@@ -16,7 +16,7 @@
 | 批次 | 状态 | 已完成 | 剩余门禁 |
 | -- | -- | -- | -- |
 | M0 硬件体检 | `COMPLETE` | Doctor、RTX 3090/BF16、1/2/4/6 卡 NCCL、报告、CI | V100/10 卡为非阻塞项 |
-| Week 1 专业化基础 | `IN_PROGRESS` | Apache/README/治理、Typer/Pydantic、公共 Schema、CI 设计 | Draft PR CI、审查、Squash 合并 |
+| Week 1 专业化基础 | `COMPLETE` | Apache/README/治理、Typer/Pydantic、公共 Schema、CI、PR #27 | 无；后续修改进入 M1 独立 PR |
 | M1 单卡闭环 | `IN_PROGRESS` | TinyGPT-Debug、Toy Data、训练配置、CPU 前后向 | Trainer、完整 Checkpoint、Exact Resume、真实中断、报告 |
 | M2–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue |
 
@@ -32,7 +32,7 @@
 - [x] 增加 ≥85% CPU 核心覆盖率、Schema、链接、公开 Artifact 和 Docker CI。
 - [x] 建立 GitHub M1–M6 Milestones 与可审查 Issues。
 - [x] 配置 `main` 保护与必需 CI。
-- [ ] Week 1 Draft PR 通过 CI、完成审查并 Squash 合并。
+- [x] Week 1 Draft PR 通过 CI、完成审查并 Squash 合并。
 
 ## M1：原生单卡 Trainer 与 Exact Resume
 

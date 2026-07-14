@@ -3,4 +3,5 @@ click==8.4.2
 numpy==2.4.6
 pydantic==2.13.4
 PyYAML==6.0.3
+tokenizers==0.21.4
 typer==0.20.1

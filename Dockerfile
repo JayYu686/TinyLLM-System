@@ -10,8 +10,9 @@ RUN python -m pip install --no-cache-dir --upgrade pip \
     && python -m pip install --no-cache-dir -r requirements/torch-cpu.txt
 
 COPY LICENSE README.md pyproject.toml ./
+COPY requirements/constraints/runtime.txt requirements/constraints/runtime.txt
 COPY src/ src/
-RUN python -m pip install --no-cache-dir .
+RUN python -m pip install --no-cache-dir -c requirements/constraints/runtime.txt .
 
 RUN useradd --create-home --uid 10001 tinyllm
 USER tinyllm

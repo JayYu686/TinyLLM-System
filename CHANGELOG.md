@@ -11,6 +11,8 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 - added synthetic CC0 fixtures and `tinyllm data inspect` for the public import contract.
 - added conservative NFC/LF normalization, content-addressed Exact Dedup, connected Tree/Repository
   grouping, deterministic hash-based splitting, and reproducible synthetic M2.2 evidence.
+- pinned the Qwen3-0.6B tokenizer artifacts and Non-thinking ChatML subset, added integrity-checked
+  `tokenizers` loading, offset-aligned Assistant-only labels, and real synthetic-fixture evidence.
 
 ## 0.1.0-alpha.1
 

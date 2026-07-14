@@ -66,6 +66,25 @@ M1 区分：
 - Scheduler 只在 Optimizer Step 成功后前进。
 - 非有限 Loss 或 Gradient 必须失败并记录首个异常 Step，不得静默跳过。
 
+M1 固定使用 AdamW（Betas 0.9/0.999、Epsilon 1e-8）。参数维度大于等于 2 的权重
+进入 Weight Decay 组；Norm 等一维参数进入 No-Decay 组。学习率按 Optimizer Step
+计算：前 `warmup_steps` 线性升温，剩余 Step 余弦下降；最后一次参数更新仍使用正 LR，
+训练完成后才归零。Step 指标记录本次参数更新实际使用的 LR，而不是 Scheduler 为下一
+Step 设置的 LR。
+
+结构化 Optimizer-Step 指标至少包含：Schema Version、Global/Micro Step、Epoch、
+累积窗口平均 Loss、实际 LR、裁剪前 Gradient Norm、本次是否裁剪、累计预测 Token 数。
+Loss、LR 和 Gradient Norm 必须拒绝 NaN/Inf。M1.1 只提供内存 Sink；JSONL 持久化在
+Run Store 接入后实现，不能由测试日志冒充事实源。
+
+稳定训练失败码：
+
+- `TRAIN_OUTPUT_INVALID`：模型没有返回标量 Loss。
+- `NON_FINITE_LOSS`：反向前发现非有限 Loss。
+- `NON_FINITE_GRADIENT`：Optimizer Step 前发现非有限 Gradient/Norm。
+- `EMPTY_DATALOADER`：数据无法形成一个完整 Micro Batch。
+- `UNSUPPORTED_PRECISION`：当前实现或硬件不支持请求的精度。
+
 ## 6. 精度规则
 
 | 环境 | Dtype | GradScaler | TF32 |

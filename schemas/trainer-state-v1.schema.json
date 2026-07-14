@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "description": "Serializable progress after the last successful operation.",
+  "properties": {
+    "epoch": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Epoch",
+      "type": "integer"
+    },
+    "global_step": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "micro_step": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Micro Step",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tokens_seen": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Tokens Seen",
+      "type": "integer"
+    }
+  },
+  "title": "TrainerState",
+  "type": "object"
+}

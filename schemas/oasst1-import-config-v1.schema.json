@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "description": "Filtering contract for the pinned OASST1 snapshot.",
+  "properties": {
+    "allowed_languages": {
+      "default": [
+        "en",
+        "zh"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Languages",
+      "type": "array"
+    },
+    "include_deleted": {
+      "const": false,
+      "default": false,
+      "title": "Include Deleted",
+      "type": "boolean"
+    },
+    "require_positive_review": {
+      "const": true,
+      "default": true,
+      "title": "Require Positive Review",
+      "type": "boolean"
+    },
+    "required_tree_state": {
+      "const": "ready_for_export",
+      "default": "ready_for_export",
+      "title": "Required Tree State",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "title": "OASST1ImportConfig",
+  "type": "object"
+}

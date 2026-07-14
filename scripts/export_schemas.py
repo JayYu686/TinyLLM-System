@@ -9,7 +9,14 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from tinyllm.data import SamplerState
+from tinyllm.data import (
+    CommitPackFTImportConfig,
+    DataImportManifest,
+    ImportedSample,
+    OASST1ImportConfig,
+    RejectedRecord,
+    SamplerState,
+)
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
 from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
@@ -20,7 +27,12 @@ from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 SCHEMAS: dict[str, type[BaseModel]] = {
     "checkpoint-manifest-v1.schema.json": CheckpointManifest,
     "checkpoint-commit-marker-v1.schema.json": CheckpointCommitMarker,
+    "commitpackft-import-config-v1.schema.json": CommitPackFTImportConfig,
+    "data-import-manifest-v1.schema.json": DataImportManifest,
+    "imported-sample-v1.schema.json": ImportedSample,
     "m1-training-config-v1.schema.json": M1TrainingConfig,
+    "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
+    "rejected-record-v1.schema.json": RejectedRecord,
     "run-manifest-v1.schema.json": RunManifest,
     "resume-result-v1.schema.json": ResumeResult,
     "sampler-state-v1.schema.json": SamplerState,

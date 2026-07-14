@@ -1,0 +1,78 @@
+{
+  "additionalProperties": false,
+  "description": "Privacy-preserving evidence for one rejected candidate or malformed row.",
+  "properties": {
+    "field": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Field"
+    },
+    "raw_record_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Record Sha256",
+      "type": "string"
+    },
+    "reason": {
+      "enum": [
+        "deleted",
+        "duplicate_source_id",
+        "empty_content",
+        "empty_instruction",
+        "invalid_conversation",
+        "malformed_row",
+        "missing_parent",
+        "missing_repository",
+        "not_python",
+        "not_ready",
+        "review_not_positive",
+        "unsupported_language",
+        "unsupported_license",
+        "unsupported_role"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "oasst1",
+        "commitpackft"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "source_record_id": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Source Record Id",
+      "type": "string"
+    },
+    "source_revision": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Source Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source",
+    "source_revision",
+    "source_record_id",
+    "raw_record_sha256",
+    "reason"
+  ],
+  "title": "RejectedRecord",
+  "type": "object"
+}

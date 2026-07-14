@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "ImportedMessage": {
+      "additionalProperties": false,
+      "description": "One validated message before normalization and tokenization.",
+      "properties": {
+        "content": {
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "system",
+            "user",
+            "assistant"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "content"
+      ],
+      "title": "ImportedMessage",
+      "type": "object"
+    },
+    "ImportedSampleMetadata": {
+      "additionalProperties": false,
+      "description": "Lineage and grouping metadata retained through the M2 pipeline.",
+      "properties": {
+        "category": {
+          "enum": [
+            "conversation",
+            "code_edit"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "group_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Group Ids",
+          "type": "array"
+        },
+        "language": {
+          "pattern": "^[a-z][a-z0-9-]{1,15}$",
+          "title": "Language",
+          "type": "string"
+        },
+        "license": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "License",
+          "type": "string"
+        },
+        "raw_record_sha256s": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Raw Record Sha256S",
+          "type": "array"
+        },
+        "source_record_id": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Source Record Id",
+          "type": "string"
+        },
+        "source_revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Source Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "language",
+        "category",
+        "license",
+        "source_revision",
+        "source_record_id",
+        "group_ids",
+        "raw_record_sha256s"
+      ],
+      "title": "ImportedSampleMetadata",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A licensed, structurally valid sample that is not yet trainable.",
+  "properties": {
+    "id": {
+      "pattern": "^(oasst1|commitpackft):[a-zA-Z0-9._-]+$",
+      "title": "Id",
+      "type": "string"
+    },
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/ImportedMessage"
+      },
+      "minItems": 2,
+      "title": "Messages",
+      "type": "array"
+    },
+    "metadata": {
+      "$ref": "#/$defs/ImportedSampleMetadata"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "oasst1",
+        "commitpackft"
+      ],
+      "title": "Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "messages",
+    "metadata"
+  ],
+  "title": "ImportedSample",
+  "type": "object"
+}

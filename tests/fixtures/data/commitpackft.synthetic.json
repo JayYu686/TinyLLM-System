@@ -1,0 +1,38 @@
+[
+  {
+    "commit": "0123456789abcdef0123456789abcdef01234567",
+    "old_file": "tool.py",
+    "new_file": "tool.py",
+    "old_contents": "print('old')\n",
+    "new_contents": "print('new')\n",
+    "subject": "Update the displayed value",
+    "message": "Update the displayed value",
+    "lang": "Python",
+    "license": "MIT",
+    "repos": "example/alpha,example/shared"
+  },
+  {
+    "commit": "89abcdef0123456789abcdef0123456789abcdef",
+    "old_file": "unsafe.py",
+    "new_file": "unsafe.py",
+    "old_contents": "pass\n",
+    "new_contents": "raise RuntimeError\n",
+    "subject": "Reject this license",
+    "message": "Reject this license",
+    "lang": "Python",
+    "license": "unknown",
+    "repos": "example/beta"
+  },
+  {
+    "commit": "fedcba9876543210fedcba9876543210fedcba98",
+    "old_file": "tool.rs",
+    "new_file": "tool.rs",
+    "old_contents": "fn old() {}\n",
+    "new_contents": "fn new() {}\n",
+    "subject": "Use the new function name",
+    "message": "Use the new function name",
+    "lang": "Rust",
+    "license": "apache-2.0",
+    "repos": "example/gamma"
+  }
+]

@@ -10,13 +10,17 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
 authors = [{ name = "TinyLLM-System contributors" }]
-dependencies = ["numpy>=1.26,<3"]
+dependencies = [
+  "numpy>=1.26,<3",
+  "PyYAML>=6.0.2,<7",
+]
 
 [project.optional-dependencies]
 dev = [
   "mypy>=1.11,<2",
   "pytest>=8,<9",
   "ruff>=0.9,<1",
+  "types-PyYAML>=6.0.12,<7",
 ]
 
 [project.scripts]

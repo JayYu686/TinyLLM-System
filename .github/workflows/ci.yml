@@ -15,6 +15,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements/torch-cpu.txt
       - run: python -m pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .

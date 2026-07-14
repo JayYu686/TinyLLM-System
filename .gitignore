@@ -13,11 +13,11 @@ dist/
 .env.*
 !.env.example
 
-data/
-models/
-runs/
-artifacts/
-checkpoints/
+/data/
+/models/
+/runs/
+/artifacts/
+/checkpoints/
 *.ckpt
 *.pt
 *.pth

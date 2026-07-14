@@ -4,11 +4,13 @@ from tinyllm.training.checkpoint import (
     CheckpointContext,
     CheckpointError,
     CheckpointErrorCode,
+    CheckpointSelection,
     CheckpointStore,
 )
 from tinyllm.training.config import M1TrainingConfig, TrainingConfigError, load_training_config
 from tinyllm.training.errors import TrainingError, TrainingErrorCode
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
+from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.seed import seed_everything
 from tinyllm.training.trainer import SingleDeviceTrainer, TrainingResult, build_m1_cpu_trainer
 
@@ -17,8 +19,10 @@ __all__ = [
     "CheckpointContext",
     "CheckpointError",
     "CheckpointErrorCode",
+    "CheckpointSelection",
     "CheckpointStore",
     "InMemoryMetricSink",
+    "ResumeMode",
     "SingleDeviceTrainer",
     "TrainerState",
     "TrainingConfigError",
@@ -28,5 +32,7 @@ __all__ = [
     "TrainingStepMetrics",
     "build_m1_cpu_trainer",
     "load_training_config",
+    "restore_from_config",
+    "restore_trainer",
     "seed_everything",
 ]

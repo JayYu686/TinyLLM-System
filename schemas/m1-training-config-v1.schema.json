@@ -18,7 +18,9 @@
           "enum": [
             "none",
             "auto",
-            "exact"
+            "exact",
+            "warm",
+            "transfer"
           ],
           "title": "Resume",
           "type": "string"

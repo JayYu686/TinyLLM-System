@@ -1,0 +1,90 @@
+{
+  "auto_fallback": {
+    "selected": "checkpoint-step-00000005",
+    "skipped_invalid": [
+      "checkpoint-step-00000010"
+    ]
+  },
+  "config": {
+    "path": "tinygpt_debug_cpu_smoke.yaml",
+    "resolved_sha256": "1dc537638ea9984943a4423c38400073735d331c39885fd2d657bd822160fbd7"
+  },
+  "exact_resume": {
+    "checkpoint_id": "checkpoint-step-00000010",
+    "final_global_step": 30,
+    "first_resumed_global_step": 11,
+    "interruption_global_step": 10,
+    "loss_lr_and_metrics_bitwise_equal": true,
+    "next_batch_indices": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "next_batch_sha256": "66baa66fe7bbef392ab80deb9438c9cf15f16e2330fb16fc83ee839004c9bba4",
+    "optimizer_state_bitwise_equal": true,
+    "parameters_bitwise_equal": true,
+    "resumed_model_sha256": "50d4056e082dd1f444b59c6b2de251871e1845a47e755ca873651d277032fca4",
+    "resumed_optimizer_steps": 20,
+    "rng_equal_at_restore": true,
+    "sampler_boundary_equal": true,
+    "scheduler_state_bitwise_equal": true,
+    "trainer_state_equal": true,
+    "uninterrupted_model_sha256": "50d4056e082dd1f444b59c6b2de251871e1845a47e755ca873651d277032fca4"
+  },
+  "failure_matrix": {
+    "bad_hash": {
+      "code": "CHECKPOINT_CORRUPT",
+      "reason": null
+    },
+    "config_drift": {
+      "code": "CHECKPOINT_INCOMPATIBLE",
+      "reason": "config:training.learning_rate"
+    },
+    "data_version": {
+      "code": "CHECKPOINT_INCOMPATIBLE",
+      "reason": "lineage:dataset_version"
+    },
+    "world_size": {
+      "code": "CHECKPOINT_INCOMPATIBLE",
+      "reason": "lineage:world_size"
+    }
+  },
+  "git": {
+    "commit": "3a077aeae7c661c7b77efe11d9256cd0a0dfe32e",
+    "dirty": false
+  },
+  "not_evaluated": [
+    "sigterm_or_sigkill_process_recovery",
+    "cuda_bf16_resume_tolerance",
+    "distributed_checkpoint_resume"
+  ],
+  "run_id": "20260714T084736Z-m1-exact-resume-smoke-1dc53763-9b38",
+  "schema_version": "1.0",
+  "smoke": "m1.3-resume-semantics-cpu",
+  "software": {
+    "cuda_runtime": "11.8",
+    "device": "cpu",
+    "python": "3.11.14",
+    "torch": "2.7.1+cu118"
+  },
+  "status": "pass",
+  "transfer_resume": {
+    "incompatible_keys": [
+      "lm_head.weight",
+      "token_embeddings.weight"
+    ],
+    "missing_keys": [
+      "lm_head.weight",
+      "token_embeddings.weight"
+    ],
+    "model_keys_loaded": 8,
+    "target_global_step": 0
+  },
+  "warm_resume": {
+    "model_keys_loaded": 10,
+    "runtime_state_reset": true,
+    "target_global_step": 0,
+    "weights_equal_to_source": true
+  }
+}

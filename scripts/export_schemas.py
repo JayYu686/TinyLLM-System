@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from tinyllm.data import SamplerState
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
+from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
 from tinyllm.training.config import M1TrainingConfig
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
@@ -20,6 +21,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "checkpoint-commit-marker-v1.schema.json": CheckpointCommitMarker,
     "m1-training-config-v1.schema.json": M1TrainingConfig,
     "run-manifest-v1.schema.json": RunManifest,
+    "resume-result-v1.schema.json": ResumeResult,
     "sampler-state-v1.schema.json": SamplerState,
     "trainer-state-v1.schema.json": TrainerState,
     "training-step-metrics-v1.schema.json": TrainingStepMetrics,

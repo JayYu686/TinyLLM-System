@@ -80,7 +80,7 @@ class CheckpointConfig(StrictSchema):
     output_dir: str = Field(min_length=1)
     save_steps: int = Field(gt=0)
     keep_last: int = Field(gt=0)
-    resume: Literal["none", "auto", "exact"]
+    resume: Literal["none", "auto", "exact", "warm", "transfer"]
 
 
 class M1TrainingConfig(StrictSchema):

@@ -55,6 +55,29 @@ class SingleDeviceTrainer:
         self.state = TrainerState()
         self._iterator: Iterator[Tensor] | None = None
 
+    @property
+    def is_pristine(self) -> bool:
+        """Return whether no training or sampler progress has occurred."""
+
+        sampler_pristine = self.sampler is None or (
+            self.sampler.epoch == 0 and self.sampler.cursor == 0
+        )
+        return self.state == TrainerState() and not self.optimizer.state and sampler_pristine
+
+    def restore_progress(self, state: TrainerState) -> None:
+        """Install optimizer-boundary progress and reset transient iteration state."""
+
+        accumulation_steps = self.config.training.gradient_accumulation_steps
+        if state.global_step > self.config.training.max_steps:
+            raise ValueError("restored global_step exceeds configured max_steps")
+        if state.micro_step != state.global_step * accumulation_steps:
+            raise ValueError("restored state is not at an optimizer-step boundary")
+        if self.sampler is not None and self.sampler.epoch != state.epoch:
+            raise ValueError("restored sampler epoch does not match trainer state")
+        self.state = state
+        self._iterator = None
+        self.optimizer.zero_grad(set_to_none=True)
+
     def _next_batch(self) -> Tensor:
         if self._iterator is None:
             self._iterator = iter(self.dataloader)

@@ -13,6 +13,7 @@ from tinyllm.schemas import (
     CheckpointFile,
     CheckpointManifest,
     CheckpointStateCoverage,
+    ResumeResult,
     RunManifest,
     RunStatus,
     canonical_config_hash,
@@ -207,3 +208,21 @@ def test_committed_json_schema_snapshots_match_models() -> None:
     for filename, model in SCHEMAS.items():
         committed = json.loads((schema_root / filename).read_text(encoding="utf-8"))
         assert committed == model.model_json_schema(), filename
+
+
+def test_resume_result_cannot_mislabel_partial_state_as_exact() -> None:
+    with pytest.raises(ValidationError, match="complete model state"):
+        ResumeResult(
+            mode="exact",
+            checkpoint_id="checkpoint-step-00000003",
+            source_run_id="20260714T000000Z-source-run-aaaaaaaa-beef",
+            source_global_step=3,
+            target_global_step=3,
+            optimizer_restored=True,
+            scheduler_restored=True,
+            scaler_restored=True,
+            sampler_restored=True,
+            rng_restored=True,
+            loaded_model_keys=("weight",),
+            missing_model_keys=("bias",),
+        )

@@ -7,6 +7,7 @@ from tinyllm.schemas.checkpoint import (
     CheckpointManifest,
     CheckpointStateCoverage,
 )
+from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest, RunStatus, canonical_config_hash, generate_run_id
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "CheckpointStateCoverage",
     "RunManifest",
     "RunStatus",
+    "ResumeResult",
     "canonical_config_hash",
     "generate_run_id",
 ]

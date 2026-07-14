@@ -16,6 +16,10 @@ These files constrain direct dependencies; they are not a fully locked transitiv
 environment. Each run must still capture a complete `pip freeze`, PyTorch/CUDA
 versions, and hardware inventory in `environment.json` and `hardware.json`.
 
+The build backend is also constrained through the development profile. `setuptools==83.0.0`
+is the minimum patched line for `PYSEC-2026-3447`; older environments must be upgraded inside
+their virtual environment before the dependency audit can pass.
+
 `pip-audit` audits packages resolvable from PyPI. Hardware-specific PyTorch wheels use
 the PyTorch index and may be reported as unauditable; this is a recorded audit limitation,
 not evidence that the wheel has no vulnerabilities. PyTorch revisions remain pinned and

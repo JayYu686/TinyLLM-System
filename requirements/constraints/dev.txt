@@ -6,4 +6,5 @@ pip-audit==2.10.1
 pytest==9.0.3
 pytest-cov==6.3.0
 ruff==0.15.21
+setuptools==83.0.0
 types-PyYAML==6.0.12.20260518

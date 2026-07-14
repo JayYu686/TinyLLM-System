@@ -1,0 +1,60 @@
+{
+  "additionalProperties": false,
+  "description": "Immutable remote identity and safe private-cache location for one M2 input.",
+  "properties": {
+    "cache_path": {
+      "format": "path",
+      "title": "Cache Path",
+      "type": "string"
+    },
+    "compression": {
+      "enum": [
+        "none",
+        "gzip"
+      ],
+      "title": "Compression",
+      "type": "string"
+    },
+    "name": {
+      "enum": [
+        "oasst1-jsonl",
+        "commitpackft-python-jsonl",
+        "qwen3-tokenizer",
+        "qwen3-tokenizer-config"
+      ],
+      "title": "Name",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    },
+    "url": {
+      "pattern": "^https://huggingface\\.co/",
+      "title": "Url",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "url",
+    "cache_path",
+    "size_bytes",
+    "sha256",
+    "compression"
+  ],
+  "title": "PinnedDataArtifact",
+  "type": "object"
+}

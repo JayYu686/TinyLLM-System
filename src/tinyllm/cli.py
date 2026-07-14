@@ -19,10 +19,20 @@ from tinyllm.data import (
     COMMITPACKFT_SOURCE,
     OASST1_SOURCE,
     CommitPackFTImportConfig,
+    DataAcquisitionError,
+    DataProcessingError,
+    DatasetRegistryError,
+    DatasetRegistryErrorCode,
     OASST1ImportConfig,
+    PackingError,
+    TokenizerContractError,
+    open_registered_dataset,
+    prepare_m2_dataset,
+    summarize_registered_dataset,
 )
 from tinyllm.doctor.collector import DoctorCollector
 from tinyllm.doctor.render import render_json, render_text
+from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
 from tinyllm.training import (
     CheckpointError,
     TrainingConfigError,
@@ -81,9 +91,14 @@ def root(
     ctx.obj = CLIState(json_output=json_output)
 
 
-def _output_error(message: str, *, json_output: bool) -> None:
+def _output_error(
+    message: str,
+    *,
+    json_output: bool,
+    error_code: str = "CLI_OUTPUT_ERROR",
+) -> None:
     if json_output:
-        payload = {"status": "error", "error": {"code": "CLI_OUTPUT_ERROR", "message": message}}
+        payload = {"status": "error", "error": {"code": error_code, "message": message}}
         typer.echo(json.dumps(payload, sort_keys=True), err=True)
     else:
         typer.echo(f"error: {message}", err=True)
@@ -100,11 +115,55 @@ def data_inspect(
         bool,
         typer.Option("--json", help="Emit stable machine-readable JSON."),
     ] = False,
+    dataset_version: Annotated[
+        str | None,
+        typer.Option(
+            "--dataset-version",
+            help="Verify and inspect one committed m2-sft Dataset Version.",
+        ),
+    ] = None,
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Private TinyLLM Artifact Root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
 ) -> None:
-    """Show pinned source identity and import policy without downloading payloads."""
+    """Show the pinned source contract or verify one committed Dataset Version."""
 
     state = cast(CLIState, ctx.obj)
     json_output = state.json_output or command_json
+    if dataset_version is not None:
+        if source != "all":
+            _output_error(
+                "--source cannot be combined with --dataset-version",
+                json_output=json_output,
+            )
+            raise typer.Exit(code=2)
+        try:
+            dataset = open_registered_dataset(
+                artifact_root=artifact_root,
+                dataset_version=dataset_version,
+            )
+            summary = summarize_registered_dataset(
+                dataset,
+                operation="inspect",
+                created=None,
+            )
+        except DatasetRegistryError as exc:
+            _output_error(
+                str(exc),
+                json_output=json_output,
+                error_code=str(exc.code),
+            )
+            code = 2 if exc.code == DatasetRegistryErrorCode.INVALID_INPUT else 3
+            raise typer.Exit(code=code) from exc
+        if json_output:
+            typer.echo(json.dumps(summary.to_dict(), indent=2, sort_keys=True))
+        else:
+            typer.echo(
+                f"verified: {summary.dataset_version} packs={summary.packed_sequences} "
+                f"tokens={summary.total_tokens}"
+            )
+        return
     if source not in {"all", "oasst1", "commitpackft"}:
         _output_error("data source must be all, oasst1, or commitpackft", json_output=json_output)
         raise typer.Exit(code=2)
@@ -140,6 +199,81 @@ def data_inspect(
         typer.echo(
             f"{descriptor['name']}: {descriptor['dataset_id']}@{descriptor['revision']} "
             f"license={descriptor['dataset_card_license']}"
+        )
+
+
+@data_app.command("prepare")
+def data_prepare(
+    ctx: typer.Context,
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Private TinyLLM Artifact Root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    processing_config: Annotated[
+        Path,
+        typer.Option("--processing-config", help="Strict M2.2 processing YAML."),
+    ] = Path("configs/data/m2_processing.yaml"),
+    tokenization_config: Annotated[
+        Path,
+        typer.Option("--tokenization-config", help="Strict M2.3a Tokenizer YAML."),
+    ] = Path("configs/data/m2_tokenization.yaml"),
+    packing_config: Annotated[
+        Path,
+        typer.Option("--packing-config", help="Strict M2.3b Packing YAML."),
+    ] = Path("configs/data/m2_packing.yaml"),
+    project_root: Annotated[
+        Path,
+        typer.Option("--project-root", help="Git project root for build lineage."),
+    ] = Path("."),
+    offline: Annotated[
+        bool,
+        typer.Option("--offline", help="Refuse network access and require verified cache hits."),
+    ] = False,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Build and atomically register the fixed M2 dataset from formal YAML."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not artifact_root.is_absolute():
+        _output_error("Artifact Root must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    if not project_root.is_dir():
+        _output_error("project root does not exist", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        summary = prepare_m2_dataset(
+            project_root=project_root.resolve(),
+            artifact_root=artifact_root,
+            processing_config_path=processing_config,
+            tokenization_config_path=tokenization_config,
+            packing_config_path=packing_config,
+            offline=offline,
+        )
+    except (DataProcessingError, PackingError, TokenizerContractError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="DATA_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except DataAcquisitionError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="DATA_ACQUISITION_ERROR")
+        raise typer.Exit(code=3) from exc
+    except DatasetRegistryError as exc:
+        _output_error(str(exc), json_output=json_output, error_code=str(exc.code))
+        code = 2 if exc.code == DatasetRegistryErrorCode.INVALID_INPUT else 3
+        raise typer.Exit(code=code) from exc
+    except (OSError, RuntimeError, ValueError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="DATA_PREPARE_FAILED")
+        raise typer.Exit(code=3) from exc
+
+    if json_output:
+        typer.echo(json.dumps(summary.to_dict(), indent=2, sort_keys=True))
+    else:
+        action = "registered" if summary.created else "verified-existing"
+        typer.echo(
+            f"{action}: {summary.dataset_version} packs={summary.packed_sequences} "
+            f"tokens={summary.total_tokens}"
         )
 
 

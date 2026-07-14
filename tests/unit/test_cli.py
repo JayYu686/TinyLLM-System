@@ -1,9 +1,11 @@
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from tinyllm.cli import main
+from tinyllm.data import RegisteredDatasetSummary
 
 
 def test_help_lists_doctor_train_and_data(capsys: pytest.CaptureFixture[str]) -> None:
@@ -12,6 +14,11 @@ def test_help_lists_doctor_train_and_data(capsys: pytest.CaptureFixture[str]) ->
     assert "doctor" in output
     assert "train" in output
     assert "data" in output
+
+    assert main(["data", "--help"]) == 0
+    data_output = capsys.readouterr().out
+    assert "prepare" in data_output
+    assert "inspect" in data_output
 
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:
@@ -114,3 +121,110 @@ def test_data_inspect_rejects_unknown_source(capsys: pytest.CaptureFixture[str])
     assert main(["data", "inspect", "--source", "floating-latest", "--json"]) == 2
     payload = json.loads(capsys.readouterr().err)
     assert "data source must be" in payload["error"]["message"]
+
+
+def test_data_inspect_rejects_invalid_or_missing_registered_version(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert (
+        main(
+            [
+                "data",
+                "inspect",
+                "--dataset-version",
+                "../../escape",
+                "--artifact-root",
+                str(tmp_path),
+                "--json",
+            ]
+        )
+        == 2
+    )
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error"]["code"] == "DATASET_INVALID_INPUT"
+
+    assert (
+        main(
+            [
+                "data",
+                "inspect",
+                "--dataset-version",
+                "m2-sft-v1-aaaaaaaa",
+                "--artifact-root",
+                str(tmp_path),
+                "--json",
+            ]
+        )
+        == 3
+    )
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error"]["code"] == "DATASET_NOT_FOUND"
+
+
+def test_data_prepare_offline_miss_is_preflight_failure(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert (
+        main(
+            [
+                "data",
+                "prepare",
+                "--artifact-root",
+                str(tmp_path),
+                "--offline",
+                "--json",
+            ]
+        )
+        == 3
+    )
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error"]["code"] == "DATA_ACQUISITION_ERROR"
+    assert "offline cache miss" in payload["error"]["message"]
+
+
+def test_data_prepare_emits_stable_path_free_summary(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    summary = RegisteredDatasetSummary(
+        status="ok",
+        operation="prepare",
+        created=True,
+        verified=True,
+        dataset_name="m2-sft",
+        dataset_version="m2-sft-v1-aaaaaaaa",
+        content_sha256="a" * 64,
+        storage_format="numpy-sharded-v1",
+        registered_at=datetime(2026, 7, 14, tzinfo=UTC),
+        git_commit="b" * 40,
+        git_dirty=False,
+        source_rows={"commitpackft": 4, "oasst1": 6},
+        imported_samples={"commitpackft": 4, "oasst1": 6},
+        processed_samples=10,
+        tokenized_samples=10,
+        balanced_samples=10,
+        packed_sequences=1,
+        total_tokens=100,
+        total_supervised_tokens=10,
+        rejection_counts={},
+        registered_files=20,
+        registered_bytes=4096,
+    )
+    monkeypatch.setattr("tinyllm.cli.prepare_m2_dataset", lambda **_kwargs: summary)
+
+    assert (
+        main(
+            [
+                "data",
+                "prepare",
+                "--artifact-root",
+                str(tmp_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == summary.to_dict()
+    assert str(tmp_path) not in json.dumps(payload)

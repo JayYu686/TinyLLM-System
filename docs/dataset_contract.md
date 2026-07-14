@@ -287,3 +287,54 @@ Stratum Basis Points、Packing 利用率和 Split Hash。`dataset_version` 为
 
 Manifest 不包含创建时间、构建主机、用户名或绝对路径；这些易变字段由 M2.3c 的独立
 Registration Record 保存，不得改变相同内容的 Dataset Version。
+
+## 15. M2.3c 不可变数据注册契约
+
+### 15.1 目录与提交协议
+
+注册版本只能位于绝对 Artifact Root 下：
+
+```text
+datasets/m2-sft/<dataset-version>/
+├── manifest.json
+├── registration.json
+├── COMMITTED
+├── lineage/
+├── rejections/
+└── shards/<split>-<index>/
+```
+
+Writer 必须在 `datasets/m2-sft/` 内创建同文件系统临时目录，写入并 `fsync` 全部文件，
+计算逐文件 SHA256，再写 `registration.json` 和最后的 `COMMITTED`。只有完整验证后才能
+原子 Rename 为最终版本目录。已存在的有效相同版本是幂等结果；相同 Version 但 Content
+SHA、Manifest 或文件不同必须拒绝，不能覆盖。无 `COMMITTED`、部分写入、坏哈希、符号链接、
+路径穿越或未知文件均不可训练。
+
+### 15.2 存储格式
+
+Pack 的事实身份仍是 M2.3b `PackedSequence`。注册编码固定为
+`numpy-sharded-v1`：按 Split 和 Pack ID 确定性分片，每个分片最多 4,194,304 Token 且不
+切断 Pack。`input_ids`/`labels` 使用 little-endian Int32，`position_ids`/`segment_ids`
+使用 little-endian UInt16，并用 Int64 Pack Offset 定位变长 Pack；JSON Metadata 保存
+Pack ID/Hash、Sample ID、边界和监督 Token 数。所有 `.npy` 必须禁用 Pickle。
+
+Reader 先完成提交与逐文件哈希验证，再加载 `allow_pickle=false` 的数组，并重建
+`PackedSequence` 触发内容、Label、Position 和 Segment Schema 校验。Trainer 只接受该
+Reader 返回的已验证注册版本，不能直接读取临时目录、缓存文件或裸数组。
+
+### 15.3 固定 Artifact 获取与 CLI
+
+源数据和 Tokenizer 只允许从完整 Revision URL 获取。每个 Artifact 固定远端文件名、字节数
+和 SHA256；下载先写临时文件，验证后原子 Rename。缓存中已存在但大小或哈希错误的文件必须
+拒绝，不能静默替换。`--offline` 模式缺文件时返回环境/资源 Preflight 失败。
+
+| Artifact | Bytes | SHA256 |
+| -- | --: | -- |
+| OASST1 ready JSONL gzip | 34,196,309 | `286a6e9a5a413b3272ae9c0b5a20d327983dea1c24342ae28cb244a6da65185c` |
+| CommitPackFT Python JSONL | 135,858,935 | `d167da37e1058371c48e057cd8815d03700c867dd8bcf58e61420d4dcd288d73` |
+| Qwen3-0.6B `tokenizer.json` | 11,422,654 | `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4` |
+| Qwen3-0.6B `tokenizer_config.json` | 9,732 | `d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101` |
+
+`tinyllm data prepare` 执行固定导入、M2.2 处理、M2.3 Tokenization/Packing 和注册；正式
+配置仍来自三个版本化 YAML。`tinyllm data inspect --dataset-version ...` 只能报告已完整验证
+版本。默认 `data inspect` 继续只读显示固定来源契约，不触发下载或构建。

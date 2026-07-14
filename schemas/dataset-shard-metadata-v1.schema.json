@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "DatasetShardPack": {
+      "additionalProperties": false,
+      "description": "Metadata required to reconstruct and validate one Pack from shard arrays.",
+      "properties": {
+        "max_sequence_length": {
+          "exclusiveMinimum": 1,
+          "title": "Max Sequence Length",
+          "type": "integer"
+        },
+        "pack_id": {
+          "pattern": "^(train|validation|test)-[0-9a-f]{16}$",
+          "title": "Pack Id",
+          "type": "string"
+        },
+        "pack_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pack Sha256",
+          "type": "string"
+        },
+        "sample_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sample Ids",
+          "type": "array"
+        },
+        "sample_token_counts": {
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "title": "Sample Token Counts",
+          "type": "array"
+        },
+        "supervised_token_count": {
+          "exclusiveMinimum": 0,
+          "title": "Supervised Token Count",
+          "type": "integer"
+        },
+        "token_count": {
+          "exclusiveMinimum": 0,
+          "title": "Token Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "pack_id",
+        "pack_sha256",
+        "max_sequence_length",
+        "sample_ids",
+        "sample_token_counts",
+        "token_count",
+        "supervised_token_count"
+      ],
+      "title": "DatasetShardPack",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Deterministic description of one NumPy shard and its Pack offsets.",
+  "properties": {
+    "array_dtypes": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Array Dtypes",
+      "type": "object"
+    },
+    "pack_count": {
+      "exclusiveMinimum": 0,
+      "title": "Pack Count",
+      "type": "integer"
+    },
+    "packs": {
+      "items": {
+        "$ref": "#/$defs/DatasetShardPack"
+      },
+      "minItems": 1,
+      "title": "Packs",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "shard_index": {
+      "minimum": 0,
+      "title": "Shard Index",
+      "type": "integer"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "storage_format": {
+      "const": "numpy-sharded-v1",
+      "title": "Storage Format",
+      "type": "string"
+    },
+    "token_count": {
+      "exclusiveMinimum": 0,
+      "title": "Token Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "storage_format",
+    "split",
+    "shard_index",
+    "token_count",
+    "pack_count",
+    "packs",
+    "array_dtypes"
+  ],
+  "title": "DatasetShardMetadata",
+  "type": "object"
+}

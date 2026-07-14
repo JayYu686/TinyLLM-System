@@ -1,0 +1,145 @@
+{
+  "code": {
+    "git_commit": "2ab550cdd2369f09472d604a53375884637928a3",
+    "git_dirty": false
+  },
+  "dataset": {
+    "balanced_samples": 6183,
+    "content_sha256": "f82ff32ee98cb852fe6779774d9cce75a71e9430da72a6e5e1f4e3f7c2efd108",
+    "dataset_name": "m2-sft",
+    "dataset_version": "m2-sft-v1-f82ff32e",
+    "imported_samples": {
+      "commitpackft": 50149,
+      "oasst1": 26172
+    },
+    "language_token_counts": {
+      "en": 1588122,
+      "zh": 438855
+    },
+    "license_sample_counts": {
+      "apache-2.0": 4181,
+      "bsd-2-clause": 93,
+      "bsd-3-clause": 441,
+      "cc0-1.0": 11,
+      "isc": 29,
+      "mit": 1414,
+      "unlicense": 14
+    },
+    "packed_sequences": 1983,
+    "packing_efficiency_basis_points": 9982,
+    "processed_samples": 75260,
+    "registered_at_utc": "2026-07-14T15:52:04.317594Z",
+    "registered_bytes": 56138828,
+    "registered_files": 32,
+    "rejection_counts": {
+      "balance.balance_downsampled": 68482,
+      "import.commitpackft.empty_content": 3,
+      "import.commitpackft.unsupported_license": 5873,
+      "import.oasst1.deleted": 584,
+      "import.oasst1.malformed_row": 732,
+      "import.oasst1.review_not_positive": 815,
+      "import.oasst1.unsupported_language": 27510,
+      "processing.exact_duplicate": 1040,
+      "processing.forbidden_control_character": 21,
+      "tokenization.sequence_too_long": 595
+    },
+    "source_rows": {
+      "commitpackft": 56025,
+      "oasst1": 88838
+    },
+    "source_token_counts": {
+      "commitpackft": 1015650,
+      "oasst1": 1011327
+    },
+    "split_pack_counts": {
+      "test": 223,
+      "train": 1419,
+      "validation": 341
+    },
+    "split_sample_counts": {
+      "test": 642,
+      "train": 4597,
+      "validation": 944
+    },
+    "split_supervised_token_counts": {
+      "test": 145054,
+      "train": 1047193,
+      "validation": 220460
+    },
+    "split_token_counts": {
+      "test": 227140,
+      "train": 1452021,
+      "validation": 347816
+    },
+    "storage_format": "numpy-sharded-v1",
+    "tokenized_samples": 74665,
+    "total_supervised_tokens": 1412707,
+    "total_tokens": 2026977,
+    "train_stratum_basis_points": {
+      "commitpackft:en": 4000,
+      "oasst1:en": 2999,
+      "oasst1:zh": 2999
+    },
+    "train_stratum_token_counts": {
+      "commitpackft:en": 580921,
+      "oasst1:en": 435498,
+      "oasst1:zh": 435602
+    }
+  },
+  "environment": {
+    "kernel": "Linux 5.4.0-216-generic x86_64",
+    "numpy": "2.4.6",
+    "python": "3.11.14",
+    "tokenizers": "0.21.4"
+  },
+  "execution_window": {
+    "ended": "2026-07-15",
+    "started": "2026-07-14",
+    "timezone": "Asia/Shanghai"
+  },
+  "runs": [
+    {
+      "created": true,
+      "elapsed_seconds": 5123,
+      "exit_status": 0,
+      "filesystem_outputs": 464312,
+      "maximum_resident_set_kib": 2443512,
+      "mode": "online-first-build",
+      "verified": true
+    },
+    {
+      "created": false,
+      "elapsed_seconds": 3838,
+      "exit_status": 0,
+      "filesystem_outputs": 0,
+      "maximum_resident_set_kib": 2444640,
+      "mode": "offline-full-rebuild",
+      "verified": true
+    }
+  ],
+  "schema_version": "1.0",
+  "scope": "full-pinned-m2-dataset-build",
+  "sources": {
+    "commitpackft": {
+      "dataset_id": "bigcode/commitpackft",
+      "revision": "fc56fe33c030c6daa414c2b112c932b8eed085e6"
+    },
+    "oasst1": {
+      "dataset_id": "OpenAssistant/oasst1",
+      "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b"
+    },
+    "tokenizer": {
+      "repository": "Qwen/Qwen3-0.6B",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+    }
+  },
+  "status": "pass",
+  "verification": {
+    "all_registered_files_verified": true,
+    "content_sha256_equal_across_rebuilds": true,
+    "dataset_version_equal_across_rebuilds": true,
+    "independent_inspect_passed": true,
+    "offline_cache_only": true,
+    "registry_not_overwritten": true
+  }
+}

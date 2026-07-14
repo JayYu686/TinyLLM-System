@@ -121,6 +121,35 @@ Toy Data 使用 Stateful Sequential Sampler。其 `num_samples`、`epoch` 和下
 `cursor` 必须进入 Checkpoint；恢复时样本数量或 Cursor 不合法必须拒绝。M1.2 只验证
 保存、完整性和下一 Batch Cursor，M1.3 才验证完整训练恢复语义。
 
+### 7.1 恢复模式
+
+M1.3 将三种恢复语义分开，调用方不得把其中一种的结果标记成另一种：
+
+| 模式 | 模型 | Optimizer/Scheduler | Step/Sampler/RNG | 目标 Run |
+|---|---|---|---|---|
+| Exact | 严格完整加载 | 完整加载 | 完整加载 | 延续原 Run |
+| Warm | 严格完整加载 | 重置 | 重置 | 新 Run |
+| Transfer | 只加载名称和形状兼容的权重 | 重置 | 重置 | 新 Run |
+
+Exact Resume 在修改目标 Trainer 前先完成完整性与兼容性 Preflight。目标 Trainer 必须为
+尚未执行 Step 的新实例；配置除 `checkpoint.output_dir` 和 `checkpoint.resume` 两个运行时
+字段外必须一致，Run ID、数据版本、Git Commit、软件环境、并行策略和 World Size 必须
+一致。加载顺序固定为模型、Optimizer、Scheduler、GradScaler、Sampler/Trainer State，
+清空梯度和 DataLoader Iterator 后最后恢复 Python、NumPy、PyTorch 和 CUDA RNG。
+
+Warm Resume 要求模型键和形状完整匹配，但不沿用旧 Run 的优化器、进度、采样位置或
+RNG。Transfer Resume 只加载兼容张量，必须报告已加载、缺失、意外和形状不兼容的键；
+没有任何兼容张量时失败。两者都要求新建的目标 Trainer，防止旧 Optimizer State 与导入
+权重混用。
+
+`auto` 从 Checkpoint Store 中按 Global Step 降序寻找最新的完整有效点，并显式报告被
+跳过的损坏或不完整目录；显式指定损坏点时必须失败，不能回退。自动选择完成后仍执行
+Exact 兼容性检查，不能通过退回旧配置掩盖当前配置漂移。
+
+M1.3 稳定失败类别为 `CHECKPOINT_INCOMPATIBLE`。坏哈希、缺少提交标记等仍分别使用
+`CHECKPOINT_CORRUPT` 或 `CHECKPOINT_INCOMPLETE`，并统一映射到 Checkpoint/Resume
+退出码 5。
+
 ## 8. 验收顺序
 
 ```text

@@ -49,6 +49,9 @@ class StatefulScaler(Protocol):
     def state_dict(self) -> dict[str, Any]:
         """Return serializable scaler state."""
 
+    def load_state_dict(self, state_dict: dict[str, Any]) -> None:
+        """Restore serializable scaler state."""
+
 
 class CheckpointErrorCode(StrEnum):
     """Stable checkpoint storage failure categories mapped to CLI exit code 5."""
@@ -58,6 +61,8 @@ class CheckpointErrorCode(StrEnum):
     CHECKPOINT_WRITE_FAILED = "CHECKPOINT_WRITE_FAILED"
     CHECKPOINT_INCOMPLETE = "CHECKPOINT_INCOMPLETE"
     CHECKPOINT_CORRUPT = "CHECKPOINT_CORRUPT"
+    CHECKPOINT_INCOMPATIBLE = "CHECKPOINT_INCOMPATIBLE"
+    CHECKPOINT_NO_VALID = "CHECKPOINT_NO_VALID"
     CHECKPOINT_RETENTION_FAILED = "CHECKPOINT_RETENTION_FAILED"
 
 
@@ -86,6 +91,14 @@ class CheckpointContext:
     environment: dict[str, object]
     strategy: Literal["single", "ddp", "fsdp2", "zero3"] = "single"
     world_size: int = 1
+
+
+@dataclass(frozen=True, slots=True)
+class CheckpointSelection:
+    """Latest structurally valid checkpoint and any newer invalid candidates."""
+
+    checkpoint_id: str
+    skipped_invalid_checkpoints: tuple[str, ...]
 
 
 def _json_bytes(value: object) -> bytes:
@@ -357,10 +370,11 @@ class CheckpointStore:
                 )
         try:
             resolved_config = json.loads((directory / CONFIG_FILENAME).read_text(encoding="utf-8"))
+            json.loads((directory / ENVIRONMENT_FILENAME).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise CheckpointError(
                 CheckpointErrorCode.CHECKPOINT_CORRUPT,
-                "checkpoint config snapshot cannot be parsed",
+                "checkpoint metadata snapshot cannot be parsed",
                 context={"checkpoint_id": checkpoint_id},
             ) from exc
         if canonical_config_hash(resolved_config) != manifest.config_hash:
@@ -421,6 +435,16 @@ class CheckpointStore:
             )
         typed_payload = cast(dict[str, Any], payload)
         try:
+            resolved_environment = json.loads(
+                (self.root / checkpoint_id / ENVIRONMENT_FILENAME).read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            raise CheckpointError(
+                CheckpointErrorCode.CHECKPOINT_CORRUPT,
+                "checkpoint environment snapshot cannot be parsed",
+                context={"checkpoint_id": checkpoint_id},
+            ) from exc
+        try:
             trainer_state = TrainerState.model_validate(typed_payload["trainer_state"])
             SamplerState.model_validate(typed_payload["sampler"])
             payload_config = M1TrainingConfig.model_validate(typed_payload["config"])
@@ -440,6 +464,7 @@ class CheckpointStore:
             and typed_payload["git_commit"] == manifest.git_commit
             and typed_payload["strategy"] == manifest.strategy
             and typed_payload["world_size"] == manifest.world_size
+            and typed_payload["environment"] == resolved_environment
             and trainer_state.global_step == manifest.global_step
             and trainer_state.micro_step == manifest.micro_step
             and trainer_state.epoch == manifest.epoch
@@ -451,6 +476,34 @@ class CheckpointStore:
                 context={"checkpoint_id": checkpoint_id},
             )
         return typed_payload
+
+    def latest_valid(self) -> CheckpointSelection:
+        """Select the highest-Step payload that passes full integrity validation."""
+
+        candidates = sorted(
+            (
+                path.name
+                for path in self.root.glob(f"{CHECKPOINT_ID_PREFIX}*")
+                if path.is_dir() and CHECKPOINT_ID_PATTERN.fullmatch(path.name) is not None
+            ),
+            reverse=True,
+        )
+        skipped: list[str] = []
+        for checkpoint_id in candidates:
+            try:
+                self.load_training_state(checkpoint_id)
+            except CheckpointError:
+                skipped.append(checkpoint_id)
+                continue
+            return CheckpointSelection(
+                checkpoint_id=checkpoint_id,
+                skipped_invalid_checkpoints=tuple(skipped),
+            )
+        raise CheckpointError(
+            CheckpointErrorCode.CHECKPOINT_NO_VALID,
+            "checkpoint store does not contain a valid checkpoint",
+            context={"candidate_count": len(candidates)},
+        )
 
     def latest(self) -> str:
         """Return and validate the atomically published latest checkpoint ID."""

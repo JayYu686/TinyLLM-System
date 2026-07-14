@@ -1,0 +1,115 @@
+{
+  "additionalProperties": false,
+  "description": "Machine-readable account of state applied from one checkpoint.",
+  "properties": {
+    "checkpoint_id": {
+      "pattern": "^checkpoint-step-\\d{8}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "incompatible_checkpoint_keys": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Incompatible Checkpoint Keys",
+      "type": "array"
+    },
+    "loaded_model_keys": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Loaded Model Keys",
+      "type": "array"
+    },
+    "missing_model_keys": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Model Keys",
+      "type": "array"
+    },
+    "mode": {
+      "enum": [
+        "exact",
+        "warm",
+        "transfer"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "optimizer_restored": {
+      "title": "Optimizer Restored",
+      "type": "boolean"
+    },
+    "rng_restored": {
+      "title": "Rng Restored",
+      "type": "boolean"
+    },
+    "sampler_restored": {
+      "title": "Sampler Restored",
+      "type": "boolean"
+    },
+    "scaler_restored": {
+      "title": "Scaler Restored",
+      "type": "boolean"
+    },
+    "scheduler_restored": {
+      "title": "Scheduler Restored",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "skipped_invalid_checkpoints": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Skipped Invalid Checkpoints",
+      "type": "array"
+    },
+    "source_global_step": {
+      "minimum": 0,
+      "title": "Source Global Step",
+      "type": "integer"
+    },
+    "source_run_id": {
+      "pattern": "^(?P<timestamp>\\d{8}T\\d{6}Z)-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<config_hash>[a-f0-9]{8})-(?P<nonce>[a-f0-9]{4})$",
+      "title": "Source Run Id",
+      "type": "string"
+    },
+    "target_global_step": {
+      "minimum": 0,
+      "title": "Target Global Step",
+      "type": "integer"
+    },
+    "unexpected_checkpoint_keys": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Unexpected Checkpoint Keys",
+      "type": "array"
+    }
+  },
+  "required": [
+    "mode",
+    "checkpoint_id",
+    "source_run_id",
+    "source_global_step",
+    "target_global_step",
+    "optimizer_restored",
+    "scheduler_restored",
+    "scaler_restored",
+    "sampler_restored",
+    "rng_restored",
+    "loaded_model_keys"
+  ],
+  "title": "ResumeResult",
+  "type": "object"
+}

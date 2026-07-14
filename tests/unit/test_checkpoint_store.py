@@ -210,6 +210,25 @@ def test_semantic_config_and_payload_drift_fail_after_hashes_are_resigned(
     assert caught.value.code == CheckpointErrorCode.CHECKPOINT_CORRUPT
 
 
+def test_payload_environment_must_match_public_snapshot_after_resigning(tmp_path: Path) -> None:
+    config = checkpoint_config()
+    trainer = build_m1_cpu_trainer(config)
+    trainer.train(target_global_step=1)
+    store = CheckpointStore(tmp_path / "checkpoints", keep_last=2)
+    manifest = save_current_checkpoint(store, trainer, config)
+    checkpoint_dir = store.root / manifest.checkpoint_id
+    state_path = checkpoint_dir / "training_state.pt"
+    payload = torch.load(state_path, map_location="cpu", weights_only=False)
+    payload["environment"] = {"python": "different"}
+    torch.save(payload, state_path)
+    resign_changed_file(checkpoint_dir, "training_state.pt")
+
+    assert store.validate(manifest.checkpoint_id).checkpoint_id == manifest.checkpoint_id
+    with pytest.raises(CheckpointError) as caught:
+        store.load_training_state(manifest.checkpoint_id)
+    assert caught.value.code == CheckpointErrorCode.CHECKPOINT_CORRUPT
+
+
 def test_write_failure_cleans_temporary_state_and_does_not_publish_latest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

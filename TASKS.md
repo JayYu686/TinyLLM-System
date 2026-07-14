@@ -27,7 +27,7 @@
 - [x] 创建隔离 `.venv` 和固定的 3090 PyTorch/CUDA Profile。
 - [x] 配置 Ruff、MyPy、Pytest。
 - [x] 建立基础 CI 配置。
-- [ ] 在远程仓库执行一次基础 CI。
+- [x] 在远程仓库执行一次基础 CI。
 - [x] 设计 `tinyllm doctor` 输出 Schema。
 - [x] 实现 `tinyllm doctor` 只读采集和稳定 JSON。
 - [x] 验证 doctor Smoke Test 和失败路径。

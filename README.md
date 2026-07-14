@@ -328,7 +328,7 @@ tinyllm benchmark --profile configs/benchmark/rtx3090_single.yaml
 ## 10. 当前状态
 
 ```text
-项目阶段：M0 技术验收通过；初始提交等待远程 CI
+项目阶段：M0 已完成；下一阶段进入 M1 单卡 Debug 闭环与 M2 数据版本化
 代码状态：最小 Python 骨架和 tinyllm doctor 已实现
 硬件体检：CUDA/BF16、1/2/4/6 卡 NCCL 已实测；开发 Smoke 按实时空闲卡选择
 Benchmark：仅记录 M0 真实 NCCL 原始结果；训练和推理 Benchmark 仍为 TBD

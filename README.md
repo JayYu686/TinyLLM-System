@@ -31,7 +31,8 @@ missing results stay explicitly unevaluated.
 | M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
-| M2–M6 | Planned | No training-quality or scaling result is claimed yet |
+| M2 licensed data pipeline | In progress | Pinned source/import contract implemented; no full dataset build or Baseline Evaluation yet |
+| M3–M6 | Planned | No training-quality or scaling result is claimed yet |
 
 The complete M0 evidence is in the
 [acceptance record](reports/m0/m0_acceptance.md),
@@ -39,6 +40,10 @@ The complete M0 evidence is in the
 [topology/NCCL report](reports/hardware/nccl_topology.md). M0 NCCL measurements prove
 tooling and collective correctness under that test protocol; they are not DDP throughput
 benchmarks.
+
+M2 source availability and Dataset Card hashes are recorded in the
+[pinned-source verification report](reports/m2/source_verification.md). This is import-contract
+evidence only; it is not evidence of a completed data build or model training.
 
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately

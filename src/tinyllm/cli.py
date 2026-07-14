@@ -14,6 +14,13 @@ import typer
 from typer.main import get_command
 
 from tinyllm import __version__
+from tinyllm.data import (
+    COMMITPACKFT_LICENSE_ALLOWLIST,
+    COMMITPACKFT_SOURCE,
+    OASST1_SOURCE,
+    CommitPackFTImportConfig,
+    OASST1ImportConfig,
+)
 from tinyllm.doctor.collector import DoctorCollector
 from tinyllm.doctor.render import render_json, render_text
 from tinyllm.training import (
@@ -30,6 +37,12 @@ app = typer.Typer(
     no_args_is_help=True,
     pretty_exceptions_enable=False,
 )
+data_app = typer.Typer(
+    name="data",
+    help="Inspect and build versioned dataset artifacts.",
+    no_args_is_help=True,
+)
+app.add_typer(data_app, name="data")
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +87,60 @@ def _output_error(message: str, *, json_output: bool) -> None:
         typer.echo(json.dumps(payload, sort_keys=True), err=True)
     else:
         typer.echo(f"error: {message}", err=True)
+
+
+@data_app.command("inspect")
+def data_inspect(
+    ctx: typer.Context,
+    source: Annotated[
+        str,
+        typer.Option("--source", help="Pinned source to inspect: all, oasst1, or commitpackft."),
+    ] = "all",
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Show pinned source identity and import policy without downloading payloads."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if source not in {"all", "oasst1", "commitpackft"}:
+        _output_error("data source must be all, oasst1, or commitpackft", json_output=json_output)
+        raise typer.Exit(code=2)
+
+    records: list[dict[str, object]] = []
+    if source in {"all", "oasst1"}:
+        records.append(
+            {
+                "source": OASST1_SOURCE.to_dict(),
+                "import_config": OASST1ImportConfig().to_dict(),
+            }
+        )
+    if source in {"all", "commitpackft"}:
+        records.append(
+            {
+                "source": COMMITPACKFT_SOURCE.to_dict(),
+                "import_config": CommitPackFTImportConfig().to_dict(),
+                "source_license_allowlist": sorted(COMMITPACKFT_LICENSE_ALLOWLIST),
+            }
+        )
+
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {"status": "ok", "stage": "import_contract", "sources": records},
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return
+    for record in records:
+        descriptor = cast(dict[str, object], record["source"])
+        typer.echo(
+            f"{descriptor['name']}: {descriptor['dataset_id']}@{descriptor['revision']} "
+            f"license={descriptor['dataset_card_license']}"
+        )
 
 
 @app.command()

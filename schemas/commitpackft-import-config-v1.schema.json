@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "description": "Language and source-license policy for CommitPackFT.",
+  "properties": {
+    "allowed_licenses": {
+      "default": [
+        "apache-2.0",
+        "bsd-2-clause",
+        "bsd-3-clause",
+        "cc0-1.0",
+        "isc",
+        "mit",
+        "unlicense"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Licenses",
+      "type": "array"
+    },
+    "prompt_template_version": {
+      "const": "commit-edit-v1",
+      "default": "commit-edit-v1",
+      "title": "Prompt Template Version",
+      "type": "string"
+    },
+    "required_language": {
+      "const": "python",
+      "default": "python",
+      "title": "Required Language",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "title": "CommitPackFTImportConfig",
+  "type": "object"
+}

@@ -3,6 +3,13 @@
 All notable changes are recorded here. Versions follow Semantic Versioning; Python
 package pre-release notation uses PEP 440 while Git tags use the public release name.
 
+## Unreleased
+
+- started M2 with pinned OASST1 and CommitPackFT identities, explicit per-source-license policy,
+  strict import schemas, deterministic input/config hashes, and privacy-preserving rejection
+  summaries;
+- added synthetic CC0 fixtures and `tinyllm data inspect` for the public import contract.
+
 ## 0.1.0-alpha.1
 
 First M1 correctness release:

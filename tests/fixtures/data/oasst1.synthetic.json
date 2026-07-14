@@ -1,0 +1,35 @@
+[
+  {
+    "message_id": "prompt-alpha",
+    "parent_id": null,
+    "text": "How do I print JSON in Python?",
+    "role": "prompter",
+    "lang": "en",
+    "review_result": true,
+    "deleted": false,
+    "message_tree_id": "tree-alpha",
+    "tree_state": "ready_for_export"
+  },
+  {
+    "message_id": "answer-alpha",
+    "parent_id": "prompt-alpha",
+    "text": "Use json.dumps(value).",
+    "role": "assistant",
+    "lang": "en",
+    "review_result": true,
+    "deleted": false,
+    "message_tree_id": "tree-alpha",
+    "tree_state": "ready_for_export"
+  },
+  {
+    "message_id": "answer-rejected",
+    "parent_id": "prompt-alpha",
+    "text": "A deliberately rejected answer.",
+    "role": "assistant",
+    "lang": "en",
+    "review_result": false,
+    "deleted": false,
+    "message_tree_id": "tree-alpha",
+    "tree_state": "ready_for_export"
+  }
+]

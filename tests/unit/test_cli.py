@@ -6,11 +6,12 @@ import pytest
 from tinyllm.cli import main
 
 
-def test_help_lists_doctor_and_train(capsys: pytest.CaptureFixture[str]) -> None:
+def test_help_lists_doctor_train_and_data(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--help"]) == 0
     output = capsys.readouterr().out
     assert "doctor" in output
     assert "train" in output
+    assert "data" in output
 
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:
@@ -95,3 +96,21 @@ def test_train_rejects_invalid_runtime_overrides(capsys: pytest.CaptureFixture[s
     assert code == 2
     payload = json.loads(capsys.readouterr().err)
     assert "resume Run directory" in payload["error"]["message"]
+
+
+def test_data_inspect_exposes_pinned_contract_as_stable_json(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["data", "inspect", "--source", "commitpackft", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["status"] == "ok"
+    assert payload["stage"] == "import_contract"
+    assert payload["sources"][0]["source"]["dataset_id"] == "bigcode/commitpackft"
+    assert "mit" in payload["sources"][0]["source_license_allowlist"]
+
+
+def test_data_inspect_rejects_unknown_source(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["data", "inspect", "--source", "floating-latest", "--json"]) == 2
+    payload = json.loads(capsys.readouterr().err)
+    assert "data source must be" in payload["error"]["message"]

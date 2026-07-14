@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "DatasetSource": {
+      "additionalProperties": false,
+      "description": "Immutable identity and public metadata for one upstream snapshot.",
+      "properties": {
+        "dataset_card_license": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Dataset Card License",
+          "type": "string"
+        },
+        "dataset_card_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Dataset Card Sha256",
+          "type": "string"
+        },
+        "dataset_card_url": {
+          "pattern": "^https://huggingface\\.co/datasets/",
+          "title": "Dataset Card Url",
+          "type": "string"
+        },
+        "dataset_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "name": {
+          "enum": [
+            "oasst1",
+            "commitpackft"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "dataset_id",
+        "revision",
+        "dataset_card_url",
+        "dataset_card_license",
+        "dataset_card_sha256"
+      ],
+      "title": "DatasetSource",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Deterministic summary and lineage for one source import operation.",
+  "properties": {
+    "accepted_samples": {
+      "minimum": 0,
+      "title": "Accepted Samples",
+      "type": "integer"
+    },
+    "candidate_samples": {
+      "minimum": 0,
+      "title": "Candidate Samples",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+    },
+    "license_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "License Counts",
+      "type": "object"
+    },
+    "rejected_samples": {
+      "minimum": 0,
+      "title": "Rejected Samples",
+      "type": "integer"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/DatasetSource"
+    },
+    "source_rows": {
+      "minimum": 0,
+      "title": "Source Rows",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "source",
+    "input_sha256",
+    "config_sha256",
+    "source_rows",
+    "candidate_samples",
+    "accepted_samples",
+    "rejected_samples",
+    "rejection_counts",
+    "license_counts"
+  ],
+  "title": "DataImportManifest",
+  "type": "object"
+}

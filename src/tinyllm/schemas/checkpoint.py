@@ -57,6 +57,14 @@ class CheckpointStateCoverage(StrictSchema):
         return all(self.model_dump().values())
 
 
+class CheckpointCommitMarker(StrictSchema):
+    """Final marker written only after the manifest and payload files are durable."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    checkpoint_id: str = Field(pattern=r"^checkpoint-step-\d{8}$")
+    manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+
+
 class CheckpointManifest(StrictSchema):
     """Integrity and compatibility contract for a published checkpoint."""
 
@@ -76,6 +84,7 @@ class CheckpointManifest(StrictSchema):
     state: CheckpointStateCoverage
     files: tuple[CheckpointFile, ...] = Field(min_length=1)
     pinned: bool = False
+    pin_reason: Literal["interruption", "best", "final"] | None = None
     committed: Literal[True] = True
 
     @model_validator(mode="after")
@@ -89,8 +98,14 @@ class CheckpointManifest(StrictSchema):
             raise ValueError("run_id config hash does not match config_hash")
         if self.created_at.tzinfo is None:
             raise ValueError("checkpoint timestamp must be timezone-aware")
+        if self.checkpoint_id != f"checkpoint-step-{self.global_step:08d}":
+            raise ValueError("checkpoint_id does not match global_step")
+        if self.micro_step < self.global_step:
+            raise ValueError("micro_step cannot precede global_step")
         if self.resume_capability == "exact" and not self.state.supports_exact_resume:
             raise ValueError("exact resume requires every state category")
+        if self.pinned != (self.pin_reason is not None):
+            raise ValueError("pinned and pin_reason must be set together")
         paths = [entry.path for entry in self.files]
         if len(paths) != len(set(paths)):
             raise ValueError("checkpoint manifest contains duplicate file paths")

@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "Final marker written only after the manifest and payload files are durable.",
+  "properties": {
+    "checkpoint_id": {
+      "pattern": "^checkpoint-step-\\d{8}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "manifest_sha256"
+  ],
+  "title": "CheckpointCommitMarker",
+  "type": "object"
+}

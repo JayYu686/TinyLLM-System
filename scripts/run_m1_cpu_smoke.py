@@ -5,35 +5,15 @@ from __future__ import annotations
 
 import json
 import platform
-import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
 
 import torch
 
+from tinyllm.lineage import read_git_identity
 from tinyllm.schemas import canonical_config_hash
 from tinyllm.training import build_m1_cpu_trainer, load_training_config
-
-
-def git_identity(project_root: Path) -> tuple[str, bool]:
-    """Return the checked-out commit and whether tracked source differs from it."""
-
-    commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=project_root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    status = subprocess.run(
-        ["git", "status", "--short", "--untracked-files=no"],
-        cwd=project_root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    return commit, bool(status)
 
 
 def run_cpu_smoke(config_path: Path) -> dict[str, Any]:
@@ -48,7 +28,7 @@ def run_cpu_smoke(config_path: Path) -> dict[str, Any]:
         raise RuntimeError("CPU smoke produced no optimizer-step metrics")
     first_loss = sum(metric.loss for metric in result.metrics[:window_size]) / window_size
     last_loss = sum(metric.loss for metric in result.metrics[-window_size:]) / window_size
-    git_commit, git_dirty = git_identity(project_root)
+    git_commit, git_dirty = read_git_identity(project_root)
     return {
         "schema_version": "1.0",
         "smoke": "m1.1-cpu-fp32",

@@ -315,6 +315,7 @@ tinyllm benchmark --profile configs/benchmark/rtx3090_single.yaml
 - [docs/evaluation_spec.md](docs/evaluation_spec.md)：评测和门禁。
 - [docs/experiment_lineage.md](docs/experiment_lineage.md)：实验血缘。
 - [docs/inference_design.md](docs/inference_design.md)：推理服务设计。
+- [docs/m1_training_contract.md](docs/m1_training_contract.md)：M1 模型、配置、确定性与恢复契约。
 - [docs/benchmark_plan.md](docs/benchmark_plan.md)：性能测试计划。
 - [docs/resume_alignment.md](docs/resume_alignment.md)：简历能力对齐。
 - [docs/doctor_contract.md](docs/doctor_contract.md)：M0 环境体检命令与输出契约。
@@ -328,8 +329,8 @@ tinyllm benchmark --profile configs/benchmark/rtx3090_single.yaml
 ## 10. 当前状态
 
 ```text
-项目阶段：M0 已完成；下一阶段进入 M1 单卡 Debug 闭环与 M2 数据版本化
-代码状态：最小 Python 骨架和 tinyllm doctor 已实现
+项目阶段：M0 已完成；M1 单卡 Debug 闭环进行中
+代码状态：M1 配置、TinyGPT-Debug、确定性 Toy Dataset 和 CPU 前后向单元测试已实现；训练器与恢复待实现
 硬件体检：CUDA/BF16、1/2/4/6 卡 NCCL 已实测；开发 Smoke 按实时空闲卡选择
 Benchmark：仅记录 M0 真实 NCCL 原始结果；训练和推理 Benchmark 仍为 TBD
 默认主平台：10×RTX 3090 24GB

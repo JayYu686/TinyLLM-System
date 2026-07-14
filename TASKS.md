@@ -45,18 +45,18 @@
 
 ## M1：单卡 Debug 训练闭环
 
-- [ ] 定义 TinyGPTConfig。
-- [ ] 实现 RMSNorm。
-- [ ] 实现 RoPE。
-- [ ] 实现 Causal Self-Attention。
-- [ ] 实现 SwiGLU。
-- [ ] 实现 Transformer Block。
-- [ ] 实现 TinyGPT。
-- [ ] 实现 Weight Tying。
-- [ ] 实现 Causal LM Loss。
-- [ ] 实现 Toy Dataset。
-- [ ] 实现固定 Seed。
-- [ ] 实现训练配置 Schema。
+- [x] 定义 TinyGPTConfig。
+- [x] 实现 RMSNorm。
+- [x] 实现 RoPE。
+- [x] 实现 Causal Self-Attention。
+- [x] 实现 SwiGLU。
+- [x] 实现 Transformer Block。
+- [x] 实现 TinyGPT。
+- [x] 实现 Weight Tying。
+- [x] 实现 Causal LM Loss。
+- [x] 实现 Toy Dataset。
+- [x] 实现固定 Seed。
+- [x] 实现训练配置 Schema。
 - [ ] 实现单卡训练器。
 - [ ] 实现 BF16 Profile。
 - [ ] 实现 FP16 + GradScaler Profile。

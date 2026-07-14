@@ -3,13 +3,13 @@
 ## 1. 当前状态
 
 ```text
-状态：PENDING_REMOTE_CI
+状态：COMPLETE
 技术验收：通过
-已完成：设计、最小工程、doctor、测试、CUDA/BF16、1/2/4/6 卡 NCCL、硬件报告、Git author 和初始提交准备
-工程流程未完成：初始提交推送后的首次远程 CI
+工程验收：通过
+已完成：设计、最小工程、doctor、测试、CUDA/BF16、1/2/4/6 卡 NCCL、硬件报告、初始提交和远程 CI
 ```
 
-根据 AGENTS.md 的里程碑规则，在首次远程 CI 验证和最终状态同步前不得将状态标记为 M0 Complete。
+M0 已满足 AGENTS.md 要求的代码、测试、Smoke、失败路径、真实结果、文档和后续依赖条件。
 
 ## 2. 验收表
 
@@ -26,14 +26,14 @@
 | MyPy Strict | 通过 | `mypy` |
 | Pytest CPU | 通过 | 18 Passed，1 GPU Test Deselected |
 | Pytest GPU | 通过 | GPU 9，BF16 Smoke 1 Passed |
-| 基础 CI | 等待远程运行 | `.github/workflows/ci.yml`；远程仓库已连接 |
+| 基础 CI | 通过 | GitHub Actions Run [29297900401](https://github.com/JayYu686/TinyLLM-System/actions/runs/29297900401)，Quality Job 26s |
 | 3090 Inventory | 通过 | `reports/hardware/rtx3090_inventory.md` |
 | NUMA/Topology | 通过 | 5+5 NUMA，PIX/PXB/SYS 已记录 |
 | NCCL 1/2/4 卡 | 通过 | 三种 Collective，Correctness Error 0 |
 | NCCL 动态 6 卡 | 通过 | GPU 4–9，三种 Collective，Correctness Error 0 |
 | NCCL 标准 8 卡 | 移至 M3 | 固定 1/2/4/8 卡扩展实验需要受控资源窗口 |
 | Git 初始化 | 通过 | Branch `main` |
-| 首个 Git Commit | 已准备 | Git author 已配置；本验收记录随初始提交发布 |
+| 首个 Git Commit | 通过 | `ae33809`，已推送至 `origin/main` |
 | V100 报告 | 条件性未执行 | 本轮无 V100 服务器连接方式，不阻塞 3090 主平台实现 |
 
 ## 3. 已验证失败路径
@@ -45,10 +45,8 @@
 - GPU 忙碌：NCCL Runner 标记 `not_run`，不自动抢占。
 - NCCL 子进程超过 300 秒：退出码 124，并保留超时日志。
 
-## 4. 完成 M0 的剩余动作
+## 4. 后续非阻塞动作
 
-1. 推送初始提交并等待基础 CI 完成。
-2. 保存远程 CI 结果。
-3. 更新本文件、TASKS.md 和 README 状态为 Complete。
-
-标准 GPU 0–7 的 8 卡 NCCL 和可选候选组对比移至 M3，不再阻塞 M0。
+- 取得 V100 服务器访问方式后补充辅助平台报告。
+- 标准 GPU 0–7 的 8 卡 NCCL 和可选候选组对比在 M3 的受控资源窗口执行。
+- 10 卡 NCCL 仅作为可选边界对照。

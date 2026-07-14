@@ -1,0 +1,70 @@
+{
+  "category_counts": {
+    "config": 40,
+    "json_items": 40,
+    "linux": 45,
+    "logs": 45,
+    "python": 50,
+    "refusal": 40,
+    "short_code": 40
+  },
+  "config_sha256": "31c839dd1e78a6ab66cface083121e6744ac48e63beb26b6b63f08e34a5c0cda",
+  "contamination": {
+    "fingerprint_algorithm": "token-sequence-sha256-v1",
+    "full_sequence": true,
+    "near_dedup": false,
+    "prompt_prefix": true,
+    "split": "train"
+  },
+  "content_sha256": "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+  "decoding": {
+    "do_sample": false,
+    "max_new_tokens": 512,
+    "seed": 42,
+    "temperature": 0.0,
+    "top_p": 1.0
+  },
+  "item_count": 300,
+  "items_sha256": "0831efc237fcc65b356d77aacc11c0b0440025c410e80c245bd86a073dd0364a",
+  "language_counts": {
+    "en": 210,
+    "zh": 90
+  },
+  "max_sequence_length": 1024,
+  "schema_version": "1.0",
+  "scorer_counts": {
+    "exact_match": 135,
+    "human_rubric": 40,
+    "json_object": 80,
+    "multiple_choice": 45
+  },
+  "suite_name": "tinyllm-domain",
+  "suite_version": "tinyllm-domain-v1-83bdd8ef",
+  "template": {
+    "add_generation_prompt": false,
+    "assistant_only_loss": true,
+    "supervise_assistant_end_token": true,
+    "template_id": "qwen3-chatml-nonthinking-v1",
+    "template_sha256": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+    "thinking": false
+  },
+  "tokenizer": {
+    "backend": "tokenizers",
+    "backend_version": "0.21.4",
+    "bos_token": "<|im_start|>",
+    "bos_token_id": 151644,
+    "eos_token": "<|im_end|>",
+    "eos_token_id": 151645,
+    "pad_token": "<|endoftext|>",
+    "pad_token_id": 151643,
+    "repository": "Qwen/Qwen3-0.6B",
+    "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "tokenizer_config_file": "tokenizer_config.json",
+    "tokenizer_config_file_size": 9732,
+    "tokenizer_config_sha256": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+    "tokenizer_file": "tokenizer.json",
+    "tokenizer_file_size": 11422654,
+    "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "vocab_size": 151669
+  }
+}

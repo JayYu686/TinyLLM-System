@@ -1,0 +1,30 @@
+{
+  "additionalProperties": false,
+  "description": "Canonical JSON-object scoring contract.",
+  "properties": {
+    "expected_json": {
+      "minLength": 2,
+      "title": "Expected Json",
+      "type": "string"
+    },
+    "kind": {
+      "const": "json_object",
+      "title": "Kind",
+      "type": "string"
+    },
+    "required_keys": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Keys",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind",
+    "expected_json",
+    "required_keys"
+  ],
+  "title": "JsonObjectScorer",
+  "type": "object"
+}

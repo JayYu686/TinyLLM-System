@@ -1,0 +1,15 @@
+{
+  "checked_evaluation_items": 3,
+  "checked_training_samples": 10,
+  "clean_control_matches": 0,
+  "clean_control_status": "clean",
+  "contaminated_items": 2,
+  "fingerprint_algorithm": "token-sequence-sha256-v1",
+  "full_sequence_matches": 1,
+  "near_dedup": "not_evaluated",
+  "prompt_prefix_matches": 2,
+  "raw_training_sample_ids_published": false,
+  "registered_dataset_verified": true,
+  "scope": "public-synthetic-evaluation-and-token-arrays",
+  "status": "pass"
+}

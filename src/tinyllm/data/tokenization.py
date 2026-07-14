@@ -73,6 +73,15 @@ class RenderedConversation:
 
 
 @dataclass(frozen=True, slots=True)
+class ConversationTokenization:
+    """Rendered Token IDs and assistant-only labels for one canonical conversation."""
+
+    input_ids: tuple[int, ...]
+    labels: tuple[int, ...]
+    rendered_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
 class TokenizationBatch:
     """Deterministically ordered tokenized samples and data-level rejections."""
 
@@ -260,6 +269,30 @@ def _labels_from_offsets(
     return tuple(labels)
 
 
+def tokenize_messages(
+    messages: tuple[ImportedMessage, ...],
+    *,
+    backend: OffsetTokenizer,
+    config: M2TokenizationConfig,
+) -> ConversationTokenization:
+    """Tokenize canonical ChatML messages with the frozen assistant-only mask."""
+
+    _validate_backend(backend, config.tokenizer)
+    rendered = render_qwen3_nonthinking(messages)
+    encoding = backend.encode(rendered.text)
+    labels = _labels_from_offsets(
+        text=rendered.text,
+        encoding=encoding,
+        assistant_spans=rendered.assistant_spans,
+        vocab_size=config.tokenizer.vocab_size,
+    )
+    return ConversationTokenization(
+        input_ids=encoding.ids,
+        labels=labels,
+        rendered_sha256=hashlib.sha256(rendered.text.encode()).hexdigest(),
+    )
+
+
 def tokenize_processed_sample(
     sample: ProcessedSample,
     *,
@@ -268,16 +301,12 @@ def tokenize_processed_sample(
 ) -> TokenizedSample | TokenizationRejectedRecord:
     """Tokenize one processed sample or return a content-free data-level rejection."""
 
-    _validate_backend(backend, config.tokenizer)
-    rendered = render_qwen3_nonthinking(sample.messages)
-    encoding = backend.encode(rendered.text)
-    labels = _labels_from_offsets(
-        text=rendered.text,
-        encoding=encoding,
-        assistant_spans=rendered.assistant_spans,
-        vocab_size=config.tokenizer.vocab_size,
+    tokenization = tokenize_messages(
+        sample.messages,
+        backend=backend,
+        config=config,
     )
-    token_count = len(encoding.ids)
+    token_count = len(tokenization.input_ids)
     if token_count > config.max_sequence_length:
         return TokenizationRejectedRecord(
             sample_id=sample.id,
@@ -288,7 +317,7 @@ def tokenize_processed_sample(
             observed_token_count=token_count,
             max_sequence_length=config.max_sequence_length,
         )
-    supervised_token_count = sum(label != -100 for label in labels)
+    supervised_token_count = sum(label != -100 for label in tokenization.labels)
     if supervised_token_count == 0:
         return TokenizationRejectedRecord(
             sample_id=sample.id,
@@ -300,7 +329,10 @@ def tokenize_processed_sample(
             max_sequence_length=config.max_sequence_length,
         )
     assistant_count = sum(message.role == "assistant" for message in sample.messages)
-    if sum(label == config.tokenizer.eos_token_id for label in labels) < assistant_count:
+    if (
+        sum(label == config.tokenizer.eos_token_id for label in tokenization.labels)
+        < assistant_count
+    ):
         raise TokenizerContractError("assistant end token is not supervised for every response")
     return TokenizedSample(
         id=sample.id,
@@ -313,12 +345,12 @@ def tokenize_processed_sample(
         language=sample.metadata.language,
         license=sample.metadata.license,
         content_sha256=sample.content_sha256,
-        rendered_sha256=hashlib.sha256(rendered.text.encode()).hexdigest(),
+        rendered_sha256=tokenization.rendered_sha256,
         tokenizer_sha256=config.tokenizer.tokenizer_sha256,
         template_sha256=config.template.template_sha256,
         max_sequence_length=config.max_sequence_length,
-        input_ids=encoding.ids,
-        labels=labels,
+        input_ids=tokenization.input_ids,
+        labels=tokenization.labels,
         token_count=token_count,
         supervised_token_count=supervised_token_count,
     )

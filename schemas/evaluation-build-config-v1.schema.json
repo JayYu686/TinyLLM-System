@@ -1,0 +1,382 @@
+{
+  "$defs": {
+    "CategoryCounts": {
+      "additionalProperties": false,
+      "description": "Frozen domain-category item counts.",
+      "properties": {
+        "config": {
+          "minimum": 0,
+          "title": "Config",
+          "type": "integer"
+        },
+        "json_items": {
+          "minimum": 0,
+          "title": "Json Items",
+          "type": "integer"
+        },
+        "linux": {
+          "minimum": 0,
+          "title": "Linux",
+          "type": "integer"
+        },
+        "logs": {
+          "minimum": 0,
+          "title": "Logs",
+          "type": "integer"
+        },
+        "python": {
+          "minimum": 0,
+          "title": "Python",
+          "type": "integer"
+        },
+        "refusal": {
+          "minimum": 0,
+          "title": "Refusal",
+          "type": "integer"
+        },
+        "short_code": {
+          "minimum": 0,
+          "title": "Short Code",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "config",
+        "json_items",
+        "linux",
+        "logs",
+        "python",
+        "refusal",
+        "short_code"
+      ],
+      "title": "CategoryCounts",
+      "type": "object"
+    },
+    "ChatTemplateIdentity": {
+      "additionalProperties": false,
+      "description": "Frozen non-thinking ChatML rendering and supervision policy.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": false,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "assistant_only_loss": {
+          "const": true,
+          "title": "Assistant Only Loss",
+          "type": "boolean"
+        },
+        "supervise_assistant_end_token": {
+          "const": true,
+          "title": "Supervise Assistant End Token",
+          "type": "boolean"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-nonthinking-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+          "title": "Template Sha256",
+          "type": "string"
+        },
+        "thinking": {
+          "const": false,
+          "title": "Thinking",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "thinking",
+        "add_generation_prompt",
+        "assistant_only_loss",
+        "supervise_assistant_end_token"
+      ],
+      "title": "ChatTemplateIdentity",
+      "type": "object"
+    },
+    "ContaminationPolicy": {
+      "additionalProperties": false,
+      "description": "Exact-only M2 contamination policy.",
+      "properties": {
+        "fingerprint_algorithm": {
+          "const": "token-sequence-sha256-v1",
+          "title": "Fingerprint Algorithm",
+          "type": "string"
+        },
+        "full_sequence": {
+          "const": true,
+          "title": "Full Sequence",
+          "type": "boolean"
+        },
+        "near_dedup": {
+          "const": false,
+          "title": "Near Dedup",
+          "type": "boolean"
+        },
+        "prompt_prefix": {
+          "const": true,
+          "title": "Prompt Prefix",
+          "type": "boolean"
+        },
+        "split": {
+          "const": "train",
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "split",
+        "full_sequence",
+        "prompt_prefix",
+        "near_dedup",
+        "fingerprint_algorithm"
+      ],
+      "title": "ContaminationPolicy",
+      "type": "object"
+    },
+    "DecodingConfig": {
+      "additionalProperties": false,
+      "description": "Frozen deterministic generation settings for the later Baseline.",
+      "properties": {
+        "do_sample": {
+          "const": false,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "exclusiveMinimum": 0,
+          "maximum": 4096,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "temperature": {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_p": {
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "do_sample",
+        "temperature",
+        "top_p",
+        "max_new_tokens",
+        "seed"
+      ],
+      "title": "DecodingConfig",
+      "type": "object"
+    },
+    "LanguageCounts": {
+      "additionalProperties": false,
+      "description": "Frozen English/Chinese item counts.",
+      "properties": {
+        "en": {
+          "minimum": 0,
+          "title": "En",
+          "type": "integer"
+        },
+        "zh": {
+          "minimum": 0,
+          "title": "Zh",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "en",
+        "zh"
+      ],
+      "title": "LanguageCounts",
+      "type": "object"
+    },
+    "TokenizerIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned files, backend, vocabulary, and special-token contract.",
+      "properties": {
+        "backend": {
+          "const": "tokenizers",
+          "title": "Backend",
+          "type": "string"
+        },
+        "backend_version": {
+          "const": "0.21.4",
+          "title": "Backend Version",
+          "type": "string"
+        },
+        "bos_token": {
+          "minLength": 1,
+          "title": "Bos Token",
+          "type": "string"
+        },
+        "bos_token_id": {
+          "minimum": 0,
+          "title": "Bos Token Id",
+          "type": "integer"
+        },
+        "eos_token": {
+          "minLength": 1,
+          "title": "Eos Token",
+          "type": "string"
+        },
+        "eos_token_id": {
+          "minimum": 0,
+          "title": "Eos Token Id",
+          "type": "integer"
+        },
+        "pad_token": {
+          "minLength": 1,
+          "title": "Pad Token",
+          "type": "string"
+        },
+        "pad_token_id": {
+          "minimum": 0,
+          "title": "Pad Token Id",
+          "type": "integer"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-0.6B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+          "title": "Revision",
+          "type": "string"
+        },
+        "tokenizer_config_file": {
+          "const": "tokenizer_config.json",
+          "title": "Tokenizer Config File",
+          "type": "string"
+        },
+        "tokenizer_config_file_size": {
+          "exclusiveMinimum": 0,
+          "title": "Tokenizer Config File Size",
+          "type": "integer"
+        },
+        "tokenizer_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tokenizer Config Sha256",
+          "type": "string"
+        },
+        "tokenizer_file": {
+          "const": "tokenizer.json",
+          "title": "Tokenizer File",
+          "type": "string"
+        },
+        "tokenizer_file_size": {
+          "exclusiveMinimum": 0,
+          "title": "Tokenizer File Size",
+          "type": "integer"
+        },
+        "tokenizer_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tokenizer Sha256",
+          "type": "string"
+        },
+        "vocab_size": {
+          "exclusiveMinimum": 0,
+          "title": "Vocab Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "tokenizer_file",
+        "tokenizer_file_size",
+        "tokenizer_sha256",
+        "tokenizer_config_file",
+        "tokenizer_config_file_size",
+        "tokenizer_config_sha256",
+        "backend",
+        "backend_version",
+        "vocab_size",
+        "pad_token",
+        "pad_token_id",
+        "bos_token",
+        "bos_token_id",
+        "eos_token",
+        "eos_token_id"
+      ],
+      "title": "TokenizerIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete deterministic evaluation-set build configuration.",
+  "properties": {
+    "category_counts": {
+      "$ref": "#/$defs/CategoryCounts"
+    },
+    "contamination": {
+      "$ref": "#/$defs/ContaminationPolicy"
+    },
+    "decoding": {
+      "$ref": "#/$defs/DecodingConfig"
+    },
+    "expected_items": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Items",
+      "type": "integer"
+    },
+    "language_counts": {
+      "$ref": "#/$defs/LanguageCounts"
+    },
+    "max_sequence_length": {
+      "exclusiveMinimum": 1,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_name": {
+      "pattern": "^[a-z][a-z0-9-]{2,63}$",
+      "title": "Suite Name",
+      "type": "string"
+    },
+    "template": {
+      "$ref": "#/$defs/ChatTemplateIdentity"
+    },
+    "tokenizer": {
+      "$ref": "#/$defs/TokenizerIdentity"
+    },
+    "version_prefix": {
+      "pattern": "^[a-z][a-z0-9-]{2,63}-v1$",
+      "title": "Version Prefix",
+      "type": "string"
+    }
+  },
+  "required": [
+    "suite_name",
+    "version_prefix",
+    "expected_items",
+    "language_counts",
+    "category_counts",
+    "tokenizer",
+    "template",
+    "max_sequence_length",
+    "decoding",
+    "contamination"
+  ],
+  "title": "EvaluationBuildConfig",
+  "type": "object"
+}

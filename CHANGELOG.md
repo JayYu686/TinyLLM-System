@@ -24,6 +24,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 - completed the real pinned-source M2 build as `m2-sft-v1-f82ff32e`, independently verified every
   registered artifact, and reproduced the same content identity through a full offline rebuild
   without overwriting the immutable Registry version.
+- added strict versioned evaluation-item/config/manifest/report schemas, deterministic evaluation
+  content identity, privacy-preserving full-sequence and Prompt-prefix Train fingerprints, and the
+  `tinyllm eval contamination` JSON/exit-code contract.
 
 ## 0.1.0-alpha.1
 

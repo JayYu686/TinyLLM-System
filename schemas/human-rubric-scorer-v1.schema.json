@@ -1,0 +1,37 @@
+{
+  "additionalProperties": false,
+  "description": "Explicit human-judgment rubric whose item-level rationale must be retained.",
+  "properties": {
+    "criteria": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Criteria",
+      "type": "array"
+    },
+    "kind": {
+      "const": "human_rubric",
+      "title": "Kind",
+      "type": "string"
+    },
+    "pass_threshold": {
+      "exclusiveMinimum": 0,
+      "title": "Pass Threshold",
+      "type": "integer"
+    },
+    "retain_judgment_rationale": {
+      "const": true,
+      "title": "Retain Judgment Rationale",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "kind",
+    "criteria",
+    "pass_threshold",
+    "retain_judgment_rationale"
+  ],
+  "title": "HumanRubricScorer",
+  "type": "object"
+}

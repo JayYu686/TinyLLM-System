@@ -32,6 +32,7 @@ from tinyllm.data import (
 )
 from tinyllm.doctor.collector import DoctorCollector
 from tinyllm.doctor.render import render_json, render_text
+from tinyllm.evaluation import EvaluationContractError, run_contamination_check
 from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
 from tinyllm.training import (
     CheckpointError,
@@ -52,7 +53,13 @@ data_app = typer.Typer(
     help="Inspect and build versioned dataset artifacts.",
     no_args_is_help=True,
 )
+eval_app = typer.Typer(
+    name="eval",
+    help="Build and run versioned model-quality evaluation contracts.",
+    no_args_is_help=True,
+)
 app.add_typer(data_app, name="data")
+app.add_typer(eval_app, name="eval")
 
 
 @dataclass(frozen=True, slots=True)
@@ -275,6 +282,77 @@ def data_prepare(
             f"{action}: {summary.dataset_version} packs={summary.packed_sequences} "
             f"tokens={summary.total_tokens}"
         )
+
+
+@eval_app.command("contamination")
+def eval_contamination(
+    ctx: typer.Context,
+    evaluation_set: Annotated[
+        Path,
+        typer.Option("--evaluation-set", help="Strict public evaluation JSONL."),
+    ],
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Strict evaluation-set build YAML."),
+    ],
+    dataset_version: Annotated[
+        str,
+        typer.Option("--dataset-version", help="Committed m2-sft Dataset Version."),
+    ],
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Private TinyLLM Artifact Root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    tokenization_config: Annotated[
+        Path,
+        typer.Option("--tokenization-config", help="Pinned M2 Tokenization YAML."),
+    ] = Path("configs/data/m2_tokenization.yaml"),
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Check frozen evaluation items against verified Train Token fingerprints."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not artifact_root.is_absolute():
+        _output_error("Artifact Root must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        report = run_contamination_check(
+            artifact_root=artifact_root,
+            dataset_version=dataset_version,
+            evaluation_set_path=evaluation_set,
+            evaluation_config_path=config,
+            tokenization_config_path=tokenization_config,
+        )
+    except EvaluationContractError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="EVALUATION_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except TokenizerContractError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="TOKENIZER_CONTRACT_ERROR")
+        raise typer.Exit(code=2) from exc
+    except DataAcquisitionError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="DATA_ACQUISITION_ERROR")
+        raise typer.Exit(code=3) from exc
+    except DatasetRegistryError as exc:
+        _output_error(str(exc), json_output=json_output, error_code=str(exc.code))
+        code = 2 if exc.code == DatasetRegistryErrorCode.INVALID_INPUT else 3
+        raise typer.Exit(code=code) from exc
+    except (OSError, RuntimeError, ValueError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="EVALUATION_FAILED")
+        raise typer.Exit(code=3) from exc
+
+    if json_output:
+        typer.echo(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+    else:
+        typer.echo(
+            f"{report.status}: {report.evaluation_suite_version} "
+            f"contaminated_items={report.contaminated_items}"
+        )
+    if report.status == "contaminated":
+        raise typer.Exit(code=6)
 
 
 @app.command()

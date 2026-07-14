@@ -1,0 +1,341 @@
+{
+  "$defs": {
+    "AuthoredProvenance": {
+      "additionalProperties": false,
+      "description": "Redistribution declaration for TinyLLM-authored evaluation content.",
+      "properties": {
+        "license": {
+          "const": "Apache-2.0",
+          "title": "License",
+          "type": "string"
+        },
+        "origin": {
+          "const": "tinyllm-authored",
+          "title": "Origin",
+          "type": "string"
+        },
+        "redistribution_allowed": {
+          "const": true,
+          "title": "Redistribution Allowed",
+          "type": "boolean"
+        },
+        "source_note": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Source Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "license",
+        "redistribution_allowed",
+        "source_note"
+      ],
+      "title": "AuthoredProvenance",
+      "type": "object"
+    },
+    "EvaluationPromptMessage": {
+      "additionalProperties": false,
+      "description": "One canonical non-assistant message in a frozen evaluation Prompt.",
+      "properties": {
+        "content": {
+          "maxLength": 131072,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "system",
+            "user"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "content"
+      ],
+      "title": "EvaluationPromptMessage",
+      "type": "object"
+    },
+    "ExactMatchScorer": {
+      "additionalProperties": false,
+      "description": "Normalized exact-string scoring contract.",
+      "properties": {
+        "accepted_answers": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Accepted Answers",
+          "type": "array"
+        },
+        "case_sensitive": {
+          "title": "Case Sensitive",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "exact_match",
+          "title": "Kind",
+          "type": "string"
+        },
+        "strip_outer_whitespace": {
+          "const": true,
+          "title": "Strip Outer Whitespace",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "accepted_answers",
+        "case_sensitive",
+        "strip_outer_whitespace"
+      ],
+      "title": "ExactMatchScorer",
+      "type": "object"
+    },
+    "HumanRubricScorer": {
+      "additionalProperties": false,
+      "description": "Explicit human-judgment rubric whose item-level rationale must be retained.",
+      "properties": {
+        "criteria": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Criteria",
+          "type": "array"
+        },
+        "kind": {
+          "const": "human_rubric",
+          "title": "Kind",
+          "type": "string"
+        },
+        "pass_threshold": {
+          "exclusiveMinimum": 0,
+          "title": "Pass Threshold",
+          "type": "integer"
+        },
+        "retain_judgment_rationale": {
+          "const": true,
+          "title": "Retain Judgment Rationale",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "criteria",
+        "pass_threshold",
+        "retain_judgment_rationale"
+      ],
+      "title": "HumanRubricScorer",
+      "type": "object"
+    },
+    "JsonObjectScorer": {
+      "additionalProperties": false,
+      "description": "Canonical JSON-object scoring contract.",
+      "properties": {
+        "expected_json": {
+          "minLength": 2,
+          "title": "Expected Json",
+          "type": "string"
+        },
+        "kind": {
+          "const": "json_object",
+          "title": "Kind",
+          "type": "string"
+        },
+        "required_keys": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Keys",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "expected_json",
+        "required_keys"
+      ],
+      "title": "JsonObjectScorer",
+      "type": "object"
+    },
+    "MultipleChoiceScorer": {
+      "additionalProperties": false,
+      "description": "Frozen option-order and answer-index scoring contract.",
+      "properties": {
+        "answer_index": {
+          "minimum": 0,
+          "title": "Answer Index",
+          "type": "integer"
+        },
+        "choices": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 2,
+          "title": "Choices",
+          "type": "array"
+        },
+        "kind": {
+          "const": "multiple_choice",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "choices",
+        "answer_index"
+      ],
+      "title": "MultipleChoiceScorer",
+      "type": "object"
+    },
+    "RequiredTermsScorer": {
+      "additionalProperties": false,
+      "description": "Deterministic required/forbidden-term scoring contract.",
+      "properties": {
+        "case_sensitive": {
+          "title": "Case Sensitive",
+          "type": "boolean"
+        },
+        "forbidden_terms": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Terms",
+          "type": "array"
+        },
+        "kind": {
+          "const": "required_terms",
+          "title": "Kind",
+          "type": "string"
+        },
+        "required_terms": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Terms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "required_terms",
+        "case_sensitive"
+      ],
+      "title": "RequiredTermsScorer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One authored, licensed, objectively scorable domain evaluation item.",
+  "properties": {
+    "category": {
+      "enum": [
+        "config",
+        "json",
+        "linux",
+        "logs",
+        "python",
+        "refusal",
+        "short_code"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "prompt_messages": {
+      "items": {
+        "$ref": "#/$defs/EvaluationPromptMessage"
+      },
+      "maxItems": 2,
+      "minItems": 1,
+      "title": "Prompt Messages",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/AuthoredProvenance"
+    },
+    "reference_answer": {
+      "maxLength": 131072,
+      "minLength": 1,
+      "title": "Reference Answer",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scorer": {
+      "discriminator": {
+        "mapping": {
+          "exact_match": "#/$defs/ExactMatchScorer",
+          "human_rubric": "#/$defs/HumanRubricScorer",
+          "json_object": "#/$defs/JsonObjectScorer",
+          "multiple_choice": "#/$defs/MultipleChoiceScorer",
+          "required_terms": "#/$defs/RequiredTermsScorer"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ExactMatchScorer"
+        },
+        {
+          "$ref": "#/$defs/MultipleChoiceScorer"
+        },
+        {
+          "$ref": "#/$defs/JsonObjectScorer"
+        },
+        {
+          "$ref": "#/$defs/RequiredTermsScorer"
+        },
+        {
+          "$ref": "#/$defs/HumanRubricScorer"
+        }
+      ],
+      "title": "Scorer"
+    },
+    "tags": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "language",
+    "category",
+    "prompt_messages",
+    "reference_answer",
+    "scorer",
+    "provenance"
+  ],
+  "title": "EvaluationItem",
+  "type": "object"
+}

@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "description": "Deterministic required/forbidden-term scoring contract.",
+  "properties": {
+    "case_sensitive": {
+      "title": "Case Sensitive",
+      "type": "boolean"
+    },
+    "forbidden_terms": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Forbidden Terms",
+      "type": "array"
+    },
+    "kind": {
+      "const": "required_terms",
+      "title": "Kind",
+      "type": "string"
+    },
+    "required_terms": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Required Terms",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind",
+    "required_terms",
+    "case_sensitive"
+  ],
+  "title": "RequiredTermsScorer",
+  "type": "object"
+}

@@ -1,0 +1,36 @@
+{
+  "additionalProperties": false,
+  "description": "Normalized exact-string scoring contract.",
+  "properties": {
+    "accepted_answers": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Accepted Answers",
+      "type": "array"
+    },
+    "case_sensitive": {
+      "title": "Case Sensitive",
+      "type": "boolean"
+    },
+    "kind": {
+      "const": "exact_match",
+      "title": "Kind",
+      "type": "string"
+    },
+    "strip_outer_whitespace": {
+      "const": true,
+      "title": "Strip Outer Whitespace",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "kind",
+    "accepted_answers",
+    "case_sensitive",
+    "strip_outer_whitespace"
+  ],
+  "title": "ExactMatchScorer",
+  "type": "object"
+}

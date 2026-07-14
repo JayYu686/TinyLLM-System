@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "description": "Frozen option-order and answer-index scoring contract.",
+  "properties": {
+    "answer_index": {
+      "minimum": 0,
+      "title": "Answer Index",
+      "type": "integer"
+    },
+    "choices": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 2,
+      "title": "Choices",
+      "type": "array"
+    },
+    "kind": {
+      "const": "multiple_choice",
+      "title": "Kind",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "choices",
+    "answer_index"
+  ],
+  "title": "MultipleChoiceScorer",
+  "type": "object"
+}

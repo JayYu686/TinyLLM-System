@@ -56,6 +56,9 @@ complete file hashing, safe NumPy reconstruction, idempotency, and corruption re
 synthetic boundary. The [full pinned-source build report](reports/m2/full_dataset_build.md) records
 the real `m2-sft-v1-f82ff32e` data product, independent file verification, and an offline full
 rebuild with the same content identity. Model quality and Baseline Evaluation remain unevaluated.
+The [M2.4a contamination contract smoke](reports/m2/contamination_smoke.md) verifies strict
+evaluation identity plus full-sequence and Prompt-prefix Exact matching on a synthetic registered
+dataset. It is not evidence that the future 300-item set is clean; that real scan remains M2.4b.
 
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately

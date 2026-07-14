@@ -1,0 +1,37 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free evidence that one evaluation fingerprint matched Train.",
+  "properties": {
+    "evaluation_item_id": {
+      "pattern": "^domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3}$",
+      "title": "Evaluation Item Id",
+      "type": "string"
+    },
+    "fingerprint_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Fingerprint Sha256",
+      "type": "string"
+    },
+    "match_kind": {
+      "enum": [
+        "full_sequence",
+        "prompt_prefix"
+      ],
+      "title": "Match Kind",
+      "type": "string"
+    },
+    "training_sample_id_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Training Sample Id Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "evaluation_item_id",
+    "match_kind",
+    "fingerprint_sha256",
+    "training_sample_id_sha256"
+  ],
+  "title": "ContaminationMatch",
+  "type": "object"
+}

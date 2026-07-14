@@ -90,6 +90,7 @@ from tinyllm.data.sources import (
 from tinyllm.data.stateful_sampler import SamplerState, StatefulSequentialSampler
 from tinyllm.data.tokenization import (
     QWEN3_NONTHINKING_TEMPLATE_SHA256,
+    ConversationTokenization,
     OffsetTokenizer,
     RenderedConversation,
     TokenEncoding,
@@ -98,6 +99,7 @@ from tinyllm.data.tokenization import (
     TokenizersBackend,
     load_m2_tokenization_config,
     render_qwen3_nonthinking,
+    tokenize_messages,
     tokenize_processed_sample,
     tokenize_processed_samples,
 )
@@ -126,6 +128,7 @@ __all__ = [
     "BalanceRejectedRecord",
     "ChatTemplateIdentity",
     "CommitPackFTImportConfig",
+    "ConversationTokenization",
     "DataAcquisitionError",
     "DataImportManifest",
     "DataProcessingError",
@@ -196,5 +199,6 @@ __all__ = [
     "summarize_registered_dataset",
     "tokenize_processed_sample",
     "tokenize_processed_samples",
+    "tokenize_messages",
     "verify_pinned_artifact",
 ]

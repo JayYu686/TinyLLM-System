@@ -1,0 +1,35 @@
+{
+  "additionalProperties": false,
+  "description": "Redistribution declaration for TinyLLM-authored evaluation content.",
+  "properties": {
+    "license": {
+      "const": "Apache-2.0",
+      "title": "License",
+      "type": "string"
+    },
+    "origin": {
+      "const": "tinyllm-authored",
+      "title": "Origin",
+      "type": "string"
+    },
+    "redistribution_allowed": {
+      "const": true,
+      "title": "Redistribution Allowed",
+      "type": "boolean"
+    },
+    "source_note": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Source Note",
+      "type": "string"
+    }
+  },
+  "required": [
+    "origin",
+    "license",
+    "redistribution_allowed",
+    "source_note"
+  ],
+  "title": "AuthoredProvenance",
+  "type": "object"
+}

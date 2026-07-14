@@ -16,6 +16,11 @@ These files constrain direct dependencies; they are not a fully locked transitiv
 environment. Each run must still capture a complete `pip freeze`, PyTorch/CUDA
 versions, and hardware inventory in `environment.json` and `hardware.json`.
 
+`pip-audit` audits packages resolvable from PyPI. Hardware-specific PyTorch wheels use
+the PyTorch index and may be reported as unauditable; this is a recorded audit limitation,
+not evidence that the wheel has no vulnerabilities. PyTorch revisions remain pinned and
+must be reviewed against upstream security advisories before a release.
+
 Install the CPU profile with `make bootstrap-cpu`, or the main RTX 3090 profile with
 `make bootstrap-gpu`. V100 remains a conditional compatibility target until access to
 the auxiliary host is provided and a real FP16 + GradScaler smoke test passes.

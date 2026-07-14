@@ -21,6 +21,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
   reconstruction, and `tinyllm data prepare|inspect` Registry contracts.
 - raised the isolated Setuptools build/development constraint to 83.0.0 after the dependency audit
   identified `PYSEC-2026-3447` in the previous local build tool.
+- completed the real pinned-source M2 build as `m2-sft-v1-f82ff32e`, independently verified every
+  registered artifact, and reproduced the same content identity through a full offline rebuild
+  without overwriting the immutable Registry version.
 
 ## 0.1.0-alpha.1
 

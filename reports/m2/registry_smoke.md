@@ -42,8 +42,9 @@ Reproduce locally:
 
 ## Boundaries
 
-- The source and Tokenizer acquisition identities are frozen, but the full pinned payload build is
-  a separate real execution after this implementation is merged and the Git worktree is clean.
+- The source and Tokenizer acquisition identities are frozen. The subsequent
+  [full pinned-source build](full_dataset_build.md) was executed from the merged clean commit and
+  reproduced offline with the same content identity.
 - `tinyllm data inspect --dataset-version ...` verifies every registered file before reporting the
   version. Future Trainers must use the same Reader instead of opening shard paths directly.
 - The 44-file count is a consequence of the smoke's deliberately small 1,024-Token shard limit;

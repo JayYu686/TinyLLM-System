@@ -1,0 +1,3 @@
+--index-url https://download.pytorch.org/whl/cu118
+# Compatibility profile only. It must pass a real V100 FP16 smoke test before release use.
+torch==2.7.1

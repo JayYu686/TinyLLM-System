@@ -110,3 +110,10 @@ Manifest 必须记录：
 - 清洗策略。
 
 不明确许可的数据不得随项目仓库发布。
+
+## 9. 求职版本固定来源
+
+M2 使用 ADR-0003 固定的 OASST1 和 CommitPackFT revision。OASST 按 Conversation
+Tree、CommitPackFT 按 Repository 分组切分，防止同源泄漏。核心必须完成 Exact Dedup
+和训练集/评测集污染检查；Near Dedup 仅作为增强，不阻塞 M2。导入时必须验证 Dataset
+Card 和样本来源许可证，不能把 ADR 中的选择当作自动许可。

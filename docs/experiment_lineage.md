@@ -4,6 +4,12 @@
 
 每次训练创建唯一 Run ID。
 
+格式固定为：
+
+```text
+<UTC时间>-<run-slug>-<resolved-config-hash前8位>-<随机4位>
+```
+
 Run ID 关联：
 
 ```text
@@ -19,6 +25,9 @@ Run
 ├── Evaluation Reports
 └── Exported Models
 ```
+
+每个 Run 的 JSON/JSONL 目录是事实源。M6 的 SQLite 索引必须可以完全从目录重建；
+MLflow 若接入只能作为可选投影。
 
 ## 2. 必须记录的环境
 

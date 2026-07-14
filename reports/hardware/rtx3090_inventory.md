@@ -5,8 +5,8 @@
 | 字段 | 实际值 |
 |---|---|
 | 采集时间 | 2026-07-13T08:32:39.484842Z |
-| 主机名 | `sitonholy` |
-| 项目根目录 | `/home/yujielun/PROJECTS/TinyLLM-System` |
+| 主机名 | `<redacted-host>` |
+| 项目根目录 | `<project-root>` |
 | doctor Schema | `1.0` |
 | doctor 总状态 | `warn` |
 | 原始报告 | `reports/hardware/raw/rtx3090_doctor.json` |

@@ -1,74 +1,39 @@
-"""Configuration for the TinyGPT decoder-only model."""
+"""Pydantic configuration for the TinyGPT decoder-only model."""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 from typing import Any
 
+from pydantic import Field, ValidationError, model_validator
 
-class TinyGPTConfigError(ValueError):
-    """Raised when a TinyGPT configuration is invalid."""
+from tinyllm.schemas.base import StrictSchema
 
-
-def _integer(mapping: dict[str, Any], key: str, default: int | None = None) -> int:
-    value = mapping.get(key, default)
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise TinyGPTConfigError(f"model.{key} must be an integer")
-    return value
+TinyGPTConfigError = ValidationError
 
 
-def _number(mapping: dict[str, Any], key: str, default: float | None = None) -> float:
-    value = mapping.get(key, default)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise TinyGPTConfigError(f"model.{key} must be a number")
-    return float(value)
+class TinyGPTConfig(StrictSchema):
+    """Strict, immutable architecture parameters for TinyGPT."""
 
-
-def _boolean(mapping: dict[str, Any], key: str, default: bool | None = None) -> bool:
-    value = mapping.get(key, default)
-    if not isinstance(value, bool):
-        raise TinyGPTConfigError(f"model.{key} must be a boolean")
-    return value
-
-
-@dataclass(frozen=True, slots=True)
-class TinyGPTConfig:
-    """Validated architecture parameters for TinyGPT."""
-
-    vocab_size: int = 256
-    hidden_size: int = 192
-    num_layers: int = 4
-    num_heads: int = 6
-    intermediate_size: int = 512
-    max_sequence_length: int = 128
-    rope_theta: float = 10_000.0
-    rms_norm_epsilon: float = 1.0e-6
-    dropout: float = 0.0
+    vocab_size: int = Field(default=256, ge=2)
+    hidden_size: int = Field(default=192, gt=0)
+    num_layers: int = Field(default=4, gt=0)
+    num_heads: int = Field(default=6, gt=0)
+    intermediate_size: int = Field(default=512, gt=0)
+    max_sequence_length: int = Field(default=128, ge=2)
+    rope_theta: float = Field(default=10_000.0, gt=0)
+    rms_norm_epsilon: float = Field(default=1.0e-6, gt=0)
+    dropout: float = Field(default=0.0, ge=0.0, lt=1.0)
     tie_word_embeddings: bool = True
 
-    def __post_init__(self) -> None:
-        if self.vocab_size < 2:
-            raise TinyGPTConfigError("model.vocab_size must be at least 2")
-        if self.hidden_size <= 0:
-            raise TinyGPTConfigError("model.hidden_size must be positive")
-        if self.num_layers <= 0:
-            raise TinyGPTConfigError("model.num_layers must be positive")
-        if self.num_heads <= 0:
-            raise TinyGPTConfigError("model.num_heads must be positive")
+    @model_validator(mode="after")
+    def validate_attention_partition(self) -> TinyGPTConfig:
+        """Require complete, even attention heads for RoPE."""
+
         if self.hidden_size % self.num_heads != 0:
-            raise TinyGPTConfigError("model.hidden_size must be divisible by model.num_heads")
+            raise ValueError("model.hidden_size must be divisible by model.num_heads")
         if self.head_dimension % 2 != 0:
-            raise TinyGPTConfigError("attention head dimension must be even for RoPE")
-        if self.intermediate_size <= 0:
-            raise TinyGPTConfigError("model.intermediate_size must be positive")
-        if self.max_sequence_length < 2:
-            raise TinyGPTConfigError("model.max_sequence_length must be at least 2")
-        if self.rope_theta <= 0:
-            raise TinyGPTConfigError("model.rope_theta must be positive")
-        if self.rms_norm_epsilon <= 0:
-            raise TinyGPTConfigError("model.rms_norm_epsilon must be positive")
-        if not 0.0 <= self.dropout < 1.0:
-            raise TinyGPTConfigError("model.dropout must be in [0, 1)")
+            raise ValueError("attention head dimension must be even for RoPE")
+        return self
 
     @property
     def head_dimension(self) -> int:
@@ -80,43 +45,9 @@ class TinyGPTConfig:
     def from_mapping(cls, raw: object) -> TinyGPTConfig:
         """Build a config from a mapping while rejecting unknown fields."""
 
-        if not isinstance(raw, dict) or not all(isinstance(key, str) for key in raw):
-            raise TinyGPTConfigError("model must be a string-keyed mapping")
-        mapping: dict[str, Any] = raw
-        allowed = {
-            "vocab_size",
-            "hidden_size",
-            "num_layers",
-            "num_heads",
-            "intermediate_size",
-            "max_sequence_length",
-            "rope_theta",
-            "rms_norm_epsilon",
-            "dropout",
-            "tie_word_embeddings",
-        }
-        unknown = sorted(set(mapping) - allowed)
-        if unknown:
-            raise TinyGPTConfigError(f"unknown model field(s): {', '.join(unknown)}")
-        defaults = cls()
-        return cls(
-            vocab_size=_integer(mapping, "vocab_size", defaults.vocab_size),
-            hidden_size=_integer(mapping, "hidden_size", defaults.hidden_size),
-            num_layers=_integer(mapping, "num_layers", defaults.num_layers),
-            num_heads=_integer(mapping, "num_heads", defaults.num_heads),
-            intermediate_size=_integer(mapping, "intermediate_size", defaults.intermediate_size),
-            max_sequence_length=_integer(
-                mapping, "max_sequence_length", defaults.max_sequence_length
-            ),
-            rope_theta=_number(mapping, "rope_theta", defaults.rope_theta),
-            rms_norm_epsilon=_number(mapping, "rms_norm_epsilon", defaults.rms_norm_epsilon),
-            dropout=_number(mapping, "dropout", defaults.dropout),
-            tie_word_embeddings=_boolean(
-                mapping, "tie_word_embeddings", defaults.tie_word_embeddings
-            ),
-        )
+        return cls.model_validate(raw)
 
-    def to_dict(self) -> dict[str, int | float | bool]:
+    def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation."""
 
-        return asdict(self)
+        return self.model_dump(mode="json")

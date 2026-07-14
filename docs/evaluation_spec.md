@@ -17,13 +17,10 @@
 - ARC Easy。
 - HellaSwag。
 - PIQA。
-- BoolQ。
-- WinoGrande。
-- 中文基础任务子集。
 
 ### 自建任务
 
-建议 300–500 条：
+固定 300 条，英文/中文目标 70%/30%：
 
 - Python。
 - Linux。
@@ -96,6 +93,10 @@ regression_limits:
 - 性能回归在阈值内。
 - Checkpoint 可加载。
 - 推理 Smoke Test 通过。
+
+M6 Candidate 的量化门禁为：领域总分相对 Baseline 至少提升 3pp 且 Bootstrap
+95% CI 下界大于 0；ARC-Easy/HellaSwag/PIQA 聚合回退不超过 2pp；JSON Valid Rate
+至少 98%；血缘完整。M7 前不以未实测的推理性能项阻止或通过 Candidate。
 
 门禁分阶段启用：
 

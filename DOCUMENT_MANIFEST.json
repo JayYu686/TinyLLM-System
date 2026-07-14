@@ -1,15 +1,19 @@
 {
   "project": "TinyLLM-System",
-  "scope": "source documentation; generated reports are tracked separately",
+  "scope": "source documentation and public contracts; generated reports are tracked separately",
   "generated_files": [
     "AGENTS.md",
+    "CONTRIBUTING.md",
     "PLANS.md",
     "README.md",
+    "SECURITY.md",
     "TASKS.md",
     "docs/adr/0001-main-platform-rtx3090.md",
     "docs/adr/0002-standard-training-group-8gpus.md",
+    "docs/adr/0003-career-release-baselines.md",
     "docs/architecture.md",
     "docs/benchmark_plan.md",
+    "docs/career_release_roadmap.md",
     "docs/dataset_contract.md",
     "docs/doctor_contract.md",
     "docs/evaluation_spec.md",
@@ -22,8 +26,11 @@
     "docs/m1_training_contract.md",
     "docs/nccl_test_plan.md",
     "docs/product_scope.md",
+    "docs/public_reporting.md",
     "docs/resume_alignment.md",
-    "docs/training_design.md"
+    "docs/training_design.md",
+    "requirements/README.md",
+    "schemas/README.md"
   ],
-  "file_count": 22
+  "file_count": 29
 }

@@ -108,7 +108,7 @@
 
 ```text
 CREATED
-  → PLANNED
+  → VALIDATED
   → RUNNING
   → CHECKPOINTING
   → EVALUATING
@@ -147,18 +147,18 @@ Raw Dataset
   → Deployment
 ```
 
-## 5. MVP 候选技术与引入阶段
+## 5. 技术选择与引入阶段
 
 - Python 3.11。
 - PyTorch。
 - Transformers。
 - TRL。
-- Typer 或 Click；M0 的最小 CLI 可以使用标准库实现，待命令面复杂后再引入框架。
-- Pydantic。
-- MLflow；实验追踪接入在血缘和评测阶段推进，不是 M0 依赖。
+- Typer；所有命令提供稳定 JSON 输出和统一退出码。
+- Pydantic v2；公共 Schema 带版本、拒绝未知字段并导出 JSON Schema Snapshot。
+- MLflow；仅作为 Artifact Store 的可选投影，不成为训练依赖。
 - FastAPI；仅在 M7 推理服务阶段引入。
-- PostgreSQL 可后置。
-- 本地文件系统优先。
+- SQLite 在 M6 作为可从 Run 目录重建的查询索引；PostgreSQL 后置。
+- 私有本地文件系统为事实源，默认根目录 `/data/yujielun/tinyllm/`。
 - Docker Compose 用于后续服务组件，不作为 M0 和训练核心的前置条件。
 
 ## 6. 可替换接口

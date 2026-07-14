@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,17 +8,26 @@ version = "0.1.0"
 description = "Hardware-aware LLM training, evaluation, and deployment for consumer multi-GPU systems."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Proprietary" }
+license = "Apache-2.0"
 authors = [{ name = "TinyLLM-System contributors" }]
 dependencies = [
   "numpy>=1.26,<3",
+  "pydantic>=2.11,<3",
   "PyYAML>=6.0.2,<7",
+  "typer>=0.16,<0.21",
 ]
+
+[project.urls]
+Homepage = "https://github.com/JayYu686/TinyLLM-System"
+Issues = "https://github.com/JayYu686/TinyLLM-System/issues"
+Repository = "https://github.com/JayYu686/TinyLLM-System.git"
 
 [project.optional-dependencies]
 dev = [
   "mypy>=1.11,<2",
+  "pip-audit>=2.9,<3",
   "pytest>=8,<9",
+  "pytest-cov>=6,<7",
   "ruff>=0.9,<1",
   "types-PyYAML>=6.0.12,<7",
 ]
@@ -53,3 +62,12 @@ markers = [
   "gpu: requires an NVIDIA GPU and is skipped by default CI",
   "integration: crosses module or process boundaries",
 ]
+
+[tool.coverage.run]
+branch = true
+source = ["tinyllm"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_covered = true

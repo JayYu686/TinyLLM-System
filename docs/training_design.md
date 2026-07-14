@@ -41,7 +41,7 @@ precision:
 
 checkpoint:
   save_steps: 200
-  keep_last: 3
+  keep_last: 2
   resume: auto
 
 evaluation:
@@ -98,6 +98,11 @@ TrainingStrategy
 - World Size。
 - Checksum。
 
+单卡/DDP 保存完整 PyTorch 训练状态；FSDP2 使用
+`torch.distributed.checkpoint` 分片。写入临时目录后必须校验文件清单和 SHA256，
+原子 Rename，最后原子更新 `LATEST`。普通滚动点保留最近两个；中断点、最佳点和
+最终点永久 Pin。Safetensors 只用于部署导出，不得冒充完整训练 Checkpoint。
+
 ## 5. 恢复语义
 
 分为：
@@ -140,11 +145,14 @@ OOM 不能无限自动重试，最多执行有限次 Micro Batch 回退。
 
 - 用于验证系统。
 - 不追求 SOTA。
-- 先 Debug，再 120M，再 350M。
+- 核心顺序为 Debug 和 Target-120M；350M 只在 M1–M6 完成后进入挑战队列。
 
 ### 开源模型
 
 - 小模型 Full SFT。
 - 7B LoRA。
-- 7B Full SFT Smoke Test。
+- 8B FSDP2 Full SFT Smoke Test。
 - DPO 后置。
+
+固定模型 revision、训练预算和回退条件见
+[ADR-0003](adr/0003-career-release-baselines.md)。

@@ -12,7 +12,7 @@
     },
     {
       "evidence": {
-        "executable": "/home/yujielun/PROJECTS/TinyLLM-System/.venv/bin/python",
+        "executable": "<project-root>/.venv/bin/python",
         "implementation": "CPython",
         "version": "3.11.14"
       },
@@ -73,13 +73,13 @@
     {
       "evidence": {
         "free_bytes": 792276889600,
-        "path": "/home/yujielun/PROJECTS/TinyLLM-System"
+        "path": "<project-root>"
       },
       "id": "storage.0",
       "remediation": null,
       "required": true,
       "status": "pass",
-      "summary": "Storage checked for /home/yujielun/PROJECTS/TinyLLM-System"
+      "summary": "Storage checked for <project-root>"
     },
     {
       "evidence": {
@@ -309,7 +309,7 @@
     ],
     "host": {
       "cpu_count": 64,
-      "hostname": "sitonholy",
+      "hostname": "<redacted-host>",
       "kernel": "5.4.0-216-generic",
       "machine": "x86_64",
       "os": {
@@ -338,7 +338,7 @@
       "vllm": null
     },
     "python": {
-      "executable": "/home/yujielun/PROJECTS/TinyLLM-System/.venv/bin/python",
+      "executable": "<project-root>/.venv/bin/python",
       "implementation": "CPython",
       "version": "3.11.14"
     },
@@ -346,7 +346,7 @@
       {
         "free_bytes": 792276889600,
         "free_percent": 21.97,
-        "path": "/home/yujielun/PROJECTS/TinyLLM-System",
+        "path": "<project-root>",
         "total_bytes": 3606978592768,
         "used_bytes": 2631400710144
       },

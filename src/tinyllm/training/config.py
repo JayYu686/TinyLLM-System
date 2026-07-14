@@ -1,127 +1,55 @@
-"""Strict YAML configuration schema for M1 single-device training."""
+"""Strict Pydantic YAML configuration schema for M1 single-device training."""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import yaml
+from pydantic import Field, ValidationError, model_validator
 
-from tinyllm.models.tinygpt.config import TinyGPTConfig, TinyGPTConfigError
+from tinyllm.models.tinygpt.config import TinyGPTConfig
+from tinyllm.schemas.base import StrictSchema
 
 
 class TrainingConfigError(ValueError):
-    """Raised when a training configuration violates the M1 schema."""
+    """Raised when a training configuration violates the public M1 schema."""
 
 
-def _mapping(raw: object, path: str) -> dict[str, Any]:
-    if not isinstance(raw, dict) or not all(isinstance(key, str) for key in raw):
-        raise TrainingConfigError(f"{path} must be a string-keyed mapping")
-    return cast(dict[str, Any], raw)
+class RunConfig(StrictSchema):
+    """Human identity and random seed for one training run."""
+
+    name: str = Field(min_length=1, max_length=128)
+    seed: int = Field(ge=0, le=2**32 - 1)
 
 
-def _reject_unknown(mapping: dict[str, Any], allowed: set[str], path: str) -> None:
-    unknown = sorted(set(mapping) - allowed)
-    if unknown:
-        raise TrainingConfigError(f"unknown {path} field(s): {', '.join(unknown)}")
-
-
-def _required(mapping: dict[str, Any], key: str, path: str) -> Any:
-    if key not in mapping:
-        raise TrainingConfigError(f"missing required field: {path}.{key}")
-    return mapping[key]
-
-
-def _string(mapping: dict[str, Any], key: str, path: str) -> str:
-    value = _required(mapping, key, path)
-    if not isinstance(value, str) or not value.strip():
-        raise TrainingConfigError(f"{path}.{key} must be a non-empty string")
-    return value
-
-
-def _integer(mapping: dict[str, Any], key: str, path: str, *, default: int | None = None) -> int:
-    value = mapping.get(key, default)
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise TrainingConfigError(f"{path}.{key} must be an integer")
-    return value
-
-
-def _number(mapping: dict[str, Any], key: str, path: str, *, default: float | None = None) -> float:
-    value = mapping.get(key, default)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise TrainingConfigError(f"{path}.{key} must be a number")
-    return float(value)
-
-
-def _boolean(mapping: dict[str, Any], key: str, path: str, *, default: bool | None = None) -> bool:
-    value = mapping.get(key, default)
-    if not isinstance(value, bool):
-        raise TrainingConfigError(f"{path}.{key} must be a boolean")
-    return value
-
-
-@dataclass(frozen=True, slots=True)
-class RunConfig:
-    """Identity and random seed for one training run."""
-
-    name: str
-    seed: int
-
-    def __post_init__(self) -> None:
-        if not self.name.strip():
-            raise TrainingConfigError("run.name must be non-empty")
-        if not 0 <= self.seed <= 2**32 - 1:
-            raise TrainingConfigError("run.seed must be between 0 and 2**32 - 1")
-
-
-@dataclass(frozen=True, slots=True)
-class ToyDataConfig:
+class ToyDataConfig(StrictSchema):
     """Configuration for deterministic synthetic token data."""
 
     kind: Literal["toy"]
-    vocab_size: int
-    sequence_length: int
-    num_samples: int
-
-    def __post_init__(self) -> None:
-        if self.kind != "toy":
-            raise TrainingConfigError("data.kind must be 'toy' in M1")
-        if self.vocab_size < 2:
-            raise TrainingConfigError("data.vocab_size must be at least 2")
-        if self.sequence_length < 2:
-            raise TrainingConfigError("data.sequence_length must be at least 2")
-        if self.num_samples <= 0:
-            raise TrainingConfigError("data.num_samples must be positive")
+    vocab_size: int = Field(ge=2)
+    sequence_length: int = Field(ge=2)
+    num_samples: int = Field(gt=0)
 
 
-@dataclass(frozen=True, slots=True)
-class TrainingLoopConfig:
+class TrainingLoopConfig(StrictSchema):
     """Optimizer-step semantics for M1."""
 
-    max_steps: int
-    micro_batch_size: int
-    gradient_accumulation_steps: int
-    learning_rate: float
-    weight_decay: float
-    max_grad_norm: float
-    warmup_steps: int
+    max_steps: int = Field(gt=0)
+    micro_batch_size: int = Field(gt=0)
+    gradient_accumulation_steps: int = Field(gt=0)
+    learning_rate: float = Field(gt=0)
+    weight_decay: float = Field(ge=0)
+    max_grad_norm: float = Field(gt=0)
+    warmup_steps: int = Field(ge=0)
 
-    def __post_init__(self) -> None:
-        if self.max_steps <= 0:
-            raise TrainingConfigError("training.max_steps must be positive")
-        if self.micro_batch_size <= 0:
-            raise TrainingConfigError("training.micro_batch_size must be positive")
-        if self.gradient_accumulation_steps <= 0:
-            raise TrainingConfigError("training.gradient_accumulation_steps must be positive")
-        if self.learning_rate <= 0:
-            raise TrainingConfigError("training.learning_rate must be positive")
-        if self.weight_decay < 0:
-            raise TrainingConfigError("training.weight_decay cannot be negative")
-        if self.max_grad_norm <= 0:
-            raise TrainingConfigError("training.max_grad_norm must be positive")
-        if not 0 <= self.warmup_steps <= self.max_steps:
-            raise TrainingConfigError("training.warmup_steps must be in [0, max_steps]")
+    @model_validator(mode="after")
+    def validate_warmup(self) -> TrainingLoopConfig:
+        """Keep warmup within the configured optimizer-step budget."""
+
+        if self.warmup_steps > self.max_steps:
+            raise ValueError("training.warmup_steps must be in [0, max_steps]")
+        return self
 
     @property
     def global_batch_size(self) -> int:
@@ -130,43 +58,32 @@ class TrainingLoopConfig:
         return self.micro_batch_size * self.gradient_accumulation_steps
 
 
-@dataclass(frozen=True, slots=True)
-class PrecisionConfig:
+class PrecisionConfig(StrictSchema):
     """Numerical precision policy for one hardware profile."""
 
     dtype: Literal["fp32", "bf16", "fp16"]
     allow_tf32: bool
     use_grad_scaler: bool
 
-    def __post_init__(self) -> None:
-        if self.dtype not in {"fp32", "bf16", "fp16"}:
-            raise TrainingConfigError("precision.dtype must be fp32, bf16, or fp16")
+    @model_validator(mode="after")
+    def validate_scaler(self) -> PrecisionConfig:
+        """Restrict GradScaler to the FP16 compatibility profile."""
+
         if self.dtype in {"fp32", "bf16"} and self.use_grad_scaler:
-            raise TrainingConfigError("GradScaler is only valid for the M1 fp16 profile")
+            raise ValueError("GradScaler is only valid for the M1 fp16 profile")
+        return self
 
 
-@dataclass(frozen=True, slots=True)
-class CheckpointConfig:
+class CheckpointConfig(StrictSchema):
     """Checkpoint retention and resume policy."""
 
-    output_dir: str
-    save_steps: int
-    keep_last: int
+    output_dir: str = Field(min_length=1)
+    save_steps: int = Field(gt=0)
+    keep_last: int = Field(gt=0)
     resume: Literal["none", "auto", "exact"]
 
-    def __post_init__(self) -> None:
-        if not self.output_dir.strip():
-            raise TrainingConfigError("checkpoint.output_dir must be non-empty")
-        if self.save_steps <= 0:
-            raise TrainingConfigError("checkpoint.save_steps must be positive")
-        if self.keep_last <= 0:
-            raise TrainingConfigError("checkpoint.keep_last must be positive")
-        if self.resume not in {"none", "auto", "exact"}:
-            raise TrainingConfigError("checkpoint.resume must be none, auto, or exact")
 
-
-@dataclass(frozen=True, slots=True)
-class M1TrainingConfig:
+class M1TrainingConfig(StrictSchema):
     """Complete validated configuration for an M1 training run."""
 
     schema_version: Literal["1.0"]
@@ -177,117 +94,44 @@ class M1TrainingConfig:
     precision: PrecisionConfig
     checkpoint: CheckpointConfig
 
-    def __post_init__(self) -> None:
-        if self.schema_version != "1.0":
-            raise TrainingConfigError("schema_version must be '1.0'")
+    @model_validator(mode="after")
+    def validate_cross_field_contract(self) -> M1TrainingConfig:
+        """Validate model/data compatibility after nested parsing."""
+
         if self.model.vocab_size != self.data.vocab_size:
-            raise TrainingConfigError("model.vocab_size must equal data.vocab_size")
+            raise ValueError("model.vocab_size must equal data.vocab_size")
         if self.data.sequence_length > self.model.max_sequence_length:
-            raise TrainingConfigError(
-                "data.sequence_length cannot exceed model.max_sequence_length"
-            )
+            raise ValueError("data.sequence_length cannot exceed model.max_sequence_length")
+        return self
 
     def to_dict(self) -> dict[str, Any]:
-        """Return a serializable resolved configuration snapshot."""
+        """Return a JSON-compatible resolved configuration snapshot."""
 
-        return asdict(self)
-
-
-def _parse_run(raw: object) -> RunConfig:
-    mapping = _mapping(raw, "run")
-    _reject_unknown(mapping, {"name", "seed"}, "run")
-    return RunConfig(
-        name=_string(mapping, "name", "run"),
-        seed=_integer(mapping, "seed", "run"),
-    )
-
-
-def _parse_data(raw: object) -> ToyDataConfig:
-    mapping = _mapping(raw, "data")
-    _reject_unknown(mapping, {"kind", "vocab_size", "sequence_length", "num_samples"}, "data")
-    kind = _string(mapping, "kind", "data")
-    if kind != "toy":
-        raise TrainingConfigError("data.kind must be 'toy' in M1")
-    return ToyDataConfig(
-        kind="toy",
-        vocab_size=_integer(mapping, "vocab_size", "data"),
-        sequence_length=_integer(mapping, "sequence_length", "data"),
-        num_samples=_integer(mapping, "num_samples", "data"),
-    )
-
-
-def _parse_training(raw: object) -> TrainingLoopConfig:
-    mapping = _mapping(raw, "training")
-    allowed = {
-        "max_steps",
-        "micro_batch_size",
-        "gradient_accumulation_steps",
-        "learning_rate",
-        "weight_decay",
-        "max_grad_norm",
-        "warmup_steps",
-    }
-    _reject_unknown(mapping, allowed, "training")
-    return TrainingLoopConfig(
-        max_steps=_integer(mapping, "max_steps", "training"),
-        micro_batch_size=_integer(mapping, "micro_batch_size", "training"),
-        gradient_accumulation_steps=_integer(mapping, "gradient_accumulation_steps", "training"),
-        learning_rate=_number(mapping, "learning_rate", "training"),
-        weight_decay=_number(mapping, "weight_decay", "training"),
-        max_grad_norm=_number(mapping, "max_grad_norm", "training"),
-        warmup_steps=_integer(mapping, "warmup_steps", "training"),
-    )
-
-
-def _parse_precision(raw: object) -> PrecisionConfig:
-    mapping = _mapping(raw, "precision")
-    _reject_unknown(mapping, {"dtype", "allow_tf32", "use_grad_scaler"}, "precision")
-    dtype = _string(mapping, "dtype", "precision")
-    if dtype not in {"fp32", "bf16", "fp16"}:
-        raise TrainingConfigError("precision.dtype must be fp32, bf16, or fp16")
-    return PrecisionConfig(
-        dtype=cast(Literal["fp32", "bf16", "fp16"], dtype),
-        allow_tf32=_boolean(mapping, "allow_tf32", "precision"),
-        use_grad_scaler=_boolean(mapping, "use_grad_scaler", "precision"),
-    )
-
-
-def _parse_checkpoint(raw: object) -> CheckpointConfig:
-    mapping = _mapping(raw, "checkpoint")
-    _reject_unknown(mapping, {"output_dir", "save_steps", "keep_last", "resume"}, "checkpoint")
-    resume = _string(mapping, "resume", "checkpoint")
-    if resume not in {"none", "auto", "exact"}:
-        raise TrainingConfigError("checkpoint.resume must be none, auto, or exact")
-    return CheckpointConfig(
-        output_dir=_string(mapping, "output_dir", "checkpoint"),
-        save_steps=_integer(mapping, "save_steps", "checkpoint"),
-        keep_last=_integer(mapping, "keep_last", "checkpoint"),
-        resume=cast(Literal["none", "auto", "exact"], resume),
-    )
+        return self.model_dump(mode="json")
 
 
 def training_config_from_mapping(raw: object) -> M1TrainingConfig:
     """Validate a decoded YAML object as an M1 training configuration."""
 
-    root = _mapping(raw, "config")
-    allowed = {"schema_version", "run", "model", "data", "training", "precision", "checkpoint"}
-    _reject_unknown(root, allowed, "config")
-    schema_version = _string(root, "schema_version", "config")
-    if schema_version != "1.0":
-        raise TrainingConfigError("schema_version must be '1.0'")
     try:
-        model = TinyGPTConfig.from_mapping(_required(root, "model", "config"))
-    except TinyGPTConfigError as exc:
-        raise TrainingConfigError(str(exc)) from exc
-    return M1TrainingConfig(
-        schema_version="1.0",
-        run=_parse_run(_required(root, "run", "config")),
-        model=model,
-        data=_parse_data(_required(root, "data", "config")),
-        training=_parse_training(_required(root, "training", "config")),
-        precision=_parse_precision(_required(root, "precision", "config")),
-        checkpoint=_parse_checkpoint(_required(root, "checkpoint", "config")),
-    )
+        return M1TrainingConfig.model_validate(raw)
+    except ValidationError as exc:
+        messages: list[str] = []
+        for error in exc.errors(include_url=False, include_context=False):
+            location = ".".join(str(part) for part in error["loc"])
+            if error["type"] == "extra_forbidden":
+                messages.append(f"unknown config field: {location}")
+            elif location:
+                messages.append(f"{location}: {error['msg']}")
+            else:
+                messages.append(str(error["msg"]))
+        raise TrainingConfigError("; ".join(messages)) from exc
+
+
+def training_config_json_schema() -> dict[str, Any]:
+    """Return the public JSON Schema for M1 YAML configuration."""
+
+    return M1TrainingConfig.model_json_schema()
 
 
 def load_training_config(path: Path) -> M1TrainingConfig:

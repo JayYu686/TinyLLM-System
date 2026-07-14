@@ -1,0 +1,92 @@
+{
+  "baseline_repeat": {
+    "loss_max_abs_diff": 0.0,
+    "model_hash_equal": true,
+    "parameter_max_abs_diff": 0.0,
+    "runs": 2,
+    "steps_per_run": 40
+  },
+  "config": {
+    "dtype": "bf16",
+    "max_steps": 40,
+    "path": "tinygpt_debug_rtx3090_bf16_smoke.yaml",
+    "resolved_sha256": "7c11f1edb0cc79e2b879cc4ad88e2470ba56b13a9bf5297e17f01ac1b2696808",
+    "save_steps": 5,
+    "tf32": true
+  },
+  "git": {
+    "commit": "3300ea6a58c4f558fc07c74f5d4a4bb0b85b7812",
+    "dirty": false
+  },
+  "gpu_preflight": {
+    "memory_total_mib": 24576,
+    "memory_used_mib": 4,
+    "name": "NVIDIA GeForce RTX 3090",
+    "physical_gpu_index": 5,
+    "temperature_c": 29,
+    "utilization_percent": 0
+  },
+  "not_evaluated": [
+    "training_throughput",
+    "cross_gpu_or_cross_version_reproducibility",
+    "v100_fp16_grad_scaler",
+    "distributed_resume"
+  ],
+  "private_artifacts": {
+    "contains_full_events_metrics_and_checkpoints": true,
+    "group_label": "m1-4-20260714T091528Z-7c11f1ed-1d4e",
+    "retained": true,
+    "run_directories": 4
+  },
+  "schema_version": "1.0",
+  "sigkill": {
+    "comparison": {
+      "loss_max_abs_diff": 0.0,
+      "lr_equal": true,
+      "parameter_max_abs_diff": 0.0,
+      "sampler_state_equal": true,
+      "status": "pass",
+      "steps_equal": true,
+      "trainer_state_equal": true
+    },
+    "final_model_sha256": "b5b82eda5cca984ead2de6f3ee870a0a95af644b34d32a64e231e36502379304",
+    "first_resumed_step": 6,
+    "initial_returncode": -9,
+    "resume_step": 5,
+    "rolled_back_steps": 2,
+    "signal_sent_after_step": 7
+  },
+  "sigterm": {
+    "checkpoint_step": 7,
+    "comparison": {
+      "loss_max_abs_diff": 0.0,
+      "lr_equal": true,
+      "parameter_max_abs_diff": 0.0,
+      "sampler_state_equal": true,
+      "status": "pass",
+      "steps_equal": true,
+      "trainer_state_equal": true
+    },
+    "final_model_sha256": "b5b82eda5cca984ead2de6f3ee870a0a95af644b34d32a64e231e36502379304",
+    "first_resumed_step": 8,
+    "initial_exit_code": 143,
+    "resume_step": 7,
+    "rolled_back_steps": 0,
+    "signal_sent_after_step": 7
+  },
+  "smoke": "m1.4-rtx3090-bf16-process-interruption",
+  "software": {
+    "bf16_supported": true,
+    "cuda_runtime": "11.8",
+    "python": "3.11.14",
+    "torch": "2.7.1+cu118"
+  },
+  "status": "pass",
+  "tolerance_frozen_before_interruption": {
+    "loss_abs_floor": 1e-06,
+    "loss_abs_tolerance": 1e-06,
+    "parameter_abs_floor": 1e-07,
+    "parameter_abs_tolerance": 1e-07,
+    "rule": "max(floor, 2x baseline repeat maximum absolute difference)"
+  }
+}

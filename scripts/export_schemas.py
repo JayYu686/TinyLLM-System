@@ -10,13 +10,17 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from tinyllm.data import (
+    BalanceRejectedRecord,
     CommitPackFTImportConfig,
     DataImportManifest,
     DataProcessingManifest,
     ImportedSample,
+    M2DatasetManifest,
+    M2PackingConfig,
     M2ProcessingConfig,
     M2TokenizationConfig,
     OASST1ImportConfig,
+    PackedSequence,
     PipelineRejectedRecord,
     ProcessedSample,
     RejectedRecord,
@@ -32,6 +36,7 @@ from tinyllm.training.config import M1TrainingConfig
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
+    "balance-rejected-record-v1.schema.json": BalanceRejectedRecord,
     "checkpoint-manifest-v1.schema.json": CheckpointManifest,
     "checkpoint-commit-marker-v1.schema.json": CheckpointCommitMarker,
     "commitpackft-import-config-v1.schema.json": CommitPackFTImportConfig,
@@ -39,10 +44,13 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "data-processing-manifest-v1.schema.json": DataProcessingManifest,
     "imported-sample-v1.schema.json": ImportedSample,
     "m2-processing-config-v1.schema.json": M2ProcessingConfig,
+    "m2-dataset-manifest-v1.schema.json": M2DatasetManifest,
+    "m2-packing-config-v1.schema.json": M2PackingConfig,
     "m2-tokenization-config-v1.schema.json": M2TokenizationConfig,
     "m1-training-config-v1.schema.json": M1TrainingConfig,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,
+    "packed-sequence-v1.schema.json": PackedSequence,
     "processed-sample-v1.schema.json": ProcessedSample,
     "rejected-record-v1.schema.json": RejectedRecord,
     "run-manifest-v1.schema.json": RunManifest,

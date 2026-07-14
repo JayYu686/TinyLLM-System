@@ -1,0 +1,20 @@
+schema_version: "1.0"
+dataset_name: m2-sft
+
+balance:
+  selection_seed: 42
+  apply_to_split: train
+  oasst1_zh_basis_points: 3000
+  oasst1_en_basis_points: 3000
+  commitpackft_en_basis_points: 4000
+  tolerance_basis_points: 300
+  require_all_strata: true
+
+packing:
+  algorithm: best-fit-decreasing-v1
+  max_sequence_length: 1024
+  split_local: true
+  reset_position_ids: true
+  emit_segment_ids: true
+  pad_to_max_length: false
+  add_separator: false

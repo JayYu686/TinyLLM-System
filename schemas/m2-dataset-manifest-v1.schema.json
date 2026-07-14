@@ -1,0 +1,445 @@
+{
+  "$defs": {
+    "ChatTemplateIdentity": {
+      "additionalProperties": false,
+      "description": "Frozen non-thinking ChatML rendering and supervision policy.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": false,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "assistant_only_loss": {
+          "const": true,
+          "title": "Assistant Only Loss",
+          "type": "boolean"
+        },
+        "supervise_assistant_end_token": {
+          "const": true,
+          "title": "Supervise Assistant End Token",
+          "type": "boolean"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-nonthinking-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+          "title": "Template Sha256",
+          "type": "string"
+        },
+        "thinking": {
+          "const": false,
+          "title": "Thinking",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "thinking",
+        "add_generation_prompt",
+        "assistant_only_loss",
+        "supervise_assistant_end_token"
+      ],
+      "title": "ChatTemplateIdentity",
+      "type": "object"
+    },
+    "SourceDatasetLineage": {
+      "additionalProperties": false,
+      "description": "Minimal deterministic upstream identity carried into the final manifest.",
+      "properties": {
+        "dataset_card_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Dataset Card Sha256",
+          "type": "string"
+        },
+        "dataset_id": {
+          "minLength": 1,
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "import_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Import Config Sha256",
+          "type": "string"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "oasst1",
+            "commitpackft"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "dataset_id",
+        "revision",
+        "dataset_card_sha256",
+        "input_sha256",
+        "import_config_sha256"
+      ],
+      "title": "SourceDatasetLineage",
+      "type": "object"
+    },
+    "TokenizerIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned files, backend, vocabulary, and special-token contract.",
+      "properties": {
+        "backend": {
+          "const": "tokenizers",
+          "title": "Backend",
+          "type": "string"
+        },
+        "backend_version": {
+          "const": "0.21.4",
+          "title": "Backend Version",
+          "type": "string"
+        },
+        "bos_token": {
+          "minLength": 1,
+          "title": "Bos Token",
+          "type": "string"
+        },
+        "bos_token_id": {
+          "minimum": 0,
+          "title": "Bos Token Id",
+          "type": "integer"
+        },
+        "eos_token": {
+          "minLength": 1,
+          "title": "Eos Token",
+          "type": "string"
+        },
+        "eos_token_id": {
+          "minimum": 0,
+          "title": "Eos Token Id",
+          "type": "integer"
+        },
+        "pad_token": {
+          "minLength": 1,
+          "title": "Pad Token",
+          "type": "string"
+        },
+        "pad_token_id": {
+          "minimum": 0,
+          "title": "Pad Token Id",
+          "type": "integer"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-0.6B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+          "title": "Revision",
+          "type": "string"
+        },
+        "tokenizer_config_file": {
+          "const": "tokenizer_config.json",
+          "title": "Tokenizer Config File",
+          "type": "string"
+        },
+        "tokenizer_config_file_size": {
+          "exclusiveMinimum": 0,
+          "title": "Tokenizer Config File Size",
+          "type": "integer"
+        },
+        "tokenizer_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tokenizer Config Sha256",
+          "type": "string"
+        },
+        "tokenizer_file": {
+          "const": "tokenizer.json",
+          "title": "Tokenizer File",
+          "type": "string"
+        },
+        "tokenizer_file_size": {
+          "exclusiveMinimum": 0,
+          "title": "Tokenizer File Size",
+          "type": "integer"
+        },
+        "tokenizer_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tokenizer Sha256",
+          "type": "string"
+        },
+        "vocab_size": {
+          "exclusiveMinimum": 0,
+          "title": "Vocab Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "tokenizer_file",
+        "tokenizer_file_size",
+        "tokenizer_sha256",
+        "tokenizer_config_file",
+        "tokenizer_config_file_size",
+        "tokenizer_config_sha256",
+        "backend",
+        "backend_version",
+        "vocab_size",
+        "pad_token",
+        "pad_token_id",
+        "bos_token",
+        "bos_token_id",
+        "eos_token",
+        "eos_token_id"
+      ],
+      "title": "TokenizerIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Content-addressed, timestamp-free final M2 dataset build identity.",
+  "properties": {
+    "balance_rejections": {
+      "minimum": 0,
+      "title": "Balance Rejections",
+      "type": "integer"
+    },
+    "balanced_samples": {
+      "minimum": 0,
+      "title": "Balanced Samples",
+      "type": "integer"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_name": {
+      "const": "m2-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m2-sft-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "input_processed_samples": {
+      "minimum": 0,
+      "title": "Input Processed Samples",
+      "type": "integer"
+    },
+    "language_token_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Language Token Counts",
+      "type": "object"
+    },
+    "license_sample_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "License Sample Counts",
+      "type": "object"
+    },
+    "max_sequence_length": {
+      "exclusiveMinimum": 1,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "packed_sequences": {
+      "minimum": 0,
+      "title": "Packed Sequences",
+      "type": "integer"
+    },
+    "packing_capacity_tokens": {
+      "minimum": 0,
+      "title": "Packing Capacity Tokens",
+      "type": "integer"
+    },
+    "packing_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Packing Config Sha256",
+      "type": "string"
+    },
+    "packing_efficiency_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Packing Efficiency Basis Points",
+      "type": "integer"
+    },
+    "processing_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Processing Config Sha256",
+      "type": "string"
+    },
+    "processing_input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Processing Input Sha256",
+      "type": "string"
+    },
+    "processing_output_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Processing Output Sha256",
+      "type": "string"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_lineage": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/SourceDatasetLineage"
+        },
+        {
+          "$ref": "#/$defs/SourceDatasetLineage"
+        }
+      ],
+      "title": "Source Lineage",
+      "type": "array"
+    },
+    "source_token_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Source Token Counts",
+      "type": "object"
+    },
+    "split_pack_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Split Pack Counts",
+      "type": "object"
+    },
+    "split_sample_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Split Sample Counts",
+      "type": "object"
+    },
+    "split_sha256s": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Split Sha256S",
+      "type": "object"
+    },
+    "split_supervised_token_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Split Supervised Token Counts",
+      "type": "object"
+    },
+    "split_token_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Split Token Counts",
+      "type": "object"
+    },
+    "template": {
+      "$ref": "#/$defs/ChatTemplateIdentity"
+    },
+    "tokenization_rejections": {
+      "minimum": 0,
+      "title": "Tokenization Rejections",
+      "type": "integer"
+    },
+    "tokenized_samples": {
+      "minimum": 0,
+      "title": "Tokenized Samples",
+      "type": "integer"
+    },
+    "tokenizer": {
+      "$ref": "#/$defs/TokenizerIdentity"
+    },
+    "total_supervised_tokens": {
+      "minimum": 0,
+      "title": "Total Supervised Tokens",
+      "type": "integer"
+    },
+    "total_tokens": {
+      "minimum": 0,
+      "title": "Total Tokens",
+      "type": "integer"
+    },
+    "train_stratum_basis_points": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Train Stratum Basis Points",
+      "type": "object"
+    },
+    "train_stratum_token_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Train Stratum Token Counts",
+      "type": "object"
+    }
+  },
+  "required": [
+    "dataset_name",
+    "dataset_version",
+    "content_sha256",
+    "source_lineage",
+    "processing_config_sha256",
+    "processing_input_sha256",
+    "processing_output_sha256",
+    "tokenizer",
+    "template",
+    "packing_config_sha256",
+    "max_sequence_length",
+    "input_processed_samples",
+    "tokenized_samples",
+    "tokenization_rejections",
+    "balanced_samples",
+    "balance_rejections",
+    "packed_sequences",
+    "total_tokens",
+    "total_supervised_tokens",
+    "packing_capacity_tokens",
+    "packing_efficiency_basis_points",
+    "split_sample_counts",
+    "split_pack_counts",
+    "split_token_counts",
+    "split_supervised_token_counts",
+    "split_sha256s",
+    "source_token_counts",
+    "language_token_counts",
+    "license_sample_counts",
+    "train_stratum_token_counts",
+    "train_stratum_basis_points",
+    "rejection_counts"
+  ],
+  "title": "M2DatasetManifest",
+  "type": "object"
+}

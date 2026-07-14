@@ -1,0 +1,110 @@
+{
+  "additionalProperties": false,
+  "description": "One unpadded split-local pack with explicit sample boundaries.",
+  "properties": {
+    "input_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Input Ids",
+      "type": "array"
+    },
+    "labels": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Labels",
+      "type": "array"
+    },
+    "max_sequence_length": {
+      "exclusiveMinimum": 1,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "pack_id": {
+      "pattern": "^(train|validation|test)-[0-9a-f]{16}$",
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "pack_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Pack Sha256",
+      "type": "string"
+    },
+    "position_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Position Ids",
+      "type": "array"
+    },
+    "sample_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Sample Ids",
+      "type": "array"
+    },
+    "sample_token_counts": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Sample Token Counts",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "segment_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Segment Ids",
+      "type": "array"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "supervised_token_count": {
+      "exclusiveMinimum": 0,
+      "title": "Supervised Token Count",
+      "type": "integer"
+    },
+    "token_count": {
+      "exclusiveMinimum": 0,
+      "title": "Token Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "pack_id",
+    "pack_sha256",
+    "split",
+    "max_sequence_length",
+    "sample_ids",
+    "sample_token_counts",
+    "input_ids",
+    "labels",
+    "position_ids",
+    "segment_ids",
+    "token_count",
+    "supervised_token_count"
+  ],
+  "title": "PackedSequence",
+  "type": "object"
+}

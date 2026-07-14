@@ -1,0 +1,105 @@
+{
+  "config": {
+    "path": "tinygpt_debug_cpu_smoke.yaml",
+    "resolved_sha256": "1dc537638ea9984943a4423c38400073735d331c39885fd2d657bd822160fbd7"
+  },
+  "corruption_probe": {
+    "detected_error_code": "CHECKPOINT_CORRUPT"
+  },
+  "git": {
+    "commit": "aa9b29b5dd80d679f676f54c89b9275951ff561e",
+    "dirty": false
+  },
+  "latest_manifest": {
+    "checkpoint_id": "checkpoint-step-00000004",
+    "committed": true,
+    "config_hash": "1dc537638ea9984943a4423c38400073735d331c39885fd2d657bd822160fbd7",
+    "created_at": "2026-07-14T08:25:28.602682Z",
+    "dataset_version": "toy-checkpoint-1dc53763",
+    "epoch": 0,
+    "files": [
+      {
+        "path": "training_state.pt",
+        "role": "training_state",
+        "sha256": "9918e9d348c0585c2cc85277ad07cdb3bfd04472f454c4d9128a660b7d1aeb52",
+        "size_bytes": 166409
+      },
+      {
+        "path": "config.resolved.json",
+        "role": "metadata",
+        "sha256": "56c4b1db8517a8bf4eb9483b29f7defb7004d7f61ed7aa2200e18d274731e71e",
+        "size_bytes": 921
+      },
+      {
+        "path": "environment.json",
+        "role": "metadata",
+        "sha256": "5b4cd06e3fd9c5a1b4318cded6b82dfec29929954fc7c1fa8efaf17004213828",
+        "size_bytes": 97
+      }
+    ],
+    "git_commit": "aa9b29b5dd80d679f676f54c89b9275951ff561e",
+    "global_step": 4,
+    "micro_step": 4,
+    "pin_reason": null,
+    "pinned": false,
+    "resume_capability": "exact",
+    "run_id": "20260714T082527Z-m1-checkpoint-smoke-1dc53763-db92",
+    "schema_version": "1.0",
+    "state": {
+      "config_snapshot": true,
+      "cuda_rng": true,
+      "environment": true,
+      "grad_scaler": true,
+      "model": true,
+      "numpy_rng": true,
+      "optimizer": true,
+      "python_rng": true,
+      "sampler": true,
+      "scheduler": true,
+      "torch_rng": true
+    },
+    "strategy": "single",
+    "world_size": 1
+  },
+  "not_evaluated": [
+    "restoring_state_into_a_new_trainer",
+    "exact_resume_equivalence",
+    "signal_interruption_recovery",
+    "cuda_bf16"
+  ],
+  "retention": {
+    "keep_last_ordinary": 2,
+    "latest": "checkpoint-step-00000004",
+    "pinned": [
+      "checkpoint-step-00000002"
+    ],
+    "retained": [
+      "checkpoint-step-00000002",
+      "checkpoint-step-00000003",
+      "checkpoint-step-00000004"
+    ]
+  },
+  "run_id": "20260714T082527Z-m1-checkpoint-smoke-1dc53763-db92",
+  "saved_sampler": {
+    "cursor": 16,
+    "epoch": 0,
+    "num_samples": 32,
+    "schema_version": "1.0"
+  },
+  "saved_trainer_state": {
+    "epoch": 0,
+    "global_step": 4,
+    "micro_step": 4,
+    "schema_version": "1.0",
+    "tokens_seen": 176
+  },
+  "schema_version": "1.0",
+  "smoke": "m1.2-atomic-checkpoint-cpu",
+  "software": {
+    "cuda_runtime": "11.8",
+    "device": "cpu",
+    "python": "3.11.14",
+    "torch": "2.7.1+cu118"
+  },
+  "status": "pass"
+}

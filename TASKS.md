@@ -18,7 +18,7 @@
 | M0 硬件体检 | `COMPLETE` | Doctor、RTX 3090/BF16、1/2/4/6 卡 NCCL、报告、CI | V100/10 卡为非阻塞项 |
 | Week 1 专业化基础 | `COMPLETE` | Apache/README/治理、Typer/Pydantic、公共 Schema、CI、PR #27 | 无；后续修改进入 M1 独立 PR |
 | M1 单卡闭环 | `COMPLETE` | 原生 Trainer、完整 Checkpoint、CPU Exact Resume、3090 BF16 与真实 SIGTERM/SIGKILL | 无；`v0.1.0-alpha.1` 后进入 M2 |
-| M2 数据与评测前置 | `IN_PROGRESS` | 固定来源/许可导入、保守规范化、Exact Dedup、连通分组 Split、Qwen3 Tokenizer 与 Assistant-only Mask | #38 合并后进入 #39/#40/#11；最终需 Packing/注册、正式数据构建与冻结 Baseline |
+| M2 数据与评测前置 | `IN_PROGRESS` | 固定来源/许可导入、保守规范化、Exact Dedup、连通分组 Split、Qwen3 Tokenizer/Assistant-only Mask、Token 平衡、Split-local Packing 与内容寻址 Manifest | #39 合并后进入 #40/#11；最终需持久化注册、正式数据构建、污染检查与冻结 Baseline |
 | M3–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue |
 
 ## Week 1：专业化基础
@@ -53,7 +53,8 @@
 依赖：固定 revision/许可证重新验证；可与 M1 后半段部分并行。
 
 执行批次：导入/Schema → 规范化/过滤/许可证 → Exact Dedup/分组 Split →
-Tokenization/Packing → Manifest/Rejected/统计 → 污染检查 → 冻结 Baseline。
+Tokenization → Token 平衡/Split-local Packing/Manifest → 持久化 Registry/全源构建 →
+污染检查 → 冻结 Baseline。
 
 完成门禁：同输入/revision/config/seed 内容哈希一致，无同源跨 Split，评测先于正式训练冻结。
 

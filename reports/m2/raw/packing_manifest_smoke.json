@@ -1,0 +1,244 @@
+{
+  "balance_rejected": [
+    {
+      "content_sha256": "3bbd0fff4357cb83115dbda8f05dbfcdc5caf4f345106556728dafbf0d5cf497",
+      "language": "en",
+      "reason": "balance_downsampled",
+      "sample_id": "oasst1:train-en-4",
+      "schema_version": "1.0",
+      "source": "oasst1",
+      "split": "train",
+      "stratum": "oasst1:en",
+      "token_count": 200
+    },
+    {
+      "content_sha256": "ed82893a8f7ef5d64fe484e8f4cdf2977cae182fc272f2d1ae0d6bc4c8b63f88",
+      "language": "zh",
+      "reason": "balance_downsampled",
+      "sample_id": "oasst1:train-zh-0",
+      "schema_version": "1.0",
+      "source": "oasst1",
+      "split": "train",
+      "stratum": "oasst1:zh",
+      "token_count": 200
+    }
+  ],
+  "input_samples": 17,
+  "input_sha256": "04256c81899da58a6e478f018de3abbe6bd6b67ec6b57c30599a433eac086e52",
+  "manifest": {
+    "balance_rejections": 2,
+    "balanced_samples": 15,
+    "content_sha256": "b606b6d326eaf859a6b968c68752c8d480ff33b5291191478d80051be28bf38d",
+    "dataset_name": "m2-sft",
+    "dataset_version": "m2-sft-v1-b606b6d3",
+    "input_processed_samples": 17,
+    "language_token_counts": {
+      "en": 2100,
+      "zh": 800
+    },
+    "license_sample_counts": {
+      "apache-2.0": 9,
+      "mit": 6
+    },
+    "max_sequence_length": 1024,
+    "packed_sequences": 5,
+    "packing_capacity_tokens": 5120,
+    "packing_config_sha256": "ccd8e7fb5b1c283cad57d4dd423fc5f07657ea98cfc0d8f48e3fa8b1b868ef5a",
+    "packing_efficiency_basis_points": 5664,
+    "processing_config_sha256": "2bbf5db9628779068375b2b66713ba7cc122a6c4093a6da723e9168b953cadf9",
+    "processing_input_sha256": "af7db314807098127a9aaef593fd200947c7b6668126261151ddeea1627c94a8",
+    "processing_output_sha256": "e49cffc08558a4e17e79d4bbc8b6df512f80cb7056fe0b817fbb45bea86c8a56",
+    "rejection_counts": {
+      "balance_downsampled": 2
+    },
+    "schema_version": "1.0",
+    "source_lineage": [
+      {
+        "dataset_card_sha256": "69799047051e9d487d20e8930d73de1b3023ee1c75cf36dc3d2dfca2643f0bb0",
+        "dataset_id": "bigcode/commitpackft",
+        "import_config_sha256": "3e5d8d6606c3d90f1c0db8e331a49c675b86aa32fabe552530519b0158cbd728",
+        "input_sha256": "7e82acd4cc3ddb38bd7ae9024d593c82398c93456a500bd27943ca0ab8b1a583",
+        "revision": "fc56fe33c030c6daa414c2b112c932b8eed085e6",
+        "source": "commitpackft"
+      },
+      {
+        "dataset_card_sha256": "68483ac2fcc2f3f7779f453352363827678070ef35b6d746ccb2ca6958540fff",
+        "dataset_id": "OpenAssistant/oasst1",
+        "import_config_sha256": "3bb61a1dec4f41cd67e6bd8157a1124d540a44a371c07fd164d3f652c01d1484",
+        "input_sha256": "aaabb1595ce1a203050bf7b9328e16867cf9b2171db65a0e07bae0ea7976ed29",
+        "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
+        "source": "oasst1"
+      }
+    ],
+    "source_token_counts": {
+      "commitpackft": 1150,
+      "oasst1": 1750
+    },
+    "split_pack_counts": {
+      "test": 1,
+      "train": 3,
+      "validation": 1
+    },
+    "split_sample_counts": {
+      "test": 1,
+      "train": 13,
+      "validation": 1
+    },
+    "split_sha256s": {
+      "test": "346dd06829870be4a97ee6c3996a1e4e4be1716c2b02dd0c26119c14a2bd7bcd",
+      "train": "666d0b4b6b1f3a6724e95ecda73a205122bfe2eb249e65f0288e63e1cbff6a8a",
+      "validation": "ae6a31a581d35900bf102a68223cad251756e20576ee4188cb698e39e182626e"
+    },
+    "split_supervised_token_counts": {
+      "test": 10,
+      "train": 130,
+      "validation": 10
+    },
+    "split_token_counts": {
+      "test": 150,
+      "train": 2600,
+      "validation": 150
+    },
+    "template": {
+      "add_generation_prompt": false,
+      "assistant_only_loss": true,
+      "supervise_assistant_end_token": true,
+      "template_id": "qwen3-chatml-nonthinking-v1",
+      "template_sha256": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+      "thinking": false
+    },
+    "tokenization_rejections": 0,
+    "tokenized_samples": 17,
+    "tokenizer": {
+      "backend": "tokenizers",
+      "backend_version": "0.21.4",
+      "bos_token": "<|im_start|>",
+      "bos_token_id": 151644,
+      "eos_token": "<|im_end|>",
+      "eos_token_id": 151645,
+      "pad_token": "<|endoftext|>",
+      "pad_token_id": 151643,
+      "repository": "Qwen/Qwen3-0.6B",
+      "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "tokenizer_config_file": "tokenizer_config.json",
+      "tokenizer_config_file_size": 9732,
+      "tokenizer_config_sha256": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+      "tokenizer_file": "tokenizer.json",
+      "tokenizer_file_size": 11422654,
+      "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "vocab_size": 151669
+    },
+    "total_supervised_tokens": 150,
+    "total_tokens": 2900,
+    "train_stratum_basis_points": {
+      "commitpackft:en": 3846,
+      "oasst1:en": 3076,
+      "oasst1:zh": 3076
+    },
+    "train_stratum_token_counts": {
+      "commitpackft:en": 1000,
+      "oasst1:en": 800,
+      "oasst1:zh": 800
+    }
+  },
+  "packs": [
+    {
+      "pack_id": "test-a9b234999d5fed42",
+      "pack_sha256": "a9b234999d5fed427b68ed81af21cae62f22f5de75d377fb8c7611b92414c244",
+      "position_resets_verified": true,
+      "sample_ids": [
+        "commitpackft:test-en"
+      ],
+      "sample_token_counts": [
+        150
+      ],
+      "segment_boundaries_verified": true,
+      "split": "test",
+      "supervised_token_count": 10,
+      "token_count": 150
+    },
+    {
+      "pack_id": "train-02009c45fc3c90d4",
+      "pack_sha256": "02009c45fc3c90d4b0662d952e0edb06202754282cbd367c6b25a8765d684bc4",
+      "position_resets_verified": true,
+      "sample_ids": [
+        "oasst1:train-zh-2",
+        "oasst1:train-zh-3",
+        "oasst1:train-zh-4"
+      ],
+      "sample_token_counts": [
+        200,
+        200,
+        200
+      ],
+      "segment_boundaries_verified": true,
+      "split": "train",
+      "supervised_token_count": 30,
+      "token_count": 600
+    },
+    {
+      "pack_id": "train-3ad791cdbaaace96",
+      "pack_sha256": "3ad791cdbaaace9651f63968e4ba3d819128623b6c50bc5dd9150c2a6832b7a6",
+      "position_resets_verified": true,
+      "sample_ids": [
+        "commitpackft:train-en-0",
+        "commitpackft:train-en-1",
+        "commitpackft:train-en-2",
+        "commitpackft:train-en-3",
+        "commitpackft:train-en-4"
+      ],
+      "sample_token_counts": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "segment_boundaries_verified": true,
+      "split": "train",
+      "supervised_token_count": 50,
+      "token_count": 1000
+    },
+    {
+      "pack_id": "train-c0fb2ab8c47f651d",
+      "pack_sha256": "c0fb2ab8c47f651df004769bae73e29001578e529bd52e8fee3293332ead6eb2",
+      "position_resets_verified": true,
+      "sample_ids": [
+        "oasst1:train-en-0",
+        "oasst1:train-en-1",
+        "oasst1:train-en-2",
+        "oasst1:train-en-3",
+        "oasst1:train-zh-1"
+      ],
+      "sample_token_counts": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "segment_boundaries_verified": true,
+      "split": "train",
+      "supervised_token_count": 50,
+      "token_count": 1000
+    },
+    {
+      "pack_id": "validation-ff8098c754d21fc5",
+      "pack_sha256": "ff8098c754d21fc525e1b12ab3d9dc34168eba4c6b053426e9dc2c4faaebe570",
+      "position_resets_verified": true,
+      "sample_ids": [
+        "oasst1:validation-en"
+      ],
+      "sample_token_counts": [
+        150
+      ],
+      "segment_boundaries_verified": true,
+      "split": "validation",
+      "supervised_token_count": 10,
+      "token_count": 150
+    }
+  ],
+  "rebuild_after_input_reversal": "identical",
+  "scope": "public-synthetic-token-arrays",
+  "status": "pass"
+}

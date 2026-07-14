@@ -246,3 +246,44 @@ Assistant-only Loss 的 Label Mask 规则：
 
 本阶段只产生 `TokenizedSample`，仍不代表最终注册数据。确定性混合、Packing、最终 Manifest
 和 Registry 分别由 M2.3b/M2.3c 完成。
+
+## 14. M2.3b Token 混合与 Packing 契约
+
+### 14.1 训练集 Token 配比
+
+只有 Train Split 参与下采样；Validation/Test 保留全部合规样本。Train 使用三个互斥
+Stratum：
+
+| Stratum | 目标 Token Basis Points |
+| -- | --: |
+| `oasst1:zh` | 3,000 |
+| `oasst1:en` | 3,000 |
+| `commitpackft:en` | 4,000 |
+
+这同时表达约 60% OASST1 / 40% CommitPackFT 与约 70% 英文 / 30% 中文目标。选择 Seed
+固定为 42。每个 Stratum 内按 `SHA256(seed + Sample ID)` 排序，使用不超过最稀缺 Stratum
+容量的共同 Token Scale，并选择累计 Token 数最接近目标的前缀。未选择样本记录为
+`balance_downsampled`，不复制内容。正式构建要求三个 Stratum 均非空，实际 Train Token
+比例与目标的最大偏差不超过 300 Basis Points；否则构建失败并要求显式调整配置/数据版本。
+
+### 14.2 Packing
+
+- 每个 Split 独立执行 Best-Fit-Decreasing；按 Token 数降序、Sample ID 升序处理。
+- 一个 Sample 必须恰好出现在一个 Pack 中，不切断、不重复，也不跨 Split。
+- 单 Pack 最多 1,024 Token，不在数据文件中补 Pad；Batch Collator 后续使用固定 Pad ID。
+- `position_ids` 在每个 Sample 边界从 0 重置。
+- `segment_ids` 标识 Pack 内 Sample；后续 Trainer 必须由此构造 Block-diagonal Causal Mask，
+  禁止后一个 Sample 关注前一个 Sample。若训练后端无法遵守该语义，必须关闭 Packing，不能
+  静默使用普通跨样本 Causal Attention。
+- 每个输入样本已由 ChatML `<|im_end|>` 结束，因此 Pack 不额外插入 Separator。
+
+### 14.3 最终 Dataset Manifest
+
+Manifest 的内容身份包含：两个固定来源的 revision/input/config hash、M2.2 处理哈希、
+Tokenizer/Template 身份、M2.3b 配置、所有 Tokenization/Balance 拒绝记录和所有 Pack。
+它记录每个 Split 的 Sample/Pack/Token/Supervised Token 数、来源/语言/许可统计、实际 Train
+Stratum Basis Points、Packing 利用率和 Split Hash。`dataset_version` 为
+`m2-sft-v1-<content-sha256前8位>`。
+
+Manifest 不包含创建时间、构建主机、用户名或绝对路径；这些易变字段由 M2.3c 的独立
+Registration Record 保存，不得改变相同内容的 Dataset Version。

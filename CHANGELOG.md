@@ -13,6 +13,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
   grouping, deterministic hash-based splitting, and reproducible synthetic M2.2 evidence.
 - pinned the Qwen3-0.6B tokenizer artifacts and Non-thinking ChatML subset, added integrity-checked
   `tokenizers` loading, offset-aligned Assistant-only labels, and real synthetic-fixture evidence.
+- added deterministic Train-only source/language Token balancing, split-local boundary-aware
+  Best-Fit Decreasing Packing, versioned Pack/Manifest schemas, content-addressed dataset identity,
+  and reproducible synthetic rebuild/failure evidence.
 
 ## 0.1.0-alpha.1
 

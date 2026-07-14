@@ -1,0 +1,141 @@
+{
+  "$defs": {
+    "SequencePackingConfig": {
+      "additionalProperties": false,
+      "description": "Split-local boundary-aware deterministic packing policy.",
+      "properties": {
+        "add_separator": {
+          "const": false,
+          "title": "Add Separator",
+          "type": "boolean"
+        },
+        "algorithm": {
+          "const": "best-fit-decreasing-v1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "emit_segment_ids": {
+          "const": true,
+          "title": "Emit Segment Ids",
+          "type": "boolean"
+        },
+        "max_sequence_length": {
+          "exclusiveMinimum": 1,
+          "title": "Max Sequence Length",
+          "type": "integer"
+        },
+        "pad_to_max_length": {
+          "const": false,
+          "title": "Pad To Max Length",
+          "type": "boolean"
+        },
+        "reset_position_ids": {
+          "const": true,
+          "title": "Reset Position Ids",
+          "type": "boolean"
+        },
+        "split_local": {
+          "const": true,
+          "title": "Split Local",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "algorithm",
+        "max_sequence_length",
+        "split_local",
+        "reset_position_ids",
+        "emit_segment_ids",
+        "pad_to_max_length",
+        "add_separator"
+      ],
+      "title": "SequencePackingConfig",
+      "type": "object"
+    },
+    "TokenBalanceConfig": {
+      "additionalProperties": false,
+      "description": "Frozen Train-only source/language token targets.",
+      "properties": {
+        "apply_to_split": {
+          "const": "train",
+          "title": "Apply To Split",
+          "type": "string"
+        },
+        "commitpackft_en_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Commitpackft En Basis Points",
+          "type": "integer"
+        },
+        "oasst1_en_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Oasst1 En Basis Points",
+          "type": "integer"
+        },
+        "oasst1_zh_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Oasst1 Zh Basis Points",
+          "type": "integer"
+        },
+        "require_all_strata": {
+          "const": true,
+          "title": "Require All Strata",
+          "type": "boolean"
+        },
+        "selection_seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Selection Seed",
+          "type": "integer"
+        },
+        "tolerance_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Tolerance Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "selection_seed",
+        "apply_to_split",
+        "oasst1_zh_basis_points",
+        "oasst1_en_basis_points",
+        "commitpackft_en_basis_points",
+        "tolerance_basis_points",
+        "require_all_strata"
+      ],
+      "title": "TokenBalanceConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete formal M2.3b build configuration.",
+  "properties": {
+    "balance": {
+      "$ref": "#/$defs/TokenBalanceConfig"
+    },
+    "dataset_name": {
+      "const": "m2-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "packing": {
+      "$ref": "#/$defs/SequencePackingConfig"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_name",
+    "balance",
+    "packing"
+  ],
+  "title": "M2PackingConfig",
+  "type": "object"
+}

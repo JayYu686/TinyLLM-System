@@ -1,0 +1,23 @@
+schema_version: "1.0"
+
+normalization:
+  unicode_form: nfc
+  normalize_line_endings: true
+  strip_bom: true
+  trim_outer_whitespace: true
+  reject_control_characters: true
+  max_message_chars: 131072
+  max_sample_chars: 262144
+
+deduplication:
+  exact: true
+  near: false
+  source_priority:
+    - oasst1
+    - commitpackft
+
+split:
+  seed: 42
+  train_basis_points: 9800
+  validation_basis_points: 100
+  test_basis_points: 100

@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free audit record for one M2.2 rejected imported sample.",
+  "properties": {
+    "content_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Sha256"
+    },
+    "duplicate_of_sample_id": {
+      "anyOf": [
+        {
+          "pattern": "^(oasst1|commitpackft):[a-zA-Z0-9._-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duplicate Of Sample Id"
+    },
+    "message_index": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Message Index"
+    },
+    "reason": {
+      "enum": [
+        "empty_after_normalization",
+        "exact_duplicate",
+        "forbidden_control_character",
+        "message_too_long",
+        "sample_too_long"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^(oasst1|commitpackft):[a-zA-Z0-9._-]+$",
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "oasst1",
+        "commitpackft"
+      ],
+      "title": "Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "sample_id",
+    "source",
+    "reason"
+  ],
+  "title": "PipelineRejectedRecord",
+  "type": "object"
+}

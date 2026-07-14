@@ -9,6 +9,8 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
   strict import schemas, deterministic input/config hashes, and privacy-preserving rejection
   summaries;
 - added synthetic CC0 fixtures and `tinyllm data inspect` for the public import contract.
+- added conservative NFC/LF normalization, content-addressed Exact Dedup, connected Tree/Repository
+  grouping, deterministic hash-based splitting, and reproducible synthetic M2.2 evidence.
 
 ## 0.1.0-alpha.1
 

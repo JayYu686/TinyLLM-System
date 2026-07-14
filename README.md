@@ -31,7 +31,7 @@ missing results stay explicitly unevaluated.
 | M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
-| M2 licensed data pipeline | In progress | Pinned source/import contract implemented; no full dataset build or Baseline Evaluation yet |
+| M2 licensed data pipeline | In progress | Pinned import plus deterministic normalization/dedup/grouped-split smoke; no full dataset build or Baseline Evaluation yet |
 | M3–M6 | Planned | No training-quality or scaling result is claimed yet |
 
 The complete M0 evidence is in the
@@ -44,6 +44,8 @@ benchmarks.
 M2 source availability and Dataset Card hashes are recorded in the
 [pinned-source verification report](reports/m2/source_verification.md). This is import-contract
 evidence only; it is not evidence of a completed data build or model training.
+The [M2.2 deterministic pipeline smoke](reports/m2/deterministic_pipeline_smoke.md) uses synthetic
+CC0 fixtures and likewise makes no full-dataset distribution or training claim.
 
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately

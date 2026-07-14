@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "description": "Last-written proof that Manifest, Registration, and all files were committed.",
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_name": {
+      "const": "m2-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m2-sft-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "registration_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Registration Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_name",
+    "dataset_version",
+    "content_sha256",
+    "manifest_sha256",
+    "registration_sha256"
+  ],
+  "title": "DatasetCommitMarker",
+  "type": "object"
+}

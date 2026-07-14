@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "DatasetArtifactFile": {
+      "additionalProperties": false,
+      "description": "One integrity-checked file below an immutable dataset version directory.",
+      "properties": {
+        "path": {
+          "format": "path",
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "lineage",
+            "rejections",
+            "shard_array",
+            "shard_metadata"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "role",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "DatasetArtifactFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Private storage/environment record for one immutable Dataset Version.",
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_name": {
+      "const": "m2-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m2-sft-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/DatasetArtifactFile"
+      },
+      "minItems": 1,
+      "title": "Files",
+      "type": "array"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "numpy_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Numpy Version",
+      "type": "string"
+    },
+    "packed_sequences": {
+      "minimum": 0,
+      "title": "Packed Sequences",
+      "type": "integer"
+    },
+    "python_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Python Version",
+      "type": "string"
+    },
+    "registered_at": {
+      "format": "date-time",
+      "title": "Registered At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "shard_token_limit": {
+      "minimum": 1024,
+      "title": "Shard Token Limit",
+      "type": "integer"
+    },
+    "storage_format": {
+      "const": "numpy-sharded-v1",
+      "title": "Storage Format",
+      "type": "string"
+    },
+    "total_tokens": {
+      "minimum": 0,
+      "title": "Total Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "dataset_name",
+    "dataset_version",
+    "content_sha256",
+    "manifest_sha256",
+    "storage_format",
+    "shard_token_limit",
+    "registered_at",
+    "git_commit",
+    "git_dirty",
+    "python_version",
+    "numpy_version",
+    "packed_sequences",
+    "total_tokens",
+    "files"
+  ],
+  "title": "DatasetRegistration",
+  "type": "object"
+}

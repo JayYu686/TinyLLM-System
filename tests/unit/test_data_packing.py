@@ -11,6 +11,7 @@ from tinyllm.data import (
     OASST1_SOURCE,
     DataImportManifest,
     DataProcessingManifest,
+    DatasetBuild,
     M2PackingConfig,
     PackedSequence,
     PackingError,
@@ -134,7 +135,7 @@ def processing_manifest(samples: tuple[TokenizedSample, ...]) -> DataProcessingM
     )
 
 
-def build(samples: tuple[TokenizedSample, ...]):  # type: ignore[no-untyped-def]
+def build(samples: tuple[TokenizedSample, ...]) -> DatasetBuild:
     source_counts = {
         source: sum(sample.source == source for sample in samples)
         for source in ("commitpackft", "oasst1")

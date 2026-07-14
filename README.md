@@ -31,7 +31,7 @@ missing results stay explicitly unevaluated.
 | M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
-| M2 licensed data pipeline | In progress | Pinned import, grouped split, Qwen3 masks, deterministic Token balancing/Packing, and content-addressed Manifest pass; no full-source build or Baseline Evaluation yet |
+| M2 licensed data pipeline | In progress | Pinned import, Qwen3 masks, deterministic Packing/Manifest, and immutable Registry synthetic smokes pass; no full-source build or Baseline Evaluation yet |
 | M3–M6 | Planned | No training-quality or scaling result is claimed yet |
 
 The complete M0 evidence is in the
@@ -51,6 +51,9 @@ Assistant-only labels without loading model weights.
 The [M2.3b Packing and Manifest smoke](reports/m2/packing_manifest_smoke.md) verifies deterministic
 Train balancing, split-local boundaries, and content identity on public synthetic Token arrays;
 its utilization numbers must not be interpreted as full-dataset results.
+The [M2.3c immutable Registry smoke](reports/m2/registry_smoke.md) verifies atomic publication,
+complete file hashing, safe NumPy reconstruction, idempotency, and corruption refusal on the same
+synthetic boundary. The full pinned-source build remains explicitly outstanding.
 
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately

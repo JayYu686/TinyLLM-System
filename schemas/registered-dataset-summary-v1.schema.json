@@ -1,0 +1,154 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free stable JSON result for prepare and inspect commands.",
+  "properties": {
+    "balanced_samples": {
+      "title": "Balanced Samples",
+      "type": "integer"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "created": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Created"
+    },
+    "dataset_name": {
+      "const": "m2-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m2-sft-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "imported_samples": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Imported Samples",
+      "type": "object"
+    },
+    "operation": {
+      "enum": [
+        "prepare",
+        "inspect"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "packed_sequences": {
+      "title": "Packed Sequences",
+      "type": "integer"
+    },
+    "processed_samples": {
+      "title": "Processed Samples",
+      "type": "integer"
+    },
+    "registered_at": {
+      "format": "date-time",
+      "title": "Registered At",
+      "type": "string"
+    },
+    "registered_bytes": {
+      "title": "Registered Bytes",
+      "type": "integer"
+    },
+    "registered_files": {
+      "title": "Registered Files",
+      "type": "integer"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_rows": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Source Rows",
+      "type": "object"
+    },
+    "status": {
+      "const": "ok",
+      "title": "Status",
+      "type": "string"
+    },
+    "storage_format": {
+      "const": "numpy-sharded-v1",
+      "title": "Storage Format",
+      "type": "string"
+    },
+    "tokenized_samples": {
+      "title": "Tokenized Samples",
+      "type": "integer"
+    },
+    "total_supervised_tokens": {
+      "title": "Total Supervised Tokens",
+      "type": "integer"
+    },
+    "total_tokens": {
+      "title": "Total Tokens",
+      "type": "integer"
+    },
+    "verified": {
+      "const": true,
+      "title": "Verified",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "status",
+    "operation",
+    "created",
+    "verified",
+    "dataset_name",
+    "dataset_version",
+    "content_sha256",
+    "storage_format",
+    "registered_at",
+    "git_commit",
+    "git_dirty",
+    "source_rows",
+    "imported_samples",
+    "processed_samples",
+    "tokenized_samples",
+    "balanced_samples",
+    "packed_sequences",
+    "total_tokens",
+    "total_supervised_tokens",
+    "rejection_counts",
+    "registered_files",
+    "registered_bytes"
+  ],
+  "title": "RegisteredDatasetSummary",
+  "type": "object"
+}

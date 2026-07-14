@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import heapq
 import json
+from bisect import bisect_left, insort
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -28,6 +30,7 @@ from tinyllm.data.tokenization_schema import (
     TokenizationRejectedRecord,
     TokenizedSample,
 )
+from tinyllm.schemas.base import StrictSchema
 
 _SPLITS: tuple[DataSplit, ...] = ("test", "train", "validation")
 _STRATA = ("commitpackft:en", "oasst1:en", "oasst1:zh")
@@ -67,6 +70,54 @@ def _canonical_json(value: object) -> bytes:
 
 def _content_hash(value: object) -> str:
     return hashlib.sha256(_canonical_json(value)).hexdigest()
+
+
+def _dataset_content_hash(
+    *,
+    balance_rejected: tuple[BalanceRejectedRecord, ...],
+    packing_config: M2PackingConfig,
+    packs: tuple[PackedSequence, ...],
+    processing_manifest: DataProcessingManifest,
+    source_manifests: tuple[DataImportManifest, ...],
+    tokenization_config: M2TokenizationConfig,
+    tokenization_rejected: tuple[TokenizationRejectedRecord, ...],
+) -> str:
+    """Stream the canonical v1 payload without materializing every Pack as one JSON value."""
+
+    digest = hashlib.sha256()
+
+    def update(value: str) -> None:
+        digest.update(value.encode("utf-8"))
+
+    def scalar(value: object) -> None:
+        digest.update(_canonical_json(value))
+
+    def sequence(values: Iterable[StrictSchema]) -> None:
+        update("[")
+        for index, value in enumerate(values):
+            if index:
+                update(",")
+            scalar(value.to_dict())
+        update("]")
+
+    ordered_sources = tuple(sorted(source_manifests, key=lambda item: item.source.name))
+    update("{")
+    update('"balance_rejected":')
+    sequence(balance_rejected)
+    update(',"packing_config":')
+    scalar(packing_config.to_dict())
+    update(',"packs":')
+    sequence(packs)
+    update(',"processing_manifest":')
+    scalar(processing_manifest.to_dict())
+    update(',"source_manifests":')
+    sequence(ordered_sources)
+    update(',"tokenization_config":')
+    scalar(tokenization_config.to_dict())
+    update(',"tokenization_rejected":')
+    sequence(tokenization_rejected)
+    update("}")
+    return digest.hexdigest()
 
 
 def _sequence_hash(values: Iterable[object]) -> str:
@@ -254,22 +305,36 @@ def _pack_split(
     max_sequence_length: int,
 ) -> tuple[PackedSequence, ...]:
     bins: list[_PackBin] = []
+    bins_by_remaining: dict[int, list[int]] = {}
+    available_remaining: list[int] = []
+
+    def add_available_bin(remaining: int, bin_index: int) -> None:
+        if remaining <= 0:
+            return
+        indices = bins_by_remaining.setdefault(remaining, [])
+        if not indices:
+            insort(available_remaining, remaining)
+        heapq.heappush(indices, bin_index)
+
     for sample in sorted(samples, key=lambda item: (-item.token_count, item.id)):
         if sample.token_count > max_sequence_length:
             raise PackingError(f"sample {sample.id} exceeds packing sequence length")
-        candidates = [
-            (max_sequence_length - current.token_count - sample.token_count, index)
-            for index, current in enumerate(bins)
-            if current.token_count + sample.token_count <= max_sequence_length
-        ]
-        if candidates:
-            _remaining, bin_index = min(candidates)
+        remaining_index = bisect_left(available_remaining, sample.token_count)
+        if remaining_index < len(available_remaining):
+            remaining = available_remaining[remaining_index]
+            indices = bins_by_remaining[remaining]
+            bin_index = heapq.heappop(indices)
+            if not indices:
+                del bins_by_remaining[remaining]
+                available_remaining.pop(remaining_index)
             target = bins[bin_index]
         else:
             target = _PackBin()
             bins.append(target)
+            bin_index = len(bins) - 1
         target.samples.append(sample)
         target.token_count += sample.token_count
+        add_available_bin(max_sequence_length - target.token_count, bin_index)
 
     packs: list[PackedSequence] = []
     for current in bins:
@@ -453,17 +518,15 @@ def build_m2_dataset(
     total_supervised = sum(pack.supervised_token_count for pack in packs)
     capacity = len(packs) * packing_config.packing.max_sequence_length
 
-    ordered_sources = tuple(sorted(source_manifests, key=lambda item: item.source.name))
-    content_payload = {
-        "balance_rejected": [record.to_dict() for record in balance_rejected],
-        "packing_config": packing_config.to_dict(),
-        "packs": [pack.to_dict() for pack in packs],
-        "processing_manifest": processing_manifest.to_dict(),
-        "source_manifests": [manifest.to_dict() for manifest in ordered_sources],
-        "tokenization_config": tokenization_config.to_dict(),
-        "tokenization_rejected": [record.to_dict() for record in tokenization.rejected],
-    }
-    content_sha256 = _content_hash(content_payload)
+    content_sha256 = _dataset_content_hash(
+        balance_rejected=balance_rejected,
+        packing_config=packing_config,
+        packs=packs,
+        processing_manifest=processing_manifest,
+        source_manifests=source_manifests,
+        tokenization_config=tokenization_config,
+        tokenization_rejected=tokenization.rejected,
+    )
     manifest = M2DatasetManifest(
         dataset_name=packing_config.dataset_name,
         dataset_version=f"m2-sft-v1-{content_sha256[:8]}",

@@ -1,0 +1,14 @@
+{
+  "content_sha256": "b606b6d326eaf859a6b968c68752c8d480ff33b5291191478d80051be28bf38d",
+  "corruption_refusal_code": "DATASET_CORRUPT",
+  "dataset_version": "m2-sft-v1-b606b6d3",
+  "first_registration_created": true,
+  "packed_sequences": 5,
+  "reconstructed_packs_identical": true,
+  "registered_files": 44,
+  "scope": "public-synthetic-token-arrays",
+  "second_registration_created": false,
+  "status": "pass",
+  "storage_format": "numpy-sharded-v1",
+  "total_tokens": 2900
+}

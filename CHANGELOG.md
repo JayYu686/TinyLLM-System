@@ -16,6 +16,11 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 - added deterministic Train-only source/language Token balancing, split-local boundary-aware
   Best-Fit Decreasing Packing, versioned Pack/Manifest schemas, content-addressed dataset identity,
   and reproducible synthetic rebuild/failure evidence.
+- added pinned atomic Artifact acquisition, strict JSONL readers, deterministic NumPy-sharded
+  storage, immutable Dataset Registration/commit markers, complete file verification, safe Pack
+  reconstruction, and `tinyllm data prepare|inspect` Registry contracts.
+- raised the isolated Setuptools build/development constraint to 83.0.0 after the dependency audit
+  identified `PYSEC-2026-3447` in the previous local build tool.
 
 ## 0.1.0-alpha.1
 

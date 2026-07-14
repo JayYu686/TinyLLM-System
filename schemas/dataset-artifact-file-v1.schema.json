@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "description": "One integrity-checked file below an immutable dataset version directory.",
+  "properties": {
+    "path": {
+      "format": "path",
+      "title": "Path",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "lineage",
+        "rejections",
+        "shard_array",
+        "shard_metadata"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size_bytes": {
+      "minimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "path",
+    "role",
+    "size_bytes",
+    "sha256"
+  ],
+  "title": "DatasetArtifactFile",
+  "type": "object"
+}

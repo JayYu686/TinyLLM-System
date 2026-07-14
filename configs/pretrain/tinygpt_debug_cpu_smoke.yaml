@@ -1,0 +1,43 @@
+schema_version: "1.0"
+
+run:
+  name: tinygpt-debug-cpu-smoke
+  seed: 42
+
+model:
+  vocab_size: 32
+  hidden_size: 32
+  num_layers: 1
+  num_heads: 4
+  intermediate_size: 64
+  max_sequence_length: 16
+  rope_theta: 10000.0
+  rms_norm_epsilon: 1.0e-6
+  dropout: 0.0
+  tie_word_embeddings: true
+
+data:
+  kind: toy
+  vocab_size: 32
+  sequence_length: 12
+  num_samples: 32
+
+training:
+  max_steps: 30
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
+  learning_rate: 0.02
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  warmup_steps: 2
+
+precision:
+  dtype: fp32
+  allow_tf32: false
+  use_grad_scaler: false
+
+checkpoint:
+  output_dir: runs/tinygpt-debug-cpu-smoke
+  save_steps: 10
+  keep_last: 2
+  resume: none

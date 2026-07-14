@@ -30,7 +30,7 @@ missing results stay explicitly unevaluated.
 | M0 host readiness | Complete | 10 RTX 3090s inventoried; CUDA/BF16 single-GPU smoke passed |
 | M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
-| M1 trainer and Exact Resume | In progress | Contracts are frozen; trainer, atomic checkpoint writer, and interruption evidence remain open |
+| M1 trainer and Exact Resume | In progress | Native CPU/FP32 Trainer and Loss smoke pass; atomic checkpoint, Exact Resume, and GPU interruption evidence remain open |
 | M2–M6 | Planned | No training-quality or scaling result is claimed yet |
 
 The complete M0 evidence is in the
@@ -39,6 +39,10 @@ The complete M0 evidence is in the
 [topology/NCCL report](reports/hardware/nccl_topology.md). M0 NCCL measurements prove
 tooling and collective correctness under that test protocol; they are not DDP throughput
 benchmarks.
+
+The M1.1 native Trainer result is documented in the
+[CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately
+separate from future Checkpoint/Resume and GPU evidence.
 
 ## System boundary
 

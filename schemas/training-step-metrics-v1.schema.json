@@ -1,0 +1,69 @@
+{
+  "additionalProperties": false,
+  "description": "One successful optimizer-step event.",
+  "properties": {
+    "epoch": {
+      "minimum": 0,
+      "title": "Epoch",
+      "type": "integer"
+    },
+    "event": {
+      "const": "optimizer_step",
+      "default": "optimizer_step",
+      "title": "Event",
+      "type": "string"
+    },
+    "global_step": {
+      "minimum": 1,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "gradient_clipped": {
+      "title": "Gradient Clipped",
+      "type": "boolean"
+    },
+    "gradient_norm": {
+      "minimum": 0.0,
+      "title": "Gradient Norm",
+      "type": "number"
+    },
+    "learning_rate": {
+      "minimum": 0.0,
+      "title": "Learning Rate",
+      "type": "number"
+    },
+    "loss": {
+      "minimum": 0.0,
+      "title": "Loss",
+      "type": "number"
+    },
+    "micro_step": {
+      "minimum": 1,
+      "title": "Micro Step",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tokens_seen": {
+      "minimum": 1,
+      "title": "Tokens Seen",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "global_step",
+    "micro_step",
+    "epoch",
+    "loss",
+    "learning_rate",
+    "gradient_norm",
+    "gradient_clipped",
+    "tokens_seen"
+  ],
+  "title": "TrainingStepMetrics",
+  "type": "object"
+}

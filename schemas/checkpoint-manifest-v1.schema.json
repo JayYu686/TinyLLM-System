@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "CheckpointFile": {
+      "additionalProperties": false,
+      "description": "One integrity-checked file in a committed checkpoint directory.",
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "training_state",
+            "shard",
+            "metadata",
+            "rng",
+            "sampler"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "role",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "CheckpointFile",
+      "type": "object"
+    },
+    "CheckpointStateCoverage": {
+      "additionalProperties": false,
+      "description": "Declare which runtime state categories are accounted for.\n\nA true value means the payload contains the state or an explicit not-applicable\nmarker, such as GradScaler under BF16 or CUDA RNG in a CPU-only test.",
+      "properties": {
+        "config_snapshot": {
+          "title": "Config Snapshot",
+          "type": "boolean"
+        },
+        "cuda_rng": {
+          "title": "Cuda Rng",
+          "type": "boolean"
+        },
+        "environment": {
+          "title": "Environment",
+          "type": "boolean"
+        },
+        "grad_scaler": {
+          "title": "Grad Scaler",
+          "type": "boolean"
+        },
+        "model": {
+          "title": "Model",
+          "type": "boolean"
+        },
+        "numpy_rng": {
+          "title": "Numpy Rng",
+          "type": "boolean"
+        },
+        "optimizer": {
+          "title": "Optimizer",
+          "type": "boolean"
+        },
+        "python_rng": {
+          "title": "Python Rng",
+          "type": "boolean"
+        },
+        "sampler": {
+          "title": "Sampler",
+          "type": "boolean"
+        },
+        "scheduler": {
+          "title": "Scheduler",
+          "type": "boolean"
+        },
+        "torch_rng": {
+          "title": "Torch Rng",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "model",
+        "optimizer",
+        "scheduler",
+        "grad_scaler",
+        "python_rng",
+        "numpy_rng",
+        "torch_rng",
+        "cuda_rng",
+        "sampler",
+        "config_snapshot",
+        "environment"
+      ],
+      "title": "CheckpointStateCoverage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Integrity and compatibility contract for a published checkpoint.",
+  "properties": {
+    "checkpoint_id": {
+      "pattern": "^checkpoint-step-\\d{8}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "committed": {
+      "const": true,
+      "default": true,
+      "title": "Committed",
+      "type": "boolean"
+    },
+    "config_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Hash",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dataset_version": {
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "epoch": {
+      "minimum": 0,
+      "title": "Epoch",
+      "type": "integer"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/CheckpointFile"
+      },
+      "minItems": 1,
+      "title": "Files",
+      "type": "array"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "global_step": {
+      "minimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "micro_step": {
+      "minimum": 0,
+      "title": "Micro Step",
+      "type": "integer"
+    },
+    "pinned": {
+      "default": false,
+      "title": "Pinned",
+      "type": "boolean"
+    },
+    "resume_capability": {
+      "enum": [
+        "exact",
+        "warm",
+        "transfer"
+      ],
+      "title": "Resume Capability",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/CheckpointStateCoverage"
+    },
+    "strategy": {
+      "enum": [
+        "single",
+        "ddp",
+        "fsdp2",
+        "zero3"
+      ],
+      "title": "Strategy",
+      "type": "string"
+    },
+    "world_size": {
+      "minimum": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "run_id",
+    "created_at",
+    "strategy",
+    "resume_capability",
+    "world_size",
+    "global_step",
+    "micro_step",
+    "epoch",
+    "config_hash",
+    "dataset_version",
+    "git_commit",
+    "state",
+    "files"
+  ],
+  "title": "CheckpointManifest",
+  "type": "object"
+}

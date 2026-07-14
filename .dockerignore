@@ -1,0 +1,16 @@
+.git
+.github
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+__pycache__
+*.egg-info
+artifacts
+checkpoints
+data
+models
+private-artifacts
+reports
+runs
+tests

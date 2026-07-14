@@ -1,0 +1,6 @@
+# Direct runtime versions validated by CPU CI and the RTX 3090 development environment.
+click==8.4.2
+numpy==2.4.6
+pydantic==2.13.4
+PyYAML==6.0.3
+typer==0.20.1

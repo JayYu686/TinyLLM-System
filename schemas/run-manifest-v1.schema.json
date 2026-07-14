@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "RunStatus": {
+      "description": "Persisted states for one training or evaluation run.",
+      "enum": [
+        "created",
+        "validated",
+        "running",
+        "checkpointing",
+        "evaluating",
+        "succeeded",
+        "failed",
+        "resumable",
+        "non_resumable",
+        "terminated"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Portable JSON fact record for one run.",
+  "properties": {
+    "artifact_root": {
+      "format": "path",
+      "title": "Artifact Root",
+      "type": "string"
+    },
+    "config_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Hash",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dataset_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dataset Version"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus"
+    },
+    "strategy": {
+      "enum": [
+        "single",
+        "ddp",
+        "fsdp2",
+        "zero3"
+      ],
+      "title": "Strategy",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tokenizer Revision"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "world_size": {
+      "minimum": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "name",
+    "status",
+    "created_at",
+    "updated_at",
+    "config_hash",
+    "git_commit",
+    "git_dirty",
+    "artifact_root",
+    "strategy",
+    "world_size"
+  ],
+  "title": "RunManifest",
+  "type": "object"
+}

@@ -85,3 +85,13 @@ def test_training_config_rejects_non_yaml_extension(tmp_path: Path) -> None:
 
     with pytest.raises(TrainingConfigError, match=".yaml"):
         load_training_config(path)
+
+
+def test_training_config_schema_rejects_coercion() -> None:
+    mapping = valid_mapping()
+    training = mapping["training"]
+    assert isinstance(training, dict)
+    training["max_steps"] = "10"
+
+    with pytest.raises(TrainingConfigError, match="max_steps"):
+        training_config_from_mapping(mapping)

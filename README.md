@@ -1,339 +1,253 @@
 # TinyLLM-System
 
-> 面向消费级多 GPU 集群的硬件感知大语言模型训练、评测与部署平台。
+> A hardware-aware LLM training, evaluation, and deployment platform for consumer
+> multi-GPU systems.
 
-TinyLLM-System 的目标不是重复实现一个完整的大模型框架，也不是把若干 Hugging Face 脚本简单拼接起来，而是在 **10×RTX 3090 24GB** 主服务器和 **8×V100 32GB** 辅助服务器上，建立一套可复现、可恢复、可评测、可晋级、可部署的大语言模型实验系统。
+[![CI](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml/badge.svg)](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
-项目重点解决以下问题：
+TinyLLM-System is an evidence-first PyTorch project built around a 10 × RTX 3090
+workstation. It is designed to answer systems questions that a collection of fine-tuning
+scripts cannot:
 
-1. 如何让任意一次训练都能追溯到唯一的数据、配置、代码和硬件环境。
-2. 如何根据 GPU 型号、数量、显存和通信拓扑，选择 DDP、FSDP2 或 ZeRO-3。
-3. 如何在多卡训练中实现可靠的 Checkpoint、异常恢复和结果复现。
-4. 如何自动比较基础模型与候选模型，并阻止能力回退的模型进入部署阶段。
-5. 如何将训练完成的模型转换成可监控、可压测、可回滚的推理服务。
+- Can every run be traced to an immutable config, dataset, tokenizer, commit, software
+  environment, hardware inventory, checkpoint, and evaluation?
+- Can interrupted single-GPU and distributed jobs resume from a validated checkpoint
+  without silently changing state?
+- When should a model use DDP, FSDP2, or ZeRO-3, given real memory and topology limits?
+- Can a candidate model prove target-task improvement without hiding general regressions?
+- Can a deployed artifact be traced back through evaluation and training lineage?
 
----
+This is not a wrapper around Hugging Face Trainer, a claim to reimplement the full LLM
+ecosystem, or a benchmark leaderboard. Measurements are published only after real runs;
+missing results stay explicitly unevaluated.
 
-## 1. 项目定位
+## Current status
 
-### 1.1 一句话介绍
+| Area | Status | Verified evidence |
+| -- | -- | -- |
+| M0 host readiness | Complete | 10 RTX 3090s inventoried; CUDA/BF16 single-GPU smoke passed |
+| M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
+| M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
+| M1 trainer and Exact Resume | In progress | Contracts are frozen; trainer, atomic checkpoint writer, and interruption evidence remain open |
+| M2–M6 | Planned | No training-quality or scaling result is claimed yet |
 
-TinyLLM-System 是一套面向消费级多 GPU 集群的 LLM 生命周期平台，覆盖：
+The complete M0 evidence is in the
+[acceptance record](reports/m0/m0_acceptance.md),
+[host inventory](reports/hardware/rtx3090_inventory.md), and
+[topology/NCCL report](reports/hardware/nccl_topology.md). M0 NCCL measurements prove
+tooling and collective correctness under that test protocol; they are not DDP throughput
+benchmarks.
 
-```text
-数据准备
-  → 训练计划生成
-  → 单卡/多卡训练
-  → Checkpoint 与恢复
-  → 自动评测
-  → 模型晋级
-  → 推理部署
-  → 性能基准测试
+## System boundary
+
+```mermaid
+flowchart LR
+    A[Versioned data] --> B[Validated YAML config]
+    H[Hardware and topology] --> P[Preflight and strategy]
+    B --> P
+    P --> T[Single / DDP / FSDP2]
+    T --> C[Atomic checkpoint and resume]
+    C --> R[Run and artifact store]
+    R --> E[Versioned evaluation]
+    E --> G[Candidate promotion gate]
+    G --> I[Inference and benchmark]
+    I --> X[Reproducible public report]
+    A --> R
+    H --> R
 ```
 
-### 1.2 核心特色
-
-- **硬件感知**：自动识别 RTX 3090、V100 的精度能力、显存和通信拓扑。
-- **策略可解释**：给出 DDP、FSDP2、ZeRO-3 的可行性估算和推荐理由。
-- **实验可复现**：记录数据版本、配置、Git Commit、依赖版本、随机种子和硬件信息。
-- **训练可恢复**：支持单卡和分布式 Checkpoint、自动恢复与损坏检测。
-- **评测可门禁**：候选模型只有通过质量与性能门禁后才能晋级。
-- **部署可追踪**：线上模型能够追溯到具体 Run、Checkpoint、数据和评测报告。
-- **结果不造假**：README 只记录真实跑出的指标，不提前填写虚构结果。
-
----
-
-## 2. 硬件资源
-
-### 2.1 主服务器
+The core release follows one lifecycle:
 
 ```text
-10 × NVIDIA RTX 3090 24GB
-总物理显存：240GB
-默认精度：BF16
-默认训练组：GPU 0–7
-评测/服务组：GPU 8
-开发/备用组：GPU 9
+data versioning
+  → hardware-aware preflight
+  → single/distributed training
+  → checkpoint and failure recovery
+  → evaluation and regression analysis
+  → candidate promotion
+  → inference performance gate
+  → experiment reproduction
 ```
 
-主要用途：
+## Hardware strategy
 
-- Qwen 等开源模型 SFT、LoRA，以及后期可选的 DPO。
-- DDP、FSDP2、ZeRO-3 分布式训练。
-- 多卡推理、Tensor Parallel 与 Data Parallel。
-- 新版 PyTorch、Transformers、TRL 和 vLLM 适配。
-- 1/2/4/8 卡扩展效率测试。
+The main server has 10 × RTX 3090 24 GB GPUs arranged across two NUMA nodes. The formal
+scaling sequence is 1/2/4/8 GPUs. Eight is the standard training group because it gives a
+conventional world size while reserving capacity for evaluation, development, and fault
+recovery. Shared-server correctness smoke tests may select any explicit idle set, including
+GPUs 4–9; those dynamic runs do not replace controlled 1/2/4/8 scaling results. Ten GPUs
+are reserved for boundary experiments and cannot become the default silently.
 
-### 2.2 辅助服务器
+The auxiliary 8 × V100 32 GB host is a conditional compatibility target. RTX 3090 uses
+BF16 by default and may use TF32; V100 requires FP16 + GradScaler and must reject BF16.
+No V100 result is claimed until access and a real smoke test exist.
 
-```text
-8 × NVIDIA V100 32GB
-默认精度：FP16
-训练可用卡数：按实际权限配置
+Strategy meanings are deliberately narrow:
+
+- **DDP** replicates model state and scales throughput when one GPU can hold the complete
+  training state. Adding DDP ranks does not combine memory.
+- **FSDP2** is the primary sharded implementation for parameters, gradients, optimizer
+  state, distributed checkpoints, and native PyTorch recovery.
+- **ZeRO-3** is a later comparison for DeepSpeed compatibility and optional offload. It
+  starts only after the equivalent FSDP2 path passes.
+
+## Quickstart
+
+Python 3.11 is the supported development runtime. CPU setup is enough for the default
+quality gate:
+
+```bash
+git clone https://github.com/JayYu686/TinyLLM-System.git
+cd TinyLLM-System
+make bootstrap-cpu
+source .venv/bin/activate
+tinyllm --help
+tinyllm doctor --json
+make check
 ```
 
-主要用途：
-
-- Volta 架构兼容性验证。
-- FP16 与 BF16 路线对照。
-- 单卡 32GB 显存实验。
-- V100 多卡拓扑和性能对比。
-- 部分对显存更敏感、但对新内核依赖较低的任务。
-
----
-
-## 3. 项目主线
-
-项目分为两条互补路线。
-
-### 3.1 路线 A：TinyGPT 从零预训练
-
-作用是验证训练系统本身，而不是与成熟开源大模型竞争。
-
-建议配置：
-
-| 模型 | 规模 | 用途 |
-|---|---:|---|
-| TinyGPT-Debug | 1M–5M | CPU/GPU Smoke Test、CI |
-| TinyGPT-120M | 约 120M | 单卡训练基线 |
-| TinyGPT-350M | 约 350M | 正式预训练主模型 |
-| TinyGPT-1B | 可选 | 后期挑战目标 |
-
-主要验证：
-
-- Decoder-only Transformer 正确性。
-- FP16/BF16 混合精度。
-- DDP 与 FSDP2 的数值一致性。
-- Checkpoint 和恢复。
-- 数据版本化与实验血缘。
-- 1/2/4/8 卡扩展效率。
-
-### 3.2 路线 B：开源模型后训练
-
-这是项目的求职价值主线。
-
-建议分层：
-
-| 模型规模 | 训练方式 | 项目用途 |
-|---|---|---|
-| 0.5B–1.5B | Full SFT | 快速建立完整闭环 |
-| 3B–4B | Full SFT / LoRA | 正式能力实验 |
-| 7B–8B | LoRA / QLoRA | 日常领域微调 |
-| 7B–8B | FSDP2 / ZeRO-3 Full SFT | 高级系统挑战 |
-| 14B | 多卡 LoRA / 推理 | 后期扩展 |
-
-MVP 必须完成：
-
-1. 一个 0.5B–1.5B 模型的 Full SFT。
-2. 一个 7B–8B 模型的 LoRA SFT。
-3. 一个 7B–8B 模型的 FSDP2 或 ZeRO-3 多卡 Smoke Test。
-4. Base 与 Fine-tuned 模型的自动评测对比。
-5. 候选模型的部署与压测。
-
----
-
-## 4. 系统架构
-
-```text
-┌─────────────────────────────────────────────┐
-│               CLI / REST API                │
-│ doctor / plan / train / eval / promote      │
-│ reproduce / serve / benchmark               │
-└───────────────────┬─────────────────────────┘
-                    │
-┌───────────────────▼─────────────────────────┐
-│             Experiment Orchestrator         │
-│ 配置校验 / 资源规划 / 状态机 / 自动恢复       │
-└────────────┬───────────────┬────────────────┘
-             │               │
-   ┌─────────▼────────┐ ┌────▼────────────────┐
-   │ Dataset Registry│ │ Training Runtime     │
-   │ 清洗/去重/切分   │ │ Single/DDP/FSDP/ZeRO│
-   │ Tokenize/Packing│ │ AMP/Checkpoint       │
-   └─────────┬────────┘ └────┬────────────────┘
-             │               │
-             └───────┬───────┘
-                     ▼
-           ┌────────────────────┐
-           │ Artifact & Run Store│
-           │ 配置/日志/模型/数据 │
-           │ Checkpoint/Manifest │
-           └─────────┬──────────┘
-                     │
-          ┌──────────▼──────────┐
-          │ Evaluation Service │
-          │ 通用任务/自建评测   │
-          │ 回归/格式/性能测试   │
-          └──────────┬──────────┘
-                     │
-             ┌───────▼────────┐
-             │ Promotion Gate │
-             │ dev/candidate  │
-             │ production     │
-             └───────┬────────┘
-                     │
-          ┌──────────▼──────────┐
-          │ Inference Gateway   │
-          │ Transformers/vLLM  │
-          │ OpenAI-compatible  │
-          └─────────────────────┘
-```
-
----
-
-## 5. 统一命令设计
-
-### 5.1 M0 本地安装
+On the RTX 3090 development host, install the isolated CUDA 11.8 profile instead:
 
 ```bash
 make bootstrap-gpu
 source .venv/bin/activate
-tinyllm --help
-tinyllm doctor
 tinyllm doctor --distributed --json
 ```
 
-M0 使用项目隔离 `.venv`，不会修改已有 Conda base。GPU 环境固定为 PyTorch 2.7.1 + CUDA 11.8 wheel；版本依据和实测结果见硬件报告。
+`doctor` is read-only and never launches a high-load NCCL benchmark. Review GPU
+utilization, temperature, topology, storage, and software compatibility before running a
+separate smoke test. Dependency profile semantics are documented in
+[requirements/README.md](requirements/README.md).
 
-```bash
-# 环境和拓扑检查
-tinyllm doctor
-tinyllm doctor --distributed
+## Stable CLI and contracts
 
-# 数据准备与注册
-tinyllm data prepare --config configs/data/instruction_v1.yaml
-tinyllm data inspect --version instruction-v1.0.0
-
-# 生成训练计划
-tinyllm plan --config configs/sft/qwen_7b_full.yaml
-
-# 启动训练
-tinyllm train --config configs/pretrain/tinygpt_350m.yaml
-tinyllm train --config configs/sft/qwen_1_5b_full.yaml
-
-# 自动评测
-tinyllm eval --run-id <run-id> --suite configs/eval/default.yaml
-
-# 基线比较
-tinyllm compare --baseline <run-id-a> --candidate <run-id-b>
-
-# 模型晋级
-tinyllm promote --run-id <run-id> --stage candidate
-tinyllm promote --run-id <run-id> --stage production
-
-# 复现实验
-tinyllm reproduce --run-id <run-id>
-
-# 启动推理
-tinyllm serve --model production --backend transformers
-
-# 性能测试
-tinyllm benchmark --profile configs/benchmark/rtx3090_single.yaml
-```
-
----
-
-## 6. MVP 范围
-
-### 必做
-
-- 配置驱动的训练入口。
-- Dataset Manifest 和数据哈希。
-- TinyGPT-Debug 与 TinyGPT-120M。
-- 3090 单卡 BF16 训练。
-- DDP 1/2/4/8 卡训练。
-- 分布式 Checkpoint 和恢复。
-- Qwen 小模型 Full SFT。
-- Qwen 7B 级 LoRA SFT。
-- FSDP2 或 ZeRO-3 Smoke Test。
-- 通用评测和自建评测。
-- Promotion Gate。
-- OpenAI-compatible 推理 API。
-- P50/P95、TTFT、Tokens/s 和显存测试。
-- Run ID 级别实验血缘。
-
-### 暂不做
-
-- 自研 CUDA Kernel。
-- 自研 FlashAttention。
-- 完整实现 vLLM。
-- MoE 正式训练。
-- 多节点训练。
-- Pipeline Parallel。
-- 自研 Tensor Parallel。
-- 完整 RLHF。
-- 大型 Kubernetes 平台。
-- 多租户计费。
-- 复杂前端管理系统。
-
----
-
-## 7. 里程碑
-
-| 阶段 | 目标 | 关键产出 |
-|---|---|---|
-| M0 | 文档与硬件体检 | 文档骨架、GPU Profile、NCCL 报告 |
-| M1 | 单卡 Debug 闭环 | TinyGPT-Debug、Checkpoint、Resume |
-| M2 | 数据版本化 | Manifest、去重、切分、Packing |
-| M3 | DDP 扩展 | 1/2/4/8 卡报告 |
-| M4 | FSDP2/ZeRO-3 | 7B 分片训练 Smoke Test |
-| M5 | 正式训练 | TinyGPT-350M、1.5B Full SFT、7B LoRA |
-| M6 | 自动评测与晋级 | Eval Report、Promotion Gate |
-| M7 | 推理与压测 | OpenAI API、多卡推理、性能报告 |
-| M8 | 自动策略规划 | `tinyllm plan`、显存探测、策略推荐 |
-
-详细内容见 [PLANS.md](PLANS.md)。
-
----
-
-## 8. 真实验收标准
-
-项目不以“支持了多少框架”作为完成标准，而以可验证结果为准：
-
-- 任意 Run 都能追溯到数据、配置、代码、环境和硬件。
-- 模拟中断后可从有效 Checkpoint 恢复。
-- DDP 的 Global Batch 和单卡基线保持一致。
-- 1/2/4/8 卡均生成真实吞吐和扩展效率报告。
-- 训练完成后自动触发评测。
-- 未通过门禁的模型无法晋级。
-- 部署模型可以追溯到训练 Run。
-- 推理服务输出 P50/P95、TTFT、Tokens/s、显存和错误率。
-- 所有展示指标均来自可复现脚本，不手工编造。
-
----
-
-## 9. 文档导航
-
-- [AGENTS.md](AGENTS.md)：AI Agent 和开发者协作规则。
-- [PLANS.md](PLANS.md)：完整里程碑和验收标准。
-- [TASKS.md](TASKS.md)：可执行任务清单。
-- [docs/product_scope.md](docs/product_scope.md)：产品边界与目标用户。
-- [docs/architecture.md](docs/architecture.md)：系统架构。
-- [docs/hardware_strategy.md](docs/hardware_strategy.md)：3090/V100 资源规划。
-- [docs/dataset_contract.md](docs/dataset_contract.md)：数据格式和版本契约。
-- [docs/training_design.md](docs/training_design.md)：训练和分布式设计。
-- [docs/evaluation_spec.md](docs/evaluation_spec.md)：评测和门禁。
-- [docs/experiment_lineage.md](docs/experiment_lineage.md)：实验血缘。
-- [docs/inference_design.md](docs/inference_design.md)：推理服务设计。
-- [docs/m1_training_contract.md](docs/m1_training_contract.md)：M1 模型、配置、确定性与恢复契约。
-- [docs/benchmark_plan.md](docs/benchmark_plan.md)：性能测试计划。
-- [docs/resume_alignment.md](docs/resume_alignment.md)：简历能力对齐。
-- [docs/doctor_contract.md](docs/doctor_contract.md)：M0 环境体检命令与输出契约。
-- [docs/nccl_test_plan.md](docs/nccl_test_plan.md)：M0 NCCL 测试矩阵与结果记录规则。
-- [reports/hardware/rtx3090_inventory.md](reports/hardware/rtx3090_inventory.md)：主服务器真实硬件与 BF16 报告。
-- [reports/hardware/nccl_topology.md](reports/hardware/nccl_topology.md)：1/2/4/6 卡 NCCL 与拓扑报告。
-- [reports/m0/m0_acceptance.md](reports/m0/m0_acceptance.md)：M0 验收状态与剩余阻塞项。
-
----
-
-## 10. 当前状态
+The public command surface is staged by milestone:
 
 ```text
-项目阶段：M0 已完成；M1 单卡 Debug 闭环进行中
-代码状态：M1 配置、TinyGPT-Debug、确定性 Toy Dataset 和 CPU 前后向单元测试已实现；训练器与恢复待实现
-硬件体检：CUDA/BF16、1/2/4/6 卡 NCCL 已实测；开发 Smoke 按实时空闲卡选择
-Benchmark：仅记录 M0 真实 NCCL 原始结果；训练和推理 Benchmark 仍为 TBD
-默认主平台：10×RTX 3090 24GB
-辅助平台：8×V100 32GB
-标准训练组：GPU 0–7（M3 正式 1/2/4/8 卡基线）；共享状态下动态选择空闲卡
+tinyllm doctor
+tinyllm data prepare|inspect
+tinyllm train
+tinyllm run list|show|reproduce
+tinyllm benchmark train
+tinyllm eval
+tinyllm compare
+tinyllm promote
 ```
+
+Buffer work adds `tinyllm plan`, `tinyllm serve`, and `tinyllm benchmark inference`.
+Commands expose stable `--json` output and use these exit-code classes:
+
+| Code | Meaning |
+| --: | -- |
+| 0 | Success |
+| 2 | Invalid config or user input |
+| 3 | Environment, hardware, or resource preflight failure |
+| 4 | Training run failure |
+| 5 | Checkpoint or resume integrity failure |
+| 6 | Evaluation failure or promotion rejection |
+
+Formal experiments start from schema-validated YAML. CLI overrides are limited to GPU
+selection, output location, resume mode, and documented runtime fields. Public Pydantic
+JSON Schema snapshots are committed under [schemas/](schemas/README.md); all models use
+a version field and reject unknown fields.
+
+## Run and checkpoint design
+
+The private Artifact Store defaults to `/data/yujielun/tinyllm/`:
+
+```text
+cache/       shared downloads
+datasets/    immutable dataset versions
+models/      model inputs and deployment exports
+runs/        JSON-first run directories
+registry/    rebuildable query index and promotion records
+```
+
+A Run ID is `<UTC>-<slug>-<resolved-config-hash8>-<random4>`. Every run directory is
+designed to contain:
+
+```text
+run.json                  environment.json
+events.jsonl              hardware.json
+config.original.yaml      metrics.jsonl
+config.resolved.json      checkpoints/ evaluations/ exports/
+```
+
+JSON/JSONL artifacts are the fact source. SQLite, introduced in M6, is a rebuildable
+query index; MLflow is an optional projection and never a training dependency.
+
+Exact checkpoints include model, optimizer, scheduler, scaler, step/epoch, Python/NumPy/
+PyTorch/CUDA RNG, sampler cursor, data/config/code/environment identity, world size,
+per-file SHA256, and a completion marker. They are written to a temporary directory,
+validated, atomically renamed, and only then published through `LATEST`. Exact, Warm, and
+Transfer resume are separate operations. Safetensors exports are not training checkpoints.
+
+## Career-oriented release train
+
+The target is a ten-week core plus a two-week buffer:
+
+| Milestone | Demonstrated capability | Core release role |
+| -- | -- | -- |
+| M1 | Native single-GPU trainer, atomic checkpoint, Exact Resume | Correctness base |
+| M2 | Licensed deterministic data pipeline and frozen evaluation | Data lineage |
+| M3 | Native DDP and controlled 1/2/4/8 scaling | First application-ready evidence |
+| M4 | Qwen3-8B FSDP2 sharded checkpoint/resume smoke | Advanced distributed evidence |
+| M5 | Qwen3-0.6B Full SFT and Qwen3-8B LoRA | Practical post-training |
+| M6 | Baseline/candidate comparison and Candidate gate | `v0.6.0-rc.1` portfolio release |
+| M7 | vLLM serving and measured inference gate | Buffer; required for Production |
+| M8 | Static estimate plus short probe planner | Buffer differentiation |
+
+M3 is the earliest job-application checkpoint. M7/M8, ZeRO-3, MLflow, V100 validation,
+and TinyGPT-350M cannot block `v0.6.0-rc.1`. See the
+[career release roadmap](docs/career_release_roadmap.md) and [full plan](PLANS.md).
+
+## Evaluation and promotion
+
+M6 compares the base and trained model on ARC-Easy, HellaSwag, PIQA, and a frozen
+300-example domain set spanning Python, Linux, JSON/config, log diagnosis, and unsupported
+claim refusal. The target Candidate gate requires:
+
+- at least +3 percentage points on the domain aggregate with a bootstrap 95% confidence
+  interval lower bound above zero;
+- no more than 2 percentage points aggregate regression on general tasks;
+- at least 98% JSON validity;
+- complete data, model, checkpoint, environment, and evaluation lineage.
+
+Thresholds are config, not README exceptions. A failed candidate stays Development, and
+regressions and failure examples remain visible. Production promotion waits for M7's real
+inference performance gate.
+
+## Scope control
+
+The core project does not implement custom CUDA kernels, custom FlashAttention, MoE,
+custom KV cache, custom tensor parallel, multi-node or pipeline parallel training, full
+RLHF, Kubernetes, billing, or a complex frontend. These are Future Work, research
+challenges, or responsibilities of other projects. A generic FastAPI layer is not an
+early milestone; M7 uses the native vLLM OpenAI-compatible API with a thin lineage-aware
+launcher.
+
+## Documentation
+
+The public README is English. Detailed design documents currently remain Chinese so the
+implementation constraints are accessible to the primary developer; public English
+contracts and reports are added at release boundaries.
+
+- [Contribution workflow](CONTRIBUTING.md)
+- [Agent and review rules](AGENTS.md)
+- [Milestone plan](PLANS.md) and [task summary](TASKS.md)
+- [Architecture](docs/architecture.md), [training design](docs/training_design.md), and
+  [M1 contract](docs/m1_training_contract.md)
+- [Data contract](docs/dataset_contract.md), [evaluation spec](docs/evaluation_spec.md),
+  and [experiment lineage](docs/experiment_lineage.md)
+- [Hardware strategy](docs/hardware_strategy.md) and
+  [benchmark policy](docs/benchmark_plan.md)
+- [Public reporting policy](docs/public_reporting.md) and
+  [security policy](SECURITY.md)
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE). Dataset and model licenses remain
+independent; each registered dataset and published adapter must preserve its own source,
+revision, and license metadata.

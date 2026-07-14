@@ -1,27 +1,51 @@
-"""Versioned output types for ``tinyllm doctor``."""
+"""Versioned Pydantic output types for ``tinyllm doctor``."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Literal
+
+from pydantic import Field
+
+from tinyllm.schemas.base import StrictSchema
 
 CheckStatus = Literal["pass", "warn", "fail", "unavailable"]
 ReportStatus = Literal["pass", "warn", "fail"]
 
 
-@dataclass(frozen=True)
-class CheckResult:
+class CheckResult(StrictSchema):
     """Result of one doctor check."""
 
     check_id: str
     status: CheckStatus
     summary: str
     required: bool = False
-    evidence: dict[str, object] = field(default_factory=dict)
+    evidence: dict[str, object] = Field(default_factory=dict)
     remediation: str | None = None
 
+    def __init__(
+        self,
+        check_id: str,
+        status: CheckStatus,
+        summary: str,
+        *,
+        required: bool = False,
+        evidence: dict[str, object] | None = None,
+        remediation: str | None = None,
+    ) -> None:
+        """Preserve the established positional collector interface."""
+
+        data: dict[str, object] = {
+            "check_id": check_id,
+            "status": status,
+            "summary": summary,
+            "required": required,
+            "evidence": evidence or {},
+            "remediation": remediation,
+        }
+        super().__init__(**data)
+
     def to_dict(self) -> dict[str, object]:
-        """Return a JSON-serializable representation."""
+        """Return the stable public shape used by doctor JSON."""
 
         return {
             "id": self.check_id,
@@ -33,22 +57,15 @@ class CheckResult:
         }
 
 
-@dataclass(frozen=True)
-class DoctorError:
+class DoctorError(StrictSchema):
     """Sanitized error emitted while collecting a report."""
 
     code: str
     message: str
-    context: dict[str, object] = field(default_factory=dict)
-
-    def to_dict(self) -> dict[str, object]:
-        """Return a JSON-serializable representation."""
-
-        return {"code": self.code, "message": self.message, "context": self.context}
+    context: dict[str, object] = Field(default_factory=dict)
 
 
-@dataclass(frozen=True)
-class DoctorReport:
+class DoctorReport(StrictSchema):
     """Complete versioned doctor report."""
 
     generated_at: str
@@ -56,11 +73,11 @@ class DoctorReport:
     inventory: dict[str, object]
     checks: tuple[CheckResult, ...]
     errors: tuple[DoctorError, ...] = ()
-    schema_version: str = "1.0"
-    command: str = "tinyllm doctor"
+    schema_version: Literal["1.0"] = "1.0"
+    command: Literal["tinyllm doctor"] = "tinyllm doctor"
 
     def to_dict(self) -> dict[str, object]:
-        """Return a JSON-serializable representation."""
+        """Return the stable public shape used by existing consumers."""
 
         return {
             "schema_version": self.schema_version,

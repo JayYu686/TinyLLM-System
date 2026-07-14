@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose a scoped capability tied to a project milestone.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: input
+    id: milestone
+    attributes:
+      label: Target milestone
+      placeholder: M1, M2, or buffer/stretch
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and user value
+      description: Describe the missing capability without prescribing a large framework.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Minimal interface and acceptance criteria
+      description: Include smoke, failure, integration, and evidence requirements.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope classification
+      options:
+        - Core M1-M6
+        - Buffer M7-M8
+        - Future work
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundary check
+      options:
+        - label: This request does not move Future Work into the MVP without an ADR.
+          required: true
+        - label: Any performance claim will be backed by a reproducible real run.
+          required: true

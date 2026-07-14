@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .coverage
+.coverage.*
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
@@ -18,6 +19,8 @@ dist/
 /runs/
 /artifacts/
 /checkpoints/
+/reports/private/
+/private-artifacts/
 *.ckpt
 *.pt
 *.pth

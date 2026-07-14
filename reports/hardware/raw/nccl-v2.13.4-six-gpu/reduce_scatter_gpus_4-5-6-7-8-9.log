@@ -6,12 +6,12 @@
 # nThread 1 nGpus 6 minBytes 8 maxBytes 536870912 step: 2(factor) warmup iters: 5 iters: 20 agg iters: 1 validation: 1 graph: 0
 #
 # Using devices
-#  Rank  0 Group  0 Pid 2225408 on  sitonholy device  0 [0x57] NVIDIA GeForce RTX 3090
-#  Rank  1 Group  0 Pid 2225408 on  sitonholy device  1 [0xce] NVIDIA GeForce RTX 3090
-#  Rank  2 Group  0 Pid 2225408 on  sitonholy device  2 [0xd1] NVIDIA GeForce RTX 3090
-#  Rank  3 Group  0 Pid 2225408 on  sitonholy device  3 [0xd2] NVIDIA GeForce RTX 3090
-#  Rank  4 Group  0 Pid 2225408 on  sitonholy device  4 [0xd5] NVIDIA GeForce RTX 3090
-#  Rank  5 Group  0 Pid 2225408 on  sitonholy device  5 [0xd6] NVIDIA GeForce RTX 3090
+#  Rank  0 Group  0 Pid 2225408 on  <redacted-host> device  0 [0x57] NVIDIA GeForce RTX 3090
+#  Rank  1 Group  0 Pid 2225408 on  <redacted-host> device  1 [0xce] NVIDIA GeForce RTX 3090
+#  Rank  2 Group  0 Pid 2225408 on  <redacted-host> device  2 [0xd1] NVIDIA GeForce RTX 3090
+#  Rank  3 Group  0 Pid 2225408 on  <redacted-host> device  3 [0xd2] NVIDIA GeForce RTX 3090
+#  Rank  4 Group  0 Pid 2225408 on  <redacted-host> device  4 [0xd5] NVIDIA GeForce RTX 3090
+#  Rank  5 Group  0 Pid 2225408 on  <redacted-host> device  5 [0xd6] NVIDIA GeForce RTX 3090
 #
 #                                                              out-of-place                       in-place          
 #       size         count      type   redop    root     time   algbw   busbw #wrong     time   algbw   busbw #wrong

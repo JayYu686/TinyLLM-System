@@ -1,0 +1,67 @@
+{
+  "accepted_samples": 2,
+  "backend": {
+    "name": "tokenizers",
+    "version": "0.21.4",
+    "vocab_size": 151669
+  },
+  "input_processing_sha256": "83bcce87a849e81a09c761a022075dfba97d3eddccfc42317a4ebcd6bca6024c",
+  "rejected": [],
+  "rejected_samples": 0,
+  "samples": [
+    {
+      "id": "commitpackft:0c8a65f7318e868eb05845a3",
+      "input_ids": [151644, 872, 198, 4289, 5392, 7197, 4092, 311, 419, 7600, 510, 4289, 279, 12596, 897, 271, 5405, 1034, 510, 1350, 492, 813, 863, 151645, 198, 151644, 77091, 198, 1350, 492, 931, 863, 151645, 198],
+      "input_ids_sha256": "3c0753cac8f69640735d87eee6a7a7ed67c2208570f7b3844014ae5504387e6a",
+      "labels": [-100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 1350, 492, 931, 863, 151645, -100],
+      "labels_sha256": "747b094a8340ad56b303a6596294bbd41775f4915ab53dbc79bf424cacbab619",
+      "rendered_sha256": "685438f104bf7e114a8a00403b8d58386e91c69550611b3db9c9826e150390d3",
+      "source": "commitpackft",
+      "split": "train",
+      "supervised_eos_count": 1,
+      "supervised_token_count": 5,
+      "token_count": 34
+    },
+    {
+      "id": "oasst1:cd28184225697dea026333af",
+      "input_ids": [151644, 872, 198, 4340, 653, 358, 1173, 4718, 304, 13027, 30, 151645, 198, 151644, 77091, 198, 10253, 2951, 21528, 3679, 568, 151645, 198],
+      "input_ids_sha256": "710fc75798c3e9028c9fe367a5ebcc054f04d52db6e91ff905e67fc7e2be8f54",
+      "labels": [-100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, 10253, 2951, 21528, 3679, 568, 151645, -100],
+      "labels_sha256": "ab21eeef734b204fe8528b71aef6304511ca683cfb71ab19c1e57d35eea60883",
+      "rendered_sha256": "454ce708e497a0411712b1b468189e82e29e4a0a6c0031aefc7ba4dbe233573a",
+      "source": "oasst1",
+      "split": "train",
+      "supervised_eos_count": 1,
+      "supervised_token_count": 6,
+      "token_count": 23
+    }
+  ],
+  "status": "pass",
+  "template": {
+    "add_generation_prompt": false,
+    "assistant_only_loss": true,
+    "supervise_assistant_end_token": true,
+    "template_id": "qwen3-chatml-nonthinking-v1",
+    "template_sha256": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+    "thinking": false
+  },
+  "tokenizer": {
+    "backend": "tokenizers",
+    "backend_version": "0.21.4",
+    "bos_token": "<|im_start|>",
+    "bos_token_id": 151644,
+    "eos_token": "<|im_end|>",
+    "eos_token_id": 151645,
+    "pad_token": "<|endoftext|>",
+    "pad_token_id": 151643,
+    "repository": "Qwen/Qwen3-0.6B",
+    "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "tokenizer_config_file": "tokenizer_config.json",
+    "tokenizer_config_file_size": 9732,
+    "tokenizer_config_sha256": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+    "tokenizer_file": "tokenizer.json",
+    "tokenizer_file_size": 11422654,
+    "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "vocab_size": 151669
+  }
+}

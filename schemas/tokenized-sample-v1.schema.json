@@ -1,0 +1,148 @@
+{
+  "additionalProperties": false,
+  "description": "One processed sample encoded with an assistant-only causal-LM mask.",
+  "properties": {
+    "component_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Component Id",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "group_keys": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Group Keys",
+      "type": "array"
+    },
+    "id": {
+      "pattern": "^(oasst1|commitpackft):[a-zA-Z0-9._-]+$",
+      "title": "Id",
+      "type": "string"
+    },
+    "input_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Input Ids",
+      "type": "array"
+    },
+    "labels": {
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "title": "Labels",
+      "type": "array"
+    },
+    "language": {
+      "maxLength": 16,
+      "minLength": 2,
+      "title": "Language",
+      "type": "string"
+    },
+    "license": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "License",
+      "type": "string"
+    },
+    "max_sequence_length": {
+      "exclusiveMinimum": 1,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "origin_record_sha256s": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Origin Record Sha256S",
+      "type": "array"
+    },
+    "origin_sample_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Origin Sample Ids",
+      "type": "array"
+    },
+    "rendered_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Rendered Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "oasst1",
+        "commitpackft"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "supervised_token_count": {
+      "exclusiveMinimum": 0,
+      "title": "Supervised Token Count",
+      "type": "integer"
+    },
+    "template_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Template Sha256",
+      "type": "string"
+    },
+    "token_count": {
+      "exclusiveMinimum": 0,
+      "title": "Token Count",
+      "type": "integer"
+    },
+    "tokenizer_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tokenizer Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "split",
+    "component_id",
+    "group_keys",
+    "origin_sample_ids",
+    "origin_record_sha256s",
+    "language",
+    "license",
+    "content_sha256",
+    "rendered_sha256",
+    "tokenizer_sha256",
+    "template_sha256",
+    "max_sequence_length",
+    "input_ids",
+    "labels",
+    "token_count",
+    "supervised_token_count"
+  ],
+  "title": "TokenizedSample",
+  "type": "object"
+}

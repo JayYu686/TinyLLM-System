@@ -15,11 +15,14 @@ from tinyllm.data import (
     DataProcessingManifest,
     ImportedSample,
     M2ProcessingConfig,
+    M2TokenizationConfig,
     OASST1ImportConfig,
     PipelineRejectedRecord,
     ProcessedSample,
     RejectedRecord,
     SamplerState,
+    TokenizationRejectedRecord,
+    TokenizedSample,
 )
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
 from tinyllm.schemas.resume import ResumeResult
@@ -36,6 +39,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "data-processing-manifest-v1.schema.json": DataProcessingManifest,
     "imported-sample-v1.schema.json": ImportedSample,
     "m2-processing-config-v1.schema.json": M2ProcessingConfig,
+    "m2-tokenization-config-v1.schema.json": M2TokenizationConfig,
     "m1-training-config-v1.schema.json": M1TrainingConfig,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,
@@ -47,6 +51,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "trainer-state-v1.schema.json": TrainerState,
     "training-step-metrics-v1.schema.json": TrainingStepMetrics,
     "training-run-result-v1.schema.json": TrainingRunResult,
+    "tokenization-rejected-record-v1.schema.json": TokenizationRejectedRecord,
+    "tokenized-sample-v1.schema.json": TokenizedSample,
 }
 
 

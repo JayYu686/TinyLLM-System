@@ -1,0 +1,196 @@
+{
+  "$defs": {
+    "ChatTemplateIdentity": {
+      "additionalProperties": false,
+      "description": "Frozen non-thinking ChatML rendering and supervision policy.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": false,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "assistant_only_loss": {
+          "const": true,
+          "title": "Assistant Only Loss",
+          "type": "boolean"
+        },
+        "supervise_assistant_end_token": {
+          "const": true,
+          "title": "Supervise Assistant End Token",
+          "type": "boolean"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-nonthinking-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+          "title": "Template Sha256",
+          "type": "string"
+        },
+        "thinking": {
+          "const": false,
+          "title": "Thinking",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "thinking",
+        "add_generation_prompt",
+        "assistant_only_loss",
+        "supervise_assistant_end_token"
+      ],
+      "title": "ChatTemplateIdentity",
+      "type": "object"
+    },
+    "TokenizerIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned files, backend, vocabulary, and special-token contract.",
+      "properties": {
+        "backend": {
+          "const": "tokenizers",
+          "title": "Backend",
+          "type": "string"
+        },
+        "backend_version": {
+          "const": "0.21.4",
+          "title": "Backend Version",
+          "type": "string"
+        },
+        "bos_token": {
+          "minLength": 1,
+          "title": "Bos Token",
+          "type": "string"
+        },
+        "bos_token_id": {
+          "minimum": 0,
+          "title": "Bos Token Id",
+          "type": "integer"
+        },
+        "eos_token": {
+          "minLength": 1,
+          "title": "Eos Token",
+          "type": "string"
+        },
+        "eos_token_id": {
+          "minimum": 0,
+          "title": "Eos Token Id",
+          "type": "integer"
+        },
+        "pad_token": {
+          "minLength": 1,
+          "title": "Pad Token",
+          "type": "string"
+        },
+        "pad_token_id": {
+          "minimum": 0,
+          "title": "Pad Token Id",
+          "type": "integer"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-0.6B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+          "title": "Revision",
+          "type": "string"
+        },
+        "tokenizer_config_file": {
+          "const": "tokenizer_config.json",
+          "title": "Tokenizer Config File",
+          "type": "string"
+        },
+        "tokenizer_config_file_size": {
+          "exclusiveMinimum": 0,
+          "title": "Tokenizer Config File Size",
+          "type": "integer"
+        },
+        "tokenizer_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tokenizer Config Sha256",
+          "type": "string"
+        },
+        "tokenizer_file": {
+          "const": "tokenizer.json",
+          "title": "Tokenizer File",
+          "type": "string"
+        },
+        "tokenizer_file_size": {
+          "exclusiveMinimum": 0,
+          "title": "Tokenizer File Size",
+          "type": "integer"
+        },
+        "tokenizer_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tokenizer Sha256",
+          "type": "string"
+        },
+        "vocab_size": {
+          "exclusiveMinimum": 0,
+          "title": "Vocab Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "tokenizer_file",
+        "tokenizer_file_size",
+        "tokenizer_sha256",
+        "tokenizer_config_file",
+        "tokenizer_config_file_size",
+        "tokenizer_config_sha256",
+        "backend",
+        "backend_version",
+        "vocab_size",
+        "pad_token",
+        "pad_token_id",
+        "bos_token",
+        "bos_token_id",
+        "eos_token",
+        "eos_token_id"
+      ],
+      "title": "TokenizerIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete M2.3a tokenizer, template, and length policy.",
+  "properties": {
+    "max_sequence_length": {
+      "exclusiveMinimum": 1,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "overlength_policy": {
+      "const": "reject",
+      "title": "Overlength Policy",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "template": {
+      "$ref": "#/$defs/ChatTemplateIdentity"
+    },
+    "tokenizer": {
+      "$ref": "#/$defs/TokenizerIdentity"
+    }
+  },
+  "required": [
+    "tokenizer",
+    "template",
+    "max_sequence_length",
+    "overlength_policy"
+  ],
+  "title": "M2TokenizationConfig",
+  "type": "object"
+}

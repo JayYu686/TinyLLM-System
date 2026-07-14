@@ -1,0 +1,68 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free data-level rejection produced after a valid tokenizer run.",
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "max_sequence_length": {
+      "exclusiveMinimum": 1,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "observed_token_count": {
+      "minimum": 0,
+      "title": "Observed Token Count",
+      "type": "integer"
+    },
+    "reason": {
+      "enum": [
+        "no_supervised_tokens",
+        "sequence_too_long"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^(oasst1|commitpackft):[a-zA-Z0-9._-]+$",
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "oasst1",
+        "commitpackft"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "title": "Split",
+      "type": "string"
+    }
+  },
+  "required": [
+    "sample_id",
+    "source",
+    "split",
+    "content_sha256",
+    "reason",
+    "observed_token_count",
+    "max_sequence_length"
+  ],
+  "title": "TokenizationRejectedRecord",
+  "type": "object"
+}

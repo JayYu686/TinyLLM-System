@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "description": "Serializable position of a deterministic sequential sampler.",
+  "properties": {
+    "cursor": {
+      "minimum": 0,
+      "title": "Cursor",
+      "type": "integer"
+    },
+    "epoch": {
+      "minimum": 0,
+      "title": "Epoch",
+      "type": "integer"
+    },
+    "num_samples": {
+      "exclusiveMinimum": 0,
+      "title": "Num Samples",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "num_samples",
+    "epoch",
+    "cursor"
+  ],
+  "title": "SamplerState",
+  "type": "object"
+}

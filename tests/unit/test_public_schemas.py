@@ -157,6 +157,24 @@ def test_checkpoint_rejects_incomplete_exact_resume_and_unsafe_files() -> None:
             files=(state_file,),
         )
 
+    with pytest.raises(ValidationError, match="global_step"):
+        CheckpointManifest(
+            checkpoint_id="checkpoint-step-00000026",
+            run_id=run_id,
+            created_at=datetime(2026, 7, 14, tzinfo=UTC),
+            strategy="single",
+            resume_capability="exact",
+            world_size=1,
+            global_step=25,
+            micro_step=25,
+            epoch=0,
+            config_hash=config_hash,
+            dataset_version="toy-v1",
+            git_commit="a" * 40,
+            state=full_state_coverage(),
+            files=(state_file,),
+        )
+
     with pytest.raises(ValidationError, match="safe relative"):
         CheckpointFile(
             path="../state.pt",

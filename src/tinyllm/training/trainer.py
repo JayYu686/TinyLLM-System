@@ -12,7 +12,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 
-from tinyllm.data import ToyTokenDataset
+from tinyllm.data import StatefulSequentialSampler, ToyTokenDataset
 from tinyllm.models.tinygpt import TinyGPT
 from tinyllm.training.config import M1TrainingConfig
 from tinyllm.training.errors import TrainingError, TrainingErrorCode
@@ -42,6 +42,7 @@ class SingleDeviceTrainer:
         config: M1TrainingConfig,
         device: torch.device,
         metric_sink: MetricSink | None = None,
+        sampler: StatefulSequentialSampler | None = None,
     ) -> None:
         self.model = model
         self.dataloader = dataloader
@@ -50,6 +51,7 @@ class SingleDeviceTrainer:
         self.config = config
         self.device = device
         self.metric_sink = metric_sink
+        self.sampler = sampler
         self.state = TrainerState()
         self._iterator: Iterator[Tensor] | None = None
 
@@ -60,12 +62,13 @@ class SingleDeviceTrainer:
             return cast(Tensor, next(self._iterator))
         except StopIteration:
             self._iterator = iter(self.dataloader)
-            self.state = TrainerState(
-                global_step=self.state.global_step,
-                micro_step=self.state.micro_step,
-                epoch=self.state.epoch + 1,
-                tokens_seen=self.state.tokens_seen,
-            )
+            if self.sampler is None:
+                self.state = TrainerState(
+                    global_step=self.state.global_step,
+                    micro_step=self.state.micro_step,
+                    epoch=self.state.epoch + 1,
+                    tokens_seen=self.state.tokens_seen,
+                )
             try:
                 return cast(Tensor, next(self._iterator))
             except StopIteration as exc:
@@ -151,7 +154,7 @@ class SingleDeviceTrainer:
                 self.state = TrainerState(
                     global_step=self.state.global_step,
                     micro_step=attempted_micro_step,
-                    epoch=self.state.epoch,
+                    epoch=self.sampler.epoch if self.sampler is not None else self.state.epoch,
                     tokens_seen=self.state.tokens_seen + predicted_tokens,
                 )
                 accumulated_loss += float(loss.detach().float().item())
@@ -211,10 +214,11 @@ def build_m1_cpu_trainer(
         num_samples=config.data.num_samples,
         seed=config.run.seed,
     )
+    sampler = StatefulSequentialSampler(dataset)
     dataloader = DataLoader(
         dataset,
         batch_size=config.training.micro_batch_size,
-        shuffle=False,
+        sampler=sampler,
         drop_last=True,
         num_workers=0,
     )
@@ -229,4 +233,5 @@ def build_m1_cpu_trainer(
         config=config,
         device=torch.device("cpu"),
         metric_sink=metric_sink,
+        sampler=sampler,
     )

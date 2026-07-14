@@ -1,5 +1,11 @@
 """Single-device and distributed training infrastructure."""
 
+from tinyllm.training.checkpoint import (
+    CheckpointContext,
+    CheckpointError,
+    CheckpointErrorCode,
+    CheckpointStore,
+)
 from tinyllm.training.config import M1TrainingConfig, TrainingConfigError, load_training_config
 from tinyllm.training.errors import TrainingError, TrainingErrorCode
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
@@ -8,6 +14,10 @@ from tinyllm.training.trainer import SingleDeviceTrainer, TrainingResult, build_
 
 __all__ = [
     "M1TrainingConfig",
+    "CheckpointContext",
+    "CheckpointError",
+    "CheckpointErrorCode",
+    "CheckpointStore",
     "InMemoryMetricSink",
     "SingleDeviceTrainer",
     "TrainerState",

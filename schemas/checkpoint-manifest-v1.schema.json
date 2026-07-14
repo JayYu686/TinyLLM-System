@@ -161,6 +161,23 @@
       "title": "Micro Step",
       "type": "integer"
     },
+    "pin_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "interruption",
+            "best",
+            "final"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pin Reason"
+    },
     "pinned": {
       "default": false,
       "title": "Pinned",

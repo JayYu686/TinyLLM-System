@@ -101,6 +101,26 @@ Checkpoint 至少保存模型、优化器、调度器、GradScaler、Global Step
 
 保存流程必须先写临时目录、完成校验后原子发布。恢复前校验结构、哈希、配置、数据、精度和设备约束。任何字段缺失都不能宣称 Exact Resume。
 
+M1 单卡 Checkpoint 目录固定包含：
+
+```text
+checkpoint-step-00000025/
+├── training_state.pt
+├── config.resolved.json
+├── environment.json
+├── manifest.json
+└── COMMITTED
+```
+
+`COMMITTED` 保存 Manifest SHA256；Manifest 保存其余文件的大小和 SHA256。先在同一
+父目录写临时目录并 `fsync`，校验后原子 Rename，再原子更新 `LATEST`。任何失败都必须
+清理临时目录，不能发布部分 Checkpoint。普通点滚动保留最近 `keep_last` 个；
+interruption、best、final 点使用明确 Pin Reason，不参与清理。
+
+Toy Data 使用 Stateful Sequential Sampler。其 `num_samples`、`epoch` 和下一个样本
+`cursor` 必须进入 Checkpoint；恢复时样本数量或 Cursor 不合法必须拒绝。M1.2 只验证
+保存、完整性和下一 Batch Cursor，M1.3 才验证完整训练恢复语义。
+
 ## 8. 验收顺序
 
 ```text

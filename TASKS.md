@@ -17,7 +17,7 @@
 | -- | -- | -- | -- |
 | M0 硬件体检 | `COMPLETE` | Doctor、RTX 3090/BF16、1/2/4/6 卡 NCCL、报告、CI | V100/10 卡为非阻塞项 |
 | Week 1 专业化基础 | `COMPLETE` | Apache/README/治理、Typer/Pydantic、公共 Schema、CI、PR #27 | 无；后续修改进入 M1 独立 PR |
-| M1 单卡闭环 | `IN_PROGRESS` | TinyGPT-Debug、Toy Data、原生 CPU Trainer、Loss Smoke、数值失败路径 | 完整 Checkpoint、Exact Resume、GPU 精度、真实中断、最终报告 |
+| M1 单卡闭环 | `IN_PROGRESS` | TinyGPT-Debug、CPU Trainer、原子完整 Checkpoint、Stateful Sampler、损坏检测 | Exact/Warm/Transfer Resume、GPU 精度、真实中断、最终报告 |
 | M2–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue |
 
 ## Week 1：专业化基础

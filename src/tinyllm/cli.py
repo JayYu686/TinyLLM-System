@@ -7,7 +7,7 @@ import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated, Literal, cast
 
 import click
 import typer
@@ -16,6 +16,13 @@ from typer.main import get_command
 from tinyllm import __version__
 from tinyllm.doctor.collector import DoctorCollector
 from tinyllm.doctor.render import render_json, render_text
+from tinyllm.training import (
+    CheckpointError,
+    TrainingConfigError,
+    TrainingError,
+    TrainingErrorCode,
+    run_single_device_training,
+)
 
 app = typer.Typer(
     name="tinyllm",
@@ -124,6 +131,83 @@ def doctor(
     typer.echo(rendered)
     if report.status == "fail":
         raise typer.Exit(code=3)
+
+
+@app.command("train")
+def train_command(
+    ctx: typer.Context,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Validated M1 YAML training configuration."),
+    ],
+    device: Annotated[
+        str,
+        typer.Option("--device", help="Runtime device override: auto, cpu, or cuda."),
+    ] = "auto",
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", help="Artifact root override for a new Run."),
+    ] = None,
+    resume_run: Annotated[
+        Path | None,
+        typer.Option("--resume-run", help="Existing Run directory used as restore source."),
+    ] = None,
+    resume_mode: Annotated[
+        str,
+        typer.Option("--resume-mode", help="Restore policy: exact, warm, or transfer."),
+    ] = "exact",
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Run native single-device training from a strict YAML configuration."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if device not in {"auto", "cpu", "cuda"}:
+        _output_error("device must be auto, cpu, or cuda", json_output=json_output)
+        raise typer.Exit(code=2)
+    if resume_mode not in {"exact", "warm", "transfer"}:
+        _output_error("resume mode must be exact, warm, or transfer", json_output=json_output)
+        raise typer.Exit(code=2)
+    if resume_run is not None and not resume_run.is_dir():
+        _output_error("resume Run directory does not exist", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        result = run_single_device_training(
+            config_path=config,
+            output_root=output,
+            device=cast(Literal["auto", "cpu", "cuda"], device),
+            resume_run=resume_run,
+            resume_mode=cast(Literal["exact", "warm", "transfer"], resume_mode),
+        )
+    except TrainingConfigError as exc:
+        _output_error(str(exc), json_output=json_output)
+        raise typer.Exit(code=2) from exc
+    except TrainingError as exc:
+        _output_error(f"{exc.code}: {exc}", json_output=json_output)
+        preflight_codes = {
+            TrainingErrorCode.ACCELERATOR_UNAVAILABLE,
+            TrainingErrorCode.UNSUPPORTED_PRECISION,
+        }
+        raise typer.Exit(code=3 if exc.code in preflight_codes else 4) from exc
+    except CheckpointError as exc:
+        _output_error(f"{exc.code}: {exc}", json_output=json_output)
+        raise typer.Exit(code=5) from exc
+    except (OSError, RuntimeError, ValueError) as exc:
+        _output_error(str(exc), json_output=json_output)
+        raise typer.Exit(code=4) from exc
+
+    if json_output:
+        typer.echo(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+    else:
+        typer.echo(
+            f"{result.status}: {result.run_id} step={result.global_step} "
+            f"checkpoint={result.checkpoint_id}"
+        )
+    if result.status == "terminated":
+        raise typer.Exit(code=143)
 
 
 def build_parser() -> click.Command:

@@ -14,6 +14,7 @@ from tinyllm.training import (
     TrainingError,
     TrainingErrorCode,
     build_m1_cpu_trainer,
+    build_m1_cuda_trainer,
 )
 from tinyllm.training.config import M1TrainingConfig, training_config_from_mapping
 from tinyllm.training.metrics import TrainingStepMetrics
@@ -126,6 +127,16 @@ class InvalidLossModel(nn.Module):
         return SimpleNamespace(loss=loss)
 
 
+class OutOfMemoryModel(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.weight = nn.Parameter(torch.tensor(1.0))
+
+    def forward(self, inputs: Tensor, *, labels: Tensor) -> object:
+        del inputs, labels
+        raise torch.OutOfMemoryError("simulated allocator failure")
+
+
 def custom_trainer(model: nn.Module, config: M1TrainingConfig) -> SingleDeviceTrainer:
     dataset = ToyTokenDataset(
         vocab_size=config.data.vocab_size,
@@ -197,3 +208,39 @@ def test_metrics_schema_rejects_non_finite_values() -> None:
             gradient_clipped=False,
             tokens_seen=10,
         )
+
+
+def test_trainer_maps_out_of_memory_to_stable_failure() -> None:
+    trainer = custom_trainer(OutOfMemoryModel(), trainer_config())
+
+    with pytest.raises(TrainingError) as caught:
+        trainer.train(target_global_step=1)
+
+    assert caught.value.code == TrainingErrorCode.ACCELERATOR_OUT_OF_MEMORY
+    assert caught.value.context["global_step"] == 0
+    assert caught.value.context["micro_step"] == 1
+
+
+def test_cuda_trainer_preflight_rejects_missing_accelerator_and_wrong_precision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    with pytest.raises(TrainingError) as caught:
+        build_m1_cuda_trainer(trainer_config())
+    assert caught.value.code == TrainingErrorCode.ACCELERATOR_UNAVAILABLE
+
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
+    with pytest.raises(TrainingError) as caught:
+        build_m1_cuda_trainer(trainer_config())
+    assert caught.value.code == TrainingErrorCode.UNSUPPORTED_PRECISION
+
+    bf16_mapping = trainer_config().to_dict()
+    precision = bf16_mapping["precision"]
+    assert isinstance(precision, dict)
+    precision["dtype"] = "bf16"
+    precision["allow_tf32"] = True
+    monkeypatch.setattr(torch.cuda, "is_bf16_supported", lambda: False)
+    with pytest.raises(TrainingError) as caught:
+        build_m1_cuda_trainer(M1TrainingConfig.model_validate(bf16_mapping))
+    assert caught.value.code == TrainingErrorCode.UNSUPPORTED_PRECISION

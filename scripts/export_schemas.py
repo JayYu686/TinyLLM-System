@@ -13,6 +13,7 @@ from tinyllm.data import SamplerState
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
 from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
+from tinyllm.schemas.training_run import TrainingRunResult
 from tinyllm.training.config import M1TrainingConfig
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
@@ -25,6 +26,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "sampler-state-v1.schema.json": SamplerState,
     "trainer-state-v1.schema.json": TrainerState,
     "training-step-metrics-v1.schema.json": TrainingStepMetrics,
+    "training-run-result-v1.schema.json": TrainingRunResult,
 }
 
 

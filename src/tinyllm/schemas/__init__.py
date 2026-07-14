@@ -9,6 +9,7 @@ from tinyllm.schemas.checkpoint import (
 )
 from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest, RunStatus, canonical_config_hash, generate_run_id
+from tinyllm.schemas.training_run import TrainingRunResult
 
 __all__ = [
     "ArtifactRoots",
@@ -18,6 +19,7 @@ __all__ = [
     "CheckpointStateCoverage",
     "RunManifest",
     "RunStatus",
+    "TrainingRunResult",
     "ResumeResult",
     "canonical_config_hash",
     "generate_run_id",

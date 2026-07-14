@@ -30,7 +30,7 @@ missing results stay explicitly unevaluated.
 | M0 host readiness | Complete | 10 RTX 3090s inventoried; CUDA/BF16 single-GPU smoke passed |
 | M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
-| M1 trainer and Exact Resume | In progress | CPU Exact/Warm/Transfer Resume passes; RTX 3090 BF16 and real signal interruption remain open |
+| M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2–M6 | Planned | No training-quality or scaling result is claimed yet |
 
 The complete M0 evidence is in the
@@ -43,8 +43,8 @@ benchmarks.
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately
 separate from the [M1.2 checkpoint report](reports/m1/atomic_checkpoint_report.md) and
-the [M1.3 Exact Resume report](reports/m1/exact_resume_report.md). GPU and process-signal
-evidence remain separate gates.
+the [M1.3 Exact Resume report](reports/m1/exact_resume_report.md). The merged result is
+summarized by the [M1 acceptance report](reports/m1/m1_acceptance.md).
 
 ## System boundary
 
@@ -111,6 +111,8 @@ make bootstrap-cpu
 source .venv/bin/activate
 tinyllm --help
 tinyllm doctor --json
+tinyllm train --config configs/pretrain/tinygpt_debug_cpu_smoke.yaml \
+  --device cpu --output /tmp/tinyllm-runs --json
 make check
 ```
 

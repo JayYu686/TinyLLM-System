@@ -43,6 +43,7 @@ class SingleDeviceTrainer:
         device: torch.device,
         metric_sink: MetricSink | None = None,
         sampler: StatefulSequentialSampler | None = None,
+        autocast_dtype: torch.dtype | None = None,
     ) -> None:
         self.model = model
         self.dataloader = dataloader
@@ -52,6 +53,7 @@ class SingleDeviceTrainer:
         self.device = device
         self.metric_sink = metric_sink
         self.sampler = sampler
+        self.autocast_dtype = autocast_dtype
         self.state = TrainerState()
         self._iterator: Iterator[Tensor] | None = None
 
@@ -167,12 +169,29 @@ class SingleDeviceTrainer:
             for _ in range(accumulation_steps):
                 batch = self._next_batch().to(self.device)
                 attempted_micro_step = self.state.micro_step + 1
-                output = self.model(batch, labels=batch)
-                loss = self._require_scalar_finite_loss(
-                    output,
-                    micro_step=attempted_micro_step,
-                )
-                torch.autograd.backward(loss / accumulation_steps)
+                try:
+                    with torch.autocast(
+                        device_type=self.device.type,
+                        dtype=self.autocast_dtype,
+                        enabled=self.autocast_dtype is not None,
+                    ):
+                        output = self.model(batch, labels=batch)
+                    loss = self._require_scalar_finite_loss(
+                        output,
+                        micro_step=attempted_micro_step,
+                    )
+                    torch.autograd.backward(loss / accumulation_steps)
+                except torch.OutOfMemoryError as exc:
+                    self.optimizer.zero_grad(set_to_none=True)
+                    raise TrainingError(
+                        TrainingErrorCode.ACCELERATOR_OUT_OF_MEMORY,
+                        "accelerator ran out of memory during forward or backward",
+                        context={
+                            "global_step": self.state.global_step,
+                            "micro_step": attempted_micro_step,
+                            "device": str(self.device),
+                        },
+                    ) from exc
                 predicted_tokens = batch.shape[0] * max(batch.shape[1] - 1, 0)
                 self.state = TrainerState(
                     global_step=self.state.global_step,
@@ -257,4 +276,67 @@ def build_m1_cpu_trainer(
         device=torch.device("cpu"),
         metric_sink=metric_sink,
         sampler=sampler,
+    )
+
+
+def build_m1_cuda_trainer(
+    config: M1TrainingConfig,
+    *,
+    metric_sink: MetricSink | None = None,
+    device_index: int = 0,
+) -> SingleDeviceTrainer:
+    """Construct the single-RTX-3090 BF16 Trainer used by the M1.4 smoke gate."""
+
+    if not torch.cuda.is_available() or not 0 <= device_index < torch.cuda.device_count():
+        raise TrainingError(
+            TrainingErrorCode.ACCELERATOR_UNAVAILABLE,
+            "requested CUDA device is unavailable",
+            context={"device_index": device_index},
+        )
+    if config.precision.dtype != "bf16" or config.precision.use_grad_scaler:
+        raise TrainingError(
+            TrainingErrorCode.UNSUPPORTED_PRECISION,
+            "M1.4 RTX 3090 Trainer requires BF16 without GradScaler",
+            context={"dtype": config.precision.dtype},
+        )
+    if not torch.cuda.is_bf16_supported():
+        raise TrainingError(
+            TrainingErrorCode.UNSUPPORTED_PRECISION,
+            "the selected CUDA environment does not support BF16",
+            context={"device_index": device_index},
+        )
+
+    device = torch.device("cuda", device_index)
+    torch.cuda.set_device(device)
+    torch.backends.cuda.matmul.allow_tf32 = config.precision.allow_tf32
+    torch.backends.cudnn.allow_tf32 = config.precision.allow_tf32
+    seed_everything(config.run.seed, deterministic_algorithms=False)
+    dataset = ToyTokenDataset(
+        vocab_size=config.data.vocab_size,
+        sequence_length=config.data.sequence_length,
+        num_samples=config.data.num_samples,
+        seed=config.run.seed,
+    )
+    sampler = StatefulSequentialSampler(dataset)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=config.training.micro_batch_size,
+        sampler=sampler,
+        drop_last=True,
+        num_workers=0,
+        pin_memory=True,
+    )
+    model = TinyGPT(config.model).to(device)
+    optimizer = build_adamw(model, config.training)
+    scheduler = build_warmup_cosine_scheduler(optimizer, config.training)
+    return SingleDeviceTrainer(
+        model=model,
+        dataloader=dataloader,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        config=config,
+        device=device,
+        metric_sink=metric_sink,
+        sampler=sampler,
+        autocast_dtype=torch.bfloat16,
     )

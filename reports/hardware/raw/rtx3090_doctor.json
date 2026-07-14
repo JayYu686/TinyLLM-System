@@ -1,0 +1,405 @@
+{
+  "checks": [
+    {
+      "evidence": {
+        "platform": "linux"
+      },
+      "id": "host.linux",
+      "remediation": null,
+      "required": true,
+      "status": "pass",
+      "summary": "Linux host detected"
+    },
+    {
+      "evidence": {
+        "executable": "/home/yujielun/PROJECTS/TinyLLM-System/.venv/bin/python",
+        "implementation": "CPython",
+        "version": "3.11.14"
+      },
+      "id": "python.executable",
+      "remediation": null,
+      "required": true,
+      "status": "pass",
+      "summary": "Python executable is available"
+    },
+    {
+      "evidence": {
+        "cuda_available": true,
+        "version": "2.7.1+cu118"
+      },
+      "id": "python.torch_import",
+      "remediation": null,
+      "required": true,
+      "status": "pass",
+      "summary": "PyTorch and CUDA are available"
+    },
+    {
+      "evidence": {
+        "gpu_count": 10
+      },
+      "id": "gpu.inventory",
+      "remediation": null,
+      "required": true,
+      "status": "pass",
+      "summary": "Discovered 10 NVIDIA GPU(s)"
+    },
+    {
+      "evidence": {
+        "busy_gpu_indices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "id": "gpu.availability",
+      "remediation": "Coordinate GPU allocation before a distributed test.",
+      "required": false,
+      "status": "warn",
+      "summary": "Some GPUs are currently busy"
+    },
+    {
+      "evidence": {
+        "hot_gpu_indices": [
+          2
+        ]
+      },
+      "id": "gpu.temperature",
+      "remediation": "Inspect cooling and sustained clocks before long training.",
+      "required": false,
+      "status": "warn",
+      "summary": "One or more GPUs are at least 80C"
+    },
+    {
+      "evidence": {
+        "free_bytes": 792276889600,
+        "path": "/home/yujielun/PROJECTS/TinyLLM-System"
+      },
+      "id": "storage.0",
+      "remediation": null,
+      "required": true,
+      "status": "pass",
+      "summary": "Storage checked for /home/yujielun/PROJECTS/TinyLLM-System"
+    },
+    {
+      "evidence": {
+        "free_bytes": 8849931976704,
+        "path": "/data"
+      },
+      "id": "storage.1",
+      "remediation": null,
+      "required": false,
+      "status": "pass",
+      "summary": "Storage checked for /data"
+    },
+    {
+      "evidence": {
+        "dirty": true,
+        "has_commit": false
+      },
+      "id": "git.lineage",
+      "remediation": "Create a reviewed commit before formal runs.",
+      "required": false,
+      "status": "warn",
+      "summary": "Git lineage is incomplete"
+    },
+    {
+      "evidence": {
+        "available": true,
+        "returncode": 0,
+        "stderr": null,
+        "timed_out": false
+      },
+      "id": "distributed.gpu_topology",
+      "remediation": null,
+      "required": false,
+      "status": "pass",
+      "summary": "gpu_topology information collected"
+    },
+    {
+      "evidence": {
+        "available": true,
+        "returncode": 0,
+        "stderr": null,
+        "timed_out": false
+      },
+      "id": "distributed.p2p_read",
+      "remediation": "Validate the limitation with a real NCCL collective test.",
+      "required": false,
+      "status": "warn",
+      "summary": "p2p_read reports a topology limitation"
+    },
+    {
+      "evidence": {
+        "available": true,
+        "returncode": 0,
+        "stderr": null,
+        "timed_out": false
+      },
+      "id": "distributed.nvlink",
+      "remediation": "Validate the limitation with a real NCCL collective test.",
+      "required": false,
+      "status": "warn",
+      "summary": "nvlink reports a topology limitation"
+    },
+    {
+      "evidence": {
+        "available": true,
+        "returncode": 0,
+        "stderr": null,
+        "timed_out": false
+      },
+      "id": "distributed.numa",
+      "remediation": null,
+      "required": false,
+      "status": "pass",
+      "summary": "NUMA information collected with lscpu"
+    },
+    {
+      "evidence": {
+        "all_gather_perf": null,
+        "all_reduce_perf": null,
+        "reduce_scatter_perf": null
+      },
+      "id": "distributed.nccl_tools",
+      "remediation": "Build a pinned nccl-tests revision before running the M0 benchmark.",
+      "required": false,
+      "status": "unavailable",
+      "summary": "NCCL test tools are unavailable"
+    }
+  ],
+  "command": "tinyllm doctor",
+  "errors": [],
+  "generated_at": "2026-07-13T08:44:11.877357Z",
+  "inventory": {
+    "cuda": {
+      "driver_reported_cuda": "12.2",
+      "driver_version": "535.261.03",
+      "nvcc_on_path": false,
+      "nvcc_path": "/usr/local/cuda/bin/nvcc",
+      "toolkit_version": "12.1"
+    },
+    "git": {
+      "branch": "main",
+      "commit": null,
+      "dirty": true,
+      "is_repository": true
+    },
+    "gpus": [
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 0,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 14252,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:4F:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 64,
+        "utilization_percent": 100
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 1,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 14232,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:52:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 73,
+        "utilization_percent": 100
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 2,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 14212,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:53:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 84,
+        "utilization_percent": 100
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 3,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 14232,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:56:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 76,
+        "utilization_percent": 100
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 4,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 1,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:57:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 30,
+        "utilization_percent": 0
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 5,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 1,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:CE:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 29,
+        "utilization_percent": 0
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 6,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 1,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:D1:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 29,
+        "utilization_percent": 0
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 7,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 1,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:D2:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 29,
+        "utilization_percent": 0
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 8,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 1,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:D5:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 30,
+        "utilization_percent": 0
+      },
+      {
+        "compute_capability": "8.6",
+        "driver_version": "535.261.03",
+        "index": 9,
+        "memory_total_mib": 24576,
+        "memory_used_mib": 1,
+        "name": "NVIDIA GeForce RTX 3090",
+        "pci_bus_id": "00000000:D6:00.0",
+        "power_limit_w": 350.0,
+        "temperature_c": 30,
+        "utilization_percent": 0
+      }
+    ],
+    "host": {
+      "cpu_count": 64,
+      "hostname": "sitonholy",
+      "kernel": "5.4.0-216-generic",
+      "machine": "x86_64",
+      "os": {
+        "bug_report_url": "https://bugs.launchpad.net/ubuntu/",
+        "home_url": "https://www.ubuntu.com/",
+        "id": "ubuntu",
+        "id_like": "debian",
+        "name": "Ubuntu",
+        "pretty_name": "Ubuntu 20.04.6 LTS",
+        "privacy_policy_url": "https://www.ubuntu.com/legal/terms-and-policies/privacy-policy",
+        "support_url": "https://help.ubuntu.com/",
+        "ubuntu_codename": "focal",
+        "version": "20.04.6 LTS (Focal Fossa)",
+        "version_codename": "focal",
+        "version_id": "20.04"
+      }
+    },
+    "packages": {
+      "deepspeed": null,
+      "mypy": "1.20.2",
+      "pytest": "8.4.2",
+      "ruff": "0.15.21",
+      "torch": "2.7.1+cu118",
+      "transformers": null,
+      "trl": null,
+      "vllm": null
+    },
+    "python": {
+      "executable": "/home/yujielun/PROJECTS/TinyLLM-System/.venv/bin/python",
+      "implementation": "CPython",
+      "version": "3.11.14"
+    },
+    "storage": [
+      {
+        "free_bytes": 792276889600,
+        "free_percent": 21.97,
+        "path": "/home/yujielun/PROJECTS/TinyLLM-System",
+        "total_bytes": 3606978592768,
+        "used_bytes": 2631400710144
+      },
+      {
+        "free_bytes": 8849931976704,
+        "free_percent": 55.33,
+        "path": "/data",
+        "total_bytes": 15995874496512,
+        "used_bytes": 6345823670272
+      }
+    ],
+    "topology": {
+      "collected": true,
+      "gpu_topology": {
+        "available": true,
+        "error": null,
+        "output": "GPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tGPU6\tGPU7\tGPU8\tGPU9\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\nGPU0\t X \tPXB\tPXB\tPXB\tPXB\tSYS\tSYS\tSYS\tSYS\tSYS\t0-15,32-47\t0\t\tN/A\nGPU1\tPXB\t X \tPIX\tPXB\tPXB\tSYS\tSYS\tSYS\tSYS\tSYS\t0-15,32-47\t0\t\tN/A\nGPU2\tPXB\tPIX\t X \tPXB\tPXB\tSYS\tSYS\tSYS\tSYS\tSYS\t0-15,32-47\t0\t\tN/A\nGPU3\tPXB\tPXB\tPXB\t X \tPIX\tSYS\tSYS\tSYS\tSYS\tSYS\t0-15,32-47\t0\t\tN/A\nGPU4\tPXB\tPXB\tPXB\tPIX\t X \tSYS\tSYS\tSYS\tSYS\tSYS\t0-15,32-47\t0\t\tN/A\nGPU5\tSYS\tSYS\tSYS\tSYS\tSYS\t X \tPXB\tPXB\tPXB\tPXB\t16-31,48-63\t1\t\tN/A\nGPU6\tSYS\tSYS\tSYS\tSYS\tSYS\tPXB\t X \tPIX\tPXB\tPXB\t16-31,48-63\t1\t\tN/A\nGPU7\tSYS\tSYS\tSYS\tSYS\tSYS\tPXB\tPIX\t X \tPXB\tPXB\t16-31,48-63\t1\t\tN/A\nGPU8\tSYS\tSYS\tSYS\tSYS\tSYS\tPXB\tPXB\tPXB\t X \tPIX\t16-31,48-63\t1\t\tN/A\nGPU9\tSYS\tSYS\tSYS\tSYS\tSYS\tPXB\tPXB\tPXB\tPIX\t X \t16-31,48-63\t1\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks"
+      },
+      "nccl_tools": {
+        "all_gather_perf": null,
+        "all_reduce_perf": null,
+        "reduce_scatter_perf": null
+      },
+      "numa": {
+        "available": true,
+        "error": null,
+        "output": "Architecture:                       x86_64\nCPU op-mode(s):                     32-bit, 64-bit\nByte Order:                         Little Endian\nAddress sizes:                      52 bits physical, 57 bits virtual\nCPU(s):                             64\nOn-line CPU(s) list:                0-63\nThread(s) per core:                 2\nCore(s) per socket:                 16\nSocket(s):                          2\nNUMA node(s):                       2\nVendor ID:                          GenuineIntel\nCPU family:                         6\nModel:                              106\nModel name:                         Intel(R) Xeon(R) Gold 6326 CPU @ 2.90GHz\nStepping:                           6\nFrequency boost:                    enabled\nCPU MHz:                            973.118\nCPU max MHz:                        3500.0000\nCPU min MHz:                        800.0000\nBogoMIPS:                           5800.00\nVirtualization:                     VT-x\nL1d cache:                          1.5 MiB\nL1i cache:                          1 MiB\nL2 cache:                           40 MiB\nL3 cache:                           48 MiB\nNUMA node0 CPU(s):                  0-15,32-47\nNUMA node1 CPU(s):                  16-31,48-63\nVulnerability Gather data sampling: Mitigation; Microcode\nVulnerability Itlb multihit:        Not affected\nVulnerability L1tf:                 Not affected\nVulnerability Mds:                  Not affected\nVulnerability Meltdown:             Not affected\nVulnerability Mmio stale data:      Mitigation; Clear CPU buffers; SMT vulnerable\nVulnerability Retbleed:             Not affected\nVulnerability Spec store bypass:    Mitigation; Speculative Store Bypass disabled via prctl and seccomp\nVulnerability Spectre v1:           Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:           Mitigation; Enhanced / Automatic IBRS; IBPB conditional; RSB filling; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop\nVulnerability Srbds:                Not affected\nVulnerability Tsx async abort:      Not affected\nFlags:                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l3 invpcid_single ssbd mba ibrs ibpb stibp ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local wbnoinvd dtherm ida arat pln pts avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid md_clear pconfig flush_l1d arch_capabilities",
+        "source": "lscpu"
+      },
+      "nvlink": {
+        "available": true,
+        "error": null,
+        "output": "GPU 0: NVIDIA GeForce RTX 3090 (UUID: GPU-e598cd2f-248d-6f91-4147-dcf9f5d73e3f)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 1: NVIDIA GeForce RTX 3090 (UUID: GPU-faa24cf0-b09f-9589-7f4a-9343be4ed2e0)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 2: NVIDIA GeForce RTX 3090 (UUID: GPU-648fa203-0daa-e063-6a15-19e002cda4a6)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 3: NVIDIA GeForce RTX 3090 (UUID: GPU-a51040f5-82b3-8ca3-ccd6-6da09f4d5871)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 4: NVIDIA GeForce RTX 3090 (UUID: GPU-9423b0ba-318c-b86a-cc7b-f1986d3c5b6c)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 5: NVIDIA GeForce RTX 3090 (UUID: GPU-0ccab9e7-2db9-72b5-dc5d-aa7a3380eac6)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 6: NVIDIA GeForce RTX 3090 (UUID: GPU-3f1ed864-6db2-4af7-e6b6-f0720db299f5)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 7: NVIDIA GeForce RTX 3090 (UUID: GPU-e78ed791-3743-9fdb-276f-3293ffedaccf)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 8: NVIDIA GeForce RTX 3090 (UUID: GPU-f97966b3-7e79-05f4-83e8-d73e0e39a6bc)\nNVML: Unable to retrieve NVLink information as all links are inActive\nGPU 9: NVIDIA GeForce RTX 3090 (UUID: GPU-5453913c-85fc-e25d-e926-7200e1880071)\nNVML: Unable to retrieve NVLink information as all links are inActive"
+      },
+      "p2p_read": {
+        "available": true,
+        "error": null,
+        "output": "GPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tGPU6\tGPU7\tGPU8\tGPU9\t\n GPU0\tX\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\t\n GPU1\tCNS\tX\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\t\n GPU2\tCNS\tCNS\tX\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\t\n GPU3\tCNS\tCNS\tCNS\tX\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\t\n GPU4\tCNS\tCNS\tCNS\tCNS\tX\tCNS\tCNS\tCNS\tCNS\tCNS\t\n GPU5\tCNS\tCNS\tCNS\tCNS\tCNS\tX\tCNS\tCNS\tCNS\tCNS\t\n GPU6\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tX\tCNS\tCNS\tCNS\t\n GPU7\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tX\tCNS\tCNS\t\n GPU8\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tX\tCNS\t\n GPU9\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tCNS\tX\t\n\nLegend:\n\n  X    = Self\n  OK   = Status Ok\n  CNS  = Chipset not supported\n  GNS  = GPU not supported\n  TNS  = Topology not supported\n  NS   = Not supported\n  U    = Unknown"
+      }
+    },
+    "torch": {
+      "bf16_supported": true,
+      "cuda_available": true,
+      "cuda_runtime": "11.8",
+      "gpu_count": 10,
+      "nccl_version": [
+        2,
+        21,
+        5
+      ],
+      "version": "2.7.1+cu118"
+    }
+  },
+  "schema_version": "1.0",
+  "status": "warn"
+}

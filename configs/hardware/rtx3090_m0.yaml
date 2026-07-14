@@ -1,0 +1,36 @@
+schema_version: "1.0"
+profile: rtx3090-main
+
+host:
+  expected_gpu_model: NVIDIA GeForce RTX 3090
+  expected_gpu_count: 10
+  standard_training_gpus: [0, 1, 2, 3, 4, 5, 6, 7]
+  evaluation_gpu: 8
+  development_gpu: 9
+
+allocation:
+  smoke_policy: explicit_idle_gpus
+  memory_busy_threshold_mib: 1024
+  utilization_busy_threshold_percent: 10
+  record_selected_gpu_indices: true
+
+precision:
+  default: bf16
+  allow_tf32: true
+  use_grad_scaler: false
+
+environment:
+  python: "3.11"
+  torch: "2.7.1"
+  torch_cuda_runtime: "11.8"
+  torch_index_url: https://download.pytorch.org/whl/cu118
+
+validation:
+  standard_training_group_status: deferred_to_m3
+  dynamic_six_gpu_smoke_status: passed
+  require_bf16_probe: true
+  require_numa_report: true
+  require_nccl_collectives:
+    - all_reduce
+    - all_gather
+    - reduce_scatter

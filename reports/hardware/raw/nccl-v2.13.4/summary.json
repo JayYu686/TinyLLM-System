@@ -1,0 +1,125 @@
+{
+  "generated_at": "2026-07-13T08:26:31.740155+00:00",
+  "nccl_tests_revision": "v2.13.4@d313d20",
+  "results": [
+    {
+      "collective": "all_reduce",
+      "duration_seconds": 2.501,
+      "exit_code": 0,
+      "gpu_group": [
+        6
+      ],
+      "log_path": "reports/hardware/raw/nccl-v2.13.4/all_reduce_gpus_6.log",
+      "preflight": [
+        {
+          "index": 6,
+          "memory_used_mib": 1,
+          "temperature_c": 29,
+          "utilization_percent": 0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "collective": "all_gather",
+      "duration_seconds": 1.971,
+      "exit_code": 0,
+      "gpu_group": [
+        6
+      ],
+      "log_path": "reports/hardware/raw/nccl-v2.13.4/all_gather_gpus_6.log",
+      "preflight": [
+        {
+          "index": 6,
+          "memory_used_mib": 1,
+          "temperature_c": 29,
+          "utilization_percent": 0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "collective": "reduce_scatter",
+      "duration_seconds": 2.395,
+      "exit_code": 0,
+      "gpu_group": [
+        6
+      ],
+      "log_path": "reports/hardware/raw/nccl-v2.13.4/reduce_scatter_gpus_6.log",
+      "preflight": [
+        {
+          "index": 6,
+          "memory_used_mib": 1,
+          "temperature_c": 29,
+          "utilization_percent": 0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "busy_gpu_indices": [
+        6
+      ],
+      "gpu_group": [
+        6,
+        7
+      ],
+      "preflight": [
+        {
+          "index": 6,
+          "memory_used_mib": 1,
+          "temperature_c": 48,
+          "utilization_percent": 67
+        },
+        {
+          "index": 7,
+          "memory_used_mib": 1,
+          "temperature_c": 29,
+          "utilization_percent": 0
+        }
+      ],
+      "reason": "busy_gpus",
+      "status": "not_run"
+    },
+    {
+      "busy_gpu_indices": [
+        6
+      ],
+      "gpu_group": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "preflight": [
+        {
+          "index": 6,
+          "memory_used_mib": 1,
+          "temperature_c": 47,
+          "utilization_percent": 67
+        },
+        {
+          "index": 7,
+          "memory_used_mib": 1,
+          "temperature_c": 29,
+          "utilization_percent": 0
+        },
+        {
+          "index": 8,
+          "memory_used_mib": 1,
+          "temperature_c": 29,
+          "utilization_percent": 0
+        },
+        {
+          "index": 9,
+          "memory_used_mib": 1,
+          "temperature_c": 29,
+          "utilization_percent": 0
+        }
+      ],
+      "reason": "busy_gpus",
+      "status": "not_run"
+    }
+  ],
+  "schema_version": "1.0"
+}

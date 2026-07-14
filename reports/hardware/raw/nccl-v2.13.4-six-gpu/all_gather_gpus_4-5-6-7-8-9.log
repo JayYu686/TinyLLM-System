@@ -1,0 +1,50 @@
+# CUDA_VISIBLE_DEVICES=4,5,6,7,8,9
+# command=/tmp/nccl-tests-2.13.4/build/all_gather_perf -b 8 -e 512M -f 2 -g 6 -w 5 -n 20 -c 1
+# started_at=2026-07-13T08:50:42.555173+00:00
+# finished_at=2026-07-13T08:51:02.063044+00:00
+# exit_code=0
+# nThread 1 nGpus 6 minBytes 8 maxBytes 536870912 step: 2(factor) warmup iters: 5 iters: 20 agg iters: 1 validation: 1 graph: 0
+#
+# Using devices
+#  Rank  0 Group  0 Pid 2222485 on  sitonholy device  0 [0x57] NVIDIA GeForce RTX 3090
+#  Rank  1 Group  0 Pid 2222485 on  sitonholy device  1 [0xce] NVIDIA GeForce RTX 3090
+#  Rank  2 Group  0 Pid 2222485 on  sitonholy device  2 [0xd1] NVIDIA GeForce RTX 3090
+#  Rank  3 Group  0 Pid 2222485 on  sitonholy device  3 [0xd2] NVIDIA GeForce RTX 3090
+#  Rank  4 Group  0 Pid 2222485 on  sitonholy device  4 [0xd5] NVIDIA GeForce RTX 3090
+#  Rank  5 Group  0 Pid 2222485 on  sitonholy device  5 [0xd6] NVIDIA GeForce RTX 3090
+#
+#                                                              out-of-place                       in-place          
+#       size         count      type   redop    root     time   algbw   busbw #wrong     time   algbw   busbw #wrong
+#        (B)    (elements)                               (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)       
+           0             0     float    none      -1    25.96    0.00    0.00      0    25.97    0.00    0.00      0
+           0             0     float    none      -1    25.69    0.00    0.00      0    26.10    0.00    0.00      0
+           0             0     float    none      -1    25.76    0.00    0.00      0    26.93    0.00    0.00      0
+           0             0     float    none      -1    25.45    0.00    0.00      0    25.90    0.00    0.00      0
+          96             4     float    none      -1    40.60    0.00    0.00      0    61.32    0.00    0.00      0
+         192             8     float    none      -1    39.50    0.00    0.00      0    57.28    0.00    0.00      0
+         480            20     float    none      -1    60.20    0.01    0.01      0    26.78    0.02    0.01      0
+         960            40     float    none      -1    29.62    0.03    0.03      0    54.55    0.02    0.01      0
+        2016            84     float    none      -1    36.92    0.05    0.05      0    36.99    0.05    0.05      0
+        4032           168     float    none      -1    29.94    0.13    0.11      0    26.12    0.15    0.13      0
+        8160           340     float    none      -1    51.66    0.16    0.13      0    76.54    0.11    0.09      0
+       16320           680     float    none      -1    41.52    0.39    0.33      0    86.35    0.19    0.16      0
+       32736          1364     float    none      -1    67.54    0.48    0.40      0    61.10    0.54    0.45      0
+       65472          2728     float    none      -1    47.98    1.36    1.14      0    75.93    0.86    0.72      0
+      131040          5460     float    none      -1    87.25    1.50    1.25      0    108.4    1.21    1.01      0
+      262080         10920     float    none      -1    154.1    1.70    1.42      0    98.77    2.65    2.21      0
+      524256         21844     float    none      -1    139.3    3.76    3.14      0    140.7    3.73    3.10      0
+     1048512         43688     float    none      -1    246.7    4.25    3.54      0    244.8    4.28    3.57      0
+     2097120         87380     float    none      -1    465.5    4.51    3.75      0    513.1    4.09    3.41      0
+     4194240        174760     float    none      -1    912.2    4.60    3.83      0    912.5    4.60    3.83      0
+     8388576        349524     float    none      -1   1796.1    4.67    3.89      0   1807.7    4.64    3.87      0
+    16777152        699048     float    none      -1   3594.4    4.67    3.89      0   3619.9    4.63    3.86      0
+    33554400       1398100     float    none      -1   7183.1    4.67    3.89      0   7218.6    4.65    3.87      0
+    67108800       2796200     float    none      -1    14292    4.70    3.91      0    14380    4.67    3.89      0
+   134217696       5592404     float    none      -1    28512    4.71    3.92      0    28544    4.70    3.92      0
+   268435392      11184808     float    none      -1    56565    4.75    3.95      0    56385    4.76    3.97      0
+   536870880      22369620     float    none      -1   112780    4.76    3.97      0   112603    4.77    3.97      0
+# Out of bounds values : 0 OK
+# Avg bus bandwidth    : 1.71595 
+#
+
+

@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-07-13T08:30:07.861843+00:00",
+  "nccl_tests_revision": "v2.13.4@d313d20",
+  "results": [
+    {
+      "collective": "all_reduce",
+      "duration_seconds": 19.675,
+      "exit_code": 0,
+      "gpu_group": [
+        8,
+        9
+      ],
+      "log_path": "reports/hardware/raw/nccl-v2.13.4-pair/all_reduce_gpus_8-9.log",
+      "preflight": [
+        {
+          "index": 8,
+          "memory_used_mib": 1,
+          "temperature_c": 34,
+          "utilization_percent": 0
+        },
+        {
+          "index": 9,
+          "memory_used_mib": 1,
+          "temperature_c": 34,
+          "utilization_percent": 0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "collective": "all_gather",
+      "duration_seconds": 6.215,
+      "exit_code": 0,
+      "gpu_group": [
+        8,
+        9
+      ],
+      "log_path": "reports/hardware/raw/nccl-v2.13.4-pair/all_gather_gpus_8-9.log",
+      "preflight": [
+        {
+          "index": 8,
+          "memory_used_mib": 1,
+          "temperature_c": 34,
+          "utilization_percent": 0
+        },
+        {
+          "index": 9,
+          "memory_used_mib": 1,
+          "temperature_c": 34,
+          "utilization_percent": 0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "collective": "reduce_scatter",
+      "duration_seconds": 13.998,
+      "exit_code": 0,
+      "gpu_group": [
+        8,
+        9
+      ],
+      "log_path": "reports/hardware/raw/nccl-v2.13.4-pair/reduce_scatter_gpus_8-9.log",
+      "preflight": [
+        {
+          "index": 8,
+          "memory_used_mib": 1,
+          "temperature_c": 34,
+          "utilization_percent": 0
+        },
+        {
+          "index": 9,
+          "memory_used_mib": 1,
+          "temperature_c": 34,
+          "utilization_percent": 0
+        }
+      ],
+      "status": "pass"
+    }
+  ],
+  "schema_version": "1.0"
+}

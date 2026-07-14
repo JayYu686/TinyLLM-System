@@ -60,6 +60,13 @@ def test_load_m1_example_config() -> None:
     assert config.training.global_batch_size == 8
     assert config.data.vocab_size == config.model.vocab_size
 
+    gpu_config = load_training_config(
+        Path("configs/pretrain/tinygpt_debug_rtx3090_bf16_smoke.yaml")
+    )
+    assert gpu_config.precision.dtype == "bf16"
+    assert gpu_config.precision.use_grad_scaler is False
+    assert gpu_config.training.max_steps == 40
+
 
 def test_training_config_rejects_unknown_fields() -> None:
     mapping = valid_mapping()

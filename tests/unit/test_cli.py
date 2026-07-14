@@ -6,14 +6,16 @@ import pytest
 from tinyllm.cli import main
 
 
-def test_help_lists_doctor(capsys: pytest.CaptureFixture[str]) -> None:
+def test_help_lists_doctor_and_train(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--help"]) == 0
-    assert "doctor" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "doctor" in output
+    assert "train" in output
 
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--version"]) == 0
-    assert capsys.readouterr().out.strip() == "tinyllm 0.1.0"
+    assert capsys.readouterr().out.strip() == "tinyllm 0.1.0a1"
 
 
 def test_missing_project_root_returns_usage_error(
@@ -48,3 +50,48 @@ def test_output_directory_is_rejected(tmp_path: Path, capsys: pytest.CaptureFixt
     assert code == 2
     payload = json.loads(capsys.readouterr().err)
     assert "output path is a directory" in payload["error"]["message"]
+
+
+def test_train_rejects_invalid_runtime_overrides(capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(
+        [
+            "train",
+            "--config",
+            "configs/pretrain/tinygpt_debug_cpu_smoke.yaml",
+            "--device",
+            "tpu",
+            "--json",
+        ]
+    )
+
+    assert code == 2
+    payload = json.loads(capsys.readouterr().err)
+    assert "device must be" in payload["error"]["message"]
+
+    code = main(
+        [
+            "train",
+            "--config",
+            "configs/pretrain/tinygpt_debug_cpu_smoke.yaml",
+            "--resume-mode",
+            "guess",
+            "--json",
+        ]
+    )
+    assert code == 2
+    payload = json.loads(capsys.readouterr().err)
+    assert "resume mode must be" in payload["error"]["message"]
+
+    code = main(
+        [
+            "train",
+            "--config",
+            "configs/pretrain/tinygpt_debug_cpu_smoke.yaml",
+            "--resume-run",
+            "/definitely/missing/run",
+            "--json",
+        ]
+    )
+    assert code == 2
+    payload = json.loads(capsys.readouterr().err)
+    assert "resume Run directory" in payload["error"]["message"]

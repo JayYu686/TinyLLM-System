@@ -144,7 +144,7 @@ def _restore_rng_state(raw: dict[str, Any]) -> None:
     torch.set_rng_state(cast(Tensor, raw["torch"]).cpu())
     cuda_state = raw["cuda"]
     if isinstance(cuda_state, list):
-        torch.cuda.set_rng_state_all(cuda_state)
+        torch.cuda.set_rng_state_all([cast(Tensor, state).cpu() for state in cuda_state])
 
 
 def _require_exact_compatibility(

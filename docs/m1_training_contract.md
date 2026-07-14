@@ -84,6 +84,8 @@ Run Store 接入后实现，不能由测试日志冒充事实源。
 - `NON_FINITE_GRADIENT`：Optimizer Step 前发现非有限 Gradient/Norm。
 - `EMPTY_DATALOADER`：数据无法形成一个完整 Micro Batch。
 - `UNSUPPORTED_PRECISION`：当前实现或硬件不支持请求的精度。
+- `ACCELERATOR_UNAVAILABLE`：请求的 CUDA 设备不存在或当前不可用。
+- `ACCELERATOR_OUT_OF_MEMORY`：前向或反向触发显存不足；当前 Step 不得提交。
 
 ## 6. 精度规则
 
@@ -149,6 +151,26 @@ Exact 兼容性检查，不能通过退回旧配置掩盖当前配置漂移。
 M1.3 稳定失败类别为 `CHECKPOINT_INCOMPATIBLE`。坏哈希、缺少提交标记等仍分别使用
 `CHECKPOINT_CORRUPT` 或 `CHECKPOINT_INCOMPLETE`，并统一映射到 Checkpoint/Resume
 退出码 5。
+
+### 7.2 RTX 3090 BF16 与进程中断
+
+M1.4 的 GPU 验收只使用通过忙卡、温度、显存和 BF16 Preflight 的单张 RTX 3090。
+训练参数保持 FP32 Master Weights，前向在 CUDA BF16 Autocast 下执行，不使用
+GradScaler；TF32 只按 YAML 显式开启。
+
+中断对照前必须先完成两次相同 Seed、配置、GPU 和软件环境的无中断运行。容差选择规则
+在中断实验之前固定为：Loss 绝对容差取 `max(1e-6, 2 × 两次基线最大绝对差)`，模型参数
+绝对容差取 `max(1e-7, 2 × 两次基线最大绝对差)`；LR、Step、Sampler 和状态字段必须
+精确一致。该规则只用于同卡同环境 BF16，不扩展为跨 GPU 或跨软件版本保证。
+
+SIGTERM Handler 只设置退出标志；Trainer 完成当前 Optimizer Step 后在安全边界保存
+`interruption` Pin Checkpoint，再以 143 退出。SIGKILL 无法执行 Handler，只能从最近一个
+已经原子提交的周期 Checkpoint 回滚；报告必须明确记录丢弃并重新计算的 Step 数，不能把
+Kill 时刻冒充可精确恢复点。重新启动使用相同 Run ID 和 `auto` Exact Resume。
+
+GPU Smoke 不报告吞吐。为可靠注入信号而使用的测试延迟必须进入私有原始事件，且不得
+进入性能 Benchmark。公开报告只保留脱敏的 GPU 索引、配置、容差、Step、哈希和结果；
+完整事件与 Checkpoint 留在私有 Artifact Store。
 
 ## 8. 验收顺序
 

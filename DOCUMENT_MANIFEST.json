@@ -3,6 +3,7 @@
   "scope": "source documentation and public contracts; generated reports are tracked separately",
   "generated_files": [
     "AGENTS.md",
+    "CHANGELOG.md",
     "CONTRIBUTING.md",
     "PLANS.md",
     "README.md",
@@ -32,5 +33,5 @@
     "requirements/README.md",
     "schemas/README.md"
   ],
-  "file_count": 29
+  "file_count": 30
 }

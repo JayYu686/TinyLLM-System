@@ -1,0 +1,82 @@
+{
+  "commitpackft_import_manifest": {
+    "accepted_samples": 1,
+    "candidate_samples": 3,
+    "config_sha256": "146b40528b13d99df908c622817bbebb0deb8a38cc15144d506344b1dcc17c5d",
+    "input_sha256": "44d5da865e125971293cd054f12bae763391d1e35a4ccaea444e0082b4ac3bd3",
+    "license_counts": {"mit": 1},
+    "rejected_samples": 2,
+    "rejection_counts": {"not_python": 1, "unsupported_license": 1},
+    "schema_version": "1.0",
+    "source": {
+      "dataset_card_license": "mit",
+      "dataset_card_sha256": "69799047051e9d487d20e8930d73de1b3023ee1c75cf36dc3d2dfca2643f0bb0",
+      "dataset_card_url": "https://huggingface.co/datasets/bigcode/commitpackft/blob/fc56fe33c030c6daa414c2b112c932b8eed085e6/README.md",
+      "dataset_id": "bigcode/commitpackft",
+      "name": "commitpackft",
+      "revision": "fc56fe33c030c6daa414c2b112c932b8eed085e6",
+      "schema_version": "1.0"
+    },
+    "source_rows": 3
+  },
+  "fixture_license": "CC0-1.0",
+  "oasst_import_manifest": {
+    "accepted_samples": 1,
+    "candidate_samples": 2,
+    "config_sha256": "17e407e0fb23260ebde51a0d4166920f0d64cfd761f644715c8d54822fc37257",
+    "input_sha256": "a8b7f6adaf0ef5075b3a4404f471a43bdf76170e74acc15e5e7ead47e3856ae8",
+    "license_counts": {"apache-2.0": 1},
+    "rejected_samples": 1,
+    "rejection_counts": {"review_not_positive": 1},
+    "schema_version": "1.0",
+    "source": {
+      "dataset_card_license": "apache-2.0",
+      "dataset_card_sha256": "68483ac2fcc2f3f7779f453352363827678070ef35b6d746ccb2ca6958540fff",
+      "dataset_card_url": "https://huggingface.co/datasets/OpenAssistant/oasst1/blob/fdf72ae0827c1cda404aff25b6603abec9e3399b/README.md",
+      "dataset_id": "OpenAssistant/oasst1",
+      "name": "oasst1",
+      "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
+      "schema_version": "1.0"
+    },
+    "source_rows": 3
+  },
+  "processed_samples": [
+    {
+      "component_id": "b76c7f35f79c22a020b01823c9d2c409784e343c14437cdc4cf86159a56d0a08",
+      "content_sha256": "8dcb44b17796f58d0f67724757a8f8921d7b11689fdedaf5f6c1928d24bcbc16",
+      "group_keys": ["commitpackft:example/alpha", "commitpackft:example/shared"],
+      "id": "commitpackft:0c8a65f7318e868eb05845a3",
+      "source": "commitpackft",
+      "split": "train"
+    },
+    {
+      "component_id": "777972fd555af73e5da30e576d54076fb2458612918fe2701825eb8f1425b031",
+      "content_sha256": "0bc3aca1ecabeed7903671ac0d736acb1c87738ac956122728c8dc1d0df1be1e",
+      "group_keys": ["oasst1:tree-alpha"],
+      "id": "oasst1:cd28184225697dea026333af",
+      "source": "oasst1",
+      "split": "train"
+    }
+  ],
+  "processing_manifest": {
+    "component_count": 2,
+    "config_sha256": "436810e3454993173a00ca4e257bef1c40c9ba83ef5ad9cc5e38f1c9d11c4b75",
+    "exact_duplicates": 0,
+    "input_samples": 2,
+    "input_sha256": "8cb104a98f402cbef836c8a9db0b4d3e0f99890d8f1f2bbdeecb5b1bc15dba6f",
+    "normalization_rejections": 0,
+    "normalized_samples": 2,
+    "output_samples": 2,
+    "output_sha256": "83bcce87a849e81a09c761a022075dfba97d3eddccfc42317a4ebcd6bca6024c",
+    "rejected_samples": 0,
+    "rejection_counts": {},
+    "schema_version": "1.0",
+    "split_counts": {"test": 0, "train": 2, "validation": 0},
+    "split_sha256s": {
+      "test": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "train": "83bcce87a849e81a09c761a022075dfba97d3eddccfc42317a4ebcd6bca6024c",
+      "validation": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass"
+}

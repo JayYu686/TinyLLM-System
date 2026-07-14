@@ -1,0 +1,154 @@
+{
+  "$defs": {
+    "DeduplicationConfig": {
+      "additionalProperties": false,
+      "description": "Exact-only M2 core deduplication and deterministic keep priority.",
+      "properties": {
+        "exact": {
+          "const": true,
+          "title": "Exact",
+          "type": "boolean"
+        },
+        "near": {
+          "const": false,
+          "title": "Near",
+          "type": "boolean"
+        },
+        "source_priority": {
+          "items": {
+            "enum": [
+              "oasst1",
+              "commitpackft"
+            ],
+            "type": "string"
+          },
+          "title": "Source Priority",
+          "type": "array"
+        }
+      },
+      "required": [
+        "exact",
+        "near",
+        "source_priority"
+      ],
+      "title": "DeduplicationConfig",
+      "type": "object"
+    },
+    "GroupedSplitConfig": {
+      "additionalProperties": false,
+      "description": "Integer-basis-point split policy with a fixed explicit seed.",
+      "properties": {
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "test_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Test Basis Points",
+          "type": "integer"
+        },
+        "train_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Train Basis Points",
+          "type": "integer"
+        },
+        "validation_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Validation Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "seed",
+        "train_basis_points",
+        "validation_basis_points",
+        "test_basis_points"
+      ],
+      "title": "GroupedSplitConfig",
+      "type": "object"
+    },
+    "NormalizationConfig": {
+      "additionalProperties": false,
+      "description": "Conservative text rules that preserve internal code whitespace.",
+      "properties": {
+        "max_message_chars": {
+          "exclusiveMinimum": 0,
+          "title": "Max Message Chars",
+          "type": "integer"
+        },
+        "max_sample_chars": {
+          "exclusiveMinimum": 0,
+          "title": "Max Sample Chars",
+          "type": "integer"
+        },
+        "normalize_line_endings": {
+          "const": true,
+          "title": "Normalize Line Endings",
+          "type": "boolean"
+        },
+        "reject_control_characters": {
+          "const": true,
+          "title": "Reject Control Characters",
+          "type": "boolean"
+        },
+        "strip_bom": {
+          "const": true,
+          "title": "Strip Bom",
+          "type": "boolean"
+        },
+        "trim_outer_whitespace": {
+          "const": true,
+          "title": "Trim Outer Whitespace",
+          "type": "boolean"
+        },
+        "unicode_form": {
+          "const": "nfc",
+          "title": "Unicode Form",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unicode_form",
+        "normalize_line_endings",
+        "strip_bom",
+        "trim_outer_whitespace",
+        "reject_control_characters",
+        "max_message_chars",
+        "max_sample_chars"
+      ],
+      "title": "NormalizationConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete M2.2 deterministic processing contract.",
+  "properties": {
+    "deduplication": {
+      "$ref": "#/$defs/DeduplicationConfig"
+    },
+    "normalization": {
+      "$ref": "#/$defs/NormalizationConfig"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "split": {
+      "$ref": "#/$defs/GroupedSplitConfig"
+    }
+  },
+  "required": [
+    "normalization",
+    "deduplication",
+    "split"
+  ],
+  "title": "M2ProcessingConfig",
+  "type": "object"
+}

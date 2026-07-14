@@ -1,0 +1,100 @@
+{
+  "additionalProperties": false,
+  "description": "Deterministic M2.2 lineage, counts, and content identities.",
+  "properties": {
+    "component_count": {
+      "minimum": 0,
+      "title": "Component Count",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "exact_duplicates": {
+      "minimum": 0,
+      "title": "Exact Duplicates",
+      "type": "integer"
+    },
+    "input_samples": {
+      "minimum": 0,
+      "title": "Input Samples",
+      "type": "integer"
+    },
+    "input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+    },
+    "normalization_rejections": {
+      "minimum": 0,
+      "title": "Normalization Rejections",
+      "type": "integer"
+    },
+    "normalized_samples": {
+      "minimum": 0,
+      "title": "Normalized Samples",
+      "type": "integer"
+    },
+    "output_samples": {
+      "minimum": 0,
+      "title": "Output Samples",
+      "type": "integer"
+    },
+    "output_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Output Sha256",
+      "type": "string"
+    },
+    "rejected_samples": {
+      "minimum": 0,
+      "title": "Rejected Samples",
+      "type": "integer"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "split_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Split Counts",
+      "type": "object"
+    },
+    "split_sha256s": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Split Sha256S",
+      "type": "object"
+    }
+  },
+  "required": [
+    "input_sha256",
+    "config_sha256",
+    "output_sha256",
+    "input_samples",
+    "normalized_samples",
+    "output_samples",
+    "rejected_samples",
+    "normalization_rejections",
+    "exact_duplicates",
+    "component_count",
+    "rejection_counts",
+    "split_counts",
+    "split_sha256s"
+  ],
+  "title": "DataProcessingManifest",
+  "type": "object"
+}

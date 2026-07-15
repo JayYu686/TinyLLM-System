@@ -29,7 +29,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
   `tinyllm eval contamination` JSON/exit-code contract.
 - added the reproducible 300-item TinyLLM domain evaluation candidate with seven fixed categories,
   explicit objective/human scorers, Apache-2.0 provenance, and 90 tagged bilingual task pairs;
-  formal clean-Train evidence and the Base Model Baseline remain separate acceptance artifacts.
+  formal clean-Train evidence and the Base Model Baseline are separate acceptance artifacts.
+- recorded the reviewed domain set's clean-main scan against all 4597 registered Train samples:
+  zero full-sequence and zero Prompt-prefix Exact matches; Near-Dedup remains not evaluated.
 
 ## 0.1.0-alpha.1
 

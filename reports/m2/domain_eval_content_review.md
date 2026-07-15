@@ -53,9 +53,10 @@ The maintainer review checked:
 5. Refusal rubrics reward evidence-grounded uncertainty without rewarding generic non-answers.
 6. No item reveals private data, credentials, host identity, or copied external benchmark content.
 
-## Pending acceptance evidence
+## Acceptance evidence completed
 
-After the content PR is approved and squash-merged, a clean `main` checkout must run
-`tinyllm eval contamination` against registered dataset `m2-sft-v1-f82ff32e`. That separate evidence
-must record the exact suite identity, checked Train sample count, exit status, and
-`near_dedup=not_evaluated`. The pre-training Qwen3-0.6B Baseline remains a later M2.4c task.
+After PR #49 was approved and squash-merged, a clean `main` checkout ran `tinyllm eval
+contamination` against registered dataset `m2-sft-v1-f82ff32e`. The separate
+[formal contamination report](domain_eval_contamination.md) records the exact suite identity,
+checked Train sample count, exit status, and `near_dedup=not_evaluated`. The pre-training
+Qwen3-0.6B Baseline remains a later M2.4c task.

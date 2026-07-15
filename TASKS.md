@@ -18,7 +18,7 @@
 | M0 硬件体检 | `COMPLETE` | Doctor、RTX 3090/BF16、1/2/4/6 卡 NCCL、报告、CI | V100/10 卡为非阻塞项 |
 | Week 1 专业化基础 | `COMPLETE` | Apache/README/治理、Typer/Pydantic、公共 Schema、CI、PR #27 | 无；后续修改进入 M1 独立 PR |
 | M1 单卡闭环 | `COMPLETE` | 原生 Trainer、完整 Checkpoint、CPU Exact Resume、3090 BF16 与真实 SIGTERM/SIGKILL | 无；`v0.1.0-alpha.1` 后进入 M2 |
-| M2 数据与评测前置 | `IN_PROGRESS` | 固定来源/许可导入、规范化/Dedup/Split、Qwen3 Mask、Token 平衡/Packing/Manifest、不可变 Registry、完整固定源/离线重建、M2.4a Exact 污染契约，以及 300 条领域集候选 | #46 完成人工内容审查、合并后真实污染扫描；#47 训练前 Baseline Evaluation |
+| M2 数据与评测前置 | `IN_PROGRESS` | 固定来源/许可导入、规范化/Dedup/Split、Qwen3 Mask、Token 平衡/Packing/Manifest、不可变 Registry、完整固定源/离线重建、M2.4a Exact 污染契约、300 条领域集及真实 Exact 扫描 | #47 训练前 Baseline Evaluation |
 | M3–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue |
 
 ## Week 1：专业化基础

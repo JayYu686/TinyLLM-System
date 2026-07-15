@@ -1,0 +1,38 @@
+{
+  "code": {
+    "git_commit": "c944cdb633c4d13f2183c82b418b33e0c1364ef6",
+    "git_dirty": false
+  },
+  "command": {
+    "artifact_root": "private-artifact-root",
+    "config": "configs/eval/m2_domain_v1.yaml",
+    "dataset_version": "m2-sft-v1-f82ff32e",
+    "evaluation_set": "evals/domain/v1/items.jsonl",
+    "tokenization_config": "configs/data/m2_tokenization.yaml"
+  },
+  "executed_at_utc": "2026-07-15T01:10:30Z",
+  "execution": {
+    "exit_status": 0,
+    "max_rss_kib": 495656,
+    "wall_seconds": 23.97
+  },
+  "report": {
+    "checked_evaluation_items": 300,
+    "checked_training_samples": 4597,
+    "contaminated_items": 0,
+    "dataset_content_sha256": "f82ff32ee98cb852fe6779774d9cce75a71e9430da72a6e5e1f4e3f7c2efd108",
+    "dataset_version": "m2-sft-v1-f82ff32e",
+    "evaluation_content_sha256": "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+    "evaluation_suite_version": "tinyllm-domain-v1-83bdd8ef",
+    "fingerprint_algorithm": "token-sequence-sha256-v1",
+    "full_sequence_matches": 0,
+    "matches": [],
+    "near_dedup": "not_evaluated",
+    "prompt_prefix_matches": 0,
+    "schema_version": "1.0",
+    "status": "clean"
+  },
+  "schema_version": "1.0",
+  "scope": "formal-m2-domain-v1-exact-train-contamination",
+  "status": "pass"
+}

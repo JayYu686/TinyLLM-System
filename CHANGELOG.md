@@ -31,7 +31,10 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
   explicit objective/human scorers, Apache-2.0 provenance, and 90 tagged bilingual task pairs;
   formal clean-Train evidence and the Base Model Baseline are separate acceptance artifacts.
 - recorded the reviewed domain set's clean-main scan against all 4597 registered Train samples:
-  zero full-sequence and zero Prompt-prefix Exact matches; Near-Dedup remains not evaluated.
+  zero full-sequence and zero Prompt-prefix Exact matches; Near-Dedup remains not evaluated;
+- completed the clean-main Qwen3-0.6B pre-training Baseline over 300 Domain items and 14,256
+  general-task samples, atomically committed 40/40 maintainer judgments, retained private raw
+  outputs, and published redacted aggregates, failed Item IDs, integrity hashes, and M2 acceptance.
 
 ## 0.1.0-alpha.1
 

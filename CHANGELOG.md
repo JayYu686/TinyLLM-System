@@ -27,6 +27,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 - added strict versioned evaluation-item/config/manifest/report schemas, deterministic evaluation
   content identity, privacy-preserving full-sequence and Prompt-prefix Train fingerprints, and the
   `tinyllm eval contamination` JSON/exit-code contract.
+- added the reproducible 300-item TinyLLM domain evaluation candidate with seven fixed categories,
+  explicit objective/human scorers, Apache-2.0 provenance, and 90 tagged bilingual task pairs;
+  formal clean-Train evidence and the Base Model Baseline remain separate acceptance artifacts.
 
 ## 0.1.0-alpha.1
 

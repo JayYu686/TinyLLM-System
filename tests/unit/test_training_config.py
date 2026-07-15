@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from tinyllm.schemas import canonical_config_hash
 from tinyllm.training.config import (
     TrainingConfigError,
     load_training_config,
@@ -58,7 +59,15 @@ def test_load_m1_example_config() -> None:
     assert config.schema_version == "1.0"
     assert config.model.head_dimension == 32
     assert config.training.global_batch_size == 8
+    assert config.global_batch_size == 8
+    assert config.distributed.strategy == "single"
+    assert "distributed" not in config.to_dict()
     assert config.data.vocab_size == config.model.vocab_size
+
+    cpu_smoke_config = load_training_config(Path("configs/pretrain/tinygpt_debug_cpu_smoke.yaml"))
+    assert canonical_config_hash(cpu_smoke_config) == (
+        "1dc537638ea9984943a4423c38400073735d331c39885fd2d657bd822160fbd7"
+    )
 
     gpu_config = load_training_config(
         Path("configs/pretrain/tinygpt_debug_rtx3090_bf16_smoke.yaml")
@@ -66,6 +75,13 @@ def test_load_m1_example_config() -> None:
     assert gpu_config.precision.dtype == "bf16"
     assert gpu_config.precision.use_grad_scaler is False
     assert gpu_config.training.max_steps == 40
+
+    ddp_config = load_training_config(Path("configs/pretrain/tinygpt_debug_ddp_cpu_smoke.yaml"))
+    assert ddp_config.distributed.strategy == "ddp"
+    assert ddp_config.distributed.backend == "gloo"
+    assert ddp_config.distributed.world_size == 2
+    assert ddp_config.global_batch_size == 8
+    assert ddp_config.to_dict()["distributed"] == ddp_config.distributed.to_dict()
 
 
 def test_training_config_rejects_unknown_fields() -> None:
@@ -101,4 +117,36 @@ def test_training_config_schema_rejects_coercion() -> None:
     training["max_steps"] = "10"
 
     with pytest.raises(TrainingConfigError, match="max_steps"):
+        training_config_from_mapping(mapping)
+
+
+def test_ddp_config_rejects_ambiguous_batch_sampler_and_resume_contracts() -> None:
+    mapping = valid_mapping()
+    training = mapping["training"]
+    checkpoint = mapping["checkpoint"]
+    assert isinstance(training, dict)
+    assert isinstance(checkpoint, dict)
+    training["max_steps"] = 1
+    training["gradient_accumulation_steps"] = 1
+    training["warmup_steps"] = 0
+    mapping["distributed"] = {
+        "strategy": "ddp",
+        "backend": "gloo",
+        "world_size": 2,
+        "timeout_seconds": 120,
+        "broadcast_buffers": False,
+        "find_unused_parameters": False,
+    }
+    config = training_config_from_mapping(mapping)
+    assert config.global_batch_size == 4
+
+    checkpoint["resume"] = "auto"
+    with pytest.raises(TrainingConfigError, match="checkpoint.resume=none"):
+        training_config_from_mapping(mapping)
+    checkpoint["resume"] = "none"
+
+    data = mapping["data"]
+    assert isinstance(data, dict)
+    data["num_samples"] = 15
+    with pytest.raises(TrainingConfigError, match="divisible by world_size"):
         training_config_from_mapping(mapping)

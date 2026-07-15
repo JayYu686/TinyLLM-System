@@ -615,6 +615,8 @@ def train_command(
         _output_error(f"{exc.code}: {exc}", json_output=json_output)
         preflight_codes = {
             TrainingErrorCode.ACCELERATOR_UNAVAILABLE,
+            TrainingErrorCode.DISTRIBUTED_LAUNCH_REQUIRED,
+            TrainingErrorCode.DISTRIBUTED_LAUNCH_INVALID,
             TrainingErrorCode.UNSUPPORTED_PRECISION,
         }
         raise typer.Exit(code=3 if exc.code in preflight_codes else 4) from exc

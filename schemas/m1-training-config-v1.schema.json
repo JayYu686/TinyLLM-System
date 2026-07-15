@@ -40,6 +40,65 @@
       "title": "CheckpointConfig",
       "type": "object"
     },
+    "DistributedConfig": {
+      "additionalProperties": false,
+      "description": "Explicit single-process or DDP launch contract.",
+      "properties": {
+        "backend": {
+          "anyOf": [
+            {
+              "enum": [
+                "gloo",
+                "nccl"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Backend"
+        },
+        "broadcast_buffers": {
+          "const": false,
+          "default": false,
+          "title": "Broadcast Buffers",
+          "type": "boolean"
+        },
+        "find_unused_parameters": {
+          "const": false,
+          "default": false,
+          "title": "Find Unused Parameters",
+          "type": "boolean"
+        },
+        "strategy": {
+          "default": "single",
+          "enum": [
+            "single",
+            "ddp"
+          ],
+          "title": "Strategy",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "default": 120,
+          "maximum": 1800,
+          "minimum": 10,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "world_size": {
+          "default": 1,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "World Size",
+          "type": "integer"
+        }
+      },
+      "title": "DistributedConfig",
+      "type": "object"
+    },
     "PrecisionConfig": {
       "additionalProperties": false,
       "description": "Numerical precision policy for one hardware profile.",
@@ -250,13 +309,16 @@
     }
   },
   "additionalProperties": false,
-  "description": "Complete validated configuration for an M1 training run.",
+  "description": "Complete validated native training configuration.",
   "properties": {
     "checkpoint": {
       "$ref": "#/$defs/CheckpointConfig"
     },
     "data": {
       "$ref": "#/$defs/ToyDataConfig"
+    },
+    "distributed": {
+      "$ref": "#/$defs/DistributedConfig"
     },
     "model": {
       "$ref": "#/$defs/TinyGPTConfig"

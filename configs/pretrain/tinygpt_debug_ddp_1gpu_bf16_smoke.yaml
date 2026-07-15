@@ -1,0 +1,51 @@
+schema_version: "1.0"
+
+run:
+  name: tinygpt-debug-ddp-1gpu-bf16-smoke
+  seed: 42
+
+model:
+  vocab_size: 256
+  hidden_size: 192
+  num_layers: 4
+  num_heads: 6
+  intermediate_size: 512
+  max_sequence_length: 128
+  rope_theta: 10000.0
+  rms_norm_epsilon: 1.0e-6
+  dropout: 0.0
+  tie_word_embeddings: true
+
+data:
+  kind: toy
+  vocab_size: 256
+  sequence_length: 128
+  num_samples: 256
+
+training:
+  max_steps: 8
+  micro_batch_size: 4
+  gradient_accumulation_steps: 2
+  learning_rate: 3.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  warmup_steps: 2
+
+precision:
+  dtype: bf16
+  allow_tf32: true
+  use_grad_scaler: false
+
+checkpoint:
+  output_dir: /data/yujielun/tinyllm/runs
+  save_steps: 8
+  keep_last: 2
+  resume: none
+
+distributed:
+  strategy: ddp
+  backend: nccl
+  world_size: 1
+  timeout_seconds: 120
+  broadcast_buffers: false
+  find_unused_parameters: false

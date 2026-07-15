@@ -1,4 +1,4 @@
-"""Strict Pydantic YAML configuration schema for M1 single-device training."""
+"""Strict Pydantic YAML configuration schema for native TinyLLM training."""
 
 from __future__ import annotations
 
@@ -53,9 +53,31 @@ class TrainingLoopConfig(StrictSchema):
 
     @property
     def global_batch_size(self) -> int:
-        """Return the M1 world-size-one global batch size."""
+        """Return the historical world-size-one global batch size."""
 
         return self.micro_batch_size * self.gradient_accumulation_steps
+
+
+class DistributedConfig(StrictSchema):
+    """Explicit single-process or DDP launch contract."""
+
+    strategy: Literal["single", "ddp"] = "single"
+    backend: Literal["gloo", "nccl"] | None = None
+    world_size: int = Field(default=1, ge=1, le=10)
+    timeout_seconds: int = Field(default=120, ge=10, le=1800)
+    broadcast_buffers: Literal[False] = False
+    find_unused_parameters: Literal[False] = False
+
+    @model_validator(mode="after")
+    def validate_strategy(self) -> DistributedConfig:
+        """Reject ambiguous backend and World Size combinations."""
+
+        if self.strategy == "single":
+            if self.world_size != 1 or self.backend is not None:
+                raise ValueError("single strategy requires world_size=1 and backend=null")
+        elif self.backend is None:
+            raise ValueError("ddp strategy requires an explicit gloo or nccl backend")
+        return self
 
 
 class PrecisionConfig(StrictSchema):
@@ -84,7 +106,7 @@ class CheckpointConfig(StrictSchema):
 
 
 class M1TrainingConfig(StrictSchema):
-    """Complete validated configuration for an M1 training run."""
+    """Complete validated native training configuration."""
 
     schema_version: Literal["1.0"]
     run: RunConfig
@@ -93,6 +115,7 @@ class M1TrainingConfig(StrictSchema):
     training: TrainingLoopConfig
     precision: PrecisionConfig
     checkpoint: CheckpointConfig
+    distributed: DistributedConfig = Field(default_factory=DistributedConfig)
 
     @model_validator(mode="after")
     def validate_cross_field_contract(self) -> M1TrainingConfig:
@@ -102,12 +125,46 @@ class M1TrainingConfig(StrictSchema):
             raise ValueError("model.vocab_size must equal data.vocab_size")
         if self.data.sequence_length > self.model.max_sequence_length:
             raise ValueError("data.sequence_length cannot exceed model.max_sequence_length")
+        if self.distributed.strategy == "ddp":
+            if self.checkpoint.resume != "none":
+                raise ValueError("M3.1 DDP correctness runs require checkpoint.resume=none")
+            if self.precision.use_grad_scaler:
+                raise ValueError("M3.1 DDP correctness does not support GradScaler")
+            if self.distributed.backend == "gloo" and self.precision.dtype != "fp32":
+                raise ValueError("gloo DDP correctness runs require fp32")
+            if self.distributed.backend == "nccl" and self.precision.dtype not in {"fp32", "bf16"}:
+                raise ValueError("nccl DDP correctness runs require fp32 or bf16")
+            if self.data.num_samples % self.distributed.world_size != 0:
+                raise ValueError("DDP data.num_samples must be divisible by world_size")
+            samples_per_rank = self.data.num_samples // self.distributed.world_size
+            if samples_per_rank % self.training.micro_batch_size != 0:
+                raise ValueError("DDP samples per rank must be divisible by micro_batch_size")
+            required_per_rank = (
+                self.training.max_steps
+                * self.training.micro_batch_size
+                * self.training.gradient_accumulation_steps
+            )
+            if required_per_rank > samples_per_rank:
+                raise ValueError("M3.1 DDP correctness run must fit within one sampler epoch")
         return self
 
-    def to_dict(self) -> dict[str, Any]:
-        """Return a JSON-compatible resolved configuration snapshot."""
+    @property
+    def global_batch_size(self) -> int:
+        """Return micro batch × accumulation × data-parallel World Size."""
 
-        return self.model_dump(mode="json")
+        return (
+            self.training.micro_batch_size
+            * self.training.gradient_accumulation_steps
+            * self.distributed.world_size
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-compatible snapshot without changing historical single-run hashes."""
+
+        resolved = self.model_dump(mode="json")
+        if self.distributed == DistributedConfig():
+            resolved.pop("distributed")
+        return resolved
 
 
 def training_config_from_mapping(raw: object) -> M1TrainingConfig:

@@ -18,6 +18,7 @@ from tinyllm.lineage import read_git_identity
 from tinyllm.schemas import TrainingRunResult, canonical_config_hash, generate_run_id
 from tinyllm.training.checkpoint import CheckpointContext, CheckpointStore
 from tinyllm.training.config import M1TrainingConfig, load_training_config
+from tinyllm.training.errors import TrainingError, TrainingErrorCode
 from tinyllm.training.resume import ResumeMode, restore_trainer
 from tinyllm.training.trainer import (
     SingleDeviceTrainer,
@@ -141,6 +142,12 @@ def run_single_device_training(
 
     config_path = config_path.resolve()
     config = load_training_config(config_path)
+    if config.distributed.strategy != "single":
+        raise TrainingError(
+            TrainingErrorCode.DISTRIBUTED_LAUNCH_REQUIRED,
+            "DDP config must be launched through the M3 torchrun worker",
+            context={"strategy": config.distributed.strategy},
+        )
     project_root = config_path.parent
     git_commit, git_dirty = read_git_identity(project_root)
     config_hash = canonical_config_hash(config)

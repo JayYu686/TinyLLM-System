@@ -9,7 +9,7 @@ ErrorContextValue: TypeAlias = bool | float | int | str
 
 
 class TrainingErrorCode(StrEnum):
-    """Machine-readable M1 training failure categories."""
+    """Machine-readable native training failure categories."""
 
     TRAIN_OUTPUT_INVALID = "TRAIN_OUTPUT_INVALID"
     NON_FINITE_LOSS = "NON_FINITE_LOSS"
@@ -18,6 +18,9 @@ class TrainingErrorCode(StrEnum):
     UNSUPPORTED_PRECISION = "UNSUPPORTED_PRECISION"
     ACCELERATOR_UNAVAILABLE = "ACCELERATOR_UNAVAILABLE"
     ACCELERATOR_OUT_OF_MEMORY = "ACCELERATOR_OUT_OF_MEMORY"
+    DISTRIBUTED_LAUNCH_REQUIRED = "DISTRIBUTED_LAUNCH_REQUIRED"
+    DISTRIBUTED_LAUNCH_INVALID = "DISTRIBUTED_LAUNCH_INVALID"
+    DISTRIBUTED_STATE_MISMATCH = "DISTRIBUTED_STATE_MISMATCH"
 
 
 class TrainingError(RuntimeError):

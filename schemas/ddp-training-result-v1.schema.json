@@ -1,0 +1,221 @@
+{
+  "$defs": {
+    "DDPCorrectnessSummary": {
+      "additionalProperties": false,
+      "description": "Correctness facts shared by all ranks in one bounded DDP run.",
+      "properties": {
+        "backend": {
+          "enum": [
+            "gloo",
+            "nccl"
+          ],
+          "title": "Backend",
+          "type": "string"
+        },
+        "durable_metric_records": {
+          "exclusiveMinimum": 0,
+          "title": "Durable Metric Records",
+          "type": "integer"
+        },
+        "durable_writer_rank": {
+          "const": 0,
+          "default": 0,
+          "title": "Durable Writer Rank",
+          "type": "integer"
+        },
+        "final_parameter_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Final Parameter Sha256",
+          "type": "string"
+        },
+        "global_batch_size": {
+          "exclusiveMinimum": 0,
+          "title": "Global Batch Size",
+          "type": "integer"
+        },
+        "gradient_norm_atol": {
+          "default": 1e-06,
+          "minimum": 0.0,
+          "title": "Gradient Norm Atol",
+          "type": "number"
+        },
+        "initial_parameter_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Initial Parameter Sha256",
+          "type": "string"
+        },
+        "loss_reduction_atol": {
+          "default": 1e-12,
+          "minimum": 0.0,
+          "title": "Loss Reduction Atol",
+          "type": "number"
+        },
+        "max_gradient_norm_abs_diff": {
+          "minimum": 0.0,
+          "title": "Max Gradient Norm Abs Diff",
+          "type": "number"
+        },
+        "max_loss_reduction_abs_diff": {
+          "minimum": 0.0,
+          "title": "Max Loss Reduction Abs Diff",
+          "type": "number"
+        },
+        "model_parameter_count": {
+          "exclusiveMinimum": 0,
+          "title": "Model Parameter Count",
+          "type": "integer"
+        },
+        "optimizer_steps": {
+          "exclusiveMinimum": 0,
+          "title": "Optimizer Steps",
+          "type": "integer"
+        },
+        "partitions": {
+          "items": {
+            "$ref": "#/$defs/DDPPartitionEvidence"
+          },
+          "title": "Partitions",
+          "type": "array"
+        },
+        "sampler_no_overlap": {
+          "const": true,
+          "default": true,
+          "title": "Sampler No Overlap",
+          "type": "boolean"
+        },
+        "sampler_num_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Sampler Num Samples",
+          "type": "integer"
+        },
+        "sampler_union_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Sampler Union Samples",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "const": "pass",
+          "default": "pass",
+          "title": "Status",
+          "type": "string"
+        },
+        "world_size": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "World Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "backend",
+        "world_size",
+        "global_batch_size",
+        "optimizer_steps",
+        "durable_metric_records",
+        "model_parameter_count",
+        "initial_parameter_sha256",
+        "final_parameter_sha256",
+        "sampler_num_samples",
+        "sampler_union_samples",
+        "partitions",
+        "max_loss_reduction_abs_diff",
+        "max_gradient_norm_abs_diff"
+      ],
+      "title": "DDPCorrectnessSummary",
+      "type": "object"
+    },
+    "DDPPartitionEvidence": {
+      "additionalProperties": false,
+      "description": "Privacy-safe identity of one DistributedSampler partition.",
+      "properties": {
+        "rank": {
+          "minimum": 0,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "sample_count": {
+          "exclusiveMinimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "sample_ids_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sample Ids Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rank",
+        "sample_count",
+        "sample_ids_sha256"
+      ],
+      "title": "DDPPartitionEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Rank-zero terminal result emitted by the M3.1 torchrun worker.",
+  "properties": {
+    "artifact_dir": {
+      "format": "path",
+      "title": "Artifact Dir",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^(?P<timestamp>\\d{8}T\\d{6}Z)-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<config_hash>[a-f0-9]{8})-(?P<nonce>[a-f0-9]{4})$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "succeeded",
+      "default": "succeeded",
+      "title": "Status",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/DDPCorrectnessSummary"
+    }
+  },
+  "required": [
+    "run_id",
+    "artifact_dir",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "summary"
+  ],
+  "title": "DDPTrainingResult",
+  "type": "object"
+}

@@ -19,7 +19,8 @@
 | Week 1 专业化基础 | `COMPLETE` | Apache/README/治理、Typer/Pydantic、公共 Schema、CI、PR #27 | 无；后续修改进入 M1 独立 PR |
 | M1 单卡闭环 | `COMPLETE` | 原生 Trainer、完整 Checkpoint、CPU Exact Resume、3090 BF16 与真实 SIGTERM/SIGKILL | 无；`v0.1.0-alpha.1` 后进入 M2 |
 | M2 数据与评测前置 | `COMPLETE` | 固定来源/许可导入、确定性处理与 Registry、完整离线重建、冻结 300 条领域集、真实 Exact 污染扫描、clean-main 全量 Qwen3 Baseline 与 40/40 人工判断 | 无；M1/M2 已解除 M3 前置阻塞 |
-| M3–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue |
+| M3 DDP 与正式扩展 | `IN_PROGRESS` | M3.1 真实 1/2 卡 DDP 正确性、CPU 两进程集成、严格 Schema/失败路径、脱敏报告 | #13 Checkpoint/Resume/Rank Failure；#14 Benchmark；#15 1/2/4/8 扩展与 NUMA 对照 |
+| M4–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue；不得阻塞当前 M3 正确性顺序 |
 
 ## Week 1：专业化基础
 

@@ -5,6 +5,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- started M3 with strict torchrun/DDP configuration, deterministic initialization and Sampler
+  evidence, exact Global Batch and reduced-Loss validation, rank-zero-only durable artifacts, and
+  real one-/two-RTX-3090 NCCL/BF16 correctness runs; distributed Resume and scaling remain open.
 - started M2 with pinned OASST1 and CommitPackFT identities, explicit per-source-license policy,
   strict import schemas, deterministic input/config hashes, and privacy-preserving rejection
   summaries;

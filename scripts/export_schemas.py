@@ -62,6 +62,11 @@ from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
 from tinyllm.schemas.training_run import TrainingRunResult
 from tinyllm.training.config import M1TrainingConfig
+from tinyllm.training.ddp_schema import (
+    DDPCorrectnessSummary,
+    DDPPartitionEvidence,
+    DDPTrainingResult,
+)
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -75,6 +80,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "contamination-report-v1.schema.json": ContaminationReport,
     "data-import-manifest-v1.schema.json": DataImportManifest,
     "data-processing-manifest-v1.schema.json": DataProcessingManifest,
+    "ddp-correctness-summary-v1.schema.json": DDPCorrectnessSummary,
+    "ddp-partition-evidence-v1.schema.json": DDPPartitionEvidence,
+    "ddp-training-result-v1.schema.json": DDPTrainingResult,
     "dataset-artifact-file-v1.schema.json": DatasetArtifactFile,
     "dataset-commit-marker-v1.schema.json": DatasetCommitMarker,
     "dataset-registration-v1.schema.json": DatasetRegistration,

@@ -135,6 +135,10 @@ Manifest 记录输入/输出哈希和许可证。M2 已解除 M3/M4/M5 的数据
 
 ## 8. Milestone 3：DDP 与扩展证据（Weeks 5–6）
 
+状态：`IN_PROGRESS`。M3.1 已完成真实 1/2 卡 NCCL/BF16 正确性运行；验收见
+[M3.1 DDP Correctness](reports/m3/ddp_correctness.md)。Checkpoint/Resume/Rank Failure 与正式
+扩展 Benchmark 尚未完成，因此不得标记 M3 完成或开始 M4。
+
 输入：M1 正确训练/恢复语义、M2 数据版本、TinyGPT-Target-120M 配置。
 
 主要工作：torchrun、DistributedSampler、参数初始化、Global Batch、Loss Reduce、Rank 0

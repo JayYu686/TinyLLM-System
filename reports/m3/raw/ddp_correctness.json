@@ -1,0 +1,168 @@
+{
+  "code": {
+    "git_commit": "9bd5e06caa1e6b217c531fdeabd826e2e148fb3c",
+    "git_dirty": false
+  },
+  "hardware": {
+    "driver_version": "535.261.03",
+    "gpu_model": "NVIDIA GeForce RTX 3090",
+    "memory_total_mib": 24576,
+    "one_gpu_preflight": [
+      {
+        "index": 4,
+        "memory_used_mib": 1,
+        "temperature_c": 30,
+        "utilization_percent": 0
+      }
+    ],
+    "two_gpu_preflight": [
+      {
+        "index": 4,
+        "memory_used_mib": 1,
+        "temperature_c": 31,
+        "utilization_percent": 0
+      },
+      {
+        "index": 5,
+        "memory_used_mib": 1,
+        "temperature_c": 28,
+        "utilization_percent": 0
+      }
+    ],
+    "two_gpu_topology": {
+      "gpu_indices": [
+        4,
+        5
+      ],
+      "nvidia_smi_relation": "SYS",
+      "numa_nodes": [
+        0,
+        1
+      ],
+      "p2p_read": "CNS"
+    }
+  },
+  "not_evaluated": [
+    "ddp_checkpoint_resume",
+    "rank_failure_recovery",
+    "changed_world_size_resume",
+    "throughput",
+    "scaling_efficiency",
+    "peak_memory",
+    "profiler_trace",
+    "four_or_eight_gpu_training",
+    "fsdp2",
+    "zero3"
+  ],
+  "private_artifacts": {
+    "correctness_sha256": {
+      "one_gpu": "ca2c6a9cb67350af6b86b3f4aa56f25db7640d161ab1585c01457516e8b85f10",
+      "two_gpu": "0d59c14a232ef2029688688a07e2d6689259ff5e87e80aab13ef530de4209796"
+    },
+    "doctor_report_sha256": "60295467e044b2910dc87c0792b29c181f233728584c11cb81889f3ea4f1dba9",
+    "doctor_report_retained": true,
+    "evidence_group": "20260715T082246Z-9bd5e06",
+    "run_directories_retained": 2,
+    "summary_sha256": {
+      "one_gpu": "d24537eebf70fe68b32dac4e8b3d966001e74ded72ac74266a0cacf20d35d739",
+      "two_gpu": "38462095c3994a0bc51c6b68ac5be47c8ca1d0c12944206504edc408b4cdeb6f"
+    },
+    "stderr_bytes": {
+      "one_gpu": 0,
+      "two_gpu": 0
+    },
+    "stderr_sha256": {
+      "one_gpu": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "two_gpu": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout_sha256": {
+      "one_gpu": "7c7fa62be8779fad723232ce881e45c90c6015a8df218a5eb99ff91a88397302",
+      "two_gpu": "d21ce8c4071c588f3b6853f06617c1179527162022e96d02e57b6edce9abca48"
+    },
+    "stdout_and_preflight_retained": true
+  },
+  "runs": {
+    "one_gpu": {
+      "config_sha256": "864678f1e87ecb9fba28587018647dd6a6b367a5946fcbc2864163f595fc620d",
+      "orchestration_wall_seconds": 6.822,
+      "run_id": "20260715T082323Z-tinygpt-debug-ddp-1gpu-bf16-smoke-864678f1-ea33",
+      "summary": {
+        "backend": "nccl",
+        "durable_metric_records": 8,
+        "durable_writer_rank": 0,
+        "final_parameter_sha256": "063c9404e2385689d0cad9b68fd6ba7fb2655a547e7f357371114a83f9692ca0",
+        "global_batch_size": 8,
+        "gradient_norm_atol": 1e-06,
+        "initial_parameter_sha256": "655bf47dfb6f9acc413417a04a834a2b03373654c6867ab0ae2e9c22152d4fc6",
+        "loss_reduction_atol": 1e-12,
+        "max_gradient_norm_abs_diff": 0.0,
+        "max_loss_reduction_abs_diff": 0.0,
+        "model_parameter_count": 1820352,
+        "optimizer_steps": 8,
+        "partitions": [
+          {
+            "rank": 0,
+            "sample_count": 256,
+            "sample_ids_sha256": "415adb4911ae6e714f937481ce983b496ebaf83dff3166d006f5425baa5a9b43",
+            "schema_version": "1.0"
+          }
+        ],
+        "sampler_no_overlap": true,
+        "sampler_num_samples": 256,
+        "sampler_union_samples": 256,
+        "schema_version": "1.0",
+        "status": "pass",
+        "world_size": 1
+      }
+    },
+    "two_gpu": {
+      "config_sha256": "bb8734af148090d1619c883726e89b08449d25eeaffaa3ca8d3af1a3739fc269",
+      "orchestration_wall_seconds": 7.305,
+      "run_id": "20260715T082349Z-tinygpt-debug-ddp-2gpu-bf16-smoke-bb8734af-8c53",
+      "summary": {
+        "backend": "nccl",
+        "durable_metric_records": 8,
+        "durable_writer_rank": 0,
+        "final_parameter_sha256": "2de86e19b979a34c5ce5fff8f1776254d8f25b2434ca1b5b50fee17e2f6fb508",
+        "global_batch_size": 8,
+        "gradient_norm_atol": 1e-06,
+        "initial_parameter_sha256": "655bf47dfb6f9acc413417a04a834a2b03373654c6867ab0ae2e9c22152d4fc6",
+        "loss_reduction_atol": 1e-12,
+        "max_gradient_norm_abs_diff": 0.0,
+        "max_loss_reduction_abs_diff": 0.0,
+        "model_parameter_count": 1820352,
+        "optimizer_steps": 8,
+        "partitions": [
+          {
+            "rank": 0,
+            "sample_count": 128,
+            "sample_ids_sha256": "172cd678e0f14a0a63111d7a636e10c8199a5c7de18fa84035f96e2f7ef36018",
+            "schema_version": "1.0"
+          },
+          {
+            "rank": 1,
+            "sample_count": 128,
+            "sample_ids_sha256": "bbf93ce4cd7587c3a3cde801ec84a1423855b3169ce5daaaefd80f1fa9e0a99d",
+            "schema_version": "1.0"
+          }
+        ],
+        "sampler_no_overlap": true,
+        "sampler_num_samples": 256,
+        "sampler_union_samples": 256,
+        "schema_version": "1.0",
+        "status": "pass",
+        "world_size": 2
+      }
+    }
+  },
+  "schema_version": "1.0",
+  "scope": "m3.1-ddp-launch-sampler-batch-metric-and-logging-correctness",
+  "software": {
+    "bf16_supported": true,
+    "cuda_runtime": "11.8",
+    "nccl": "2.21.5",
+    "python": "3.11.14",
+    "torch": "2.7.1+cu118"
+  },
+  "status": "pass"
+}

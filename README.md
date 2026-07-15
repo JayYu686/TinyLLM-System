@@ -59,10 +59,11 @@ rebuild with the same content identity. Model quality and Baseline Evaluation re
 The [M2.4a contamination contract smoke](reports/m2/contamination_smoke.md) verifies strict
 evaluation identity plus full-sequence and Prompt-prefix Exact matching on a synthetic registered
 dataset. The [300-item domain candidate](evals/domain/v1/README.md) and its
-[content-review checklist](reports/m2/domain_eval_content_review.md) freeze the intended 210/90
-language mix, seven categories, explicit scorers, and 90 bilingual task pairs. Their content PR and
-the subsequent clean-`main` real contamination evidence remain M2.4b acceptance gates; neither the
-synthetic Smoke nor committed content alone proves the set clean.
+[content-review report](reports/m2/domain_eval_content_review.md) freeze the intended 210/90
+language mix, seven categories, explicit scorers, and 90 bilingual task pairs. The subsequent
+[formal clean-`main` report](reports/m2/domain_eval_contamination.md) checked all 300 items against
+4597 verified Train samples with zero full-sequence and zero Prompt-prefix Exact matches. Near-Dedup
+remains `not_evaluated`, and the pre-training Base Model Evaluation remains M2.4c.
 
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately

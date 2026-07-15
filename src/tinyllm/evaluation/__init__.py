@@ -1,5 +1,49 @@
-"""Versioned evaluation-set identity and contamination checks."""
+"""Versioned evaluation identities, Baseline contracts, and contamination checks."""
 
+from tinyllm.evaluation.baseline import (
+    BaselineContractError,
+    build_lm_eval_command,
+    build_lm_eval_validation_command,
+    load_baseline_config,
+    load_human_rubric_judgments,
+    render_generation_prompt,
+    score_domain_response,
+    validate_baseline_inputs,
+)
+from tinyllm.evaluation.baseline_inference import (
+    DomainGenerationBackend,
+    GeneratedResponse,
+    TransformersDomainBackend,
+    run_domain_generation,
+    seed_baseline,
+)
+from tinyllm.evaluation.baseline_results import (
+    build_domain_summary,
+    load_general_summary,
+)
+from tinyllm.evaluation.baseline_run import (
+    complete_baseline_human_review,
+    run_baseline_evaluation,
+)
+from tinyllm.evaluation.baseline_runtime import (
+    BaselineGpuPreflight,
+    BaselinePreflightError,
+    BaselineRuntime,
+    BaselineRuntimeError,
+    acquire_baseline_model,
+    load_baseline_runtime,
+    preflight_baseline_gpu,
+)
+from tinyllm.evaluation.baseline_schema import (
+    BaselineEvaluationResult,
+    BaselineRunConfig,
+    DomainBaselineSummary,
+    DomainItemResult,
+    GeneralBaselineSummary,
+    GeneralTaskResult,
+    HumanReviewCommit,
+    HumanRubricJudgment,
+)
 from tinyllm.evaluation.contamination import (
     EvaluationContractError,
     build_evaluation_manifest,
@@ -30,11 +74,21 @@ from tinyllm.evaluation.schema import (
 
 __all__ = [
     "AuthoredProvenance",
+    "BaselineContractError",
+    "BaselineEvaluationResult",
+    "BaselineGpuPreflight",
+    "BaselinePreflightError",
+    "BaselineRunConfig",
+    "BaselineRuntime",
+    "BaselineRuntimeError",
     "CategoryCounts",
     "ContaminationMatch",
     "ContaminationPolicy",
     "ContaminationReport",
     "DecodingConfig",
+    "DomainItemResult",
+    "DomainGenerationBackend",
+    "DomainBaselineSummary",
     "EvaluationBuildConfig",
     "EvaluationContractError",
     "EvaluationItem",
@@ -42,14 +96,36 @@ __all__ = [
     "EvaluationSetManifest",
     "ExactMatchScorer",
     "HumanRubricScorer",
+    "HumanRubricJudgment",
+    "HumanReviewCommit",
     "JsonObjectScorer",
     "LanguageCounts",
+    "GeneratedResponse",
+    "GeneralBaselineSummary",
+    "GeneralTaskResult",
     "MultipleChoiceScorer",
     "RequiredTermsScorer",
+    "TransformersDomainBackend",
+    "acquire_baseline_model",
     "build_evaluation_manifest",
+    "build_lm_eval_command",
+    "build_lm_eval_validation_command",
+    "complete_baseline_human_review",
+    "build_domain_summary",
     "fingerprint_token_sequence",
     "load_evaluation_build_config",
     "load_evaluation_items",
+    "load_baseline_config",
+    "load_baseline_runtime",
+    "load_human_rubric_judgments",
+    "load_general_summary",
+    "preflight_baseline_gpu",
+    "render_generation_prompt",
     "run_contamination_check",
+    "run_baseline_evaluation",
+    "run_domain_generation",
     "scan_exact_contamination",
+    "score_domain_response",
+    "seed_baseline",
+    "validate_baseline_inputs",
 ]

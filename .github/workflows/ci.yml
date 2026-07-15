@@ -24,6 +24,31 @@ jobs:
       - run: make check VENV="$(python -c 'import sys; print(sys.prefix)')"
       - run: pip-audit --skip-editable
 
+  baseline-dependencies:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements/torch-cpu.txt
+      - run: >-
+          python -m pip install
+          -c requirements/constraints/baseline.txt
+          -e ".[baseline]"
+          pip-audit
+          setuptools
+      - run: >-
+          pip-audit --skip-editable
+          --ignore-vuln PYSEC-2025-217
+          --ignore-vuln PYSEC-2026-1939
+          --ignore-vuln PYSEC-2026-2288
+          --ignore-vuln PYSEC-2026-2289
+          --ignore-vuln PYSEC-2026-2290
+
   docker:
     runs-on: ubuntu-22.04
     timeout-minutes: 20

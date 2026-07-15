@@ -196,3 +196,65 @@ Near-Dedup 是后续增强项。只完成 Exact 指纹扫描时必须记录 `nea
 
 污染为零不等于评测质量合格；300 条内容仍必须经过语言、类别、评分客观性、许可和人工
 质量审查。Baseline 未真实运行时必须保持 `not_evaluated`。
+
+## 11. M2.4c 训练前 Baseline 契约
+
+M2.4c 固定使用 `Qwen/Qwen3-0.6B@c1899de289a04d12100db370d81485cdf75e47ca` 的
+Post-trained 权重、BF16、Non-thinking ChatML、Greedy Decoding 和单张 RTX 3090。正式运行
+必须在已合并实现的 clean `main` 上从经过 SHA256 校验的私有缓存离线加载模型；不得让
+Transformers 静默回退到远端默认分支或执行 Remote Code。
+
+Baseline 使用独立 `.venv-baseline`：Transformers 4.57.6 需要 Tokenizers 0.22.2，而 M2
+数据构建仍固定 Tokenizers 0.21.4。两者不能共用解释器后再声称数据可复现。安装与审计命令
+固定为 `make bootstrap-baseline` 和 `make audit-baseline`；审计例外及其失效条件记录在
+`requirements/baseline_security_exceptions.md`。
+
+领域集生成使用 `qwen3-chatml-nonthinking-generation-v1`：对冻结的 System/User 消息使用
+与 M2 数据一致的 ChatML 消息格式，并追加 Assistant Generation Header 与 Qwen3 官方
+`enable_thinking=false` 所需的空 `<think></think>` 块。它与污染检测中
+包含 Reference 的 `qwen3-chatml-nonthinking-v1` 是两个显式身份，不能混用。300 条输出全部
+保存在私有 Run；公共仓库只保存内容哈希、分项汇总、脱敏失败 Item ID 和人工判断依据。
+
+客观评分规则固定为：Exact Match 按 Item 的大小写/首尾空白策略；JSON 先解析并独立记录
+Valid Rate，再比较对象；Multiple Choice 比较冻结选项文本；Required Terms 按显式必含/
+禁含项。40 条 `human_rubric` 必须由维护者逐项保存三个布尔判定和非空 Rationale，未完成人工
+判断时整个 Baseline 状态只能是 `awaiting_human_review`。
+
+通用任务通过 `lm-eval==0.4.12` 的本地 YAML Adapter 运行，均为 0-shot、固定 Batch、应用
+Qwen Chat Template 且 `enable_thinking=false`，同时保存 `--log_samples` 原始记录。任务与
+数据版本固定为：
+
+| Task | Dataset revision | Split | Samples | Public metric |
+| -- | -- | -- | --: | -- |
+| ARC-Easy | `allenai/ai2_arc@210d026faf9955653af8916fad021475a3f00453` | test | 2376 | `acc`, `acc_norm` |
+| HellaSwag | `Rowan/hellaswag@218ec52e09a7e7462a5400043bb9a69a41d06b76` | validation | 10042 | `acc`, `acc_norm` |
+| PIQA | `baber/piqa@142f6d7367fd9877f0fb3b5734ea6a545f54cdd1` | validation | 1838 | `acc`, `acc_norm` |
+
+HellaSwag/PIQA 的 Hub Mirror 未声明许可证，原始样本、Prompt 和模型输出因此只保存在私有
+Artifact Store；这不影响只公开聚合指标，但必须作为报告限制。正式运行前先用独立 Smoke
+配置对每类至少两条样本验证模型加载、输出、评分、OOM/缓存缺失失败路径和原始日志写入。
+运行前必须单独执行 `lm-eval validate`；不使用 v0.4.12 PyPI Wheel 中会因未打包源码测试
+目录而失败的 `--check_integrity` 运行时开关。
+
+GPU 由 CLI 的 `--gpu-index` 显式覆盖。模型加载前必须重新采集物理卡显存占用、利用率和
+温度；超过 1024 MiB、利用率超过 10% 或温度达到 80 C 时拒绝运行。通过的 M2.4c 兼容性
+Smoke 记录在 `reports/m2/baseline_smoke.md`，其 2 条/任务限制不构成质量 Baseline。
+
+正式 Domain 生成完成后，Run 必须保持 `awaiting_human_review`，直到 40 条拒答 Item 都有
+一条私有 JSONL Judgment。每条 Judgment 固定保存三个按 Item Criteria 顺序排列的布尔值、
+三项全通过得到的 `passed`、非空 Rationale 和 `reviewer_role=maintainer`。Judgment 必须按
+Run 中 Item 顺序一次性完整提交，禁止部分提交或覆盖已提交结果：
+
+```bash
+.venv-baseline/bin/tinyllm eval baseline-review \
+  --run-id "$BASELINE_RUN_ID" \
+  --judgments "$PRIVATE_JUDGMENTS_JSONL" \
+  --artifact-root "$TINYLLM_ARTIFACT_ROOT" \
+  --json
+```
+
+提交器会重新验证 Run Config、Domain 原始响应哈希、待审汇总和 Judgment ID，并先原子发布
+`human_review/` 目录，再将 Run 从 `evaluating` 更新为 `succeeded`。公共报告可以发布汇总和
+脱敏失败 Item ID；原始响应与完整 Judgment 仍保留在私有 Artifact Store。若进程在评审目录
+发布后、Run 状态更新前中断，相同 Judgment 提交会校验已发布 Commit 并幂等完成外层状态；
+不同内容不能覆盖既有 Commit。

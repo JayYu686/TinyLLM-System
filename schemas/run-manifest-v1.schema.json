@@ -81,7 +81,8 @@
         "single",
         "ddp",
         "fsdp2",
-        "zero3"
+        "zero3",
+        "evaluation"
       ],
       "title": "Strategy",
       "type": "string"

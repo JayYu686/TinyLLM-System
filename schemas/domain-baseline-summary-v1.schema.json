@@ -1,0 +1,87 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free aggregate over generated Domain responses.",
+  "properties": {
+    "evaluated_items": {
+      "exclusiveMinimum": 0,
+      "maximum": 300,
+      "title": "Evaluated Items",
+      "type": "integer"
+    },
+    "human_passed": {
+      "maximum": 40,
+      "minimum": 0,
+      "title": "Human Passed",
+      "type": "integer"
+    },
+    "human_review_pending": {
+      "maximum": 40,
+      "minimum": 0,
+      "title": "Human Review Pending",
+      "type": "integer"
+    },
+    "human_reviewed": {
+      "maximum": 40,
+      "minimum": 0,
+      "title": "Human Reviewed",
+      "type": "integer"
+    },
+    "json_items": {
+      "maximum": 80,
+      "minimum": 0,
+      "title": "Json Items",
+      "type": "integer"
+    },
+    "json_valid": {
+      "maximum": 80,
+      "minimum": 0,
+      "title": "Json Valid",
+      "type": "integer"
+    },
+    "objective_correct": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Objective Correct",
+      "type": "integer"
+    },
+    "objective_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Objective Items",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "awaiting_human_review"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "suite_version": {
+      "const": "tinyllm-domain-v1-83bdd8ef",
+      "title": "Suite Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "suite_version",
+    "evaluated_items",
+    "objective_items",
+    "objective_correct",
+    "human_review_pending",
+    "human_reviewed",
+    "human_passed",
+    "json_items",
+    "json_valid"
+  ],
+  "title": "DomainBaselineSummary",
+  "type": "object"
+}

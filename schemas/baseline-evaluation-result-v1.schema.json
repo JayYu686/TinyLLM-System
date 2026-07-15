@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "DomainBaselineSummary": {
+      "additionalProperties": false,
+      "description": "Path-free aggregate over generated Domain responses.",
+      "properties": {
+        "evaluated_items": {
+          "exclusiveMinimum": 0,
+          "maximum": 300,
+          "title": "Evaluated Items",
+          "type": "integer"
+        },
+        "human_passed": {
+          "maximum": 40,
+          "minimum": 0,
+          "title": "Human Passed",
+          "type": "integer"
+        },
+        "human_review_pending": {
+          "maximum": 40,
+          "minimum": 0,
+          "title": "Human Review Pending",
+          "type": "integer"
+        },
+        "human_reviewed": {
+          "maximum": 40,
+          "minimum": 0,
+          "title": "Human Reviewed",
+          "type": "integer"
+        },
+        "json_items": {
+          "maximum": 80,
+          "minimum": 0,
+          "title": "Json Items",
+          "type": "integer"
+        },
+        "json_valid": {
+          "maximum": 80,
+          "minimum": 0,
+          "title": "Json Valid",
+          "type": "integer"
+        },
+        "objective_correct": {
+          "maximum": 300,
+          "minimum": 0,
+          "title": "Objective Correct",
+          "type": "integer"
+        },
+        "objective_items": {
+          "maximum": 300,
+          "minimum": 0,
+          "title": "Objective Items",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "awaiting_human_review"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "suite_version": {
+          "const": "tinyllm-domain-v1-83bdd8ef",
+          "title": "Suite Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "suite_version",
+        "evaluated_items",
+        "objective_items",
+        "objective_correct",
+        "human_review_pending",
+        "human_reviewed",
+        "human_passed",
+        "json_items",
+        "json_valid"
+      ],
+      "title": "DomainBaselineSummary",
+      "type": "object"
+    },
+    "GeneralBaselineSummary": {
+      "additionalProperties": false,
+      "description": "Verified aggregates parsed from a private lm-eval result directory.",
+      "properties": {
+        "evaluation_seconds": {
+          "exclusiveMinimum": 0.0,
+          "title": "Evaluation Seconds",
+          "type": "number"
+        },
+        "harness_version": {
+          "const": "0.4.12",
+          "title": "Harness Version",
+          "type": "string"
+        },
+        "model_parameters": {
+          "exclusiveMinimum": 0,
+          "title": "Model Parameters",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tasks": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/GeneralTaskResult"
+            },
+            {
+              "$ref": "#/$defs/GeneralTaskResult"
+            },
+            {
+              "$ref": "#/$defs/GeneralTaskResult"
+            }
+          ],
+          "title": "Tasks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "harness_version",
+        "model_parameters",
+        "tasks",
+        "evaluation_seconds"
+      ],
+      "title": "GeneralBaselineSummary",
+      "type": "object"
+    },
+    "GeneralTaskResult": {
+      "additionalProperties": false,
+      "description": "Path-free lm-eval aggregate for one pinned general-regression task.",
+      "properties": {
+        "acc": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc",
+          "type": "number"
+        },
+        "acc_norm": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Norm",
+          "type": "number"
+        },
+        "acc_norm_stderr": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Norm Stderr",
+          "type": "number"
+        },
+        "acc_stderr": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Stderr",
+          "type": "number"
+        },
+        "samples": {
+          "exclusiveMinimum": 0,
+          "title": "Samples",
+          "type": "integer"
+        },
+        "task": {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task",
+        "samples",
+        "acc",
+        "acc_stderr",
+        "acc_norm",
+        "acc_norm_stderr"
+      ],
+      "title": "GeneralTaskResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Stable path-free result returned by the Baseline CLI.",
+  "properties": {
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "domain": {
+      "$ref": "#/$defs/DomainBaselineSummary"
+    },
+    "general": {
+      "$ref": "#/$defs/GeneralBaselineSummary"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "mode": {
+      "enum": [
+        "formal",
+        "smoke"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model_repository": {
+      "const": "Qwen/Qwen3-0.6B",
+      "title": "Model Repository",
+      "type": "string"
+    },
+    "model_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^\\d{8}T\\d{6}Z-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{8}-[0-9a-f]{4}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "awaiting_human_review"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "mode",
+    "run_id",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "model_repository",
+    "model_revision",
+    "domain",
+    "general"
+  ],
+  "title": "BaselineEvaluationResult",
+  "type": "object"
+}

@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "GeneralTaskResult": {
+      "additionalProperties": false,
+      "description": "Path-free lm-eval aggregate for one pinned general-regression task.",
+      "properties": {
+        "acc": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc",
+          "type": "number"
+        },
+        "acc_norm": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Norm",
+          "type": "number"
+        },
+        "acc_norm_stderr": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Norm Stderr",
+          "type": "number"
+        },
+        "acc_stderr": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Stderr",
+          "type": "number"
+        },
+        "samples": {
+          "exclusiveMinimum": 0,
+          "title": "Samples",
+          "type": "integer"
+        },
+        "task": {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task",
+        "samples",
+        "acc",
+        "acc_stderr",
+        "acc_norm",
+        "acc_norm_stderr"
+      ],
+      "title": "GeneralTaskResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Verified aggregates parsed from a private lm-eval result directory.",
+  "properties": {
+    "evaluation_seconds": {
+      "exclusiveMinimum": 0.0,
+      "title": "Evaluation Seconds",
+      "type": "number"
+    },
+    "harness_version": {
+      "const": "0.4.12",
+      "title": "Harness Version",
+      "type": "string"
+    },
+    "model_parameters": {
+      "exclusiveMinimum": 0,
+      "title": "Model Parameters",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tasks": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/GeneralTaskResult"
+        },
+        {
+          "$ref": "#/$defs/GeneralTaskResult"
+        },
+        {
+          "$ref": "#/$defs/GeneralTaskResult"
+        }
+      ],
+      "title": "Tasks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "harness_version",
+    "model_parameters",
+    "tasks",
+    "evaluation_seconds"
+  ],
+  "title": "GeneralBaselineSummary",
+  "type": "object"
+}

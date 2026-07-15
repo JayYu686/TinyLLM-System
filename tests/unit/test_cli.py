@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -7,9 +8,16 @@ import pytest
 from tinyllm.cli import main
 from tinyllm.data import RegisteredDatasetSummary
 from tinyllm.evaluation import (
+    BaselineContractError,
+    BaselineEvaluationResult,
+    BaselineGpuPreflight,
+    BaselinePreflightError,
     ContaminationMatch,
     ContaminationReport,
+    DomainBaselineSummary,
     EvaluationContractError,
+    GeneralBaselineSummary,
+    GeneralTaskResult,
 )
 
 
@@ -27,7 +35,10 @@ def test_help_lists_doctor_train_data_and_eval(capsys: pytest.CaptureFixture[str
     assert "inspect" in data_output
 
     assert main(["eval", "--help"]) == 0
-    assert "contamination" in capsys.readouterr().out
+    eval_output = capsys.readouterr().out
+    assert "contamination" in eval_output
+    assert "baseline" in eval_output
+    assert "baseline-review" in eval_output
 
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:
@@ -329,3 +340,210 @@ def test_eval_contamination_maps_contract_error_to_usage_exit(
     assert code == 2
     payload = json.loads(capsys.readouterr().err)
     assert payload["error"]["code"] == "EVALUATION_CONFIG_ERROR"
+
+
+def baseline_result() -> BaselineEvaluationResult:
+    tasks = (
+        GeneralTaskResult(
+            task="tinyllm_arc_easy",
+            samples=2,
+            acc=0.5,
+            acc_stderr=0.5,
+            acc_norm=0.5,
+            acc_norm_stderr=0.5,
+        ),
+        GeneralTaskResult(
+            task="tinyllm_hellaswag",
+            samples=2,
+            acc=0.0,
+            acc_stderr=0.0,
+            acc_norm=0.5,
+            acc_norm_stderr=0.5,
+        ),
+        GeneralTaskResult(
+            task="tinyllm_piqa",
+            samples=2,
+            acc=0.5,
+            acc_stderr=0.5,
+            acc_norm=0.5,
+            acc_norm_stderr=0.5,
+        ),
+    )
+    return BaselineEvaluationResult(
+        status="succeeded",
+        mode="smoke",
+        run_id="20260715T000000Z-qwen3-baseline-smoke-aaaaaaaa-cafe",
+        config_sha256="a" * 64,
+        git_commit="b" * 40,
+        git_dirty=True,
+        model_repository="Qwen/Qwen3-0.6B",
+        model_revision="c1899de289a04d12100db370d81485cdf75e47ca",
+        domain=DomainBaselineSummary(
+            status="complete",
+            suite_version="tinyllm-domain-v1-83bdd8ef",
+            evaluated_items=2,
+            objective_items=2,
+            objective_correct=1,
+            human_review_pending=0,
+            human_reviewed=0,
+            human_passed=0,
+            json_items=2,
+            json_valid=2,
+        ),
+        general=GeneralBaselineSummary(
+            harness_version="0.4.12",
+            model_parameters=596_049_920,
+            tasks=tasks,
+            evaluation_seconds=2.5,
+        ),
+    )
+
+
+def test_eval_baseline_requires_explicit_gpu_and_emits_path_free_result(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert (
+        main(
+            [
+                "eval",
+                "baseline",
+                "--config",
+                "configs/eval/m2_baseline_smoke.yaml",
+                "--artifact-root",
+                str(tmp_path),
+                "--json",
+            ]
+        )
+        == 2
+    )
+    assert "--gpu-index" in json.loads(capsys.readouterr().err)["error"]["message"]
+
+    seen: dict[str, object] = {}
+
+    def preflight(index: int) -> BaselineGpuPreflight:
+        seen["index"] = index
+        return BaselineGpuPreflight(
+            physical_index=index,
+            memory_used_mib=1,
+            utilization_percent=0,
+            temperature_c=30,
+        )
+
+    def run(**_kwargs: object) -> BaselineEvaluationResult:
+        seen["visible"] = os.environ.get("CUDA_VISIBLE_DEVICES")
+        return baseline_result()
+
+    monkeypatch.setattr("tinyllm.cli.preflight_baseline_gpu", preflight)
+    monkeypatch.setattr("tinyllm.cli.run_baseline_evaluation", run)
+    previous = os.environ.get("CUDA_VISIBLE_DEVICES")
+    assert (
+        main(
+            [
+                "eval",
+                "baseline",
+                "--config",
+                "configs/eval/m2_baseline_smoke.yaml",
+                "--artifact-root",
+                str(tmp_path),
+                "--gpu-index",
+                "5",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["run_id"] == baseline_result().run_id
+    assert str(tmp_path) not in json.dumps(payload)
+    assert seen == {"index": 5, "visible": "5"}
+    assert os.environ.get("CUDA_VISIBLE_DEVICES") == previous
+
+
+def test_eval_baseline_maps_gpu_preflight_to_exit_three(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(_index: int) -> BaselineGpuPreflight:
+        raise BaselinePreflightError("selected physical GPU is busy")
+
+    monkeypatch.setattr("tinyllm.cli.preflight_baseline_gpu", fail)
+    code = main(
+        [
+            "eval",
+            "baseline",
+            "--config",
+            "configs/eval/m2_baseline_smoke.yaml",
+            "--artifact-root",
+            str(tmp_path),
+            "--gpu-index",
+            "5",
+            "--json",
+        ]
+    )
+    assert code == 3
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error"]["code"] == "BASELINE_PREFLIGHT_FAILED"
+
+
+def test_eval_baseline_review_emits_result_and_maps_contract_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    result = baseline_result()
+    monkeypatch.setattr("tinyllm.cli.complete_baseline_human_review", lambda **_kwargs: result)
+    code = main(
+        [
+            "eval",
+            "baseline-review",
+            "--run-id",
+            result.run_id,
+            "--judgments",
+            str(tmp_path / "judgments.jsonl"),
+            "--artifact-root",
+            str(tmp_path),
+            "--json",
+        ]
+    )
+    assert code == 0
+    assert json.loads(capsys.readouterr().out) == result.to_dict()
+
+    def fail(**_kwargs: object) -> BaselineEvaluationResult:
+        raise BaselineContractError("Run is not awaiting human review")
+
+    monkeypatch.setattr("tinyllm.cli.complete_baseline_human_review", fail)
+    code = main(
+        [
+            "eval",
+            "baseline-review",
+            "--run-id",
+            result.run_id,
+            "--judgments",
+            str(tmp_path / "judgments.jsonl"),
+            "--artifact-root",
+            str(tmp_path),
+            "--json",
+        ]
+    )
+    assert code == 2
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error"]["code"] == "BASELINE_REVIEW_ERROR"
+
+    code = main(
+        [
+            "eval",
+            "baseline-review",
+            "--run-id",
+            result.run_id,
+            "--judgments",
+            str(tmp_path / "judgments.jsonl"),
+            "--artifact-root",
+            "relative",
+            "--json",
+        ]
+    )
+    assert code == 2
+    assert "absolute" in json.loads(capsys.readouterr().err)["error"]["message"]

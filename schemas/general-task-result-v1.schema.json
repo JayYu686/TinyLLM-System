@@ -1,0 +1,54 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free lm-eval aggregate for one pinned general-regression task.",
+  "properties": {
+    "acc": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Acc",
+      "type": "number"
+    },
+    "acc_norm": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Acc Norm",
+      "type": "number"
+    },
+    "acc_norm_stderr": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Acc Norm Stderr",
+      "type": "number"
+    },
+    "acc_stderr": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Acc Stderr",
+      "type": "number"
+    },
+    "samples": {
+      "exclusiveMinimum": 0,
+      "title": "Samples",
+      "type": "integer"
+    },
+    "task": {
+      "enum": [
+        "tinyllm_arc_easy",
+        "tinyllm_hellaswag",
+        "tinyllm_piqa"
+      ],
+      "title": "Task",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task",
+    "samples",
+    "acc",
+    "acc_stderr",
+    "acc_norm",
+    "acc_norm_stderr"
+  ],
+  "title": "GeneralTaskResult",
+  "type": "object"
+}

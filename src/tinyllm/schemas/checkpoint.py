@@ -16,7 +16,7 @@ class CheckpointFile(StrictSchema):
     """One integrity-checked file in a committed checkpoint directory."""
 
     path: str
-    role: Literal["training_state", "shard", "metadata", "rng", "sampler"]
+    role: Literal["training_state", "rank_state", "shard", "metadata", "rng", "sampler"]
     size_bytes: int = Field(ge=0)
     sha256: str = Field(pattern=SHA256_PATTERN)
 
@@ -109,4 +109,11 @@ class CheckpointManifest(StrictSchema):
         paths = [entry.path for entry in self.files]
         if len(paths) != len(set(paths)):
             raise ValueError("checkpoint manifest contains duplicate file paths")
+        rank_state_paths = sorted(entry.path for entry in self.files if entry.role == "rank_state")
+        if self.strategy == "ddp":
+            expected_rank_paths = [f"rank-{rank:05d}.pt" for rank in range(self.world_size)]
+            if rank_state_paths != expected_rank_paths:
+                raise ValueError("DDP checkpoint must contain one contiguous state file per Rank")
+        elif rank_state_paths:
+            raise ValueError("only DDP checkpoints may contain rank_state files")
         return self

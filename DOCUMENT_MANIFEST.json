@@ -26,6 +26,7 @@
     "docs/inference_design.md",
     "docs/m1_training_contract.md",
     "docs/m3_ddp_correctness_contract.md",
+    "docs/m3_ddp_recovery_contract.md",
     "docs/nccl_test_plan.md",
     "docs/product_scope.md",
     "docs/public_reporting.md",
@@ -35,5 +36,5 @@
     "requirements/baseline_security_exceptions.md",
     "schemas/README.md"
   ],
-  "file_count": 32
+  "file_count": 33
 }

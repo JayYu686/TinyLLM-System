@@ -1,0 +1,65 @@
+{
+  "additionalProperties": false,
+  "description": "Serializable cursor in one deterministic distributed partition.",
+  "properties": {
+    "cursor": {
+      "minimum": 0,
+      "title": "Cursor",
+      "type": "integer"
+    },
+    "drop_last": {
+      "const": true,
+      "default": true,
+      "title": "Drop Last",
+      "type": "boolean"
+    },
+    "epoch": {
+      "minimum": 0,
+      "title": "Epoch",
+      "type": "integer"
+    },
+    "num_replicas": {
+      "exclusiveMinimum": 0,
+      "title": "Num Replicas",
+      "type": "integer"
+    },
+    "num_samples": {
+      "exclusiveMinimum": 0,
+      "title": "Num Samples",
+      "type": "integer"
+    },
+    "rank": {
+      "minimum": 0,
+      "title": "Rank",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "shuffle": {
+      "const": true,
+      "default": true,
+      "title": "Shuffle",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "num_samples",
+    "num_replicas",
+    "rank",
+    "seed",
+    "epoch",
+    "cursor"
+  ],
+  "title": "DistributedSamplerState",
+  "type": "object"
+}

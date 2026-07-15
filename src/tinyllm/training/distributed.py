@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import platform
 from collections.abc import Mapping, Sequence
+from datetime import timedelta
 
 import torch
 from pydantic import Field, model_validator
@@ -12,6 +15,7 @@ from torch import distributed as dist
 from torch import nn
 
 from tinyllm.schemas.base import StrictSchema
+from tinyllm.training.config import M1TrainingConfig
 from tinyllm.training.ddp_schema import DDPPartitionEvidence
 from tinyllm.training.errors import TrainingError, TrainingErrorCode
 
@@ -69,6 +73,113 @@ def torchrun_environment(environ: Mapping[str, str]) -> TorchrunEnvironment:
             TrainingErrorCode.DISTRIBUTED_LAUNCH_INVALID,
             str(exc),
         ) from exc
+
+
+def physical_gpu_index(
+    launch: TorchrunEnvironment,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> int | None:
+    """Map one local Rank to the physical index selected by CUDA_VISIBLE_DEVICES."""
+
+    visible = (environ or os.environ).get("CUDA_VISIBLE_DEVICES")
+    if visible is None:
+        return launch.local_rank
+    entries = [entry.strip() for entry in visible.split(",") if entry.strip()]
+    if launch.local_rank >= len(entries) or not entries[launch.local_rank].isdigit():
+        return None
+    return int(entries[launch.local_rank])
+
+
+def select_ddp_device(config: M1TrainingConfig, launch: TorchrunEnvironment) -> torch.device:
+    """Select and validate the Rank-local CPU or CUDA device for a DDP run."""
+
+    backend = config.distributed.backend
+    if backend == "gloo":
+        if config.precision.dtype != "fp32":
+            raise TrainingError(
+                TrainingErrorCode.UNSUPPORTED_PRECISION,
+                "gloo DDP correctness requires fp32",
+            )
+        return torch.device("cpu")
+    if backend != "nccl":
+        raise TrainingError(
+            TrainingErrorCode.DISTRIBUTED_LAUNCH_INVALID,
+            "DDP backend must be gloo or nccl",
+        )
+    if not torch.cuda.is_available() or launch.local_rank >= torch.cuda.device_count():
+        raise TrainingError(
+            TrainingErrorCode.ACCELERATOR_UNAVAILABLE,
+            "local CUDA rank is unavailable",
+            context={"local_rank": launch.local_rank},
+        )
+    torch.cuda.set_device(launch.local_rank)
+    if config.precision.dtype == "bf16" and not torch.cuda.is_bf16_supported():
+        raise TrainingError(
+            TrainingErrorCode.UNSUPPORTED_PRECISION,
+            "NCCL BF16 correctness requires BF16-capable visible GPUs",
+        )
+    torch.backends.cuda.matmul.allow_tf32 = config.precision.allow_tf32
+    torch.backends.cudnn.allow_tf32 = config.precision.allow_tf32
+    return torch.device("cuda", launch.local_rank)
+
+
+def initialize_process_group(
+    config: M1TrainingConfig,
+    *,
+    device: torch.device,
+) -> None:
+    """Initialize one bounded env:// process group on the selected device."""
+
+    if config.distributed.backend is None:
+        raise TrainingError(
+            TrainingErrorCode.DISTRIBUTED_LAUNCH_INVALID,
+            "DDP backend is missing",
+        )
+    arguments: dict[str, object] = {
+        "backend": config.distributed.backend,
+        "init_method": "env://",
+        "timeout": timedelta(seconds=config.distributed.timeout_seconds),
+    }
+    if device.type == "cuda":
+        arguments["device_id"] = device
+    dist.init_process_group(**arguments)  # type: ignore[arg-type]
+
+
+def rank_environment(
+    launch: TorchrunEnvironment,
+    device: torch.device,
+) -> dict[str, object]:
+    """Capture stable runtime and hardware identity for one Rank."""
+
+    result: dict[str, object] = {
+        "rank": launch.rank,
+        "local_rank": launch.local_rank,
+        "python": platform.python_version(),
+        "torch": str(torch.__version__),
+        "cuda_runtime": torch.version.cuda,
+        "device": str(device),
+        "physical_gpu_index": physical_gpu_index(launch),
+    }
+    if device.type == "cuda":
+        properties = torch.cuda.get_device_properties(device)
+        result.update(
+            {
+                "gpu_name": properties.name,
+                "memory_total_bytes": properties.total_memory,
+                "compute_capability": f"{properties.major}.{properties.minor}",
+            }
+        )
+    return result
+
+
+def distributed_barrier(device: torch.device, launch: TorchrunEnvironment) -> None:
+    """Bind NCCL barriers to the selected local CUDA device."""
+
+    if device.type == "cuda":
+        dist.barrier(device_ids=[launch.local_rank])
+    else:
+        dist.barrier()
 
 
 def model_state_sha256(model: nn.Module) -> str:

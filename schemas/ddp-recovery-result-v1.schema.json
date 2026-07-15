@@ -1,0 +1,116 @@
+{
+  "additionalProperties": false,
+  "description": "Rank-zero result for one successful or intentionally interrupted phase.",
+  "properties": {
+    "artifact_dir": {
+      "format": "path",
+      "title": "Artifact Dir",
+      "type": "string"
+    },
+    "backend": {
+      "enum": [
+        "gloo",
+        "nccl"
+      ],
+      "title": "Backend",
+      "type": "string"
+    },
+    "checkpoint_id": {
+      "pattern": "^checkpoint-step-\\d{8}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "durable_metric_records": {
+      "minimum": 1,
+      "title": "Durable Metric Records",
+      "type": "integer"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "global_step": {
+      "minimum": 1,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "mode": {
+      "enum": [
+        "fresh",
+        "exact_resume"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model_parameter_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Model Parameter Sha256",
+      "type": "string"
+    },
+    "resumed_from_step": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resumed From Step"
+    },
+    "run_id": {
+      "pattern": "^(?P<timestamp>\\d{8}T\\d{6}Z)-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<config_hash>[a-f0-9]{8})-(?P<nonce>[a-f0-9]{4})$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "interrupted"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "world_size": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "status",
+    "mode",
+    "run_id",
+    "artifact_dir",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "backend",
+    "world_size",
+    "global_step",
+    "checkpoint_id",
+    "model_parameter_sha256",
+    "durable_metric_records"
+  ],
+  "title": "DDPRecoveryResult",
+  "type": "object"
+}

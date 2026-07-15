@@ -126,10 +126,10 @@ class M1TrainingConfig(StrictSchema):
         if self.data.sequence_length > self.model.max_sequence_length:
             raise ValueError("data.sequence_length cannot exceed model.max_sequence_length")
         if self.distributed.strategy == "ddp":
-            if self.checkpoint.resume != "none":
-                raise ValueError("M3.1 DDP correctness runs require checkpoint.resume=none")
+            if self.checkpoint.resume not in {"none", "auto", "exact"}:
+                raise ValueError("DDP supports only none, auto, or exact resume")
             if self.precision.use_grad_scaler:
-                raise ValueError("M3.1 DDP correctness does not support GradScaler")
+                raise ValueError("native DDP correctness and recovery do not support GradScaler")
             if self.distributed.backend == "gloo" and self.precision.dtype != "fp32":
                 raise ValueError("gloo DDP correctness runs require fp32")
             if self.distributed.backend == "nccl" and self.precision.dtype not in {"fp32", "bf16"}:
@@ -145,7 +145,7 @@ class M1TrainingConfig(StrictSchema):
                 * self.training.gradient_accumulation_steps
             )
             if required_per_rank > samples_per_rank:
-                raise ValueError("M3.1 DDP correctness run must fit within one sampler epoch")
+                raise ValueError("bounded DDP runs must fit within one sampler epoch")
         return self
 
     @property

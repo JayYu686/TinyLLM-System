@@ -87,7 +87,13 @@ from tinyllm.data.sources import (
     COMMITPACKFT_SOURCE,
     OASST1_SOURCE,
 )
-from tinyllm.data.stateful_sampler import SamplerState, StatefulSequentialSampler
+from tinyllm.data.stateful_sampler import (
+    DistributedSamplerState,
+    SamplerState,
+    StatefulDistributedSampler,
+    StatefulSampler,
+    StatefulSequentialSampler,
+)
 from tinyllm.data.tokenization import (
     QWEN3_NONTHINKING_TEMPLATE_SHA256,
     ConversationTokenization,
@@ -145,6 +151,7 @@ __all__ = [
     "DatasetShardPack",
     "DatasetSource",
     "DeduplicationConfig",
+    "DistributedSamplerState",
     "GroupedSplitConfig",
     "ImportResult",
     "ImportedMessage",
@@ -172,6 +179,8 @@ __all__ = [
     "SequencePackingConfig",
     "SourceDatasetLineage",
     "StatefulSequentialSampler",
+    "StatefulDistributedSampler",
+    "StatefulSampler",
     "TokenBalanceConfig",
     "TokenEncoding",
     "TokenizationBatch",

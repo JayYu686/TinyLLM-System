@@ -19,6 +19,7 @@ from tinyllm.data import (
     DatasetRegistration,
     DatasetShardMetadata,
     DatasetShardPack,
+    DistributedSamplerState,
     ImportedSample,
     M2AcquisitionManifest,
     M2DatasetManifest,
@@ -62,6 +63,7 @@ from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
 from tinyllm.schemas.training_run import TrainingRunResult
 from tinyllm.training.config import M1TrainingConfig
+from tinyllm.training.ddp_recovery_schema import DDPRecoveryResult
 from tinyllm.training.ddp_schema import (
     DDPCorrectnessSummary,
     DDPPartitionEvidence,
@@ -82,6 +84,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "data-processing-manifest-v1.schema.json": DataProcessingManifest,
     "ddp-correctness-summary-v1.schema.json": DDPCorrectnessSummary,
     "ddp-partition-evidence-v1.schema.json": DDPPartitionEvidence,
+    "ddp-recovery-result-v1.schema.json": DDPRecoveryResult,
     "ddp-training-result-v1.schema.json": DDPTrainingResult,
     "dataset-artifact-file-v1.schema.json": DatasetArtifactFile,
     "dataset-commit-marker-v1.schema.json": DatasetCommitMarker,
@@ -90,6 +93,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "dataset-shard-pack-v1.schema.json": DatasetShardPack,
     "domain-baseline-summary-v1.schema.json": DomainBaselineSummary,
     "domain-item-result-v1.schema.json": DomainItemResult,
+    "distributed-sampler-state-v1.schema.json": DistributedSamplerState,
     "evaluation-authored-provenance-v1.schema.json": AuthoredProvenance,
     "evaluation-build-config-v1.schema.json": EvaluationBuildConfig,
     "evaluation-item-v1.schema.json": EvaluationItem,

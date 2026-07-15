@@ -14,6 +14,7 @@ from typing import Literal
 
 import torch
 
+from tinyllm.data import StatefulSequentialSampler
 from tinyllm.lineage import read_git_identity
 from tinyllm.schemas import TrainingRunResult, canonical_config_hash, generate_run_id
 from tinyllm.training.checkpoint import CheckpointContext, CheckpointStore
@@ -87,8 +88,8 @@ def _save_checkpoint(
     context: CheckpointContext,
     pin_reason: Literal["interruption", "final"] | None,
 ) -> str:
-    if trainer.sampler is None:
-        raise RuntimeError("single-device training requires a stateful sampler")
+    if not isinstance(trainer.sampler, StatefulSequentialSampler):
+        raise RuntimeError("single-device training requires its sequential stateful sampler")
     manifest = store.save(
         model=trainer.model,
         optimizer=trainer.optimizer,

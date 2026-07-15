@@ -14,6 +14,15 @@ from tinyllm.training.config import (
     load_training_config,
 )
 from tinyllm.training.ddp import run_ddp_correctness
+from tinyllm.training.ddp_checkpoint import (
+    DDPCheckpointStore,
+    LoadedDDPCheckpoint,
+    build_rank_state,
+    restore_local_rng_state,
+    validate_local_rng_state,
+)
+from tinyllm.training.ddp_recovery_schema import DDPRecoveryResult
+from tinyllm.training.ddp_resume import restore_ddp_trainer
 from tinyllm.training.ddp_schema import (
     DDPCorrectnessSummary,
     DDPPartitionEvidence,
@@ -42,8 +51,11 @@ __all__ = [
     "CheckpointStore",
     "InMemoryMetricSink",
     "DDPCorrectnessSummary",
+    "DDPCheckpointStore",
     "DDPPartitionEvidence",
+    "DDPRecoveryResult",
     "DDPTrainingResult",
+    "LoadedDDPCheckpoint",
     "ResumeMode",
     "SingleDeviceTrainer",
     "TrainerState",
@@ -55,11 +67,15 @@ __all__ = [
     "TrainingStepMetrics",
     "build_m1_cpu_trainer",
     "build_m1_cuda_trainer",
+    "build_rank_state",
     "load_training_config",
     "restore_from_config",
+    "restore_ddp_trainer",
+    "restore_local_rng_state",
     "restore_trainer",
     "run_single_device_training",
     "run_ddp_correctness",
     "seed_everything",
     "validate_sampler_partitions",
+    "validate_local_rng_state",
 ]

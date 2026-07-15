@@ -120,6 +120,15 @@ def _rank_environment(launch: TorchrunEnvironment, device: torch.device) -> dict
     return result
 
 
+def _barrier(device: torch.device, launch: TorchrunEnvironment) -> None:
+    """Bind NCCL barriers to the already selected local CUDA device."""
+
+    if device.type == "cuda":
+        dist.barrier(device_ids=[launch.local_rank])
+    else:
+        dist.barrier()
+
+
 def _new_rank_zero_run(
     *,
     config_path: Path,
@@ -232,11 +241,19 @@ def run_ddp_correctness(
             },
         )
     device = _select_device(config, launch)
-    dist.init_process_group(
-        backend=config.distributed.backend,
-        init_method="env://",
-        timeout=timedelta(seconds=config.distributed.timeout_seconds),
-    )
+    if device.type == "cuda":
+        dist.init_process_group(
+            backend=config.distributed.backend,
+            init_method="env://",
+            timeout=timedelta(seconds=config.distributed.timeout_seconds),
+            device_id=device,
+        )
+    else:
+        dist.init_process_group(
+            backend=config.distributed.backend,
+            init_method="env://",
+            timeout=timedelta(seconds=config.distributed.timeout_seconds),
+        )
     artifact_dir: Path | None = None
     try:
         config_hash = canonical_config_hash(config)
@@ -266,7 +283,7 @@ def run_ddp_correctness(
                 git_dirty=git_dirty,
                 rank_environments=gathered_environments,
             )
-        dist.barrier()
+        _barrier(device, launch)
 
         seed_everything(
             config.run.seed,
@@ -454,7 +471,7 @@ def run_ddp_correctness(
                 git_dirty=git_dirty,
                 summary=summary,
             )
-        dist.barrier()
+        _barrier(device, launch)
         return result_value
     except Exception as exc:
         if launch.rank == 0 and artifact_dir is not None:

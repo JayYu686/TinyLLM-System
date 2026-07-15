@@ -9,7 +9,14 @@ from urllib.parse import unquote
 
 LINK_PATTERN = re.compile(r"(?<!!)\[[^\]]*\]\((?P<target>[^)]+)\)")
 IGNORED_PREFIXES = ("#", "http://", "https://", "mailto:")
-IGNORED_PARTS = {".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv"}
+IGNORED_PARTS = {
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    ".venv-baseline",
+}
 
 
 def markdown_files(root: Path) -> list[Path]:

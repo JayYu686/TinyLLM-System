@@ -1,0 +1,96 @@
+{
+  "additionalProperties": false,
+  "description": "Private raw model output plus deterministic automatic-scoring state.",
+  "properties": {
+    "automatic_correct": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Automatic Correct"
+    },
+    "finish_reason": {
+      "enum": [
+        "eos",
+        "length"
+      ],
+      "title": "Finish Reason",
+      "type": "string"
+    },
+    "generated_tokens": {
+      "minimum": 0,
+      "title": "Generated Tokens",
+      "type": "integer"
+    },
+    "human_review_required": {
+      "title": "Human Review Required",
+      "type": "boolean"
+    },
+    "item_id": {
+      "pattern": "^domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3}$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "json_valid": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Json Valid"
+    },
+    "prompt_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Prompt Tokens",
+      "type": "integer"
+    },
+    "response": {
+      "maxLength": 131072,
+      "title": "Response",
+      "type": "string"
+    },
+    "response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Response Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scorer_kind": {
+      "enum": [
+        "exact_match",
+        "human_rubric",
+        "json_object",
+        "multiple_choice",
+        "required_terms"
+      ],
+      "title": "Scorer Kind",
+      "type": "string"
+    }
+  },
+  "required": [
+    "item_id",
+    "scorer_kind",
+    "response",
+    "response_sha256",
+    "prompt_tokens",
+    "generated_tokens",
+    "finish_reason",
+    "automatic_correct",
+    "json_valid",
+    "human_review_required"
+  ],
+  "title": "DomainItemResult",
+  "type": "object"
+}

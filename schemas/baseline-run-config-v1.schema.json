@@ -1,0 +1,517 @@
+{
+  "$defs": {
+    "BaselineModelIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned model and safe-loading policy for the pre-training Baseline.",
+      "properties": {
+        "attention_implementation": {
+          "const": "sdpa",
+          "title": "Attention Implementation",
+          "type": "string"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ModelFileIdentity"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "license": {
+          "const": "Apache-2.0",
+          "title": "License",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-0.6B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "license",
+        "files",
+        "dtype",
+        "attention_implementation",
+        "trust_remote_code",
+        "local_files_only"
+      ],
+      "title": "BaselineModelIdentity",
+      "type": "object"
+    },
+    "BaselineSeeds": {
+      "additionalProperties": false,
+      "description": "All random seeds accepted by lm-eval and Transformers.",
+      "properties": {
+        "fewshot": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Fewshot",
+          "type": "integer"
+        },
+        "numpy": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Numpy",
+          "type": "integer"
+        },
+        "python": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Python",
+          "type": "integer"
+        },
+        "torch": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Torch",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "python",
+        "numpy",
+        "torch",
+        "fewshot"
+      ],
+      "title": "BaselineSeeds",
+      "type": "object"
+    },
+    "BaselineSoftwareIdentity": {
+      "additionalProperties": false,
+      "description": "Direct package versions that define the Baseline implementation.",
+      "properties": {
+        "accelerate": {
+          "const": "1.12.0",
+          "title": "Accelerate",
+          "type": "string"
+        },
+        "datasets": {
+          "const": "4.8.5",
+          "title": "Datasets",
+          "type": "string"
+        },
+        "lm_eval": {
+          "const": "0.4.12",
+          "title": "Lm Eval",
+          "type": "string"
+        },
+        "safetensors": {
+          "const": "0.6.2",
+          "title": "Safetensors",
+          "type": "string"
+        },
+        "tokenizers": {
+          "const": "0.22.2",
+          "title": "Tokenizers",
+          "type": "string"
+        },
+        "torch": {
+          "const": "2.7.1+cu118",
+          "title": "Torch",
+          "type": "string"
+        },
+        "transformers": {
+          "const": "4.57.6",
+          "title": "Transformers",
+          "type": "string"
+        }
+      },
+      "required": [
+        "torch",
+        "transformers",
+        "tokenizers",
+        "accelerate",
+        "datasets",
+        "lm_eval",
+        "safetensors"
+      ],
+      "title": "BaselineSoftwareIdentity",
+      "type": "object"
+    },
+    "DomainBaselineProtocol": {
+      "additionalProperties": false,
+      "description": "Frozen generation and scoring policy for the 300-item suite.",
+      "properties": {
+        "batch_size": {
+          "exclusiveMinimum": 0,
+          "maximum": 64,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "content_sha256": {
+          "const": "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "do_sample": {
+          "const": false,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "expected_items": {
+          "const": 300,
+          "title": "Expected Items",
+          "type": "integer"
+        },
+        "items_path": {
+          "title": "Items Path",
+          "type": "string"
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 300,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "max_new_tokens": {
+          "const": 512,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "max_sequence_length": {
+          "const": 1024,
+          "title": "Max Sequence Length",
+          "type": "integer"
+        },
+        "scorer_policy": {
+          "const": "tinyllm-domain-scorer-v1",
+          "title": "Scorer Policy",
+          "type": "string"
+        },
+        "suite_version": {
+          "const": "tinyllm-domain-v1-83bdd8ef",
+          "title": "Suite Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "suite_version",
+        "content_sha256",
+        "items_path",
+        "expected_items",
+        "batch_size",
+        "max_sequence_length",
+        "max_new_tokens",
+        "do_sample",
+        "scorer_policy"
+      ],
+      "title": "DomainBaselineProtocol",
+      "type": "object"
+    },
+    "GeneralBaselineProtocol": {
+      "additionalProperties": false,
+      "description": "Frozen lm-eval execution policy for general regression tasks.",
+      "properties": {
+        "apply_chat_template": {
+          "const": true,
+          "title": "Apply Chat Template",
+          "type": "boolean"
+        },
+        "batch_size": {
+          "exclusiveMinimum": 0,
+          "maximum": 64,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "const": false,
+          "title": "Enable Thinking",
+          "type": "boolean"
+        },
+        "harness_version": {
+          "const": "0.4.12",
+          "title": "Harness Version",
+          "type": "string"
+        },
+        "include_path": {
+          "title": "Include Path",
+          "type": "string"
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "log_samples": {
+          "const": true,
+          "title": "Log Samples",
+          "type": "boolean"
+        },
+        "max_length": {
+          "const": 1024,
+          "title": "Max Length",
+          "type": "integer"
+        },
+        "num_fewshot": {
+          "const": 0,
+          "title": "Num Fewshot",
+          "type": "integer"
+        },
+        "task_validation": {
+          "const": true,
+          "title": "Task Validation",
+          "type": "boolean"
+        },
+        "tasks": {
+          "items": {
+            "$ref": "#/$defs/GeneralTaskIdentity"
+          },
+          "title": "Tasks",
+          "type": "array"
+        },
+        "tokenizer_chat_template_sha256": {
+          "const": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+          "title": "Tokenizer Chat Template Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "harness_version",
+        "include_path",
+        "tasks",
+        "task_validation",
+        "tokenizer_chat_template_sha256",
+        "apply_chat_template",
+        "enable_thinking",
+        "num_fewshot",
+        "batch_size",
+        "max_length",
+        "log_samples"
+      ],
+      "title": "GeneralBaselineProtocol",
+      "type": "object"
+    },
+    "GeneralTaskIdentity": {
+      "additionalProperties": false,
+      "description": "One pinned lm-eval Adapter and Hub dataset revision.",
+      "properties": {
+        "adapter_path": {
+          "title": "Adapter Path",
+          "type": "string"
+        },
+        "adapter_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Adapter Sha256",
+          "type": "string"
+        },
+        "dataset": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Dataset",
+          "type": "string"
+        },
+        "dataset_license": {
+          "enum": [
+            "cc-by-sa-4.0",
+            "not-declared-by-hub-mirror"
+          ],
+          "title": "Dataset License",
+          "type": "string"
+        },
+        "dataset_revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Dataset Revision",
+          "type": "string"
+        },
+        "expected_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Expected Samples",
+          "type": "integer"
+        },
+        "metrics": {
+          "items": {
+            "enum": [
+              "acc",
+              "acc_norm"
+            ],
+            "type": "string"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "split": {
+          "enum": [
+            "test",
+            "validation"
+          ],
+          "title": "Split",
+          "type": "string"
+        },
+        "task": {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task",
+        "adapter_path",
+        "adapter_sha256",
+        "dataset",
+        "dataset_revision",
+        "split",
+        "expected_samples",
+        "dataset_license",
+        "metrics"
+      ],
+      "title": "GeneralTaskIdentity",
+      "type": "object"
+    },
+    "GenerationTemplateIdentity": {
+      "additionalProperties": false,
+      "description": "Frozen prompt renderer used only for model generation.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": true,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-nonthinking-generation-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "b9a510e2f016a112860e47056f770b04e5c93131cc4a8ecd47fcc950cfdb6273",
+          "title": "Template Sha256",
+          "type": "string"
+        },
+        "thinking": {
+          "const": false,
+          "title": "Thinking",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "thinking",
+        "add_generation_prompt"
+      ],
+      "title": "GenerationTemplateIdentity",
+      "type": "object"
+    },
+    "ModelFileIdentity": {
+      "additionalProperties": false,
+      "description": "One required file in the immutable local Qwen model snapshot.",
+      "properties": {
+        "filename": {
+          "pattern": "^[a-z0-9_.-]+$",
+          "title": "Filename",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "ModelFileIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete formal or bounded-Smoke M2.4c Baseline contract.",
+  "properties": {
+    "domain": {
+      "$ref": "#/$defs/DomainBaselineProtocol"
+    },
+    "general": {
+      "$ref": "#/$defs/GeneralBaselineProtocol"
+    },
+    "generation_template": {
+      "$ref": "#/$defs/GenerationTemplateIdentity"
+    },
+    "mode": {
+      "enum": [
+        "formal",
+        "smoke"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model": {
+      "$ref": "#/$defs/BaselineModelIdentity"
+    },
+    "run_slug": {
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Run Slug",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seeds": {
+      "$ref": "#/$defs/BaselineSeeds"
+    },
+    "software": {
+      "$ref": "#/$defs/BaselineSoftwareIdentity"
+    }
+  },
+  "required": [
+    "mode",
+    "run_slug",
+    "model",
+    "software",
+    "generation_template",
+    "seeds",
+    "domain",
+    "general"
+  ],
+  "title": "BaselineRunConfig",
+  "type": "object"
+}

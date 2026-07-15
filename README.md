@@ -31,7 +31,7 @@ missing results stay explicitly unevaluated.
 | M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
-| M2 licensed data pipeline | In progress | Full pinned-source build and offline deterministic rebuild pass; contamination checks and Baseline Evaluation remain |
+| M2 data and evaluation | In progress | Full build/rebuild and Exact contamination pass; bounded Qwen3 Baseline Smoke passes; formal Baseline remains |
 | M3–M6 | Planned | No training-quality or scaling result is claimed yet |
 
 The complete M0 evidence is in the
@@ -64,6 +64,9 @@ language mix, seven categories, explicit scorers, and 90 bilingual task pairs. T
 [formal clean-`main` report](reports/m2/domain_eval_contamination.md) checked all 300 items against
 4597 verified Train samples with zero full-sequence and zero Prompt-prefix Exact matches. Near-Dedup
 remains `not_evaluated`, and the pre-training Base Model Evaluation remains M2.4c.
+The [Qwen3-0.6B Baseline Smoke](reports/m2/baseline_smoke.md) then verifies the complete private
+Run path on an idle RTX 3090 with two Domain items and two samples per general task. Its bounded
+values are compatibility evidence only; the clean-`main`, full-sample Baseline remains unevaluated.
 
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately

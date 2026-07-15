@@ -1,0 +1,103 @@
+{
+  "artifacts": {
+    "domain_response_hashes_verified": true,
+    "domain_results_sha256": "060af4052fc2dff80d482d7196a14148ffc02d326e0b49f09a852fbd889617d6",
+    "general_aggregate_sha256": "8b6724c63a13f98b6bd495ea427869596ac3e35e51000d8ee825107e8339739c",
+    "private_raw_outputs_retained": true,
+    "public_raw_outputs": false
+  },
+  "code": {
+    "git_commit": "98cbfe42464983a06b6342576be5c21ca867b096",
+    "git_dirty": true
+  },
+  "environment": {
+    "accelerate": "1.12.0",
+    "cuda_runtime": "11.8",
+    "datasets": "4.8.5",
+    "lm_eval": "0.4.12",
+    "pip_freeze_entries": 115,
+    "python": "3.11.14",
+    "safetensors": "0.6.2",
+    "tokenizers": "0.22.2",
+    "torch": "2.7.1+cu118",
+    "transformers": "4.57.6"
+  },
+  "executed_at_utc": "2026-07-15T03:17:12.450401Z",
+  "execution": {
+    "exit_status": 0,
+    "general_evaluation_seconds": 20.225973090156913,
+    "lm_eval_exit_status": 0,
+    "lm_eval_validation_exit_status": 0,
+    "offline": true,
+    "wall_seconds": 34.854161
+  },
+  "hardware": {
+    "bf16_supported": true,
+    "compute_capability": "8.6",
+    "driver_version": "535.261.03",
+    "gpu_name": "NVIDIA GeForce RTX 3090",
+    "physical_gpu_index": 5,
+    "start_memory_used_mib": 4,
+    "start_temperature_c": 31,
+    "start_utilization_percent": 0
+  },
+  "result": {
+    "config_sha256": "3457c91740c26013a8408cad9b38e2e970a66dace26dbd1acb2c52d5bca5c72c",
+    "domain": {
+      "evaluated_items": 2,
+      "human_review_pending": 0,
+      "human_reviewed": 0,
+      "human_passed": 0,
+      "json_items": 2,
+      "json_valid": 2,
+      "objective_correct": 1,
+      "objective_items": 2,
+      "schema_version": "1.0",
+      "status": "complete",
+      "suite_version": "tinyllm-domain-v1-83bdd8ef"
+    },
+    "general": {
+      "evaluation_seconds": 20.225973090156913,
+      "harness_version": "0.4.12",
+      "model_parameters": 596049920,
+      "schema_version": "1.0",
+      "tasks": [
+        {
+          "acc": 0.5,
+          "acc_norm": 0.5,
+          "acc_norm_stderr": 0.5,
+          "acc_stderr": 0.5,
+          "samples": 2,
+          "task": "tinyllm_arc_easy"
+        },
+        {
+          "acc": 0.0,
+          "acc_norm": 0.5,
+          "acc_norm_stderr": 0.5,
+          "acc_stderr": 0.0,
+          "samples": 2,
+          "task": "tinyllm_hellaswag"
+        },
+        {
+          "acc": 0.5,
+          "acc_norm": 0.5,
+          "acc_norm_stderr": 0.5,
+          "acc_stderr": 0.5,
+          "samples": 2,
+          "task": "tinyllm_piqa"
+        }
+      ]
+    },
+    "git_commit": "98cbfe42464983a06b6342576be5c21ca867b096",
+    "git_dirty": true,
+    "mode": "smoke",
+    "model_repository": "Qwen/Qwen3-0.6B",
+    "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "run_id": "20260715T031711Z-qwen3-0-6b-baseline-smoke-3457c917-bc1b",
+    "schema_version": "1.0",
+    "status": "succeeded"
+  },
+  "schema_version": "1.0",
+  "scope": "m2-qwen3-0.6b-baseline-smoke",
+  "status": "pass"
+}

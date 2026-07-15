@@ -22,6 +22,9 @@ from tinyllm.schemas.base import StrictSchema
 ArtifactName = Literal[
     "oasst1-jsonl",
     "commitpackft-python-jsonl",
+    "qwen3-generation-config",
+    "qwen3-model-config",
+    "qwen3-model-weights",
     "qwen3-tokenizer",
     "qwen3-tokenizer-config",
 ]

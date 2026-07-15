@@ -31,7 +31,8 @@
     "docs/resume_alignment.md",
     "docs/training_design.md",
     "requirements/README.md",
+    "requirements/baseline_security_exceptions.md",
     "schemas/README.md"
   ],
-  "file_count": 30
+  "file_count": 31
 }

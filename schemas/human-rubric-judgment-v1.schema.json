@@ -1,0 +1,58 @@
+{
+  "additionalProperties": false,
+  "description": "Maintainer decision for one evidence-grounded refusal output.",
+  "properties": {
+    "criterion_results": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "boolean"
+        }
+      ],
+      "title": "Criterion Results",
+      "type": "array"
+    },
+    "item_id": {
+      "pattern": "^domain-refusal-[0-9]{3}$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "rationale": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "reviewer_role": {
+      "const": "maintainer",
+      "title": "Reviewer Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "item_id",
+    "criterion_results",
+    "passed",
+    "rationale",
+    "reviewer_role"
+  ],
+  "title": "HumanRubricJudgment",
+  "type": "object"
+}

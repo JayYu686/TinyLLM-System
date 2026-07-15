@@ -1,0 +1,47 @@
+{
+  "additionalProperties": false,
+  "description": "Completion marker for one atomically published private Judgment set.",
+  "properties": {
+    "committed_at": {
+      "format": "date-time",
+      "title": "Committed At",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "judgment_count": {
+      "exclusiveMinimum": 0,
+      "maximum": 40,
+      "title": "Judgment Count",
+      "type": "integer"
+    },
+    "judgments_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Judgments Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^\\d{8}T\\d{6}Z-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{8}-[0-9a-f]{4}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "config_sha256",
+    "committed_at",
+    "judgment_count",
+    "judgments_sha256"
+  ],
+  "title": "HumanReviewCommit",
+  "type": "object"
+}

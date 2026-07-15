@@ -8,6 +8,7 @@ updated.
 | -- | -- | -- |
 | `constraints/runtime.txt` | Direct runtime dependency versions | CPU CI and RTX 3090 development environment |
 | `constraints/dev.txt` | Direct quality-tool versions | CPU CI and RTX 3090 development environment |
+| `constraints/baseline.txt` | Qwen3 and lm-eval Baseline dependencies | RTX 3090 M2.4c compatibility Smoke |
 | `torch-cpu.txt` | CPU-only CI and local smoke tests | CPU CI |
 | `torch-cu118.txt` | RTX 3090 CUDA 11.8 profile | M0 hardware smoke |
 | `torch-v100-cu118.txt` | Prospective V100 FP16 profile | Not validated; cannot be used for a release claim |
@@ -25,6 +26,14 @@ the PyTorch index and may be reported as unauditable; this is a recorded audit l
 not evidence that the wheel has no vulnerabilities. PyTorch revisions remain pinned and
 must be reviewed against upstream security advisories before a release.
 
-Install the CPU profile with `make bootstrap-cpu`, or the main RTX 3090 profile with
-`make bootstrap-gpu`. V100 remains a conditional compatibility target until access to
+Install the CPU profile with `make bootstrap-cpu`, the main RTX 3090 profile with
+`make bootstrap-gpu`, or the M2.4c model-evaluation profile with `make bootstrap-baseline`.
+The Baseline uses `.venv-baseline` because its reviewed Transformers 4.57 line requires
+Tokenizers 0.22, while deterministic M2 data builds remain pinned to Tokenizers 0.21.4 in the
+default `.venv`. Run Baseline commands through `.venv-baseline/bin/tinyllm`; do not reuse that
+environment to rebuild M2 data. V100 remains a conditional compatibility target until access to
 the auxiliary host is provided and a real FP16 + GradScaler smoke test passes.
+
+The Baseline dependency audit and its narrowly scoped, time-bounded advisory exceptions are
+documented in [baseline_security_exceptions.md](baseline_security_exceptions.md). Run it with
+`make audit-baseline`; an exception is not a claim that the dependency is vulnerability-free.

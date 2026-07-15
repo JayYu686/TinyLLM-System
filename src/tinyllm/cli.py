@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -32,7 +33,16 @@ from tinyllm.data import (
 )
 from tinyllm.doctor.collector import DoctorCollector
 from tinyllm.doctor.render import render_json, render_text
-from tinyllm.evaluation import EvaluationContractError, run_contamination_check
+from tinyllm.evaluation import (
+    BaselineContractError,
+    BaselinePreflightError,
+    BaselineRuntimeError,
+    EvaluationContractError,
+    complete_baseline_human_review,
+    preflight_baseline_gpu,
+    run_baseline_evaluation,
+    run_contamination_check,
+)
 from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
 from tinyllm.training import (
     CheckpointError,
@@ -353,6 +363,143 @@ def eval_contamination(
         )
     if report.status == "contaminated":
         raise typer.Exit(code=6)
+
+
+@eval_app.command("baseline")
+def eval_baseline(
+    ctx: typer.Context,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Strict M2.4c formal or Smoke Baseline YAML."),
+    ],
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Private TinyLLM Artifact Root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    project_root: Annotated[
+        Path,
+        typer.Option("--project-root", help="Git project root used for evaluation lineage."),
+    ] = Path("."),
+    device: Annotated[
+        str,
+        typer.Option("--device", help="Evaluation device: cuda or cpu."),
+    ] = "cuda",
+    gpu_index: Annotated[
+        int | None,
+        typer.Option("--gpu-index", help="Physical GPU index selected after busy/heat preflight."),
+    ] = None,
+    offline: Annotated[
+        bool,
+        typer.Option("--offline/--online", help="Require verified local model and dataset caches."),
+    ] = True,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable path-free machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Run the frozen pre-training model Baseline into a private traceable Run."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if device not in {"cpu", "cuda"}:
+        _output_error("device must be cuda or cpu", json_output=json_output)
+        raise typer.Exit(code=2)
+    if not artifact_root.is_absolute():
+        _output_error("Artifact Root must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    if device == "cuda" and gpu_index is None:
+        _output_error("CUDA Baseline requires --gpu-index", json_output=json_output)
+        raise typer.Exit(code=2)
+    if device == "cpu" and gpu_index is not None:
+        _output_error("--gpu-index is valid only with CUDA", json_output=json_output)
+        raise typer.Exit(code=2)
+
+    previous_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    try:
+        if gpu_index is not None:
+            preflight_baseline_gpu(gpu_index)
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_index)
+        result = run_baseline_evaluation(
+            config_path=config,
+            project_root=project_root,
+            artifact_root=artifact_root,
+            device=cast(Literal["cpu", "cuda"], device),
+            offline=offline,
+        )
+    except BaselineContractError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BASELINE_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except BaselinePreflightError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BASELINE_PREFLIGHT_FAILED")
+        raise typer.Exit(code=3) from exc
+    except BaselineRuntimeError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BASELINE_EVALUATION_FAILED")
+        raise typer.Exit(code=6) from exc
+    except (OSError, RuntimeError, ValueError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BASELINE_EVALUATION_FAILED")
+        raise typer.Exit(code=6) from exc
+    finally:
+        if gpu_index is not None:
+            if previous_visible is None:
+                os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            else:
+                os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
+
+    if json_output:
+        typer.echo(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+    else:
+        typer.echo(
+            f"{result.status}: {result.run_id} "
+            f"domain={result.domain.evaluated_items} general_tasks={len(result.general.tasks)}"
+        )
+
+
+@eval_app.command("baseline-review")
+def eval_baseline_review(
+    ctx: typer.Context,
+    run_id: Annotated[
+        str,
+        typer.Option("--run-id", help="Awaiting Baseline Run ID."),
+    ],
+    judgments: Annotated[
+        Path,
+        typer.Option("--judgments", help="Private strict human-rubric Judgment JSONL."),
+    ],
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Private TinyLLM Artifact Root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable path-free machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Commit all maintainer rubric Judgments and finalize an awaiting Baseline."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not artifact_root.is_absolute():
+        _output_error("Artifact Root must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        result = complete_baseline_human_review(
+            run_id=run_id,
+            artifact_root=artifact_root,
+            judgments_path=judgments,
+        )
+    except BaselineContractError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BASELINE_REVIEW_ERROR")
+        raise typer.Exit(code=2) from exc
+    except (OSError, RuntimeError, ValueError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BASELINE_REVIEW_FAILED")
+        raise typer.Exit(code=6) from exc
+    if json_output:
+        typer.echo(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+    else:
+        typer.echo(
+            f"{result.status}: {result.run_id} "
+            f"reviewed={result.domain.human_reviewed} passed={result.domain.human_passed}"
+        )
 
 
 @app.command()

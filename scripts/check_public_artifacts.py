@@ -6,7 +6,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-SKIPPED_PARTS = {".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv"}
+SKIPPED_PARTS = {
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    ".venv-baseline",
+}
 TEXT_SUFFIXES = {
     ".json",
     ".jsonl",

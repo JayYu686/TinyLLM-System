@@ -25,3 +25,8 @@ exports use Safetensors when that feature is implemented.
 
 The project does not promise security support for models, datasets, or dependencies
 outside revisions explicitly recorded in a run manifest.
+
+Reviewed dependency-audit exceptions are recorded in
+[requirements/baseline_security_exceptions.md](requirements/baseline_security_exceptions.md).
+They must name the constrained execution path and a removal condition; suppressing an advisory
+without that record is not allowed.

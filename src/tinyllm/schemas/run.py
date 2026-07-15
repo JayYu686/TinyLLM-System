@@ -104,7 +104,7 @@ class RunManifest(StrictSchema):
     git_commit: str = Field(pattern=GIT_COMMIT_PATTERN)
     git_dirty: bool
     artifact_root: Path
-    strategy: Literal["single", "ddp", "fsdp2", "zero3"]
+    strategy: Literal["single", "ddp", "fsdp2", "zero3", "evaluation"]
     world_size: int = Field(ge=1)
     dataset_version: str | None = None
     tokenizer_revision: str | None = None

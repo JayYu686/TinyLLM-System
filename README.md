@@ -31,7 +31,7 @@ missing results stay explicitly unevaluated.
 | M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
-| M2 data and evaluation | In progress | Full build/rebuild and Exact contamination pass; bounded Qwen3 Baseline Smoke passes; formal Baseline remains |
+| M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
 | M3–M6 | Planned | No training-quality or scaling result is claimed yet |
 
 The complete M0 evidence is in the
@@ -55,7 +55,7 @@ The [M2.3c immutable Registry smoke](reports/m2/registry_smoke.md) verifies atom
 complete file hashing, safe NumPy reconstruction, idempotency, and corruption refusal on the same
 synthetic boundary. The [full pinned-source build report](reports/m2/full_dataset_build.md) records
 the real `m2-sft-v1-f82ff32e` data product, independent file verification, and an offline full
-rebuild with the same content identity. Model quality and Baseline Evaluation remain unevaluated.
+rebuild with the same content identity. That data-build evidence is independent of model quality.
 The [M2.4a contamination contract smoke](reports/m2/contamination_smoke.md) verifies strict
 evaluation identity plus full-sequence and Prompt-prefix Exact matching on a synthetic registered
 dataset. The [300-item domain candidate](evals/domain/v1/README.md) and its
@@ -63,10 +63,14 @@ dataset. The [300-item domain candidate](evals/domain/v1/README.md) and its
 language mix, seven categories, explicit scorers, and 90 bilingual task pairs. The subsequent
 [formal clean-`main` report](reports/m2/domain_eval_contamination.md) checked all 300 items against
 4597 verified Train samples with zero full-sequence and zero Prompt-prefix Exact matches. Near-Dedup
-remains `not_evaluated`, and the pre-training Base Model Evaluation remains M2.4c.
+remains `not_evaluated`.
 The [Qwen3-0.6B Baseline Smoke](reports/m2/baseline_smoke.md) then verifies the complete private
 Run path on an idle RTX 3090 with two Domain items and two samples per general task. Its bounded
-values are compatibility evidence only; the clean-`main`, full-sample Baseline remains unevaluated.
+values are compatibility evidence only. The subsequent
+[formal clean-`main` Baseline](reports/m2/baseline_formal.md) records all 300 Domain items, all
+14,256 general-task samples, and 40/40 maintainer judgments. The consolidated
+[M2 acceptance report](reports/m2/m2_acceptance.md) defines the accepted identities and explicit
+limitations.
 
 The M1.1 native Trainer result is documented in the
 [CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately

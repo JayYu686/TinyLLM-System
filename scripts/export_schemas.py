@@ -79,6 +79,12 @@ from tinyllm.training.ddp_schema import (
     DDPPartitionEvidence,
     DDPTrainingResult,
 )
+from tinyllm.training.fsdp2_config import FSDP2CorrectnessConfig
+from tinyllm.training.fsdp2_schema import (
+    FSDP2CorrectnessSummary,
+    FSDP2RankEvidence,
+    FSDP2TrainingResult,
+)
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -117,6 +123,10 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "exact-match-scorer-v1.schema.json": ExactMatchScorer,
     "general-baseline-summary-v1.schema.json": GeneralBaselineSummary,
     "general-task-result-v1.schema.json": GeneralTaskResult,
+    "fsdp2-correctness-config-v1.schema.json": FSDP2CorrectnessConfig,
+    "fsdp2-correctness-summary-v1.schema.json": FSDP2CorrectnessSummary,
+    "fsdp2-rank-evidence-v1.schema.json": FSDP2RankEvidence,
+    "fsdp2-training-result-v1.schema.json": FSDP2TrainingResult,
     "human-rubric-scorer-v1.schema.json": HumanRubricScorer,
     "human-rubric-judgment-v1.schema.json": HumanRubricJudgment,
     "human-review-commit-v1.schema.json": HumanReviewCommit,

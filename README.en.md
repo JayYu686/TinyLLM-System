@@ -35,7 +35,7 @@ missing results stay explicitly unevaluated.
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
 | M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
-| M4 FSDP2 | In progress | M4.1 contract and isolated dependency profile preparation; no FSDP2 result is claimed before the four-GPU memory probe |
+| M4 FSDP2 | In progress | Two-process CPU/Gloo Tiny Model correctness passes; no CUDA, DCP, Qwen3-8B, or four-GPU result is claimed |
 | M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
 
 The complete M0 evidence is in the
@@ -90,6 +90,11 @@ Step 6 Exact Resume, and recovery after a forced Rank 1 exit at Step 8. The subs
 [M3 scaling report](reports/m3/ddp_scaling.md) records the real 1/2/4-GPU Strong/Weak matrix,
 Profiler-observed NCCL communication, retained preflight failures, and the explicit absence of
 eight-GPU and controlled cross-NUMA claims.
+
+The first [M4 FSDP2 CPU/Gloo correctness report](reports/m4/fsdp2_cpu_correctness.md) verifies an
+explicit CPU DeviceMesh, DTensor shard coverage, forward/backward, optimizer steps, reduced Loss,
+full-state reconstruction, and World Size mismatch refusal across two processes. It does not claim
+CUDA, DCP, Qwen3-8B, or four-GPU support.
 
 ## System boundary
 

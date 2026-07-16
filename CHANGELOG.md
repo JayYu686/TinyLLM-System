@@ -5,6 +5,13 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- started M4 with strict FSDP2 correctness schemas, explicit CPU DeviceMesh selection, two-process
+  Gloo/DTensor sharding evidence, full-state reconstruction, rank-zero-only artifacts, and
+  fail-closed World Size/config/numerical guards; CUDA, DCP, Qwen3-8B, and four-GPU support remain
+  explicitly unevaluated;
+- made the complete Chinese `README.md` the primary public entrypoint while retaining a complete
+  mutually linked English version in `README.en.md`.
+
 ## 0.3.0-beta.1
 
 - added a fail-closed, YAML-driven M3 DDP benchmark harness with per-rank CUDA timings,

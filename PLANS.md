@@ -161,8 +161,9 @@ M3 阻塞 M4；完成后开始正式投递。
 
 ## 9. Milestone 4：FSDP2 分片训练（Week 7）
 
-状态：`IN_PROGRESS`。M1–M3 前置门禁已解除；M4.1 正在冻结契约和独立依赖环境，尚未产生
-任何 FSDP2、Qwen3-8B 显存或吞吐结论。
+状态：`IN_PROGRESS`。M1–M3 前置门禁已解除；M4.1 两进程 CPU/Gloo Tiny Model 正确性
+已经通过，下一门禁是独立依赖环境和 CUDA/NCCL Tiny Model。尚未产生 Qwen3-8B 显存或
+吞吐结论。
 
 输入：M1/M2/M3，通过 revision/许可证/依赖 Smoke 的 Qwen3-8B。
 

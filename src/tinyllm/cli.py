@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -15,6 +16,13 @@ import typer
 from typer.main import get_command
 
 from tinyllm import __version__
+from tinyllm.benchmark.config import BenchmarkProfile, DDPBenchmarkConfigError
+from tinyllm.benchmark.schema import BenchmarkGroup
+from tinyllm.benchmark.supervisor import (
+    BenchmarkPreflightError,
+    BenchmarkRunError,
+    run_formal_benchmark,
+)
 from tinyllm.data import (
     COMMITPACKFT_LICENSE_ALLOWLIST,
     COMMITPACKFT_SOURCE,
@@ -51,6 +59,7 @@ from tinyllm.training import (
     TrainingErrorCode,
     run_single_device_training,
 )
+from tinyllm.training.smoke_preflight import parse_gpu_indices
 
 app = typer.Typer(
     name="tinyllm",
@@ -68,8 +77,14 @@ eval_app = typer.Typer(
     help="Build and run versioned model-quality evaluation contracts.",
     no_args_is_help=True,
 )
+benchmark_app = typer.Typer(
+    name="benchmark",
+    help="Run evidence-first training performance benchmarks.",
+    no_args_is_help=True,
+)
 app.add_typer(data_app, name="data")
 app.add_typer(eval_app, name="eval")
+app.add_typer(benchmark_app, name="benchmark")
 
 
 @dataclass(frozen=True, slots=True)
@@ -636,6 +651,102 @@ def train_command(
         )
     if result.status == "terminated":
         raise typer.Exit(code=143)
+
+
+@benchmark_app.command("train")
+def benchmark_train(
+    ctx: typer.Context,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Frozen M3 DDP benchmark YAML."),
+    ],
+    output_root: Annotated[
+        Path,
+        typer.Option("--output-root", help="Private benchmark Run root."),
+    ],
+    evidence_dir: Annotated[
+        Path,
+        typer.Option("--evidence-dir", help="New private supervisor evidence directory."),
+    ],
+    profile_name: Annotated[
+        str,
+        typer.Option("--profile", help="Scaling profile: strong or weak."),
+    ],
+    repeat: Annotated[
+        int,
+        typer.Option("--repeat", min=1, help="Independent repeat number."),
+    ],
+    gpu_indices: Annotated[
+        str,
+        typer.Option("--gpu-indices", help="Ordered physical GPU indices, for example 4,5."),
+    ],
+    group: Annotated[
+        str,
+        typer.Option(
+            "--group",
+            help="Controlled group: standard, same_numa, or cross_numa.",
+        ),
+    ] = "standard",
+    timeout_seconds: Annotated[
+        int,
+        typer.Option("--timeout-seconds", min=1, help="Bounded torchrun timeout."),
+    ] = 7200,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Run one formal M3 DDP training benchmark repetition."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if profile_name not in {"strong", "weak"}:
+        _output_error("profile must be strong or weak", json_output=json_output)
+        raise typer.Exit(code=2)
+    if group not in {"standard", "same_numa", "cross_numa"}:
+        _output_error(
+            "group must be standard, same_numa, or cross_numa",
+            json_output=json_output,
+        )
+        raise typer.Exit(code=2)
+    if not output_root.is_absolute() or not evidence_dir.is_absolute():
+        _output_error("benchmark output paths must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        parsed_indices = parse_gpu_indices(gpu_indices)
+    except (argparse.ArgumentTypeError, ValueError) as exc:
+        _output_error(str(exc), json_output=json_output)
+        raise typer.Exit(code=2) from exc
+    try:
+        result = run_formal_benchmark(
+            config_path=config,
+            output_root=output_root,
+            evidence_dir=evidence_dir,
+            profile=cast(BenchmarkProfile, profile_name),
+            group=cast(BenchmarkGroup, group),
+            repeat=repeat,
+            gpu_indices=parsed_indices,
+            timeout_seconds=timeout_seconds,
+        )
+    except DDPBenchmarkConfigError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BENCHMARK_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except BenchmarkPreflightError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BENCHMARK_PREFLIGHT_FAILED")
+        raise typer.Exit(code=3) from exc
+    except BenchmarkRunError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BENCHMARK_RUN_FAILED")
+        raise typer.Exit(code=4) from exc
+    except (OSError, RuntimeError, ValueError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="BENCHMARK_RUN_FAILED")
+        raise typer.Exit(code=4) from exc
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"pass: {result.run_id} profile={result.profile} world_size={result.world_size} "
+            f"repeat={result.repeat} tokens_per_second={result.tokens_per_second:.3f}"
+        )
 
 
 def build_parser() -> click.Command:

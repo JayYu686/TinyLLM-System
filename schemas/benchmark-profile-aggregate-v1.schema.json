@@ -1,0 +1,114 @@
+{
+  "additionalProperties": false,
+  "description": "Three-repeat summary for one controlled matrix cell.",
+  "properties": {
+    "data_wait_percent_median": {
+      "minimum": 0,
+      "title": "Data Wait Percent Median",
+      "type": "number"
+    },
+    "gpu_indices": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Gpu Indices",
+      "type": "array"
+    },
+    "group": {
+      "enum": [
+        "standard",
+        "same_numa",
+        "cross_numa"
+      ],
+      "title": "Group",
+      "type": "string"
+    },
+    "peak_memory_bytes_median": {
+      "minimum": 0,
+      "title": "Peak Memory Bytes Median",
+      "type": "number"
+    },
+    "profile": {
+      "enum": [
+        "strong",
+        "weak"
+      ],
+      "title": "Profile",
+      "type": "string"
+    },
+    "repeats": {
+      "items": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer"
+      },
+      "title": "Repeats",
+      "type": "array"
+    },
+    "run_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Run Ids",
+      "type": "array"
+    },
+    "scaling_efficiency": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scaling Efficiency"
+    },
+    "step_time_ms_median": {
+      "exclusiveMinimum": 0,
+      "title": "Step Time Ms Median",
+      "type": "number"
+    },
+    "tokens_per_second_max": {
+      "exclusiveMinimum": 0,
+      "title": "Tokens Per Second Max",
+      "type": "number"
+    },
+    "tokens_per_second_median": {
+      "exclusiveMinimum": 0,
+      "title": "Tokens Per Second Median",
+      "type": "number"
+    },
+    "tokens_per_second_min": {
+      "exclusiveMinimum": 0,
+      "title": "Tokens Per Second Min",
+      "type": "number"
+    },
+    "world_size": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "group",
+    "profile",
+    "world_size",
+    "gpu_indices",
+    "repeats",
+    "run_ids",
+    "tokens_per_second_median",
+    "tokens_per_second_min",
+    "tokens_per_second_max",
+    "step_time_ms_median",
+    "peak_memory_bytes_median",
+    "data_wait_percent_median"
+  ],
+  "title": "BenchmarkProfileAggregate",
+  "type": "object"
+}

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from tinyllm.benchmark.supervisor import BenchmarkPreflightError
 from tinyllm.cli import main
 from tinyllm.data import RegisteredDatasetSummary
 from tinyllm.evaluation import (
@@ -21,13 +22,16 @@ from tinyllm.evaluation import (
 )
 
 
-def test_help_lists_doctor_train_data_and_eval(capsys: pytest.CaptureFixture[str]) -> None:
+def test_help_lists_doctor_train_data_eval_and_benchmark(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     assert main(["--help"]) == 0
     output = capsys.readouterr().out
     assert "doctor" in output
     assert "train" in output
     assert "data" in output
     assert "eval" in output
+    assert "benchmark" in output
 
     assert main(["data", "--help"]) == 0
     data_output = capsys.readouterr().out
@@ -39,6 +43,44 @@ def test_help_lists_doctor_train_data_and_eval(capsys: pytest.CaptureFixture[str
     assert "contamination" in eval_output
     assert "baseline" in eval_output
     assert "baseline-review" in eval_output
+
+    assert main(["benchmark", "--help"]) == 0
+    benchmark_output = capsys.readouterr().out
+    assert "train" in benchmark_output
+
+
+def test_benchmark_train_uses_preflight_exit_class(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def reject(**_kwargs: object) -> None:
+        raise BenchmarkPreflightError("selected GPU is busy")
+
+    monkeypatch.setattr("tinyllm.cli.run_formal_benchmark", reject)
+    code = main(
+        [
+            "benchmark",
+            "train",
+            "--config",
+            "configs/benchmark/m3_tinygpt_120m_ddp.yaml",
+            "--output-root",
+            str(tmp_path),
+            "--evidence-dir",
+            str(tmp_path / "evidence"),
+            "--profile",
+            "weak",
+            "--repeat",
+            "1",
+            "--gpu-indices",
+            "5,6",
+            "--json",
+        ]
+    )
+
+    assert code == 3
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error"]["code"] == "BENCHMARK_PREFLIGHT_FAILED"
 
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:

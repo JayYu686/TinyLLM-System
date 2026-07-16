@@ -1,0 +1,50 @@
+schema_version: "1.0"
+
+run:
+  name: m3-ddp-benchmark-cpu-test
+  seed: 42
+
+model:
+  vocab_size: 64
+  hidden_size: 32
+  num_layers: 1
+  num_heads: 4
+  intermediate_size: 64
+  max_sequence_length: 16
+  rope_theta: 10000.0
+  rms_norm_epsilon: 1.0e-6
+  dropout: 0.0
+  tie_word_embeddings: true
+
+data:
+  kind: toy
+  vocab_size: 64
+  sequence_length: 16
+
+training:
+  micro_batch_size: 1
+  strong_global_batch_size: 2
+  weak_per_rank_batch_size: 1
+  learning_rate: 3.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  learning_rate_warmup_steps: 1
+
+benchmark:
+  warmup_steps: 1
+  measurement_steps: 2
+  repetitions: 3
+  profiler_steps: 1
+  profiler_repeat: 1
+  telemetry_interval_seconds: 0.1
+
+precision:
+  dtype: fp32
+  allow_tf32: false
+  use_grad_scaler: false
+
+distributed:
+  backend: gloo
+  timeout_seconds: 60
+  broadcast_buffers: false
+  find_unused_parameters: false

@@ -1,0 +1,50 @@
+schema_version: "1.0"
+
+run:
+  name: tinygpt-target-120m-ddp-benchmark
+  seed: 3407
+
+model:
+  vocab_size: 32768
+  hidden_size: 768
+  num_layers: 12
+  num_heads: 12
+  intermediate_size: 2304
+  max_sequence_length: 1024
+  rope_theta: 10000.0
+  rms_norm_epsilon: 1.0e-6
+  dropout: 0.0
+  tie_word_embeddings: true
+
+data:
+  kind: toy
+  vocab_size: 32768
+  sequence_length: 1024
+
+training:
+  micro_batch_size: 1
+  strong_global_batch_size: 8
+  weak_per_rank_batch_size: 1
+  learning_rate: 3.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  learning_rate_warmup_steps: 20
+
+benchmark:
+  warmup_steps: 20
+  measurement_steps: 100
+  repetitions: 3
+  profiler_steps: 5
+  profiler_repeat: 1
+  telemetry_interval_seconds: 2.0
+
+precision:
+  dtype: bf16
+  allow_tf32: true
+  use_grad_scaler: false
+
+distributed:
+  backend: nccl
+  timeout_seconds: 300
+  broadcast_buffers: false
+  find_unused_parameters: false

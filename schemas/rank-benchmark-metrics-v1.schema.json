@@ -1,0 +1,136 @@
+{
+  "$defs": {
+    "CommunicationMeasurement": {
+      "additionalProperties": false,
+      "description": "Profiler-observed distributed communication for a bounded step window.",
+      "properties": {
+        "device_time_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device Time Ms"
+        },
+        "event_keys": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Event Keys",
+          "type": "array"
+        },
+        "profiled_steps": {
+          "minimum": 0,
+          "title": "Profiled Steps",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "measured",
+            "not_collected",
+            "not_applicable",
+            "unavailable"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "profiled_steps"
+      ],
+      "title": "CommunicationMeasurement",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Raw timing, memory, profiler, and hardware facts from one Rank.",
+  "properties": {
+    "communication": {
+      "$ref": "#/$defs/CommunicationMeasurement"
+    },
+    "data_wait_ms": {
+      "items": {
+        "type": "number"
+      },
+      "title": "Data Wait Ms",
+      "type": "array"
+    },
+    "gpu_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gpu Name"
+    },
+    "local_rank": {
+      "minimum": 0,
+      "title": "Local Rank",
+      "type": "integer"
+    },
+    "peak_memory_allocated_bytes": {
+      "minimum": 0,
+      "title": "Peak Memory Allocated Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Physical Gpu Index"
+    },
+    "profiler_trace_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Profiler Trace Sha256"
+    },
+    "rank": {
+      "minimum": 0,
+      "title": "Rank",
+      "type": "integer"
+    },
+    "step_time_ms": {
+      "items": {
+        "type": "number"
+      },
+      "title": "Step Time Ms",
+      "type": "array"
+    }
+  },
+  "required": [
+    "rank",
+    "local_rank",
+    "step_time_ms",
+    "data_wait_ms",
+    "peak_memory_allocated_bytes",
+    "communication"
+  ],
+  "title": "RankBenchmarkMetrics",
+  "type": "object"
+}

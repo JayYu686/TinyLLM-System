@@ -1,0 +1,396 @@
+{
+  "$defs": {
+    "BenchmarkTimingSummary": {
+      "additionalProperties": false,
+      "description": "Distribution summary that always retains a bounded raw sample count.",
+      "properties": {
+        "count": {
+          "exclusiveMinimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "max_ms": {
+          "exclusiveMinimum": 0,
+          "title": "Max Ms",
+          "type": "number"
+        },
+        "median_ms": {
+          "exclusiveMinimum": 0,
+          "title": "Median Ms",
+          "type": "number"
+        },
+        "min_ms": {
+          "exclusiveMinimum": 0,
+          "title": "Min Ms",
+          "type": "number"
+        },
+        "p95_ms": {
+          "exclusiveMinimum": 0,
+          "title": "P95 Ms",
+          "type": "number"
+        },
+        "total_ms": {
+          "exclusiveMinimum": 0,
+          "title": "Total Ms",
+          "type": "number"
+        }
+      },
+      "required": [
+        "count",
+        "total_ms",
+        "min_ms",
+        "median_ms",
+        "p95_ms",
+        "max_ms"
+      ],
+      "title": "BenchmarkTimingSummary",
+      "type": "object"
+    },
+    "CommunicationMeasurement": {
+      "additionalProperties": false,
+      "description": "Profiler-observed distributed communication for a bounded step window.",
+      "properties": {
+        "device_time_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device Time Ms"
+        },
+        "event_keys": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Event Keys",
+          "type": "array"
+        },
+        "profiled_steps": {
+          "minimum": 0,
+          "title": "Profiled Steps",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "measured",
+            "not_collected",
+            "not_applicable",
+            "unavailable"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "profiled_steps"
+      ],
+      "title": "CommunicationMeasurement",
+      "type": "object"
+    },
+    "RankBenchmarkMetrics": {
+      "additionalProperties": false,
+      "description": "Raw timing, memory, profiler, and hardware facts from one Rank.",
+      "properties": {
+        "communication": {
+          "$ref": "#/$defs/CommunicationMeasurement"
+        },
+        "data_wait_ms": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Data Wait Ms",
+          "type": "array"
+        },
+        "gpu_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpu Name"
+        },
+        "local_rank": {
+          "minimum": 0,
+          "title": "Local Rank",
+          "type": "integer"
+        },
+        "peak_memory_allocated_bytes": {
+          "minimum": 0,
+          "title": "Peak Memory Allocated Bytes",
+          "type": "integer"
+        },
+        "physical_gpu_index": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Physical Gpu Index"
+        },
+        "profiler_trace_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profiler Trace Sha256"
+        },
+        "rank": {
+          "minimum": 0,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "step_time_ms": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Step Time Ms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "rank",
+        "local_rank",
+        "step_time_ms",
+        "data_wait_ms",
+        "peak_memory_allocated_bytes",
+        "communication"
+      ],
+      "title": "RankBenchmarkMetrics",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete private result for one Profile, World Size, and independent repeat.",
+  "properties": {
+    "artifact_dir": {
+      "format": "path",
+      "title": "Artifact Dir",
+      "type": "string"
+    },
+    "backend": {
+      "enum": [
+        "gloo",
+        "nccl"
+      ],
+      "title": "Backend",
+      "type": "string"
+    },
+    "base_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Base Config Sha256",
+      "type": "string"
+    },
+    "data_wait_percent": {
+      "minimum": 0,
+      "title": "Data Wait Percent",
+      "type": "number"
+    },
+    "effective_data_wait": {
+      "$ref": "#/$defs/BenchmarkTimingSummary"
+    },
+    "effective_step_time": {
+      "$ref": "#/$defs/BenchmarkTimingSummary"
+    },
+    "finished_at": {
+      "format": "date-time",
+      "title": "Finished At",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "global_batch_size": {
+      "exclusiveMinimum": 0,
+      "title": "Global Batch Size",
+      "type": "integer"
+    },
+    "gradient_accumulation_steps": {
+      "exclusiveMinimum": 0,
+      "title": "Gradient Accumulation Steps",
+      "type": "integer"
+    },
+    "group": {
+      "enum": [
+        "standard",
+        "same_numa",
+        "cross_numa"
+      ],
+      "title": "Group",
+      "type": "string"
+    },
+    "measurement_steps": {
+      "exclusiveMinimum": 0,
+      "title": "Measurement Steps",
+      "type": "integer"
+    },
+    "micro_batch_size": {
+      "exclusiveMinimum": 0,
+      "title": "Micro Batch Size",
+      "type": "integer"
+    },
+    "model_parameter_count": {
+      "exclusiveMinimum": 0,
+      "title": "Model Parameter Count",
+      "type": "integer"
+    },
+    "peak_memory_allocated_bytes": {
+      "minimum": 0,
+      "title": "Peak Memory Allocated Bytes",
+      "type": "integer"
+    },
+    "precision": {
+      "enum": [
+        "fp32",
+        "bf16"
+      ],
+      "title": "Precision",
+      "type": "string"
+    },
+    "predicted_tokens_per_step": {
+      "exclusiveMinimum": 0,
+      "title": "Predicted Tokens Per Step",
+      "type": "integer"
+    },
+    "profile": {
+      "enum": [
+        "strong",
+        "weak"
+      ],
+      "title": "Profile",
+      "type": "string"
+    },
+    "rank_metrics": {
+      "items": {
+        "$ref": "#/$defs/RankBenchmarkMetrics"
+      },
+      "title": "Rank Metrics",
+      "type": "array"
+    },
+    "repeat": {
+      "exclusiveMinimum": 0,
+      "maximum": 10,
+      "title": "Repeat",
+      "type": "integer"
+    },
+    "resolved_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Resolved Config Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^(?P<timestamp>\\d{8}T\\d{6}Z)-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<config_hash>[a-f0-9]{8})-(?P<nonce>[a-f0-9]{4})$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "samples_per_second": {
+      "exclusiveMinimum": 0,
+      "title": "Samples Per Second",
+      "type": "number"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "sequence_length": {
+      "minimum": 2,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "const": "pass",
+      "default": "pass",
+      "title": "Status",
+      "type": "string"
+    },
+    "tokens_per_second": {
+      "exclusiveMinimum": 0,
+      "title": "Tokens Per Second",
+      "type": "number"
+    },
+    "warmup_steps": {
+      "minimum": 0,
+      "title": "Warmup Steps",
+      "type": "integer"
+    },
+    "world_size": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "artifact_dir",
+    "group",
+    "profile",
+    "world_size",
+    "repeat",
+    "seed",
+    "base_config_sha256",
+    "resolved_config_sha256",
+    "git_commit",
+    "git_dirty",
+    "started_at",
+    "finished_at",
+    "backend",
+    "precision",
+    "model_parameter_count",
+    "sequence_length",
+    "warmup_steps",
+    "measurement_steps",
+    "micro_batch_size",
+    "gradient_accumulation_steps",
+    "global_batch_size",
+    "predicted_tokens_per_step",
+    "tokens_per_second",
+    "samples_per_second",
+    "effective_step_time",
+    "effective_data_wait",
+    "data_wait_percent",
+    "peak_memory_allocated_bytes",
+    "rank_metrics"
+  ],
+  "title": "DDPBenchmarkRunResult",
+  "type": "object"
+}

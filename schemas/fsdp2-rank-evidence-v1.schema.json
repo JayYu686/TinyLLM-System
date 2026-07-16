@@ -1,0 +1,49 @@
+{
+  "additionalProperties": false,
+  "description": "Privacy-safe local-shard evidence for one FSDP2 Rank.",
+  "properties": {
+    "device_type": {
+      "enum": [
+        "cpu",
+        "cuda"
+      ],
+      "title": "Device Type",
+      "type": "string"
+    },
+    "local_shard_numel": {
+      "exclusiveMinimum": 0,
+      "title": "Local Shard Numel",
+      "type": "integer"
+    },
+    "local_shard_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Local Shard Sha256",
+      "type": "string"
+    },
+    "parameters_are_dtensor": {
+      "const": true,
+      "default": true,
+      "title": "Parameters Are Dtensor",
+      "type": "boolean"
+    },
+    "rank": {
+      "minimum": 0,
+      "title": "Rank",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "rank",
+    "device_type",
+    "local_shard_numel",
+    "local_shard_sha256"
+  ],
+  "title": "FSDP2RankEvidence",
+  "type": "object"
+}

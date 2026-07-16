@@ -30,6 +30,18 @@ from tinyllm.training.ddp_schema import (
 )
 from tinyllm.training.distributed import TorchrunEnvironment, validate_sampler_partitions
 from tinyllm.training.errors import TrainingError, TrainingErrorCode
+from tinyllm.training.fsdp2 import run_fsdp2_correctness
+from tinyllm.training.fsdp2_config import (
+    FSDP2ConfigError,
+    FSDP2CorrectnessConfig,
+    FSDP2PolicyConfig,
+    load_fsdp2_config,
+)
+from tinyllm.training.fsdp2_schema import (
+    FSDP2CorrectnessSummary,
+    FSDP2RankEvidence,
+    FSDP2TrainingResult,
+)
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
 from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.run import run_single_device_training
@@ -55,6 +67,12 @@ __all__ = [
     "DDPPartitionEvidence",
     "DDPRecoveryResult",
     "DDPTrainingResult",
+    "FSDP2ConfigError",
+    "FSDP2CorrectnessConfig",
+    "FSDP2CorrectnessSummary",
+    "FSDP2PolicyConfig",
+    "FSDP2RankEvidence",
+    "FSDP2TrainingResult",
     "LoadedDDPCheckpoint",
     "ResumeMode",
     "SingleDeviceTrainer",
@@ -69,12 +87,14 @@ __all__ = [
     "build_m1_cuda_trainer",
     "build_rank_state",
     "load_training_config",
+    "load_fsdp2_config",
     "restore_from_config",
     "restore_ddp_trainer",
     "restore_local_rng_state",
     "restore_trainer",
     "run_single_device_training",
     "run_ddp_correctness",
+    "run_fsdp2_correctness",
     "seed_everything",
     "validate_sampler_partitions",
     "validate_local_rng_state",

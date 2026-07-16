@@ -1,0 +1,257 @@
+{
+  "$defs": {
+    "FSDP2CorrectnessSummary": {
+      "additionalProperties": false,
+      "description": "Correctness facts shared by all Ranks in one bounded FSDP2 run.",
+      "properties": {
+        "activation_checkpointing": {
+          "const": false,
+          "default": false,
+          "title": "Activation Checkpointing",
+          "type": "boolean"
+        },
+        "backend": {
+          "enum": [
+            "gloo",
+            "nccl"
+          ],
+          "title": "Backend",
+          "type": "string"
+        },
+        "checkpoint_status": {
+          "const": "not_evaluated_m4_1",
+          "default": "not_evaluated_m4_1",
+          "title": "Checkpoint Status",
+          "type": "string"
+        },
+        "cpu_offload": {
+          "const": false,
+          "default": false,
+          "title": "Cpu Offload",
+          "type": "boolean"
+        },
+        "device_type": {
+          "enum": [
+            "cpu",
+            "cuda"
+          ],
+          "title": "Device Type",
+          "type": "string"
+        },
+        "durable_metric_records": {
+          "exclusiveMinimum": 0,
+          "title": "Durable Metric Records",
+          "type": "integer"
+        },
+        "durable_writer_rank": {
+          "const": 0,
+          "default": 0,
+          "title": "Durable Writer Rank",
+          "type": "integer"
+        },
+        "final_full_parameter_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Final Full Parameter Sha256",
+          "type": "string"
+        },
+        "global_batch_size": {
+          "exclusiveMinimum": 0,
+          "title": "Global Batch Size",
+          "type": "integer"
+        },
+        "gradient_norm_atol": {
+          "default": 1e-06,
+          "minimum": 0.0,
+          "title": "Gradient Norm Atol",
+          "type": "number"
+        },
+        "initial_full_parameter_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Initial Full Parameter Sha256",
+          "type": "string"
+        },
+        "local_shard_parameter_sum": {
+          "exclusiveMinimum": 0,
+          "title": "Local Shard Parameter Sum",
+          "type": "integer"
+        },
+        "logical_parameter_count": {
+          "exclusiveMinimum": 0,
+          "title": "Logical Parameter Count",
+          "type": "integer"
+        },
+        "loss_reduction_atol": {
+          "default": 1e-12,
+          "minimum": 0.0,
+          "title": "Loss Reduction Atol",
+          "type": "number"
+        },
+        "max_gradient_norm_abs_diff": {
+          "minimum": 0.0,
+          "title": "Max Gradient Norm Abs Diff",
+          "type": "number"
+        },
+        "max_loss_reduction_abs_diff": {
+          "minimum": 0.0,
+          "title": "Max Loss Reduction Abs Diff",
+          "type": "number"
+        },
+        "optimizer_steps": {
+          "exclusiveMinimum": 0,
+          "title": "Optimizer Steps",
+          "type": "integer"
+        },
+        "rank_evidence": {
+          "items": {
+            "$ref": "#/$defs/FSDP2RankEvidence"
+          },
+          "title": "Rank Evidence",
+          "type": "array"
+        },
+        "reshard_after_forward": {
+          "const": true,
+          "default": true,
+          "title": "Reshard After Forward",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "const": "pass",
+          "default": "pass",
+          "title": "Status",
+          "type": "string"
+        },
+        "world_size": {
+          "maximum": 4,
+          "minimum": 1,
+          "title": "World Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "backend",
+        "device_type",
+        "world_size",
+        "global_batch_size",
+        "optimizer_steps",
+        "durable_metric_records",
+        "logical_parameter_count",
+        "local_shard_parameter_sum",
+        "initial_full_parameter_sha256",
+        "final_full_parameter_sha256",
+        "rank_evidence",
+        "max_loss_reduction_abs_diff",
+        "max_gradient_norm_abs_diff"
+      ],
+      "title": "FSDP2CorrectnessSummary",
+      "type": "object"
+    },
+    "FSDP2RankEvidence": {
+      "additionalProperties": false,
+      "description": "Privacy-safe local-shard evidence for one FSDP2 Rank.",
+      "properties": {
+        "device_type": {
+          "enum": [
+            "cpu",
+            "cuda"
+          ],
+          "title": "Device Type",
+          "type": "string"
+        },
+        "local_shard_numel": {
+          "exclusiveMinimum": 0,
+          "title": "Local Shard Numel",
+          "type": "integer"
+        },
+        "local_shard_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Local Shard Sha256",
+          "type": "string"
+        },
+        "parameters_are_dtensor": {
+          "const": true,
+          "default": true,
+          "title": "Parameters Are Dtensor",
+          "type": "boolean"
+        },
+        "rank": {
+          "minimum": 0,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rank",
+        "device_type",
+        "local_shard_numel",
+        "local_shard_sha256"
+      ],
+      "title": "FSDP2RankEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Rank-zero terminal result emitted by the M4.1 torchrun worker.",
+  "properties": {
+    "artifact_dir": {
+      "format": "path",
+      "title": "Artifact Dir",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^(?P<timestamp>\\d{8}T\\d{6}Z)-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<config_hash>[a-f0-9]{8})-(?P<nonce>[a-f0-9]{4})$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "succeeded",
+      "default": "succeeded",
+      "title": "Status",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/FSDP2CorrectnessSummary"
+    }
+  },
+  "required": [
+    "run_id",
+    "artifact_dir",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "summary"
+  ],
+  "title": "FSDP2TrainingResult",
+  "type": "object"
+}

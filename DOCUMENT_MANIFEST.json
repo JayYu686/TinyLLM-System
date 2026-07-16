@@ -29,6 +29,7 @@
     "docs/m3_ddp_correctness_contract.md",
     "docs/m3_ddp_benchmark_contract.md",
     "docs/m3_ddp_recovery_contract.md",
+    "docs/m4_fsdp2_contract.md",
     "docs/nccl_test_plan.md",
     "docs/product_scope.md",
     "docs/public_reporting.md",
@@ -38,5 +39,5 @@
     "requirements/baseline_security_exceptions.md",
     "schemas/README.md"
   ],
-  "file_count": 35
+  "file_count": 36
 }

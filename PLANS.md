@@ -161,11 +161,12 @@ M3 阻塞 M4；完成后开始正式投递。
 
 ## 9. Milestone 4：FSDP2 分片训练（Week 7）
 
-状态：`READY`。M1–M3 前置门禁已解除；尚未产生任何 FSDP2、Qwen3-8B 显存或吞吐结论。
+状态：`IN_PROGRESS`。M1–M3 前置门禁已解除；M4.1 正在冻结契约和独立依赖环境，尚未产生
+任何 FSDP2、Qwen3-8B 显存或吞吐结论。
 
 输入：M1/M2/M3，通过 revision/许可证/依赖 Smoke 的 Qwen3-8B。
 
-主要工作：BF16、Activation Checkpointing、FULL_SHARD、DCP Sharded Checkpoint/Resume、
+主要工作：BF16、Activation Checkpointing、FSDP2 `fully_shard` 完整分片、DCP Sharded Checkpoint/Resume、
 Peak Memory 和单体 Safetensors 导出。正式验收固定四卡并先做真实显存 Probe；8 卡只作为
 资源允许时的增强实验，四卡无法容纳时必须通过新 ADR 调整目标，不能猜测可运行。
 

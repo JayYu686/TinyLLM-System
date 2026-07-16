@@ -37,3 +37,9 @@ the auxiliary host is provided and a real FP16 + GradScaler smoke test passes.
 The Baseline dependency audit and its narrowly scoped, time-bounded advisory exceptions are
 documented in [baseline_security_exceptions.md](baseline_security_exceptions.md). Run it with
 `make audit-baseline`; an exception is not a claim that the dependency is vulnerability-free.
+
+M4 FSDP2 dependencies are intentionally not treated as validated by either the core or Baseline
+profile. M4 uses a separate `.venv-m4`; its constraints file will be committed only after the
+PyTorch FSDP2/DCP, Transformers Qwen, Safetensors, and CPU/Gloo compatibility smoke described in
+[the M4 contract](../docs/m4_fsdp2_contract.md) passes. Until then, the presence of an importable
+API is readiness evidence, not a model-training support claim.

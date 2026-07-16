@@ -20,7 +20,7 @@
 | M1 单卡闭环 | `COMPLETE` | 原生 Trainer、完整 Checkpoint、CPU Exact Resume、3090 BF16 与真实 SIGTERM/SIGKILL | 无；`v0.1.0-alpha.1` 后进入 M2 |
 | M2 数据与评测前置 | `COMPLETE` | 固定来源/许可导入、确定性处理与 Registry、完整离线重建、冻结 300 条领域集、真实 Exact 污染扫描、clean-main 全量 Qwen3 Baseline 与 40/40 人工判断 | 无；M1/M2 已解除 M3 前置阻塞 |
 | M3 DDP 与正式扩展 | `COMPLETE` | M3.1 正确性、M3.2 Exact Resume/Rank Failure、M3.3–M3.4 正式 1/2/4 卡 Strong/Weak、Profiler、失败留存、中文报告与 PR #55 | 无；8 卡与跨 NUMA 为非阻塞增强项 |
-| M4 FSDP2 | `READY` | 路线、固定 Qwen3-8B revision 与四卡资源边界 | #16–#18；先冻结契约和依赖 Smoke，再做四卡显存 Probe |
+| M4 FSDP2 | `IN_PROGRESS` | M4.1 契约、固定 Qwen3-8B revision 与四卡资源边界 | #16–#18；先完成独立依赖 Smoke，再做四卡显存 Probe |
 | M5–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue；不得提前绕过 M4 正确性顺序 |
 
 ## Week 1：专业化基础

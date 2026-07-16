@@ -7,6 +7,7 @@
     "CONTRIBUTING.md",
     "PLANS.md",
     "README.md",
+    "README.en.md",
     "SECURITY.md",
     "TASKS.md",
     "docs/adr/0001-main-platform-rtx3090.md",
@@ -39,5 +40,5 @@
     "requirements/baseline_security_exceptions.md",
     "schemas/README.md"
   ],
-  "file_count": 36
+  "file_count": 37
 }

@@ -32,8 +32,9 @@ missing results stay explicitly unevaluated.
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
-| M3 DDP | In progress | M3.1 correctness and M3.2 real Exact Resume/Rank Failure gates pass; benchmark and scaling remain |
-| M4–M6 | Planned | No FSDP2, training-quality, promotion, or deployment result is claimed yet |
+| M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
+| M4 FSDP2 | Ready | M1–M3 prerequisites pass; no FSDP2 result is claimed before the four-GPU memory probe |
+| M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
 
 The complete M0 evidence is in the
 [acceptance record](reports/m0/m0_acceptance.md),
@@ -83,8 +84,10 @@ The [M3.1 DDP correctness report](reports/m3/ddp_correctness.md) records real on
 torchrun evidence for initialization, Sampler partitioning, Global Batch, reduced Loss, final
 parameter synchronization, and rank-zero-only durable logging. The subsequent
 [M3.2 recovery report](reports/m3/ddp_recovery.md) records real two-GPU complete Checkpoints,
-Step 6 Exact Resume, and recovery after a forced Rank 1 exit at Step 8. Neither report is a
-throughput or scaling result; the controlled benchmark matrix remains the next gate.
+Step 6 Exact Resume, and recovery after a forced Rank 1 exit at Step 8. The subsequent
+[M3 scaling report](reports/m3/ddp_scaling.md) records the real 1/2/4-GPU Strong/Weak matrix,
+Profiler-observed NCCL communication, retained preflight failures, and the explicit absence of
+eight-GPU and controlled cross-NUMA claims.
 
 ## System boundary
 
@@ -119,12 +122,12 @@ data versioning
 
 ## Hardware strategy
 
-The main server has 10 × RTX 3090 24 GB GPUs arranged across two NUMA nodes. The formal
-scaling sequence is 1/2/4/8 GPUs. Eight is the standard training group because it gives a
-conventional world size while reserving capacity for evaluation, development, and fault
-recovery. Shared-server correctness smoke tests may select any explicit idle set, including
-GPUs 4–9; those dynamic runs do not replace controlled 1/2/4/8 scaling results. Ten GPUs
-are reserved for boundary experiments and cannot become the default silently.
+The main server has 10 × RTX 3090 24 GB GPUs arranged across two NUMA nodes, but it is a
+long-lived shared host. The reproducible release gate therefore uses controlled 1/2/4-GPU
+scaling on nested idle sets. Eight-GPU and controlled cross-NUMA runs remain optional
+enhancements because the project cannot preempt other users or rely on an unbounded resource
+wait. Public results state the actual world size and never extrapolate four-GPU measurements
+to eight or ten GPUs. See [ADR-0004](docs/adr/0004-shared-server-4gpu-acceptance.md).
 
 The auxiliary 8 × V100 32 GB host is a conditional compatibility target. RTX 3090 uses
 BF16 by default and may use TF32; V100 requires FP16 + GradScaler and must reject BF16.
@@ -240,7 +243,7 @@ The target is a ten-week core plus a two-week buffer:
 | -- | -- | -- |
 | M1 | Native single-GPU trainer, atomic checkpoint, Exact Resume | Correctness base |
 | M2 | Licensed deterministic data pipeline and frozen evaluation | Data lineage |
-| M3 | Native DDP and controlled 1/2/4/8 scaling | First application-ready evidence |
+| M3 | Native DDP and controlled 1/2/4 scaling | First application-ready evidence |
 | M4 | Qwen3-8B FSDP2 sharded checkpoint/resume smoke | Advanced distributed evidence |
 | M5 | Qwen3-0.6B Full SFT and Qwen3-8B LoRA | Practical post-training |
 | M6 | Baseline/candidate comparison and Candidate gate | `v0.6.0-rc.1` portfolio release |

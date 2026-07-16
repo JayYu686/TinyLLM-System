@@ -107,7 +107,8 @@ M3.1 closes only Issue #12. The following remain mandatory:
 1. #13: complete DDP Checkpoint, Exact Resume constraints, real Rank Failure, and recovery.
 2. #14: benchmark harness with warmup, measurement windows, three repetitions, memory, data wait,
    communication, and Profiler evidence.
-3. #15: controlled 1/2/4/8 Strong and Weak Scaling plus same-NUMA/cross-NUMA comparison.
+3. #15: controlled 1/2/4 Strong and Weak Scaling; 8-GPU and cross-NUMA evidence is optional
+   under ADR-0004 and cannot be claimed unless actually measured.
 
 No Checkpoint was written by these runs; the empty directory and
 `checkpoint_status=not_evaluated_m3_1` prevent a partial state from being mislabeled as resumable.

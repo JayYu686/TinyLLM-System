@@ -62,7 +62,7 @@
 2. 执行 `tinyllm plan`。
 3. 启动训练。
 4. 模拟中断和恢复。
-5. 展示 1/2/4/8 卡报告。
+5. 展示真实 1/2/4 卡报告，并说明共享资源下不外推 8 卡结论。
 6. 比较 Base 与 Fine-tuned。
 7. 展示 Promotion Gate。
 8. 部署 production 模型。

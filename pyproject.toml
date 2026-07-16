@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tinyllm-system"
-version = "0.1.0a1"
+version = "0.3.0b1"
 description = "Hardware-aware LLM training, evaluation, and deployment for consumer multi-GPU systems."
 readme = "README.md"
 requires-python = ">=3.11"

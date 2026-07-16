@@ -9,6 +9,16 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from tinyllm.benchmark import (
+    BenchmarkProfileAggregate,
+    BenchmarkTimingSummary,
+    CommunicationMeasurement,
+    DDPBenchmarkConfig,
+    DDPBenchmarkMatrixSummary,
+    DDPBenchmarkRunResult,
+    RankBenchmarkMetrics,
+    ResolvedBenchmarkProfile,
+)
 from tinyllm.data import (
     BalanceRejectedRecord,
     CommitPackFTImportConfig,
@@ -75,14 +85,20 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "balance-rejected-record-v1.schema.json": BalanceRejectedRecord,
     "baseline-evaluation-result-v1.schema.json": BaselineEvaluationResult,
     "baseline-run-config-v1.schema.json": BaselineRunConfig,
+    "benchmark-profile-aggregate-v1.schema.json": BenchmarkProfileAggregate,
+    "benchmark-timing-summary-v1.schema.json": BenchmarkTimingSummary,
     "checkpoint-manifest-v1.schema.json": CheckpointManifest,
     "checkpoint-commit-marker-v1.schema.json": CheckpointCommitMarker,
     "commitpackft-import-config-v1.schema.json": CommitPackFTImportConfig,
+    "communication-measurement-v1.schema.json": CommunicationMeasurement,
     "contamination-match-v1.schema.json": ContaminationMatch,
     "contamination-report-v1.schema.json": ContaminationReport,
     "data-import-manifest-v1.schema.json": DataImportManifest,
     "data-processing-manifest-v1.schema.json": DataProcessingManifest,
     "ddp-correctness-summary-v1.schema.json": DDPCorrectnessSummary,
+    "ddp-benchmark-config-v1.schema.json": DDPBenchmarkConfig,
+    "ddp-benchmark-matrix-summary-v1.schema.json": DDPBenchmarkMatrixSummary,
+    "ddp-benchmark-run-result-v1.schema.json": DDPBenchmarkRunResult,
     "ddp-partition-evidence-v1.schema.json": DDPPartitionEvidence,
     "ddp-recovery-result-v1.schema.json": DDPRecoveryResult,
     "ddp-training-result-v1.schema.json": DDPTrainingResult,
@@ -121,6 +137,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "rejected-record-v1.schema.json": RejectedRecord,
     "registered-dataset-summary-v1.schema.json": RegisteredDatasetSummary,
     "required-terms-scorer-v1.schema.json": RequiredTermsScorer,
+    "rank-benchmark-metrics-v1.schema.json": RankBenchmarkMetrics,
+    "resolved-benchmark-profile-v1.schema.json": ResolvedBenchmarkProfile,
     "run-manifest-v1.schema.json": RunManifest,
     "resume-result-v1.schema.json": ResumeResult,
     "sampler-state-v1.schema.json": SamplerState,

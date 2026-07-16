@@ -5,6 +5,16 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+## 0.3.0-beta.1
+
+- added a fail-closed, YAML-driven M3 DDP benchmark harness with per-rank CUDA timings,
+  data-wait and peak-memory metrics, PyTorch Profiler traces, live GPU telemetry, retained
+  failure evidence, and strict repeat/matrix aggregation;
+- completed real RTX 3090 BF16 Strong/Weak Scaling runs for 1/2/4 GPUs with three independent
+  repeats per cell, published the raw repeat-level summary, and documented the observed
+  non-linear scaling without extrapolation;
+- adopted ADR-0004 so the shared-server release gate uses reproducible 1/2/4-GPU evidence while
+  eight-GPU and controlled cross-NUMA runs remain explicitly uncollected optional enhancements;
 - started M3 with strict torchrun/DDP configuration, deterministic initialization and Sampler
   evidence, exact Global Batch and reduced-Loss validation, rank-zero-only durable artifacts, and
   real one-/two-RTX-3090 NCCL/BF16 correctness runs; distributed Resume and scaling remain open.

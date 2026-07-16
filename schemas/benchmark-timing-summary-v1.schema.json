@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "description": "Distribution summary that always retains a bounded raw sample count.",
+  "properties": {
+    "count": {
+      "exclusiveMinimum": 0,
+      "title": "Count",
+      "type": "integer"
+    },
+    "max_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Max Ms",
+      "type": "number"
+    },
+    "median_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Median Ms",
+      "type": "number"
+    },
+    "min_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Min Ms",
+      "type": "number"
+    },
+    "p95_ms": {
+      "exclusiveMinimum": 0,
+      "title": "P95 Ms",
+      "type": "number"
+    },
+    "total_ms": {
+      "exclusiveMinimum": 0,
+      "title": "Total Ms",
+      "type": "number"
+    }
+  },
+  "required": [
+    "count",
+    "total_ms",
+    "min_ms",
+    "median_ms",
+    "p95_ms",
+    "max_ms"
+  ],
+  "title": "BenchmarkTimingSummary",
+  "type": "object"
+}

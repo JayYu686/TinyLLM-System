@@ -31,8 +31,9 @@ V100 和 TinyGPT-350M 不阻塞核心版本。
 ## 3. 平台与资源策略
 
 主平台是 10 × RTX 3090 24GB：BF16 优先，可启用 TF32，通常不使用 GradScaler。
-正式扩展实验固定 1/2/4/8 卡；共享开发时可显式选择任意空闲卡，例如 GPU 4–9，
-但动态分组不替代受控扩展结果。10 卡仅用于边界对照。
+正式扩展实验固定 1/2/4 卡；共享开发时可显式选择通过 Preflight 的空闲卡，例如
+GPU 5–9。8/10 卡与受控跨 NUMA对照是非阻塞增强项，不能由四卡结果外推。
+资源决策见 [ADR-0004](docs/adr/0004-shared-server-4gpu-acceptance.md)。
 
 8 × V100 32GB 是条件性辅助平台：只允许 FP16 + GradScaler，不允许 BF16/TF32。
 没有连接方式和真实 Smoke 前，V100 不进入发布声明。
@@ -135,20 +136,23 @@ Manifest 记录输入/输出哈希和许可证。M2 已解除 M3/M4/M5 的数据
 
 ## 8. Milestone 3：DDP 与扩展证据（Weeks 5–6）
 
-状态：`IN_PROGRESS`。M3.1 已完成真实 1/2 卡 NCCL/BF16 正确性运行；M3.2 已完成双卡
-完整 Checkpoint、Step 6 Exact Resume 和 Step 8 Rank 1 故障恢复。验收见
+状态：`COMPLETE`。M3.1 已完成真实 1/2 卡 NCCL/BF16 正确性运行；M3.2 已完成双卡
+完整 Checkpoint、Step 6 Exact Resume 和 Step 8 Rank 1 故障恢复；M3.3–M3.4 已完成
+正式 1/2/4 卡 Strong/Weak Scaling 和同 NUMA 补充证据。验收见
 [M3.1 DDP Correctness](reports/m3/ddp_correctness.md)与
-[M3.2 DDP Recovery](reports/m3/ddp_recovery.md)。正式扩展 Benchmark 尚未完成，因此不得
-标记 M3 完成或开始 M4。
+[M3.2 DDP Recovery](reports/m3/ddp_recovery.md)以及
+[M3 Scaling](reports/m3/ddp_scaling.md)。所有者已于 2026-07-16 确认中文报告通过，
+PR #55 的最终 CI 和合并构成 M3 的原子发布门禁。
 
 输入：M1 正确训练/恢复语义、M2 数据版本、TinyGPT-Target-120M 配置。
 
 主要工作：torchrun、DistributedSampler、参数初始化、Global Batch、Loss Reduce、Rank 0
 日志、DDP Checkpoint/Resume 和 Rank 退出处理。
 
-Benchmark：正式 1/2/4/8 卡 Strong/Weak Scaling；每组预热 20 Step、测量 100 Step、
+Benchmark：正式 1/2/4 卡 Strong/Weak Scaling；每组预热 20 Step、测量 100 Step、
 独立重复 3 次；保存原始 JSON、中位数/范围、显存、通信、数据等待和 Profiler Trace。
-增加 GPU 6–9 同 NUMA与 GPU 4–7 跨 NUMA受控对照，保留并解释异常运行。
+GPU 6–9 同 NUMA 结果作为补充证据；GPU 4–7 跨 NUMA 受控对照和 8 卡矩阵不阻塞 M3，
+未完成时必须明确标记，保留并解释所有异常运行。
 
 输出：可复现扩展报告和 `v0.3.0-beta.1`。
 
@@ -157,10 +161,13 @@ M3 阻塞 M4；完成后开始正式投递。
 
 ## 9. Milestone 4：FSDP2 分片训练（Week 7）
 
+状态：`READY`。M1–M3 前置门禁已解除；尚未产生任何 FSDP2、Qwen3-8B 显存或吞吐结论。
+
 输入：M1/M2/M3，通过 revision/许可证/依赖 Smoke 的 Qwen3-8B。
 
 主要工作：BF16、Activation Checkpointing、FULL_SHARD、DCP Sharded Checkpoint/Resume、
-Peak Memory 和单体 Safetensors 导出。正式验收固定 8 卡；动态 4/6 卡只做正确性 Smoke。
+Peak Memory 和单体 Safetensors 导出。正式验收固定四卡并先做真实显存 Probe；8 卡只作为
+资源允许时的增强实验，四卡无法容纳时必须通过新 ADR 调整目标，不能猜测可运行。
 
 输出：50 Optimizer Step 报告；Step 25 Checkpoint，模拟退出并恢复到 Step 50；分片
 Manifest、内存证据和部署导出。
@@ -216,7 +223,7 @@ M8 的估算必须标注为估算，Probe 结果覆盖估算；不实现 ZeRO-2 
 | 风险 | 控制 |
 | -- | -- |
 | 范围失控 | 核心/缓冲/Future 三层边界；revision 变化走 ADR |
-| 3090/10 卡非标准拓扑 | 正式 1/2/4/8；记录 NUMA、温度、频率和背景负载 |
+| 3090/10 卡非标准拓扑 | 正式 1/2/4；记录 NUMA、温度、频率和背景负载；8/10 卡不阻塞 |
 | FSDP2/ZeRO-3 复杂度 | 单卡→DDP→FSDP2；ZeRO-3 不阻塞 |
 | Checkpoint 假恢复 | 原子提交、哈希、完整状态、真实中断、坏文件和兼容性拒绝 |
 | 数据质量/许可证 | 固定 revision、Allowlist、分组切分、污染检查、拒绝统计 |

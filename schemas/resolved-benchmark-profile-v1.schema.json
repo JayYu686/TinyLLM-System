@@ -1,0 +1,94 @@
+{
+  "additionalProperties": false,
+  "description": "World-size-specific batch and step values derived from the YAML.",
+  "properties": {
+    "dataset_samples": {
+      "exclusiveMinimum": 0,
+      "title": "Dataset Samples",
+      "type": "integer"
+    },
+    "global_batch_size": {
+      "exclusiveMinimum": 0,
+      "title": "Global Batch Size",
+      "type": "integer"
+    },
+    "gradient_accumulation_steps": {
+      "exclusiveMinimum": 0,
+      "title": "Gradient Accumulation Steps",
+      "type": "integer"
+    },
+    "measurement_steps": {
+      "exclusiveMinimum": 0,
+      "title": "Measurement Steps",
+      "type": "integer"
+    },
+    "micro_batch_size": {
+      "exclusiveMinimum": 0,
+      "title": "Micro Batch Size",
+      "type": "integer"
+    },
+    "profile": {
+      "enum": [
+        "strong",
+        "weak"
+      ],
+      "title": "Profile",
+      "type": "string"
+    },
+    "profiler_steps": {
+      "minimum": 0,
+      "title": "Profiler Steps",
+      "type": "integer"
+    },
+    "repeat": {
+      "exclusiveMinimum": 0,
+      "maximum": 10,
+      "title": "Repeat",
+      "type": "integer"
+    },
+    "samples_per_rank": {
+      "exclusiveMinimum": 0,
+      "title": "Samples Per Rank",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "warmup_steps": {
+      "minimum": 0,
+      "title": "Warmup Steps",
+      "type": "integer"
+    },
+    "world_size": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "profile",
+    "world_size",
+    "repeat",
+    "seed",
+    "warmup_steps",
+    "measurement_steps",
+    "profiler_steps",
+    "micro_batch_size",
+    "gradient_accumulation_steps",
+    "global_batch_size",
+    "samples_per_rank",
+    "dataset_samples"
+  ],
+  "title": "ResolvedBenchmarkProfile",
+  "type": "object"
+}

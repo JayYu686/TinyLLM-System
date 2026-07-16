@@ -19,8 +19,9 @@
 | Week 1 专业化基础 | `COMPLETE` | Apache/README/治理、Typer/Pydantic、公共 Schema、CI、PR #27 | 无；后续修改进入 M1 独立 PR |
 | M1 单卡闭环 | `COMPLETE` | 原生 Trainer、完整 Checkpoint、CPU Exact Resume、3090 BF16 与真实 SIGTERM/SIGKILL | 无；`v0.1.0-alpha.1` 后进入 M2 |
 | M2 数据与评测前置 | `COMPLETE` | 固定来源/许可导入、确定性处理与 Registry、完整离线重建、冻结 300 条领域集、真实 Exact 污染扫描、clean-main 全量 Qwen3 Baseline 与 40/40 人工判断 | 无；M1/M2 已解除 M3 前置阻塞 |
-| M3 DDP 与正式扩展 | `IN_PROGRESS` | M3.1 真实 1/2 卡 DDP 正确性；M3.2 完整 Checkpoint、双卡 Exact Resume、Rank 1 故障恢复、CPU 集成与脱敏报告 | #13 PR 合并；#14 Benchmark；#15 1/2/4/8 扩展与 NUMA 对照 |
-| M4–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue；不得阻塞当前 M3 正确性顺序 |
+| M3 DDP 与正式扩展 | `COMPLETE` | M3.1 正确性、M3.2 Exact Resume/Rank Failure、M3.3–M3.4 正式 1/2/4 卡 Strong/Weak、Profiler、失败留存、中文报告与 PR #55 | 无；8 卡与跨 NUMA 为非阻塞增强项 |
+| M4 FSDP2 | `READY` | 路线、固定 Qwen3-8B revision 与四卡资源边界 | #16–#18；先冻结契约和依赖 Smoke，再做四卡显存 Probe |
+| M5–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue；不得提前绕过 M4 正确性顺序 |
 
 ## Week 1：专业化基础
 
@@ -62,14 +63,14 @@ Tokenization → Token 平衡/Split-local Packing/Manifest → 持久化 Registr
 ## M3：DDP 与正式扩展
 
 严格依赖：M1、M2。执行批次：分布式正确性 → Checkpoint/Resume/Rank Failure →
-受控 1/2/4/8 Strong/Weak Scaling → NUMA 对照 → 报告和 `v0.3.0-beta.1`。
+受控 1/2/4 Strong/Weak Scaling → 可选 8 卡/NUMA 增强 → 报告和 `v0.3.0-beta.1`。
 
 完成门禁：每配置预热 20、测量 100、重复 3 次，原始结果与异常说明完整。
 
 ## M4：FSDP2
 
 严格依赖：M1–M3。执行批次：FULL_SHARD/Activation Checkpointing → DCP 分片保存 →
-Step 25 退出/恢复到 50 → Peak Memory/导出 → 正式 8 卡报告。
+Step 25 退出/恢复到 50 → Peak Memory/导出 → 正式四卡报告；8 卡为非阻塞增强项。
 
 完成门禁：固定 Qwen3-8B revision 真实完成 50 Step 和 Sharded Resume。ZeRO-3 不阻塞。
 

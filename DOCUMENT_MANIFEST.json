@@ -12,6 +12,7 @@
     "docs/adr/0001-main-platform-rtx3090.md",
     "docs/adr/0002-standard-training-group-8gpus.md",
     "docs/adr/0003-career-release-baselines.md",
+    "docs/adr/0004-shared-server-4gpu-acceptance.md",
     "docs/architecture.md",
     "docs/benchmark_plan.md",
     "docs/career_release_roadmap.md",
@@ -26,6 +27,7 @@
     "docs/inference_design.md",
     "docs/m1_training_contract.md",
     "docs/m3_ddp_correctness_contract.md",
+    "docs/m3_ddp_benchmark_contract.md",
     "docs/m3_ddp_recovery_contract.md",
     "docs/nccl_test_plan.md",
     "docs/product_scope.md",
@@ -36,5 +38,5 @@
     "requirements/baseline_security_exceptions.md",
     "schemas/README.md"
   ],
-  "file_count": 33
+  "file_count": 35
 }

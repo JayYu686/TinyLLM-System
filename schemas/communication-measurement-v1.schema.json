@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "description": "Profiler-observed distributed communication for a bounded step window.",
+  "properties": {
+    "device_time_ms": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Device Time Ms"
+    },
+    "event_keys": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Event Keys",
+      "type": "array"
+    },
+    "profiled_steps": {
+      "minimum": 0,
+      "title": "Profiled Steps",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "measured",
+        "not_collected",
+        "not_applicable",
+        "unavailable"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "profiled_steps"
+  ],
+  "title": "CommunicationMeasurement",
+  "type": "object"
+}

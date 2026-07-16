@@ -141,7 +141,9 @@ def test_ddp_config_rejects_ambiguous_batch_sampler_and_resume_contracts() -> No
     assert config.global_batch_size == 4
 
     checkpoint["resume"] = "auto"
-    with pytest.raises(TrainingConfigError, match="checkpoint.resume=none"):
+    assert training_config_from_mapping(mapping).checkpoint.resume == "auto"
+    checkpoint["resume"] = "warm"
+    with pytest.raises(TrainingConfigError, match="none, auto, or exact"):
         training_config_from_mapping(mapping)
     checkpoint["resume"] = "none"
 

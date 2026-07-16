@@ -22,7 +22,7 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-from tinyllm.data import SamplerState, StatefulSequentialSampler
+from tinyllm.data import SamplerState, StatefulSampler, StatefulSequentialSampler
 from tinyllm.schemas import (
     CheckpointCommitMarker,
     CheckpointFile,
@@ -175,7 +175,7 @@ class CheckpointStore:
         optimizer: Optimizer,
         scheduler: LRScheduler,
         scaler: StatefulScaler | None,
-        sampler: StatefulSequentialSampler,
+        sampler: StatefulSampler,
         trainer_state: TrainerState,
         config: M1TrainingConfig,
         context: CheckpointContext,
@@ -183,6 +183,9 @@ class CheckpointStore:
         created_at: datetime | None = None,
     ) -> CheckpointManifest:
         """Write full state to a temporary directory and publish it atomically."""
+
+        if not isinstance(sampler, StatefulSequentialSampler):
+            raise ValueError("single-device Checkpoint requires a sequential stateful sampler")
 
         checkpoint_id = _checkpoint_id(trainer_state.global_step)
         destination = self.root / checkpoint_id

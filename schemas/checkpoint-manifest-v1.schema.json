@@ -11,6 +11,7 @@
         "role": {
           "enum": [
             "training_state",
+            "rank_state",
             "shard",
             "metadata",
             "rng",

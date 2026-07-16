@@ -12,7 +12,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 
-from tinyllm.data import StatefulSequentialSampler, ToyTokenDataset
+from tinyllm.data import StatefulSampler, StatefulSequentialSampler, ToyTokenDataset
 from tinyllm.models.tinygpt import TinyGPT
 from tinyllm.training.config import M1TrainingConfig
 from tinyllm.training.errors import TrainingError, TrainingErrorCode
@@ -42,7 +42,7 @@ class SingleDeviceTrainer:
         config: M1TrainingConfig,
         device: torch.device,
         metric_sink: MetricSink | None = None,
-        sampler: StatefulSequentialSampler | None = None,
+        sampler: StatefulSampler | None = None,
         autocast_dtype: torch.dtype | None = None,
     ) -> None:
         self.model = model

@@ -17,6 +17,12 @@ artifacts that cannot legally be redistributed.
   measurements, and failure records.
 - MLflow, when added, is a rebuildable projection and never the only copy of lineage.
 
+## Review language
+
+- 提交给项目所有者进行内容审核的 Markdown 报告、验收记录和 Review Packet 默认使用简体中文。
+- 英文 `README.md`、稳定的 CLI/Schema 字段和机器可读 JSON 键名可以继续使用英文。
+- 如果求职展示或外部发布需要英文报告，应在中文审核版通过后另行提供，不得用英文版替代所有者需要审核的中文版本。
+
 The default private root is `/data/yujielun/tinyllm/`. That path is a configured storage
 contract, not a statement that the directory currently exists or has passed capacity
 checks.

@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import json
 import os
-import platform
 import shutil
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
@@ -23,10 +22,13 @@ from tinyllm.schemas import canonical_config_hash, generate_run_id
 from tinyllm.training.config import M1TrainingConfig, load_training_config
 from tinyllm.training.ddp_schema import DDPCorrectnessSummary, DDPTrainingResult
 from tinyllm.training.distributed import (
-    TorchrunEnvironment,
     all_gather_objects,
+    distributed_barrier,
+    initialize_process_group,
     model_state_sha256,
+    rank_environment,
     reduced_mean,
+    select_ddp_device,
     torchrun_environment,
     validate_sampler_partitions,
 )
@@ -55,78 +57,6 @@ def _append_jsonl(path: Path, value: object) -> None:
         stream.write(json.dumps(value, sort_keys=True) + "\n")
         stream.flush()
         os.fsync(stream.fileno())
-
-
-def _physical_gpu_index(launch: TorchrunEnvironment) -> int | None:
-    visible = os.environ.get("CUDA_VISIBLE_DEVICES")
-    if visible is None:
-        return launch.local_rank
-    entries = [entry.strip() for entry in visible.split(",") if entry.strip()]
-    if launch.local_rank >= len(entries) or not entries[launch.local_rank].isdigit():
-        return None
-    return int(entries[launch.local_rank])
-
-
-def _select_device(config: M1TrainingConfig, launch: TorchrunEnvironment) -> torch.device:
-    backend = config.distributed.backend
-    if backend == "gloo":
-        if config.precision.dtype != "fp32":
-            raise TrainingError(
-                TrainingErrorCode.UNSUPPORTED_PRECISION,
-                "gloo DDP correctness requires fp32",
-            )
-        return torch.device("cpu")
-    if backend != "nccl":
-        raise TrainingError(
-            TrainingErrorCode.DISTRIBUTED_LAUNCH_INVALID,
-            "DDP backend must be gloo or nccl",
-        )
-    if not torch.cuda.is_available() or launch.local_rank >= torch.cuda.device_count():
-        raise TrainingError(
-            TrainingErrorCode.ACCELERATOR_UNAVAILABLE,
-            "local CUDA rank is unavailable",
-            context={"local_rank": launch.local_rank},
-        )
-    torch.cuda.set_device(launch.local_rank)
-    if config.precision.dtype == "bf16" and not torch.cuda.is_bf16_supported():
-        raise TrainingError(
-            TrainingErrorCode.UNSUPPORTED_PRECISION,
-            "NCCL BF16 correctness requires BF16-capable visible GPUs",
-        )
-    torch.backends.cuda.matmul.allow_tf32 = config.precision.allow_tf32
-    torch.backends.cudnn.allow_tf32 = config.precision.allow_tf32
-    return torch.device("cuda", launch.local_rank)
-
-
-def _rank_environment(launch: TorchrunEnvironment, device: torch.device) -> dict[str, object]:
-    result: dict[str, object] = {
-        "rank": launch.rank,
-        "local_rank": launch.local_rank,
-        "python": platform.python_version(),
-        "torch": str(torch.__version__),
-        "cuda_runtime": torch.version.cuda,
-        "device": str(device),
-        "physical_gpu_index": _physical_gpu_index(launch),
-    }
-    if device.type == "cuda":
-        properties = torch.cuda.get_device_properties(device)
-        result.update(
-            {
-                "gpu_name": properties.name,
-                "memory_total_bytes": properties.total_memory,
-                "compute_capability": f"{properties.major}.{properties.minor}",
-            }
-        )
-    return result
-
-
-def _barrier(device: torch.device, launch: TorchrunEnvironment) -> None:
-    """Bind NCCL barriers to the already selected local CUDA device."""
-
-    if device.type == "cuda":
-        dist.barrier(device_ids=[launch.local_rank])
-    else:
-        dist.barrier()
 
 
 def _new_rank_zero_run(
@@ -240,20 +170,8 @@ def run_ddp_correctness(
                 "expected_world_size": config.distributed.world_size,
             },
         )
-    device = _select_device(config, launch)
-    if device.type == "cuda":
-        dist.init_process_group(
-            backend=config.distributed.backend,
-            init_method="env://",
-            timeout=timedelta(seconds=config.distributed.timeout_seconds),
-            device_id=device,
-        )
-    else:
-        dist.init_process_group(
-            backend=config.distributed.backend,
-            init_method="env://",
-            timeout=timedelta(seconds=config.distributed.timeout_seconds),
-        )
+    device = select_ddp_device(config, launch)
+    initialize_process_group(config, device=device)
     artifact_dir: Path | None = None
     try:
         config_hash = canonical_config_hash(config)
@@ -266,9 +184,9 @@ def run_ddp_correctness(
         dist.broadcast_object_list(run_id_values, src=0)
         run_id = str(run_id_values[0])
 
-        rank_environment = _rank_environment(launch, device)
+        rank_environment_value = rank_environment(launch, device)
         gathered_environments = all_gather_objects(
-            rank_environment,
+            rank_environment_value,
             world_size=launch.world_size,
         )
         if launch.rank == 0:
@@ -283,7 +201,7 @@ def run_ddp_correctness(
                 git_dirty=git_dirty,
                 rank_environments=gathered_environments,
             )
-        _barrier(device, launch)
+        distributed_barrier(device, launch)
 
         seed_everything(
             config.run.seed,
@@ -471,7 +389,7 @@ def run_ddp_correctness(
                 git_dirty=git_dirty,
                 summary=summary,
             )
-        _barrier(device, launch)
+        distributed_barrier(device, launch)
         return result_value
     except Exception as exc:
         if launch.rank == 0 and artifact_dir is not None:

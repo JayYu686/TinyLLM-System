@@ -32,7 +32,7 @@ missing results stay explicitly unevaluated.
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
-| M3 DDP | In progress | M3.1 real 1/2-GPU NCCL/BF16 correctness passes; Resume, Rank Failure, and scaling remain |
+| M3 DDP | In progress | M3.1 correctness and M3.2 real Exact Resume/Rank Failure gates pass; benchmark and scaling remain |
 | M4–M6 | Planned | No FSDP2, training-quality, promotion, or deployment result is claimed yet |
 
 The complete M0 evidence is in the
@@ -81,8 +81,10 @@ summarized by the [M1 acceptance report](reports/m1/m1_acceptance.md).
 
 The [M3.1 DDP correctness report](reports/m3/ddp_correctness.md) records real one- and two-GPU
 torchrun evidence for initialization, Sampler partitioning, Global Batch, reduced Loss, final
-parameter synchronization, and rank-zero-only durable logging. It is not a throughput or scaling
-report; distributed Checkpoint/Resume and Rank Failure remain the next gate.
+parameter synchronization, and rank-zero-only durable logging. The subsequent
+[M3.2 recovery report](reports/m3/ddp_recovery.md) records real two-GPU complete Checkpoints,
+Step 6 Exact Resume, and recovery after a forced Rank 1 exit at Step 8. Neither report is a
+throughput or scaling result; the controlled benchmark matrix remains the next gate.
 
 ## System boundary
 

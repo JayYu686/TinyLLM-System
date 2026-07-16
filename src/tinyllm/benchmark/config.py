@@ -234,7 +234,7 @@ def validate_formal_m3_config(config: DDPBenchmarkConfig) -> None:
     )
     if mismatches:
         raise DDPBenchmarkConfigError(f"formal M3 benchmark config mismatch: {mismatches}")
-    for world_size in (1, 2, 4, 8):
+    for world_size in (1, 2, 4):
         resolve_benchmark_profile(config, profile="strong", world_size=world_size, repeat=1)
         resolve_benchmark_profile(config, profile="weak", world_size=world_size, repeat=1)
 

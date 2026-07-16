@@ -19,9 +19,9 @@
 - 测量：100 个 Optimizer Step；
 - 重复：每个 Profile 独立运行 3 次；
 - Micro Batch：每 Rank 1；
-- Strong Scaling：Global Batch 固定为 8，1/2/4/8 卡分别使用 8/4/2/1 次
+- Strong Scaling：Global Batch 固定为 8，1/2/4 卡分别使用 8/4/2 次
   Gradient Accumulation；
-- Weak Scaling：每 Rank Batch 固定为 1，Global Batch 随 World Size 变为 1/2/4/8；
+- Weak Scaling：每 Rank Batch 固定为 1，Global Batch 随 World Size 变为 1/2/4；
 - Profiler：每个配置的第一次重复采集前 5 个测量 Step，所有 Rank 都保存 Trace。
 
 GPU 编号、输出位置、Profile、World Size 和重复编号属于允许的运行时字段；模型、数据、
@@ -73,7 +73,7 @@ Samples/s = 测量窗口内全局样本数 / 有效 Step Time 总和
 
 ## 6. 正式矩阵
 
-正式 1/2/4/8 卡 Strong/Weak Scaling 使用相同代码 Commit、YAML、模型、数据生成算法和
+正式 1/2/4 卡 Strong/Weak Scaling 使用相同代码 Commit、YAML、模型、数据生成算法和
 重复 Seed。每个 Profile/World Size 都必须有三次成功原始运行。Scaling Efficiency：
 
 ```text
@@ -84,13 +84,18 @@ Weak Efficiency(N)   = Per-GPU Throughput(N) / Per-GPU Throughput(1)
 每个单元格用三次 Tokens/s 的中位数作为比较值，同时报告最小值和最大值。失败运行不进入
 中位数，但必须保留并单独解释；不能补写、复制或插值缺失重复。
 
-NUMA 对照固定为四卡 Weak Scaling：
+正式矩阵采用同一 NUMA 节点内的嵌套 GPU 集合：GPU 8、GPU 8–9、GPU 6–9。8 卡
+Strong/Weak Scaling 是可选增强实验，不阻塞 M3；只有 Strong 和 Weak 都完成三次重复时，
+机器可读汇总才会把其状态标为 `complete`。
+
+NUMA 对照是非阻塞的四卡 Weak Scaling 增强实验：
 
 - 同 NUMA：GPU 6–9；
 - 跨 NUMA：GPU 4–7。
 
-两组使用同一配置和三次独立重复。若实际拓扑与上述假设不一致，必须停止并修订 ADR/契约，
-不能继续沿用标签。
+两组使用同一配置和三次独立重复。只有两组都完成时才能比较 NUMA 性能；仅有一组时必须
+标记为 `partial`。若实际拓扑与上述假设不一致，必须停止并修订 ADR/契约，不能继续沿用
+标签。资源范围变更依据 [ADR-0004](adr/0004-shared-server-4gpu-acceptance.md)。
 
 ## 7. 完成门禁
 
@@ -99,8 +104,8 @@ M3 只有在以下条件全部满足后才能标记 `COMPLETE`：
 1. Benchmark 配置、Schema、聚合逻辑和 Trace 契约有单元测试；
 2. CPU/Gloo 小配置通过真实多进程集成测试；
 3. Busy GPU、错误 World Size、配置漂移、已有 Evidence 目录、超时和无效 Worker 输出均被拒绝；
-4. 正式 1/2/4/8 Strong/Weak 每格完成三次真实运行；
-5. 两个四卡 NUMA 组各完成三次真实运行；
+4. 正式 1/2/4 Strong/Weak 每格完成三次真实运行；
+5. 8 卡和 NUMA 对照如未完成，必须在机器汇总和中文报告中明确标记为非阻塞缺失证据；
 6. 原始私有证据可被严格 Schema 重新加载，公开证据不包含用户名、主机名或绝对路径；
 7. 中文报告解释环境、拓扑、温度、频率、后台负载、异常和结论边界；
 8. 全量质量门禁、CI、PR 合并和 Issue #14/#15 关闭。

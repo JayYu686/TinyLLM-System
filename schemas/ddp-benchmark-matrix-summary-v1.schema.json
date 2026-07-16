@@ -4,6 +4,23 @@
       "additionalProperties": false,
       "description": "Three-repeat summary for one controlled matrix cell.",
       "properties": {
+        "data_wait_percent_by_repeat": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Data Wait Percent By Repeat",
+          "type": "array"
+        },
         "data_wait_percent_median": {
           "minimum": 0,
           "title": "Data Wait Percent Median",
@@ -24,6 +41,23 @@
           ],
           "title": "Group",
           "type": "string"
+        },
+        "peak_memory_bytes_by_repeat": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Peak Memory Bytes By Repeat",
+          "type": "array"
         },
         "peak_memory_bytes_median": {
           "minimum": 0,
@@ -70,10 +104,44 @@
           "default": null,
           "title": "Scaling Efficiency"
         },
+        "step_time_ms_by_repeat": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Step Time Ms By Repeat",
+          "type": "array"
+        },
         "step_time_ms_median": {
           "exclusiveMinimum": 0,
           "title": "Step Time Ms Median",
           "type": "number"
+        },
+        "tokens_per_second_by_repeat": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Tokens Per Second By Repeat",
+          "type": "array"
         },
         "tokens_per_second_max": {
           "exclusiveMinimum": 0,
@@ -104,6 +172,10 @@
         "gpu_indices",
         "repeats",
         "run_ids",
+        "tokens_per_second_by_repeat",
+        "step_time_ms_by_repeat",
+        "peak_memory_bytes_by_repeat",
+        "data_wait_percent_by_repeat",
         "tokens_per_second_median",
         "tokens_per_second_min",
         "tokens_per_second_max",
@@ -118,9 +190,34 @@
   "additionalProperties": false,
   "description": "Strict acceptance summary for the complete M3.3/M3.4 matrix.",
   "properties": {
+    "acceptance_world_sizes": {
+      "default": [
+        1,
+        2,
+        4
+      ],
+      "items": {
+        "enum": [
+          1,
+          2,
+          4
+        ],
+        "type": "integer"
+      },
+      "title": "Acceptance World Sizes",
+      "type": "array"
+    },
     "base_config_sha256": {
       "pattern": "^[a-f0-9]{64}$",
       "title": "Base Config Sha256",
+      "type": "string"
+    },
+    "eight_gpu_status": {
+      "enum": [
+        "complete",
+        "not_collected"
+      ],
+      "title": "Eight Gpu Status",
       "type": "string"
     },
     "git_commit": {
@@ -140,9 +237,18 @@
       "title": "Numa",
       "type": "array"
     },
+    "numa_comparison_status": {
+      "enum": [
+        "complete",
+        "partial",
+        "not_collected"
+      ],
+      "title": "Numa Comparison Status",
+      "type": "string"
+    },
     "schema_version": {
-      "const": "1.0",
-      "default": "1.0",
+      "const": "1.1",
+      "default": "1.1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -164,6 +270,8 @@
     "base_config_sha256",
     "git_commit",
     "model_parameter_count",
+    "eight_gpu_status",
+    "numa_comparison_status",
     "standard",
     "numa"
   ],

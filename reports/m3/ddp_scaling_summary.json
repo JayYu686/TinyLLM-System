@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.1",
+  "status": "pass",
+  "base_config_sha256": "5dc8fb4d8534c63c890b13a169d37f430dbed8bdd293dbb6c2bf8ba228e919f3",
+  "git_commit": "a373b4623e22ab14360100793e9af396cfc88d98",
+  "model_parameter_count": 117197568,
+  "acceptance_world_sizes": [1, 2, 4],
+  "eight_gpu_status": "not_collected",
+  "numa_comparison_status": "partial",
+  "standard": [
+    {
+      "group": "standard",
+      "profile": "strong",
+      "world_size": 1,
+      "gpu_indices": [8],
+      "repeats": [1, 2, 3],
+      "run_ids": [
+        "20260716T062924Z-tinygpt-target-120m-ddp-benchmark-db4bb5ee-5754",
+        "20260716T063021Z-tinygpt-target-120m-ddp-benchmark-e6de07db-eccd",
+        "20260716T063112Z-tinygpt-target-120m-ddp-benchmark-59fa1475-d284"
+      ],
+      "tokens_per_second_by_repeat": [22986.218053185785, 25852.168312968428, 25696.705307871554],
+      "step_time_ms_by_repeat": [351.91943359375, 315.7923889160156, 316.4892120361328],
+      "peak_memory_bytes_by_repeat": [3617102848, 3617102848, 3617102848],
+      "data_wait_percent_by_repeat": [0.2748095649438714, 0.33858746442774296, 0.3293026064796136],
+      "tokens_per_second_median": 25696.705307871554,
+      "tokens_per_second_min": 22986.218053185785,
+      "tokens_per_second_max": 25852.168312968428,
+      "step_time_ms_median": 316.4892120361328,
+      "peak_memory_bytes_median": 3617102848.0,
+      "data_wait_percent_median": 0.3293026064796136,
+      "scaling_efficiency": 1.0
+    },
+    {
+      "group": "standard",
+      "profile": "strong",
+      "world_size": 2,
+      "gpu_indices": [8, 9],
+      "repeats": [1, 2, 3],
+      "run_ids": [
+        "20260716T063356Z-tinygpt-target-120m-ddp-benchmark-ca9dc5d3-c72d",
+        "20260716T063454Z-tinygpt-target-120m-ddp-benchmark-5e055ba0-a83d",
+        "20260716T063534Z-tinygpt-target-120m-ddp-benchmark-685693c5-d77c"
+      ],
+      "tokens_per_second_by_repeat": [34090.1750902689, 38463.30894168098, 37939.28029208327],
+      "step_time_ms_by_repeat": [236.74494171142578, 211.69766235351562, 215.01388549804688],
+      "peak_memory_bytes_by_repeat": [3617102848, 3617102848, 3617102848],
+      "data_wait_percent_by_repeat": [0.23747372983067028, 0.26376218189085926, 0.2838983344326052],
+      "tokens_per_second_median": 37939.28029208327,
+      "tokens_per_second_min": 34090.1750902689,
+      "tokens_per_second_max": 38463.30894168098,
+      "step_time_ms_median": 215.01388549804688,
+      "peak_memory_bytes_median": 3617102848.0,
+      "data_wait_percent_median": 0.26376218189085926,
+      "scaling_efficiency": 0.7382129311429957
+    },
+    {
+      "group": "standard",
+      "profile": "strong",
+      "world_size": 4,
+      "gpu_indices": [6, 7, 8, 9],
+      "repeats": [1, 2, 3],
+      "run_ids": [
+        "20260716T064029Z-tinygpt-target-120m-ddp-benchmark-adb481c7-fedc",
+        "20260716T064200Z-tinygpt-target-120m-ddp-benchmark-18d0827e-5986",
+        "20260716T064241Z-tinygpt-target-120m-ddp-benchmark-5962ca5a-aec7"
+      ],
+      "tokens_per_second_by_repeat": [35748.27616941486, 36957.962631041286, 37487.72951476539],
+      "step_time_ms_by_repeat": [226.14319610595703, 219.71763610839844, 215.90322875976562],
+      "peak_memory_bytes_by_repeat": [3624645632, 3624645632, 3624645632],
+      "data_wait_percent_by_repeat": [0.17903049454526787, 0.18984680909441867, 0.19679797294556367],
+      "tokens_per_second_median": 36957.962631041286,
+      "tokens_per_second_min": 35748.27616941486,
+      "tokens_per_second_max": 37487.72951476539,
+      "step_time_ms_median": 219.71763610839844,
+      "peak_memory_bytes_median": 3624645632.0,
+      "data_wait_percent_median": 0.18984680909441867,
+      "scaling_efficiency": 0.35955935000468836
+    },
+    {
+      "group": "standard",
+      "profile": "weak",
+      "world_size": 1,
+      "gpu_indices": [8],
+      "repeats": [1, 2, 3],
+      "run_ids": [
+        "20260716T062731Z-tinygpt-target-120m-ddp-benchmark-60945b95-11bc",
+        "20260716T062848Z-tinygpt-target-120m-ddp-benchmark-3f5c6dd6-0b8f",
+        "20260716T062906Z-tinygpt-target-120m-ddp-benchmark-ef51cc9d-4168"
+      ],
+      "tokens_per_second_by_repeat": [17601.85828275221, 20242.179877756786, 19734.715988090185],
+      "step_time_ms_by_repeat": [58.360416412353516, 50.259456634521484, 51.09503936767578],
+      "peak_memory_bytes_by_repeat": [3140472832, 3140472832, 3140472832],
+      "data_wait_percent_by_repeat": [0.7202910793855093, 0.9089444963348865, 1.0657748679983161],
+      "tokens_per_second_median": 19734.715988090185,
+      "tokens_per_second_min": 17601.85828275221,
+      "tokens_per_second_max": 20242.179877756786,
+      "step_time_ms_median": 51.09503936767578,
+      "peak_memory_bytes_median": 3140472832.0,
+      "data_wait_percent_median": 0.9089444963348865,
+      "scaling_efficiency": 1.0
+    },
+    {
+      "group": "standard",
+      "profile": "weak",
+      "world_size": 2,
+      "gpu_indices": [8, 9],
+      "repeats": [1, 2, 3],
+      "run_ids": [
+        "20260716T063234Z-tinygpt-target-120m-ddp-benchmark-a7f5067b-7a3a",
+        "20260716T063305Z-tinygpt-target-120m-ddp-benchmark-b6992ed7-5fdd",
+        "20260716T063330Z-tinygpt-target-120m-ddp-benchmark-9656c104-e9e8"
+      ],
+      "tokens_per_second_by_repeat": [20400.206346485833, 21201.384188761265, 21226.913189236173],
+      "step_time_ms_by_repeat": [99.25408172607422, 95.94623947143555, 94.57715225219727],
+      "peak_memory_bytes_by_repeat": [3140472832, 3140472832, 3140472832],
+      "data_wait_percent_by_repeat": [0.32638179189446104, 0.32030353813194606, 0.38628565311660173],
+      "tokens_per_second_median": 21201.384188761265,
+      "tokens_per_second_min": 20400.206346485833,
+      "tokens_per_second_max": 21226.913189236173,
+      "step_time_ms_median": 95.94623947143555,
+      "peak_memory_bytes_median": 3140472832.0,
+      "data_wait_percent_median": 0.32638179189446104,
+      "scaling_efficiency": 0.5371595973703449
+    },
+    {
+      "group": "standard",
+      "profile": "weak",
+      "world_size": 4,
+      "gpu_indices": [6, 7, 8, 9],
+      "repeats": [1, 2, 3],
+      "run_ids": [
+        "20260716T063656Z-tinygpt-target-120m-ddp-benchmark-14c142e9-88a7",
+        "20260716T063819Z-tinygpt-target-120m-ddp-benchmark-9a64f7ab-a7cf",
+        "20260716T063911Z-tinygpt-target-120m-ddp-benchmark-f0a402c2-5196"
+      ],
+      "tokens_per_second_by_repeat": [22864.75370212363, 22987.48597360223, 23235.0781116951],
+      "step_time_ms_by_repeat": [175.98524475097656, 176.92467498779297, 175.32774353027344],
+      "peak_memory_bytes_by_repeat": [3140472832, 3140472832, 3140472832],
+      "data_wait_percent_by_repeat": [0.19223737938717544, 0.21123469550529372, 0.214896311336367],
+      "tokens_per_second_median": 22987.48597360223,
+      "tokens_per_second_min": 22864.75370212363,
+      "tokens_per_second_max": 23235.0781116951,
+      "step_time_ms_median": 175.98524475097656,
+      "peak_memory_bytes_median": 3140472832.0,
+      "data_wait_percent_median": 0.21123469550529372,
+      "scaling_efficiency": 0.2912061920155714
+    }
+  ],
+  "numa": [
+    {
+      "group": "same_numa",
+      "profile": "weak",
+      "world_size": 4,
+      "gpu_indices": [6, 7, 8, 9],
+      "repeats": [1, 2, 3],
+      "run_ids": [
+        "20260716T064347Z-tinygpt-target-120m-ddp-benchmark-caa81ef3-d15b",
+        "20260716T064453Z-tinygpt-target-120m-ddp-benchmark-96b412da-76c2",
+        "20260716T064528Z-tinygpt-target-120m-ddp-benchmark-ab00f4b7-ba42"
+      ],
+      "tokens_per_second_by_repeat": [22856.606809432706, 23223.30082760857, 22652.733593418227],
+      "step_time_ms_by_repeat": [175.87786865234375, 174.21311950683594, 179.33618927001953],
+      "peak_memory_bytes_by_repeat": [3140472832, 3140472832, 3140472832],
+      "data_wait_percent_by_repeat": [0.20194924376340773, 0.21919345945528065, 0.21984442645013663],
+      "tokens_per_second_median": 22856.606809432706,
+      "tokens_per_second_min": 22652.733593418227,
+      "tokens_per_second_max": 23223.30082760857,
+      "step_time_ms_median": 175.87786865234375,
+      "peak_memory_bytes_median": 3140472832.0,
+      "data_wait_percent_median": 0.21919345945528065,
+      "scaling_efficiency": null
+    }
+  ]
+}

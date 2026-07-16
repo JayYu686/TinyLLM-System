@@ -2,6 +2,23 @@
   "additionalProperties": false,
   "description": "Three-repeat summary for one controlled matrix cell.",
   "properties": {
+    "data_wait_percent_by_repeat": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Data Wait Percent By Repeat",
+      "type": "array"
+    },
     "data_wait_percent_median": {
       "minimum": 0,
       "title": "Data Wait Percent Median",
@@ -22,6 +39,23 @@
       ],
       "title": "Group",
       "type": "string"
+    },
+    "peak_memory_bytes_by_repeat": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Peak Memory Bytes By Repeat",
+      "type": "array"
     },
     "peak_memory_bytes_median": {
       "minimum": 0,
@@ -68,10 +102,44 @@
       "default": null,
       "title": "Scaling Efficiency"
     },
+    "step_time_ms_by_repeat": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Step Time Ms By Repeat",
+      "type": "array"
+    },
     "step_time_ms_median": {
       "exclusiveMinimum": 0,
       "title": "Step Time Ms Median",
       "type": "number"
+    },
+    "tokens_per_second_by_repeat": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Tokens Per Second By Repeat",
+      "type": "array"
     },
     "tokens_per_second_max": {
       "exclusiveMinimum": 0,
@@ -102,6 +170,10 @@
     "gpu_indices",
     "repeats",
     "run_ids",
+    "tokens_per_second_by_repeat",
+    "step_time_ms_by_repeat",
+    "peak_memory_bytes_by_repeat",
+    "data_wait_percent_by_repeat",
     "tokens_per_second_median",
     "tokens_per_second_min",
     "tokens_per_second_max",

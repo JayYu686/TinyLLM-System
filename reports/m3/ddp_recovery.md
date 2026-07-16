@@ -108,7 +108,8 @@ M3.2 只关闭 Issue #13。剩余工作为：
 
 1. Issue #14：Benchmark Harness，包括预热、测量窗口、三次独立重复、显存、数据等待、
    通信和 Profiler 证据；
-2. Issue #15：受控的 1/2/4/8 卡 Strong/Weak Scaling，以及同 NUMA/跨 NUMA 对照。
+2. Issue #15：受控的 1/2/4 卡 Strong/Weak Scaling。根据 ADR-0004，8 卡和跨 NUMA
+   对照是非阻塞增强项，未实测时不得给出相应结论。
 
 M3.2 的恢复编排时长、Checkpoint 写入时间、Tokens/s 和 Scaling 均不得被提前包装成
 Benchmark 结果。

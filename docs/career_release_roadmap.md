@@ -17,8 +17,8 @@ order, not permission to skip milestone gates when shared GPUs are unavailable.
 | Week 1 | Professional foundation | Apache-2.0, public README, governance, Typer/Pydantic contracts, CI | — |
 | Weeks 2–3 | M1 | Native single-GPU trainer and verified Exact Resume/failure paths | `v0.1.0-alpha.1` |
 | Week 4 | M2 | Deterministic licensed dataset version plus frozen baseline evaluation | — |
-| Weeks 5–6 | M3 | Correct DDP and controlled 1/2/4/8-GPU scaling evidence | `v0.3.0-beta.1` |
-| Week 7 | M4 | Qwen3-8B FSDP2 8-GPU sharded checkpoint/resume smoke | — |
+| Weeks 5–6 | M3 | Correct DDP and controlled 1/2/4-GPU scaling evidence | `v0.3.0-beta.1` |
+| Week 7 | M4 | Qwen3-8B FSDP2 four-GPU sharded checkpoint/resume smoke after memory probe | — |
 | Weeks 8–9 | M5 | Qwen3-0.6B Full SFT and Qwen3-8B LoRA with real evaluations | — |
 | Week 10 | M6 | Compare, Candidate gate, reports, resume bullets, and demo | `v0.6.0-rc.1` |
 

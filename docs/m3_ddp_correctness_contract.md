@@ -60,7 +60,7 @@ canonical snapshot and hash.
 | RTX 3090 two-rank DDP | NCCL | 2 | 4 | 1 | 8 | 8 |
 
 The fixed GPU configs keep Global Batch at 8 while changing World Size. These are bounded
-correctness Smokes, not Strong Scaling measurements. Formal 1/2/4/8 Benchmark configs will use
+correctness Smokes, not Strong Scaling measurements. Formal 1/2/4 Benchmark configs will use
 the separate #14/#15 protocol with warmup, measurement windows, repetition, and Profiler evidence.
 
 Global Batch is resolved once from:

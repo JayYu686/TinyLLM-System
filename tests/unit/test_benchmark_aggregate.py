@@ -14,7 +14,11 @@ from tinyllm.benchmark import (
     build_m3_matrix_summary,
     load_benchmark_evidence,
 )
-from tinyllm.benchmark.schema import BenchmarkGroup, BenchmarkProfile
+from tinyllm.benchmark.schema import (
+    BenchmarkGroup,
+    BenchmarkProfile,
+    DDPBenchmarkMatrixSummary,
+)
 from tinyllm.schemas import generate_run_id
 
 BASE_HASH = "a" * 64
@@ -96,7 +100,7 @@ def _result(
 def _matrix_runs() -> list[DDPBenchmarkRunResult]:
     runs: list[DDPBenchmarkRunResult] = []
     for profile in ("strong", "weak"):
-        for world_size in (1, 2, 4, 8):
+        for world_size in (1, 2, 4):
             for repeat in (1, 2, 3):
                 runs.append(
                     _result(
@@ -107,17 +111,16 @@ def _matrix_runs() -> list[DDPBenchmarkRunResult]:
                         throughput=100.0 * world_size + repeat,
                     )
                 )
-    for group in ("same_numa", "cross_numa"):
-        for repeat in (1, 2, 3):
-            runs.append(
-                _result(
-                    group=group,
-                    profile="weak",
-                    world_size=4,
-                    repeat=repeat,
-                    throughput=400.0 + repeat,
-                )
+    for repeat in (1, 2, 3):
+        runs.append(
+            _result(
+                group="same_numa",
+                profile="weak",
+                world_size=4,
+                repeat=repeat,
+                throughput=400.0 + repeat,
             )
+        )
     return runs
 
 
@@ -125,17 +128,93 @@ def test_complete_matrix_uses_repeat_medians_and_scaling_formulas() -> None:
     summary = build_m3_matrix_summary(_matrix_runs())
 
     assert summary.status == "pass"
-    assert len(summary.standard) == 8
-    assert len(summary.numa) == 2
+    assert summary.schema_version == "1.1"
+    assert summary.acceptance_world_sizes == (1, 2, 4)
+    assert summary.eight_gpu_status == "not_collected"
+    assert summary.numa_comparison_status == "partial"
+    assert len(summary.standard) == 6
+    assert len(summary.numa) == 1
     strong_two = next(
         item for item in summary.standard if item.profile == "strong" and item.world_size == 2
     )
     assert strong_two.tokens_per_second_median == 202.0
+    assert strong_two.tokens_per_second_by_repeat == (201.0, 202.0, 203.0)
+    assert strong_two.step_time_ms_by_repeat == (10.0, 10.0, 10.0)
+    assert strong_two.peak_memory_bytes_by_repeat == (1024, 1024, 1024)
+    assert strong_two.data_wait_percent_by_repeat == (10.0, 10.0, 10.0)
     assert strong_two.scaling_efficiency == pytest.approx(202.0 / (2 * 102.0))
-    weak_eight = next(
-        item for item in summary.standard if item.profile == "weak" and item.world_size == 8
+    weak_four = next(
+        item for item in summary.standard if item.profile == "weak" and item.world_size == 4
     )
-    assert weak_eight.scaling_efficiency == pytest.approx((802.0 / 8) / 102.0)
+    assert weak_four.scaling_efficiency == pytest.approx((402.0 / 4) / 102.0)
+
+
+def test_complete_optional_eight_gpu_and_numa_evidence_is_retained() -> None:
+    runs = _matrix_runs()
+    for profile in ("strong", "weak"):
+        for repeat in (1, 2, 3):
+            runs.append(
+                _result(
+                    group="standard",
+                    profile=profile,
+                    world_size=8,
+                    repeat=repeat,
+                    throughput=800.0 + repeat,
+                )
+            )
+    for repeat in (1, 2, 3):
+        runs.append(
+            _result(
+                group="cross_numa",
+                profile="weak",
+                world_size=4,
+                repeat=repeat,
+                throughput=390.0 + repeat,
+            )
+        )
+
+    summary = build_m3_matrix_summary(runs)
+
+    assert summary.eight_gpu_status == "complete"
+    assert summary.numa_comparison_status == "complete"
+    assert len(summary.standard) == 8
+    assert len(summary.numa) == 2
+
+
+def test_matrix_rejects_partial_optional_eight_gpu_evidence() -> None:
+    runs = _matrix_runs()
+    for repeat in (1, 2, 3):
+        runs.append(
+            _result(
+                group="standard",
+                profile="weak",
+                world_size=8,
+                repeat=repeat,
+                throughput=800.0 + repeat,
+            )
+        )
+
+    with pytest.raises(ValueError, match="optional eight-GPU"):
+        build_m3_matrix_summary(runs)
+
+
+def test_matrix_rejects_efficiency_that_disagrees_with_raw_throughput() -> None:
+    summary = build_m3_matrix_summary(_matrix_runs()).model_dump(mode="python")
+    summary["standard"][1]["scaling_efficiency"] = 1.0
+
+    with pytest.raises(ValueError, match="scaling efficiency"):
+        DDPBenchmarkMatrixSummary.model_validate(summary)
+
+
+def test_public_m3_summary_is_a_valid_strict_snapshot() -> None:
+    root = Path(__file__).resolve().parents[2]
+    summary = DDPBenchmarkMatrixSummary.model_validate_json(
+        (root / "reports/m3/ddp_scaling_summary.json").read_text(encoding="utf-8")
+    )
+
+    assert summary.status == "pass"
+    assert summary.git_commit == "a373b4623e22ab14360100793e9af396cfc88d98"
+    assert summary.acceptance_world_sizes == (1, 2, 4)
 
 
 def test_matrix_rejects_missing_repeat_and_dirty_runs() -> None:

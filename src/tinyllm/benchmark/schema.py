@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+import statistics
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -156,6 +158,10 @@ class BenchmarkProfileAggregate(StrictSchema):
     gpu_indices: tuple[int, ...]
     repeats: tuple[Literal[1, 2, 3], ...]
     run_ids: tuple[str, ...]
+    tokens_per_second_by_repeat: tuple[float, float, float]
+    step_time_ms_by_repeat: tuple[float, float, float]
+    peak_memory_bytes_by_repeat: tuple[int, int, int]
+    data_wait_percent_by_repeat: tuple[float, float, float]
     tokens_per_second_median: float = Field(gt=0, allow_inf_nan=False)
     tokens_per_second_min: float = Field(gt=0, allow_inf_nan=False)
     tokens_per_second_max: float = Field(gt=0, allow_inf_nan=False)
@@ -170,6 +176,16 @@ class BenchmarkProfileAggregate(StrictSchema):
 
         if self.repeats != (1, 2, 3) or len(self.run_ids) != 3:
             raise ValueError("formal aggregate requires repeats 1, 2, and 3")
+        if any(
+            not math.isfinite(value) or value <= 0 for value in self.tokens_per_second_by_repeat
+        ):
+            raise ValueError("repeat throughput must be positive")
+        if any(not math.isfinite(value) or value <= 0 for value in self.step_time_ms_by_repeat):
+            raise ValueError("repeat step times must be positive")
+        if any(value < 0 for value in self.peak_memory_bytes_by_repeat):
+            raise ValueError("repeat peak memory must be non-negative")
+        if any(not math.isfinite(value) or value < 0 for value in self.data_wait_percent_by_repeat):
+            raise ValueError("repeat data wait percentages must be non-negative")
         if len(self.gpu_indices) != self.world_size:
             raise ValueError("GPU index count must equal world_size")
         if (
@@ -178,35 +194,94 @@ class BenchmarkProfileAggregate(StrictSchema):
             <= self.tokens_per_second_max
         ):
             raise ValueError("throughput range must contain the median")
+        if self.tokens_per_second_min != min(self.tokens_per_second_by_repeat) or (
+            self.tokens_per_second_max != max(self.tokens_per_second_by_repeat)
+        ):
+            raise ValueError("throughput range must match repeat measurements")
+        expected_medians = (
+            statistics.median(self.tokens_per_second_by_repeat),
+            statistics.median(self.step_time_ms_by_repeat),
+            statistics.median(self.peak_memory_bytes_by_repeat),
+            statistics.median(self.data_wait_percent_by_repeat),
+        )
+        actual_medians = (
+            self.tokens_per_second_median,
+            self.step_time_ms_median,
+            self.peak_memory_bytes_median,
+            self.data_wait_percent_median,
+        )
+        if actual_medians != expected_medians:
+            raise ValueError("aggregate medians must match repeat measurements")
         return self
 
 
 class DDPBenchmarkMatrixSummary(StrictSchema):
     """Strict acceptance summary for the complete M3.3/M3.4 matrix."""
 
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.1"] = "1.1"
     status: Literal["pass"] = "pass"
     base_config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=GIT_COMMIT_PATTERN)
     model_parameter_count: int = Field(gt=0)
+    acceptance_world_sizes: tuple[Literal[1, 2, 4], ...] = (1, 2, 4)
+    eight_gpu_status: Literal["complete", "not_collected"]
+    numa_comparison_status: Literal["complete", "partial", "not_collected"]
     standard: tuple[BenchmarkProfileAggregate, ...]
     numa: tuple[BenchmarkProfileAggregate, ...]
 
     @model_validator(mode="after")
     def validate_matrix(self) -> DDPBenchmarkMatrixSummary:
-        """Require the complete 1/2/4/8 Strong/Weak and two four-GPU NUMA cells."""
+        """Require 1/2/4 Strong/Weak while validating optional eight-GPU/NUMA evidence."""
 
-        expected_standard = {
-            (profile, world_size) for profile in ("strong", "weak") for world_size in (1, 2, 4, 8)
+        if self.acceptance_world_sizes != (1, 2, 4):
+            raise ValueError("M3 acceptance_world_sizes must be exactly 1/2/4")
+        required_standard = {
+            (profile, world_size) for profile in ("strong", "weak") for world_size in (1, 2, 4)
         }
+        optional_eight = {(profile, 8) for profile in ("strong", "weak")}
         actual_standard = {(item.profile, item.world_size) for item in self.standard}
-        if actual_standard != expected_standard or any(
-            item.group != "standard" for item in self.standard
+        if (
+            not required_standard.issubset(actual_standard)
+            or not actual_standard.issubset(required_standard | optional_eight)
+            or len(actual_standard) != len(self.standard)
+            or any(item.group != "standard" for item in self.standard)
         ):
-            raise ValueError("standard matrix must contain complete 1/2/4/8 Strong/Weak cells")
+            raise ValueError("standard matrix must contain complete 1/2/4 Strong/Weak cells")
+        has_eight = bool(actual_standard & optional_eight)
+        if has_eight and not optional_eight.issubset(actual_standard):
+            raise ValueError("optional eight-GPU evidence must contain both Strong and Weak cells")
+        expected_eight_status = "complete" if has_eight else "not_collected"
+        if self.eight_gpu_status != expected_eight_status:
+            raise ValueError("eight_gpu_status disagrees with standard evidence")
         expected_numa = {"same_numa", "cross_numa"}
-        if {item.group for item in self.numa} != expected_numa:
-            raise ValueError("NUMA matrix must contain same_numa and cross_numa")
-        if any(item.profile != "weak" or item.world_size != 4 for item in self.numa):
+        actual_numa = {item.group for item in self.numa}
+        if (
+            not actual_numa.issubset(expected_numa)
+            or len(actual_numa) != len(self.numa)
+            or any(item.profile != "weak" or item.world_size != 4 for item in self.numa)
+        ):
             raise ValueError("NUMA cells must be four-GPU Weak Scaling")
+        expected_numa_status = (
+            "complete"
+            if actual_numa == expected_numa
+            else "partial"
+            if actual_numa
+            else "not_collected"
+        )
+        if self.numa_comparison_status != expected_numa_status:
+            raise ValueError("numa_comparison_status disagrees with NUMA evidence")
+        aggregates = {(item.profile, item.world_size): item for item in self.standard}
+        strong_one = aggregates[("strong", 1)].tokens_per_second_median
+        weak_one = aggregates[("weak", 1)].tokens_per_second_median
+        for item in self.standard:
+            baseline = strong_one if item.profile == "strong" else weak_one
+            expected_efficiency = item.tokens_per_second_median / (item.world_size * baseline)
+            if item.scaling_efficiency is None or not math.isclose(
+                item.scaling_efficiency,
+                expected_efficiency,
+                rel_tol=1e-12,
+            ):
+                raise ValueError("scaling efficiency disagrees with throughput measurements")
+        if any(item.scaling_efficiency is not None for item in self.numa):
+            raise ValueError("unpaired NUMA cells cannot claim scaling efficiency")
         return self

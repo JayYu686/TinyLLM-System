@@ -7,7 +7,7 @@ import statistics
 from collections import defaultdict
 from collections.abc import Iterable
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 from tinyllm.benchmark.schema import (
     BenchmarkGroup,
@@ -72,6 +72,26 @@ def _aggregate_cell(
         gpu_indices=next(iter(gpu_sets)),
         repeats=(1, 2, 3),
         run_ids=tuple(item.run_id for item in ordered),
+        tokens_per_second_by_repeat=(
+            ordered[0].tokens_per_second,
+            ordered[1].tokens_per_second,
+            ordered[2].tokens_per_second,
+        ),
+        step_time_ms_by_repeat=(
+            ordered[0].effective_step_time.median_ms,
+            ordered[1].effective_step_time.median_ms,
+            ordered[2].effective_step_time.median_ms,
+        ),
+        peak_memory_bytes_by_repeat=(
+            ordered[0].peak_memory_allocated_bytes,
+            ordered[1].peak_memory_allocated_bytes,
+            ordered[2].peak_memory_allocated_bytes,
+        ),
+        data_wait_percent_by_repeat=(
+            ordered[0].data_wait_percent,
+            ordered[1].data_wait_percent,
+            ordered[2].data_wait_percent,
+        ),
         tokens_per_second_median=statistics.median(throughput),
         tokens_per_second_min=min(throughput),
         tokens_per_second_max=max(throughput),
@@ -88,7 +108,7 @@ def _aggregate_cell(
 def build_m3_matrix_summary(
     runs: Iterable[DDPBenchmarkRunResult],
 ) -> DDPBenchmarkMatrixSummary:
-    """Validate and aggregate all required M3 benchmark cells."""
+    """Validate and aggregate required 1/2/4 cells plus optional enhancement evidence."""
 
     values = list(runs)
     if not values:
@@ -106,27 +126,34 @@ def build_m3_matrix_summary(
     ] = defaultdict(list)
     for item in values:
         grouped[(item.group, item.profile, item.world_size)].append(item)
-    expected = {
+    required = {
         ("standard", profile, world_size)
         for profile in cast(tuple[BenchmarkProfile, ...], ("strong", "weak"))
-        for world_size in (1, 2, 4, 8)
+        for world_size in (1, 2, 4)
     }
-    expected.update(
-        {
-            ("same_numa", "weak", 4),
-            ("cross_numa", "weak", 4),
-        }
-    )
-    if set(grouped) != expected:
-        missing = sorted(expected - set(grouped))
-        unexpected = sorted(set(grouped) - expected)
+    optional_eight = {
+        ("standard", profile, 8)
+        for profile in cast(tuple[BenchmarkProfile, ...], ("strong", "weak"))
+    }
+    optional_numa = {
+        ("same_numa", "weak", 4),
+        ("cross_numa", "weak", 4),
+    }
+    actual = set(grouped)
+    allowed = required | optional_eight | optional_numa
+    if not required.issubset(actual) or not actual.issubset(allowed):
+        missing = sorted(required - actual)
+        unexpected = sorted(actual - allowed)
         raise ValueError(f"incomplete M3 matrix: missing={missing}, unexpected={unexpected}")
+    if actual & optional_eight and not optional_eight.issubset(actual):
+        raise ValueError("optional eight-GPU evidence requires complete Strong and Weak cells")
     aggregates = {key: _aggregate_cell(items) for key, items in grouped.items()}
     strong_one = aggregates[("standard", "strong", 1)].tokens_per_second_median
     weak_one_per_gpu = aggregates[("standard", "weak", 1)].tokens_per_second_median
     standard: list[BenchmarkProfileAggregate] = []
     for profile in cast(tuple[BenchmarkProfile, ...], ("strong", "weak")):
-        for world_size in (1, 2, 4, 8):
+        world_sizes = (1, 2, 4, 8) if optional_eight.issubset(actual) else (1, 2, 4)
+        for world_size in world_sizes:
             cell = aggregates[("standard", profile, world_size)]
             if profile == "strong":
                 efficiency = cell.tokens_per_second_median / (world_size * strong_one)
@@ -134,14 +161,28 @@ def build_m3_matrix_summary(
                 efficiency = cell.tokens_per_second_median / world_size / weak_one_per_gpu
             standard.append(cell.model_copy(update={"scaling_efficiency": efficiency}))
     numa = [
-        aggregates[("same_numa", "weak", 4)],
-        aggregates[("cross_numa", "weak", 4)],
+        aggregates[key]
+        for key in (("same_numa", "weak", 4), ("cross_numa", "weak", 4))
+        if key in aggregates
     ]
+    eight_gpu_status: Literal["complete", "not_collected"] = (
+        "complete" if optional_eight.issubset(actual) else "not_collected"
+    )
+    numa_groups = {item.group for item in numa}
+    numa_comparison_status: Literal["complete", "partial", "not_collected"] = (
+        "complete"
+        if numa_groups == {"same_numa", "cross_numa"}
+        else "partial"
+        if numa_groups
+        else "not_collected"
+    )
     base_config_sha256, git_commit, model_parameter_count = next(iter(identities))
     return DDPBenchmarkMatrixSummary(
         base_config_sha256=base_config_sha256,
         git_commit=git_commit,
         model_parameter_count=model_parameter_count,
+        eight_gpu_status=eight_gpu_status,
+        numa_comparison_status=numa_comparison_status,
         standard=tuple(standard),
         numa=tuple(numa),
     )

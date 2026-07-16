@@ -85,7 +85,7 @@ def test_benchmark_train_uses_preflight_exit_class(
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--version"]) == 0
-    assert capsys.readouterr().out.strip() == "tinyllm 0.1.0a1"
+    assert capsys.readouterr().out.strip() == "tinyllm 0.3.0b1"
 
 
 def test_missing_project_root_returns_usage_error(

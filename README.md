@@ -1,151 +1,120 @@
 # TinyLLM-System
 
-> A hardware-aware LLM training, evaluation, and deployment platform for consumer
-> multi-GPU systems.
+**简体中文** | [English](README.en.md)
+
+> 面向消费级多 GPU 系统的硬件感知大语言模型训练、评测与部署平台。
 
 [![CI](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml/badge.svg)](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
-TinyLLM-System is an evidence-first PyTorch project built around a 10 × RTX 3090
-workstation. It is designed to answer systems questions that a collection of fine-tuning
-scripts cannot:
+TinyLLM-System 是一个以真实证据和可复现性为先的原生 PyTorch 项目，主要运行在
+10 × RTX 3090 工作站上。它关注的不是“再写一组微调脚本”，而是回答以下训练系统问题：
 
-- Can every run be traced to an immutable config, dataset, tokenizer, commit, software
-  environment, hardware inventory, checkpoint, and evaluation?
-- Can interrupted single-GPU and distributed jobs resume from a validated checkpoint
-  without silently changing state?
-- When should a model use DDP, FSDP2, or ZeRO-3, given real memory and topology limits?
-- Can a candidate model prove target-task improvement without hiding general regressions?
-- Can a deployed artifact be traced back through evaluation and training lineage?
+- 每次 Run 能否追溯到不可变配置、数据集、Tokenizer、Git Commit、软件环境、硬件环境、
+  Checkpoint 和评测结果？
+- 单卡或分布式作业中断后，能否从经过完整性校验的 Checkpoint 恢复，并避免训练状态静默漂移？
+- 面对真实显存和通信拓扑约束，什么时候应选择 DDP、FSDP2 或 ZeRO-3？
+- 候选模型能否证明目标任务获得提升，同时如实呈现通用能力回退？
+- 部署 Artifact 能否反向追溯到评测、Checkpoint、训练 Run 和数据版本？
 
-This is not a wrapper around Hugging Face Trainer, a claim to reimplement the full LLM
-ecosystem, or a benchmark leaderboard. Measurements are published only after real runs;
-missing results stay explicitly unevaluated.
+本项目不是 Hugging Face Trainer 的简单包装，不试图从零重写整个 LLM 生态，也不是只展示
+漂亮数字的 Benchmark 榜单。所有指标只能来自真实运行；尚未测量的结果会明确标记为未评估。
 
-## Current status
+## 当前进度
 
-| Area | Status | Verified evidence |
+| 模块 | 状态 | 已验证证据 |
 | -- | -- | -- |
-| M0 host readiness | Complete | 10 RTX 3090s inventoried; CUDA/BF16 single-GPU smoke passed |
-| M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
-| M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
-| M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
-| M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
-| M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
-| M4 FSDP2 | Ready | M1–M3 prerequisites pass; no FSDP2 result is claimed before the four-GPU memory probe |
-| M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
+| M0 主机体检 | 已完成 | 已盘点 10 张 RTX 3090；CUDA/BF16 单卡 Smoke 通过 |
+| M0 Collective | 就绪验证完成 | 已完成 1/2/4/6 卡 NCCL 正确性测试，未报告正确性错误 |
+| M1 模型基础 | 已实现 | TinyGPT-Debug 实际包含 1,820,352 个可训练参数，并通过 CPU 前后向测试 |
+| M1 单卡训练 | 已完成 | CPU Exact Resume 与 RTX 3090 BF16 SIGTERM/SIGKILL 恢复通过 |
+| M2 数据与评测 | 已完成 | 不可变数据构建/重建、冻结 300 条领域集、Exact 污染扫描和完整 Qwen3 Baseline 通过 |
+| M3 DDP | 已完成 | 正确性、Exact Resume/Rank Failure 和真实 1/2/4 卡扩展证据已在 PR #55 验收 |
+| M4 FSDP2 | 进行中 | 正在冻结 M4.1 契约和独立依赖环境；四卡显存 Probe 前不声明 FSDP2 可运行 |
+| M5–M6 | 计划中 | 尚未声明训练质量、模型晋级或部署结果 |
 
-The complete M0 evidence is in the
-[acceptance record](reports/m0/m0_acceptance.md),
-[host inventory](reports/hardware/rtx3090_inventory.md), and
-[topology/NCCL report](reports/hardware/nccl_topology.md). M0 NCCL measurements prove
-tooling and collective correctness under that test protocol; they are not DDP throughput
-benchmarks.
+M0 的完整证据见 [验收记录](reports/m0/m0_acceptance.md)、
+[RTX 3090 硬件报告](reports/hardware/rtx3090_inventory.md) 和
+[拓扑/NCCL 报告](reports/hardware/nccl_topology.md)。M0 NCCL 数据只证明对应测试协议下的
+工具可用性和 Collective 正确性，不等价于 DDP 训练吞吐。
 
-M2 source availability and Dataset Card hashes are recorded in the
-[pinned-source verification report](reports/m2/source_verification.md). This is import-contract
-evidence only; it is not evidence of a completed data build or model training.
-The [M2.2 deterministic pipeline smoke](reports/m2/deterministic_pipeline_smoke.md) uses synthetic
-CC0 fixtures and likewise makes no full-dataset distribution or training claim.
-The [pinned Qwen3 tokenizer smoke](reports/m2/qwen3_tokenizer_smoke.md) verifies real Token IDs and
-Assistant-only labels without loading model weights.
-The [M2.3b Packing and Manifest smoke](reports/m2/packing_manifest_smoke.md) verifies deterministic
-Train balancing, split-local boundaries, and content identity on public synthetic Token arrays;
-its utilization numbers must not be interpreted as full-dataset results.
-The [M2.3c immutable Registry smoke](reports/m2/registry_smoke.md) verifies atomic publication,
-complete file hashing, safe NumPy reconstruction, idempotency, and corruption refusal on the same
-synthetic boundary. The [full pinned-source build report](reports/m2/full_dataset_build.md) records
-the real `m2-sft-v1-f82ff32e` data product, independent file verification, and an offline full
-rebuild with the same content identity. That data-build evidence is independent of model quality.
-The [M2.4a contamination contract smoke](reports/m2/contamination_smoke.md) verifies strict
-evaluation identity plus full-sequence and Prompt-prefix Exact matching on a synthetic registered
-dataset. The [300-item domain candidate](evals/domain/v1/README.md) and its
-[content-review report](reports/m2/domain_eval_content_review.md) freeze the intended 210/90
-language mix, seven categories, explicit scorers, and 90 bilingual task pairs. The subsequent
-[formal clean-`main` report](reports/m2/domain_eval_contamination.md) checked all 300 items against
-4597 verified Train samples with zero full-sequence and zero Prompt-prefix Exact matches. Near-Dedup
-remains `not_evaluated`.
-The [Qwen3-0.6B Baseline Smoke](reports/m2/baseline_smoke.md) then verifies the complete private
-Run path on an idle RTX 3090 with two Domain items and two samples per general task. Its bounded
-values are compatibility evidence only. The subsequent
-[formal clean-`main` Baseline](reports/m2/baseline_formal.md) records all 300 Domain items, all
-14,256 general-task samples, and 40/40 maintainer judgments. The consolidated
-[M2 acceptance report](reports/m2/m2_acceptance.md) defines the accepted identities and explicit
-limitations.
+M1 原生 Trainer 见 [CPU 正确性报告](reports/m1/native_cpu_trainer_report.md)，原子 Checkpoint
+见 [M1.2 报告](reports/m1/atomic_checkpoint_report.md)，Exact Resume 见
+[M1.3 报告](reports/m1/exact_resume_report.md)，合并结论见
+[M1 验收报告](reports/m1/m1_acceptance.md)。
 
-The M1.1 native Trainer result is documented in the
-[CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately
-separate from the [M1.2 checkpoint report](reports/m1/atomic_checkpoint_report.md) and
-the [M1.3 Exact Resume report](reports/m1/exact_resume_report.md). The merged result is
-summarized by the [M1 acceptance report](reports/m1/m1_acceptance.md).
+M2 固定数据源和 Dataset Card 哈希见
+[数据源核验报告](reports/m2/source_verification.md)。完整的固定源数据构建见
+[M2 全量数据报告](reports/m2/full_dataset_build.md)：真实数据产品为
+`m2-sft-v1-f82ff32e`，并完成独立文件校验和相同内容身份的离线重建。
+[300 条领域评测集](evals/domain/v1/README.md) 固定了 210/90 中英文比例、七类任务和
+90 组双语任务对；[正式污染报告](reports/m2/domain_eval_contamination.md) 对 4,597 条已验证
+Train 样本执行 Exact 全序列和 Prompt 前缀匹配，结果均为零，Near-Dedup 仍明确标记为
+`not_evaluated`。Qwen3-0.6B 的完整训练前 Baseline 见
+[正式 Baseline 报告](reports/m2/baseline_formal.md)，M2 最终身份和限制见
+[M2 验收报告](reports/m2/m2_acceptance.md)。
 
-The [M3.1 DDP correctness report](reports/m3/ddp_correctness.md) records real one- and two-GPU
-torchrun evidence for initialization, Sampler partitioning, Global Batch, reduced Loss, final
-parameter synchronization, and rank-zero-only durable logging. The subsequent
-[M3.2 recovery report](reports/m3/ddp_recovery.md) records real two-GPU complete Checkpoints,
-Step 6 Exact Resume, and recovery after a forced Rank 1 exit at Step 8. The subsequent
-[M3 scaling report](reports/m3/ddp_scaling.md) records the real 1/2/4-GPU Strong/Weak matrix,
-Profiler-observed NCCL communication, retained preflight failures, and the explicit absence of
-eight-GPU and controlled cross-NUMA claims.
+M3.1 的真实单卡/双卡 torchrun 证据见
+[DDP 正确性报告](reports/m3/ddp_correctness.md)，覆盖初始化、Sampler 分片、Global Batch、
+Loss 聚合、最终参数同步和仅 Rank 0 持久化日志。M3.2 见
+[DDP 恢复报告](reports/m3/ddp_recovery.md)，覆盖双卡完整 Checkpoint、Step 6 Exact Resume
+和 Rank 1 在 Step 8 强制退出后的恢复。正式
+[DDP 扩展报告](reports/m3/ddp_scaling.md) 保存真实 1/2/4 卡 Strong/Weak 矩阵、Profiler
+观察到的 NCCL 通信和被 Preflight 拒绝的运行；项目不声称已经验证 8 卡或受控跨 NUMA 性能。
 
-## System boundary
+## 系统主链路
 
 ```mermaid
 flowchart LR
-    A[Versioned data] --> B[Validated YAML config]
-    H[Hardware and topology] --> P[Preflight and strategy]
+    A[版本化数据] --> B[Schema 校验的 YAML 配置]
+    H[硬件与拓扑] --> P[Preflight 与策略选择]
     B --> P
-    P --> T[Single / DDP / FSDP2]
-    T --> C[Atomic checkpoint and resume]
-    C --> R[Run and artifact store]
-    R --> E[Versioned evaluation]
-    E --> G[Candidate promotion gate]
-    G --> I[Inference and benchmark]
-    I --> X[Reproducible public report]
+    P --> T[单卡 / DDP / FSDP2]
+    T --> C[原子 Checkpoint 与恢复]
+    C --> R[Run 与 Artifact Store]
+    R --> E[版本化评测]
+    E --> G[Candidate 晋级门禁]
+    G --> I[推理与性能门禁]
+    I --> X[可复现公开报告]
     A --> R
     H --> R
 ```
 
-The core release follows one lifecycle:
+核心发布链路为：
 
 ```text
-data versioning
-  → hardware-aware preflight
-  → single/distributed training
-  → checkpoint and failure recovery
-  → evaluation and regression analysis
-  → candidate promotion
-  → inference performance gate
-  → experiment reproduction
+数据版本化
+  → 硬件感知 Preflight
+  → 单卡/分布式训练
+  → Checkpoint 与失败恢复
+  → 评测和回归分析
+  → Candidate 晋级
+  → 推理性能门禁
+  → 实验复现
 ```
 
-## Hardware strategy
+## 硬件与分布式策略
 
-The main server has 10 × RTX 3090 24 GB GPUs arranged across two NUMA nodes, but it is a
-long-lived shared host. The reproducible release gate therefore uses controlled 1/2/4-GPU
-scaling on nested idle sets. Eight-GPU and controlled cross-NUMA runs remain optional
-enhancements because the project cannot preempt other users or rely on an unbounded resource
-wait. Public results state the actual world size and never extrapolate four-GPU measurements
-to eight or ten GPUs. See [ADR-0004](docs/adr/0004-shared-server-4gpu-acceptance.md).
+主服务器包含跨两个 NUMA 节点的 10 × RTX 3090 24GB，但它是一台长期共享主机。核心发布
+门禁因此使用经过协调的 1/2/4 卡嵌套空闲集合。8 卡和受控跨 NUMA 实验仅作为增强项：项目
+不能抢占其他用户资源，也不能依赖没有上限的等待时间。公开报告始终记录实际 World Size，
+不会把四卡数据外推为八卡或十卡结果。参见
+[ADR-0004](docs/adr/0004-shared-server-4gpu-acceptance.md)。
 
-The auxiliary 8 × V100 32 GB host is a conditional compatibility target. RTX 3090 uses
-BF16 by default and may use TF32; V100 requires FP16 + GradScaler and must reject BF16.
-No V100 result is claimed until access and a real smoke test exist.
+辅助的 8 × V100 32GB 服务器只是条件式兼容目标。RTX 3090 默认使用 BF16，并可按配置启用
+TF32；V100 必须使用 FP16 + GradScaler，并拒绝 BF16。在获得辅助服务器访问权限并完成真实
+Smoke Test 前，本项目不声明任何 V100 结果。
 
-Strategy meanings are deliberately narrow:
+三种策略的边界如下：
 
-- **DDP** replicates model state and scales throughput when one GPU can hold the complete
-  training state. Adding DDP ranks does not combine memory.
-- **FSDP2** is the primary sharded implementation for parameters, gradients, optimizer
-  state, distributed checkpoints, and native PyTorch recovery.
-- **ZeRO-3** is a later comparison for DeepSpeed compatibility and optional offload. It
-  starts only after the equivalent FSDP2 path passes.
+- **DDP**：完整训练状态能装入单卡时，通过模型复制扩展吞吐；增加 DDP Rank 不会合并显存。
+- **FSDP2**：用于参数、梯度、优化器状态分片，以及 PyTorch 原生分布式 Checkpoint 和恢复。
+- **ZeRO-3**：用于后续 DeepSpeed 兼容和可选 Offload 对照；只有对应 FSDP2 路径通过后才开始。
 
-## Quickstart
+## 快速开始
 
-Python 3.11 is the supported development runtime. CPU setup is enough for the default
-quality gate:
+项目开发环境固定为 Python 3.11。默认质量门禁只需要 CPU 环境：
 
 ```bash
 git clone https://github.com/JayYu686/TinyLLM-System.git
@@ -159,7 +128,7 @@ tinyllm train --config configs/pretrain/tinygpt_debug_cpu_smoke.yaml \
 make check
 ```
 
-On the RTX 3090 development host, install the isolated CUDA 11.8 profile instead:
+在 RTX 3090 开发服务器上使用隔离的 CUDA 11.8 Profile：
 
 ```bash
 make bootstrap-gpu
@@ -167,14 +136,13 @@ source .venv/bin/activate
 tinyllm doctor --distributed --json
 ```
 
-`doctor` is read-only and never launches a high-load NCCL benchmark. Review GPU
-utilization, temperature, topology, storage, and software compatibility before running a
-separate smoke test. Dependency profile semantics are documented in
-[requirements/README.md](requirements/README.md).
+`doctor` 是只读命令，不会自动启动高负载 NCCL Benchmark。执行独立 Smoke Test 前必须检查
+GPU 利用率、温度、拓扑、磁盘和软件兼容性。依赖环境规则见
+[requirements/README.md](requirements/README.md)。
 
-## Stable CLI and contracts
+## 稳定 CLI 与 Schema
 
-The public command surface is staged by milestone:
+公开 CLI 按里程碑逐步实现：
 
 ```text
 tinyllm doctor
@@ -187,37 +155,35 @@ tinyllm compare
 tinyllm promote
 ```
 
-Buffer work adds `tinyllm plan`, `tinyllm serve`, and `tinyllm benchmark inference`.
-Commands expose stable `--json` output and use these exit-code classes:
+缓冲阶段增加 `tinyllm plan`、`tinyllm serve` 和 `tinyllm benchmark inference`。命令提供稳定
+`--json` 输出，并使用统一退出码：
 
-| Code | Meaning |
+| 退出码 | 含义 |
 | --: | -- |
-| 0 | Success |
-| 2 | Invalid config or user input |
-| 3 | Environment, hardware, or resource preflight failure |
-| 4 | Training run failure |
-| 5 | Checkpoint or resume integrity failure |
-| 6 | Evaluation failure or promotion rejection |
+| 0 | 成功 |
+| 2 | 配置或用户输入错误 |
+| 3 | 环境、硬件或资源 Preflight 失败 |
+| 4 | 训练运行失败 |
+| 5 | Checkpoint 或 Resume 完整性失败 |
+| 6 | 评测失败或 Promotion Gate 拒绝 |
 
-Formal experiments start from schema-validated YAML. CLI overrides are limited to GPU
-selection, output location, resume mode, and documented runtime fields. Public Pydantic
-JSON Schema snapshots are committed under [schemas/](schemas/README.md); all models use
-a version field and reject unknown fields.
+正式实验必须从经过 Schema 校验的 YAML 启动。CLI 只允许覆盖 GPU、输出位置、Resume 模式和
+已记录的少量运行时字段。Pydantic JSON Schema Snapshot 保存在
+[schemas/](schemas/README.md)；所有公共 Schema 均带版本字段并拒绝未知字段。
 
-## Run and checkpoint design
+## Run 与 Checkpoint 设计
 
-The private Artifact Store defaults to `/data/yujielun/tinyllm/`:
+私有 Artifact Store 默认位于 `/data/yujielun/tinyllm/`：
 
 ```text
-cache/       shared downloads
-datasets/    immutable dataset versions
-models/      model inputs and deployment exports
-runs/        JSON-first run directories
-registry/    rebuildable query index and promotion records
+cache/       共享下载缓存
+datasets/    不可变数据版本
+models/      模型输入和部署导出
+runs/        以 JSON 为事实源的 Run 目录
+registry/    可重建查询索引和晋级记录
 ```
 
-A Run ID is `<UTC>-<slug>-<resolved-config-hash8>-<random4>`. Every run directory is
-designed to contain:
+Run ID 格式为 `<UTC>-<slug>-<resolved-config-hash8>-<random4>`。每个 Run 设计为保存：
 
 ```text
 run.json                  environment.json
@@ -226,79 +192,69 @@ config.original.yaml      metrics.jsonl
 config.resolved.json      checkpoints/ evaluations/ exports/
 ```
 
-JSON/JSONL artifacts are the fact source. SQLite, introduced in M6, is a rebuildable
-query index; MLflow is an optional projection and never a training dependency.
+JSON/JSONL 是事实源。M6 引入的 SQLite 只是可从目录重建的查询索引；MLflow 是可选投影，
+永远不是训练依赖。
 
-Exact checkpoints include model, optimizer, scheduler, scaler, step/epoch, Python/NumPy/
-PyTorch/CUDA RNG, sampler cursor, data/config/code/environment identity, world size,
-per-file SHA256, and a completion marker. They are written to a temporary directory,
-validated, atomically renamed, and only then published through `LATEST`. Exact, Warm, and
-Transfer resume are separate operations. Safetensors exports are not training checkpoints.
+Exact Checkpoint 包含模型、优化器、Scheduler、Scaler、Step/Epoch、Python/NumPy/PyTorch/
+CUDA RNG、Sampler Cursor、数据/配置/代码/环境身份、World Size、逐文件 SHA256 和完成标记。
+系统先写临时目录，校验后原子 Rename，最后才原子更新 `LATEST`。Exact、Warm 和 Transfer
+Resume 是不同操作；Safetensors 导出不是训练 Checkpoint。
 
-## Career-oriented release train
+## 求职导向发布路线
 
-The target is a ten-week core plus a two-week buffer:
+项目采用“十周核心 + 两周缓冲”的路线：
 
-| Milestone | Demonstrated capability | Core release role |
+| 里程碑 | 证明的能力 | 核心发布作用 |
 | -- | -- | -- |
-| M1 | Native single-GPU trainer, atomic checkpoint, Exact Resume | Correctness base |
-| M2 | Licensed deterministic data pipeline and frozen evaluation | Data lineage |
-| M3 | Native DDP and controlled 1/2/4 scaling | First application-ready evidence |
-| M4 | Qwen3-8B FSDP2 sharded checkpoint/resume smoke | Advanced distributed evidence |
-| M5 | Qwen3-0.6B Full SFT and Qwen3-8B LoRA | Practical post-training |
-| M6 | Baseline/candidate comparison and Candidate gate | `v0.6.0-rc.1` portfolio release |
-| M7 | vLLM serving and measured inference gate | Buffer; required for Production |
-| M8 | Static estimate plus short probe planner | Buffer differentiation |
+| M1 | 原生单卡 Trainer、原子 Checkpoint、Exact Resume | 正确性基础 |
+| M2 | 合法、确定性数据流水线和冻结评测 | 数据与评测血缘 |
+| M3 | 原生 DDP 和受控 1/2/4 卡扩展 | 首个可正式投递版本 |
+| M4 | Qwen3-8B FSDP2 分片 Checkpoint/Resume Smoke | 高级分布式证据 |
+| M5 | Qwen3-0.6B Full SFT 和 Qwen3-8B LoRA | 实用后训练能力 |
+| M6 | Base/Candidate 比较和 Candidate Gate | `v0.6.0-rc.1` 作品版本 |
+| M7 | vLLM 服务和真实推理门禁 | 缓冲项；Production 的前置条件 |
+| M8 | 静态估算与短 Probe Planner | 缓冲期差异化能力 |
 
-M3 is the earliest job-application checkpoint. M7/M8, ZeRO-3, MLflow, V100 validation,
-and TinyGPT-350M cannot block `v0.6.0-rc.1`. See the
-[career release roadmap](docs/career_release_roadmap.md) and [full plan](PLANS.md).
+M3 已达到开始正式投递的阶段。M7/M8、ZeRO-3、MLflow、V100 验证和 TinyGPT-350M
+不得阻塞 `v0.6.0-rc.1`。完整路线见
+[求职发布路线](docs/career_release_roadmap.md) 和 [项目计划](PLANS.md)。
 
-## Evaluation and promotion
+## 评测与模型晋级
 
-M6 compares the base and trained model on ARC-Easy, HellaSwag, PIQA, and a frozen
-300-example domain set spanning Python, Linux, JSON/config, log diagnosis, and unsupported
-claim refusal. The target Candidate gate requires:
+M6 将在 ARC-Easy、HellaSwag、PIQA 和冻结的 300 条领域集上比较 Base 与训练后模型。领域集
+覆盖 Python、Linux、JSON/配置、日志诊断和无依据拒答。Candidate Gate 的目标是：
 
-- at least +3 percentage points on the domain aggregate with a bootstrap 95% confidence
-  interval lower bound above zero;
-- no more than 2 percentage points aggregate regression on general tasks;
-- at least 98% JSON validity;
-- complete data, model, checkpoint, environment, and evaluation lineage.
+- 领域聚合分数至少提升 3 个百分点，且 Bootstrap 95% 置信区间下界大于零；
+- 通用任务聚合下降不超过 2 个百分点；
+- JSON Valid Rate 至少 98%；
+- 数据、模型、Checkpoint、环境和评测血缘完整。
 
-Thresholds are config, not README exceptions. A failed candidate stays Development, and
-regressions and failure examples remain visible. Production promotion waits for M7's real
-inference performance gate.
+门禁阈值来自配置，不允许在 README 中临时找例外。未通过的候选模型保留 Development 状态，
+并公开回退和失败样例。Production 晋级必须等待 M7 的真实推理性能门禁。
 
-## Scope control
+## 范围控制
 
-The core project does not implement custom CUDA kernels, custom FlashAttention, MoE,
-custom KV cache, custom tensor parallel, multi-node or pipeline parallel training, full
-RLHF, Kubernetes, billing, or a complex frontend. These are Future Work, research
-challenges, or responsibilities of other projects. A generic FastAPI layer is not an
-early milestone; M7 uses the native vLLM OpenAI-compatible API with a thin lineage-aware
-launcher.
+核心项目不实现自研 CUDA Kernel、自研 FlashAttention、MoE、自研 KV Cache、自研 Tensor
+Parallel、多节点/Pipeline Parallel、完整 RLHF、Kubernetes、计费或复杂前端。这些属于 Future
+Work、研究挑战或其他项目职责。通用 FastAPI 不是早期里程碑；M7 使用 vLLM 原生
+OpenAI-compatible API，并增加轻量的血缘感知启动包装。
 
-## Documentation
+## 文档入口
 
-The public README is English. Detailed design documents currently remain Chinese so the
-implementation constraints are accessible to the primary developer; public English
-contracts and reports are added at release boundaries.
+本文件是公开中文主入口，[README.en.md](README.en.md) 提供完整英文版本。面向项目维护者和
+审查者的设计文档与报告以中文为主；稳定 CLI/Schema 字段和机器可读 JSON Key 保持英文。
 
-- [Contribution workflow](CONTRIBUTING.md)
-- [Agent and review rules](AGENTS.md)
-- [Milestone plan](PLANS.md) and [task summary](TASKS.md)
-- [Architecture](docs/architecture.md), [training design](docs/training_design.md), and
-  [M1 contract](docs/m1_training_contract.md)
-- [Data contract](docs/dataset_contract.md), [evaluation spec](docs/evaluation_spec.md),
-  and [experiment lineage](docs/experiment_lineage.md)
-- [Hardware strategy](docs/hardware_strategy.md) and
-  [benchmark policy](docs/benchmark_plan.md)
-- [Public reporting policy](docs/public_reporting.md) and
-  [security policy](SECURITY.md)
+- [贡献与 PR 流程](CONTRIBUTING.md)
+- [Agent 与代码审查规则](AGENTS.md)
+- [里程碑计划](PLANS.md) 与 [任务摘要](TASKS.md)
+- [系统架构](docs/architecture.md)、[训练设计](docs/training_design.md) 与
+  [M4 FSDP2 契约](docs/m4_fsdp2_contract.md)
+- [数据契约](docs/dataset_contract.md)、[评测规范](docs/evaluation_spec.md) 与
+  [实验血缘](docs/experiment_lineage.md)
+- [硬件策略](docs/hardware_strategy.md) 与 [Benchmark 规范](docs/benchmark_plan.md)
+- [公开报告规范](docs/public_reporting.md) 与 [安全策略](SECURITY.md)
 
-## License
+## 许可证
 
-Licensed under the [Apache License 2.0](LICENSE). Dataset and model licenses remain
-independent; each registered dataset and published adapter must preserve its own source,
-revision, and license metadata.
+项目采用 [Apache License 2.0](LICENSE)。数据集和模型许可证相互独立；每个注册数据集和公开
+Adapter 都必须保留其来源、固定 Revision 和许可证元数据。

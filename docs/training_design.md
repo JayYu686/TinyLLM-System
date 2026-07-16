@@ -34,7 +34,7 @@ training:
 
 distributed:
   strategy: fsdp2
-  world_size: 8
+  world_size: 4
 
 precision:
   dtype: bf16
@@ -156,3 +156,5 @@ OOM 不能无限自动重试，最多执行有限次 Micro Batch 回退。
 
 固定模型 revision、训练预算和回退条件见
 [ADR-0003](adr/0003-career-release-baselines.md)。
+M4 的四卡 FSDP2、DCP 恢复、数据视图和失败门禁见
+[M4 FSDP2 分片训练契约](m4_fsdp2_contract.md)。

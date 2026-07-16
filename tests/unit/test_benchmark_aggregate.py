@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -204,6 +205,35 @@ def test_matrix_rejects_efficiency_that_disagrees_with_raw_throughput() -> None:
 
     with pytest.raises(ValueError, match="scaling efficiency"):
         DDPBenchmarkMatrixSummary.model_validate(summary)
+
+
+def test_matrix_rejects_machine_status_and_group_drift() -> None:
+    valid = build_m3_matrix_summary(_matrix_runs()).model_dump(mode="python")
+    cases: list[tuple[dict[str, object], str]] = []
+
+    acceptance = deepcopy(valid)
+    acceptance["acceptance_world_sizes"] = (1, 2)
+    cases.append((acceptance, "acceptance_world_sizes"))
+
+    eight = deepcopy(valid)
+    eight["eight_gpu_status"] = "complete"
+    cases.append((eight, "eight_gpu_status"))
+
+    numa_status = deepcopy(valid)
+    numa_status["numa_comparison_status"] = "complete"
+    cases.append((numa_status, "numa_comparison_status"))
+
+    numa_efficiency = deepcopy(valid)
+    numa_efficiency["numa"][0]["scaling_efficiency"] = 1.0
+    cases.append((numa_efficiency, "NUMA cells"))
+
+    wrong_group = deepcopy(valid)
+    wrong_group["standard"][0]["group"] = "same_numa"
+    cases.append((wrong_group, "standard matrix"))
+
+    for payload, message in cases:
+        with pytest.raises(ValueError, match=message):
+            DDPBenchmarkMatrixSummary.model_validate(payload)
 
 
 def test_public_m3_summary_is_a_valid_strict_snapshot() -> None:

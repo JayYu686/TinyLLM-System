@@ -146,6 +146,19 @@ def test_rank_metric_rejects_bad_windows_and_missing_trace() -> None:
         ("finished_at", "2026-07-15T00:00:00Z", "follow"),
         ("world_size", 1, "rank_metrics count"),
         ("measurement_steps", 3, "retain all"),
+        ("effective_step_time", _timing(count=1).to_dict(), "effective step"),
+        (
+            "effective_data_wait",
+            BenchmarkTimingSummary(
+                count=1,
+                total_ms=1.0,
+                min_ms=1.0,
+                median_ms=1.0,
+                p95_ms=1.0,
+                max_ms=1.0,
+            ).to_dict(),
+            "effective data",
+        ),
         ("global_batch_size", 4, "arithmetic"),
         ("predicted_tokens_per_step", 31, "predicted_tokens"),
     ],
@@ -185,3 +198,39 @@ def test_profile_aggregate_rejects_incomplete_repeats_gpu_count_and_range() -> N
     ):
         with pytest.raises(ValueError, match=message):
             BenchmarkProfileAggregate(**(kwargs | update))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("update", "message"),
+    [
+        ({"tokens_per_second_by_repeat": (0.0, 2.0, 3.0)}, "throughput"),
+        ({"step_time_ms_by_repeat": (0.0, 1.0, 1.0)}, "step times"),
+        ({"peak_memory_bytes_by_repeat": (-1, 1, 1)}, "peak memory"),
+        ({"data_wait_percent_by_repeat": (-1.0, 1.0, 1.0)}, "data wait"),
+        ({"step_time_ms_median": 2.0}, "medians"),
+    ],
+)
+def test_profile_aggregate_rejects_invalid_raw_repeat_values(
+    update: dict[str, object],
+    message: str,
+) -> None:
+    kwargs = {
+        "group": "standard",
+        "profile": "weak",
+        "world_size": 2,
+        "gpu_indices": (4, 5),
+        "repeats": (1, 2, 3),
+        "run_ids": ("a", "b", "c"),
+        "tokens_per_second_by_repeat": (1.0, 2.0, 3.0),
+        "step_time_ms_by_repeat": (1.0, 1.0, 1.0),
+        "peak_memory_bytes_by_repeat": (1, 1, 1),
+        "data_wait_percent_by_repeat": (1.0, 1.0, 1.0),
+        "tokens_per_second_median": 2.0,
+        "tokens_per_second_min": 1.0,
+        "tokens_per_second_max": 3.0,
+        "step_time_ms_median": 1.0,
+        "peak_memory_bytes_median": 1.0,
+        "data_wait_percent_median": 1.0,
+    }
+    with pytest.raises(ValueError, match=message):
+        BenchmarkProfileAggregate(**(kwargs | update))  # type: ignore[arg-type]

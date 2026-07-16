@@ -136,13 +136,13 @@ Manifest 记录输入/输出哈希和许可证。M2 已解除 M3/M4/M5 的数据
 
 ## 8. Milestone 3：DDP 与扩展证据（Weeks 5–6）
 
-状态：`IN_PROGRESS`（仅剩 PR/合并门禁）。M3.1 已完成真实 1/2 卡 NCCL/BF16 正确性
-运行；M3.2 已完成双卡完整 Checkpoint、Step 6 Exact Resume 和 Step 8 Rank 1 故障恢复；
-M3.3–M3.4 已完成正式 1/2/4 卡 Strong/Weak Scaling 和同 NUMA补充证据。验收见
+状态：`COMPLETE`。M3.1 已完成真实 1/2 卡 NCCL/BF16 正确性运行；M3.2 已完成双卡
+完整 Checkpoint、Step 6 Exact Resume 和 Step 8 Rank 1 故障恢复；M3.3–M3.4 已完成
+正式 1/2/4 卡 Strong/Weak Scaling 和同 NUMA 补充证据。验收见
 [M3.1 DDP Correctness](reports/m3/ddp_correctness.md)与
 [M3.2 DDP Recovery](reports/m3/ddp_recovery.md)以及
-[M3 Scaling](reports/m3/ddp_scaling.md)。在本批次 CI、审查和 PR 合并前不得标记 M3
-`COMPLETE` 或开始 M4 正式实现。
+[M3 Scaling](reports/m3/ddp_scaling.md)。所有者已于 2026-07-16 确认中文报告通过，
+PR #55 的最终 CI 和合并构成 M3 的原子发布门禁。
 
 输入：M1 正确训练/恢复语义、M2 数据版本、TinyGPT-Target-120M 配置。
 
@@ -160,6 +160,8 @@ GPU 6–9 同 NUMA 结果作为补充证据；GPU 4–7 跨 NUMA 受控对照和
 M3 阻塞 M4；完成后开始正式投递。
 
 ## 9. Milestone 4：FSDP2 分片训练（Week 7）
+
+状态：`READY`。M1–M3 前置门禁已解除；尚未产生任何 FSDP2、Qwen3-8B 显存或吞吐结论。
 
 输入：M1/M2/M3，通过 revision/许可证/依赖 Smoke 的 Qwen3-8B。
 

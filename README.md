@@ -32,8 +32,9 @@ missing results stay explicitly unevaluated.
 | M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
-| M3 DDP | In progress (merge gate) | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence pass; PR merge remains |
-| M4–M6 | Planned | No FSDP2, training-quality, promotion, or deployment result is claimed yet |
+| M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
+| M4 FSDP2 | Ready | M1–M3 prerequisites pass; no FSDP2 result is claimed before the four-GPU memory probe |
+| M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
 
 The complete M0 evidence is in the
 [acceptance record](reports/m0/m0_acceptance.md),

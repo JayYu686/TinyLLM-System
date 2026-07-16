@@ -85,6 +85,7 @@ from tinyllm.training.fsdp2_schema import (
     FSDP2RankEvidence,
     FSDP2TrainingResult,
 )
+from tinyllm.training.m4_dependencies import M4DependencySmokeResult
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -138,6 +139,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m2-packing-config-v1.schema.json": M2PackingConfig,
     "m2-tokenization-config-v1.schema.json": M2TokenizationConfig,
     "m1-training-config-v1.schema.json": M1TrainingConfig,
+    "m4-dependency-smoke-result-v1.schema.json": M4DependencySmokeResult,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,

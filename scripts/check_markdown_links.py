@@ -16,6 +16,7 @@ IGNORED_PARTS = {
     ".ruff_cache",
     ".venv",
     ".venv-baseline",
+    ".venv-m4",
 }
 
 

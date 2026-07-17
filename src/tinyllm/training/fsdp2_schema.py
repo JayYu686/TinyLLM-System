@@ -25,6 +25,30 @@ class FSDP2RankEvidence(StrictSchema):
     local_shard_sha256: str = Field(pattern=SHA256_PATTERN)
 
 
+class FSDP2RankFailureEvidence(StrictSchema):
+    """Durable diagnostic written before one nonzero FSDP2 Rank exits."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    event: Literal["forced_rank_exit"] = "forced_rank_exit"
+    run_id: str = Field(pattern=RUN_ID_PATTERN.pattern)
+    config_sha256: str = Field(pattern=SHA256_PATTERN)
+    git_commit: str = Field(pattern=GIT_COMMIT_PATTERN)
+    world_size: int = Field(ge=2, le=4)
+    rank: int = Field(ge=1)
+    exit_code: Literal[17] = 17
+    global_step: int = Field(gt=0)
+    resumable: Literal[False] = False
+    checkpoint_status: Literal["not_evaluated_m4_1"] = "not_evaluated_m4_1"
+
+    @model_validator(mode="after")
+    def validate_rank(self) -> FSDP2RankFailureEvidence:
+        """Reject Rank zero and Ranks outside the launched World Size."""
+
+        if self.rank >= self.world_size:
+            raise ValueError("failure rank must be a nonzero member of world_size")
+        return self
+
+
 class FSDP2CorrectnessSummary(StrictSchema):
     """Correctness facts shared by all Ranks in one bounded FSDP2 run."""
 
@@ -43,7 +67,9 @@ class FSDP2CorrectnessSummary(StrictSchema):
     final_full_parameter_sha256: str = Field(pattern=SHA256_PATTERN)
     reshard_after_forward: Literal[True] = True
     cpu_offload: Literal[False] = False
-    activation_checkpointing: Literal[False] = False
+    activation_checkpointing: bool = False
+    activation_checkpointed_block_type: Literal["TransformerBlock"] | None = None
+    activation_checkpointed_block_count: int = Field(default=0, ge=0)
     rank_evidence: tuple[FSDP2RankEvidence, ...]
     max_loss_reduction_abs_diff: float = Field(ge=0.0, allow_inf_nan=False)
     max_gradient_norm_abs_diff: float = Field(ge=0.0, allow_inf_nan=False)
@@ -87,6 +113,16 @@ class FSDP2CorrectnessSummary(StrictSchema):
             raise ValueError("loss reduction difference exceeds the fixed tolerance")
         if self.max_gradient_norm_abs_diff > self.gradient_norm_atol:
             raise ValueError("gradient norm difference exceeds the fixed tolerance")
+        if self.activation_checkpointing:
+            if self.activation_checkpointed_block_type != "TransformerBlock":
+                raise ValueError("activation checkpointing must target TransformerBlock")
+            if self.activation_checkpointed_block_count <= 0:
+                raise ValueError("activation checkpointing must wrap at least one block")
+        elif (
+            self.activation_checkpointed_block_type is not None
+            or self.activation_checkpointed_block_count != 0
+        ):
+            raise ValueError("disabled activation checkpointing cannot report wrapped blocks")
         return self
 
 

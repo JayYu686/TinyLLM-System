@@ -5,7 +5,6 @@
       "description": "Explicit FSDP2 sharding policy for the bounded correctness gate.",
       "properties": {
         "activation_checkpointing": {
-          "const": false,
           "default": false,
           "title": "Activation Checkpointing",
           "type": "boolean"

@@ -53,8 +53,26 @@
   "additionalProperties": false,
   "description": "Correctness facts shared by all Ranks in one bounded FSDP2 run.",
   "properties": {
+    "activation_checkpointed_block_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Activation Checkpointed Block Count",
+      "type": "integer"
+    },
+    "activation_checkpointed_block_type": {
+      "anyOf": [
+        {
+          "const": "TransformerBlock",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Activation Checkpointed Block Type"
+    },
     "activation_checkpointing": {
-      "const": false,
       "default": false,
       "title": "Activation Checkpointing",
       "type": "boolean"

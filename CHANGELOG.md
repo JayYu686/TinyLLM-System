@@ -5,10 +5,13 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- froze an isolated M4 dependency profile with a network-free Tiny Qwen autograd gate, dedicated
+  audit policy, schema snapshot, and CI job; revalidated CPU/Gloo and passed a real single-RTX-3090
+  BF16 CUDA/NCCL FSDP2 Smoke while retaining a two-GPU busy-card preflight refusal;
 - started M4 with strict FSDP2 correctness schemas, explicit CPU DeviceMesh selection, two-process
   Gloo/DTensor sharding evidence, full-state reconstruction, rank-zero-only artifacts, and
-  fail-closed World Size/config/numerical guards; CUDA, DCP, Qwen3-8B, and four-GPU support remain
-  explicitly unevaluated;
+  fail-closed World Size/config/numerical guards; multi-GPU CUDA, DCP, Qwen3-8B, and four-GPU
+  support remain explicitly unevaluated;
 - made the complete Chinese `README.md` the primary public entrypoint while retaining a complete
   mutually linked English version in `README.en.md`.
 

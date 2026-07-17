@@ -1,0 +1,151 @@
+{
+  "schema_version": "1.0",
+  "status": "partial_pass",
+  "scope": "m4-isolated-dependencies-and-tiny-model-cuda-readiness",
+  "dependency_gate": {
+    "status": "pass",
+    "git_commit": "2a969632b8d132d6fe77ca2f1f4c7ae71ffe9cec",
+    "constraints_sha256": "84de7c42d55bbea874a0b4f0a40a56bf68d30ee29bb4be818faac0f2421a58a7",
+    "private_pip_freeze_sha256": "557b098e4c4898791ba067db5146336dfb80571ad25a2b35c774aa8eceb48737",
+    "audit": {
+      "status": "pass_with_documented_exceptions",
+      "known_vulnerabilities_not_excepted": 0,
+      "documented_exceptions": 4,
+      "torch_pypi_audit_status": "unavailable_for_cu118_wheel"
+    },
+    "result": {
+      "fixed_qwen3_8b_revision_verified": false,
+      "network_accessed": false,
+      "packages": {
+        "accelerate": "1.12.0",
+        "huggingface_hub": "0.36.2",
+        "safetensors": "0.6.2",
+        "tokenizers": "0.22.2",
+        "torch": "2.7.1+cu118",
+        "transformers": "4.57.6"
+      },
+      "profile": "m4-fsdp2-qwen",
+      "python_version": "3.11.14",
+      "qwen_apis": {
+        "backward_finite": true,
+        "causal_lm_importable": true,
+        "config_importable": true,
+        "forward_finite": true,
+        "parameter_count": 82304
+      },
+      "remote_model_assets_loaded": false,
+      "schema_version": "1.0",
+      "status": "pass",
+      "torch_apis": {
+        "dcp_load_importable": true,
+        "dcp_save_importable": true,
+        "distributed_available": true,
+        "fully_shard_importable": true
+      },
+      "torch_cuda_available": true,
+      "torch_cuda_runtime": "11.8",
+      "torch_nccl_version": [
+        2,
+        21,
+        5
+      ]
+    },
+    "cpu_gloo_recheck": {
+      "status": "pass",
+      "run_id": "20260716T153336Z-tinygpt-debug-fsdp2-gloo-smoke-ba2a44fa-c88c",
+      "config_sha256": "ba2a44fac9330dab43122322e1911e408ae542ead5fe25d35288277b9eea73f9",
+      "world_size": 2,
+      "optimizer_steps": 2,
+      "logical_parameter_count": 86336,
+      "local_shard_parameter_sum": 86336,
+      "max_loss_reduction_abs_diff": 0.0,
+      "max_gradient_norm_abs_diff": 0.0
+    }
+  },
+  "cuda_gate": {
+    "git_commit": "6c241a09e2a2a08eacfce79f630c1142b9e3a041",
+    "single_gpu": {
+      "status": "pass",
+      "run_id": "20260716T153830Z-tinygpt-debug-fsdp2-nccl-bf16-single-gpu-smoke-1a20d57a-6123",
+      "config_path": "configs/fsdp2/tinygpt_debug_nccl_bf16_single_gpu_smoke.yaml",
+      "config_sha256": "1a20d57a9e0264f96c61517db041203ec67f30b4b44789370c7642312797f12d",
+      "duration_seconds": 11.383,
+      "preflight": {
+        "physical_gpu_index": 9,
+        "memory_used_mib": 1,
+        "utilization_percent": 0,
+        "temperature_c": 31,
+        "driver_version": "535.261.03"
+      },
+      "summary": {
+        "schema_version": "1.0",
+        "status": "pass",
+        "backend": "nccl",
+        "device_type": "cuda",
+        "world_size": 1,
+        "global_batch_size": 2,
+        "optimizer_steps": 2,
+        "durable_metric_records": 2,
+        "durable_writer_rank": 0,
+        "logical_parameter_count": 86336,
+        "local_shard_parameter_sum": 86336,
+        "initial_full_parameter_sha256": "6d08111b98de593d58881fdd222ce084ffada2b9ed24f0217bb2d2adca71337f",
+        "final_full_parameter_sha256": "30cdcf6559285b1dbbc2d5cf23e1ab961e966b25af6f2d9ef0d072efd3333440",
+        "reshard_after_forward": true,
+        "cpu_offload": false,
+        "activation_checkpointing": false,
+        "rank_evidence": [
+          {
+            "schema_version": "1.0",
+            "rank": 0,
+            "device_type": "cuda",
+            "parameters_are_dtensor": true,
+            "local_shard_numel": 86336,
+            "local_shard_sha256": "7b46e5fd39db4ae966803219db51263be56d10a210c838f91a462d64fe99f939"
+          }
+        ],
+        "max_loss_reduction_abs_diff": 0.0,
+        "max_gradient_norm_abs_diff": 0.0,
+        "loss_reduction_atol": 1e-12,
+        "gradient_norm_atol": 1e-06,
+        "checkpoint_status": "not_evaluated_m4_1"
+      }
+    },
+    "two_gpu": {
+      "status": "not_run",
+      "reason": "fail_closed_gpu_preflight",
+      "requested_physical_gpu_indices": [
+        8,
+        9
+      ],
+      "rejected_physical_gpu_indices": [
+        8
+      ],
+      "rejected_gpu_observation": {
+        "memory_used_mib": 5802,
+        "utilization_percent": 78,
+        "temperature_c": 59
+      },
+      "training_process_started": false
+    }
+  },
+  "automated_validation": {
+    "make_check": "pass",
+    "cpu_tests_passed": 374,
+    "gpu_tests_deselected": 2,
+    "branch_coverage_percent": 85.19,
+    "m4_dependency_smoke": "pass",
+    "m4_dependency_audit": "pass_with_4_documented_exceptions",
+    "pip_check": "pass"
+  },
+  "not_evaluated": [
+    "two-or-more-GPU NCCL collectives in the M4 FSDP2 runtime",
+    "activation checkpointing",
+    "rank mid-run failure",
+    "DCP sharded checkpoint and exact resume",
+    "fixed Qwen3-8B revision acquisition and file verification",
+    "Qwen3-8B memory fit or training",
+    "four-GPU M4 acceptance",
+    "peak GPU memory and throughput"
+  ]
+}

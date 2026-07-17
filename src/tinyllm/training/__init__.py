@@ -42,6 +42,13 @@ from tinyllm.training.fsdp2_schema import (
     FSDP2RankEvidence,
     FSDP2TrainingResult,
 )
+from tinyllm.training.m4_dependencies import (
+    M4DependencySmokeResult,
+    M4PackageVersions,
+    M4QwenApiEvidence,
+    M4TorchApiEvidence,
+    run_m4_dependency_smoke,
+)
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
 from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.run import run_single_device_training
@@ -74,6 +81,10 @@ __all__ = [
     "FSDP2RankEvidence",
     "FSDP2TrainingResult",
     "LoadedDDPCheckpoint",
+    "M4DependencySmokeResult",
+    "M4PackageVersions",
+    "M4QwenApiEvidence",
+    "M4TorchApiEvidence",
     "ResumeMode",
     "SingleDeviceTrainer",
     "TrainerState",
@@ -95,6 +106,7 @@ __all__ = [
     "run_single_device_training",
     "run_ddp_correctness",
     "run_fsdp2_correctness",
+    "run_m4_dependency_smoke",
     "seed_everything",
     "validate_sampler_partitions",
     "validate_local_rng_state",

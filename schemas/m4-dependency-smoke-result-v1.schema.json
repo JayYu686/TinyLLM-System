@@ -1,0 +1,216 @@
+{
+  "$defs": {
+    "M4PackageVersions": {
+      "additionalProperties": false,
+      "description": "Direct M4 package versions plus the Qwen Hub client version.",
+      "properties": {
+        "accelerate": {
+          "minLength": 1,
+          "title": "Accelerate",
+          "type": "string"
+        },
+        "huggingface_hub": {
+          "minLength": 1,
+          "title": "Huggingface Hub",
+          "type": "string"
+        },
+        "safetensors": {
+          "minLength": 1,
+          "title": "Safetensors",
+          "type": "string"
+        },
+        "tokenizers": {
+          "minLength": 1,
+          "title": "Tokenizers",
+          "type": "string"
+        },
+        "torch": {
+          "minLength": 1,
+          "title": "Torch",
+          "type": "string"
+        },
+        "transformers": {
+          "minLength": 1,
+          "title": "Transformers",
+          "type": "string"
+        }
+      },
+      "required": [
+        "torch",
+        "transformers",
+        "accelerate",
+        "safetensors",
+        "tokenizers",
+        "huggingface_hub"
+      ],
+      "title": "M4PackageVersions",
+      "type": "object"
+    },
+    "M4QwenApiEvidence": {
+      "additionalProperties": false,
+      "description": "Synthetic local Qwen3 construction and autograd evidence.",
+      "properties": {
+        "backward_finite": {
+          "const": true,
+          "default": true,
+          "title": "Backward Finite",
+          "type": "boolean"
+        },
+        "causal_lm_importable": {
+          "const": true,
+          "default": true,
+          "title": "Causal Lm Importable",
+          "type": "boolean"
+        },
+        "config_importable": {
+          "const": true,
+          "default": true,
+          "title": "Config Importable",
+          "type": "boolean"
+        },
+        "forward_finite": {
+          "const": true,
+          "default": true,
+          "title": "Forward Finite",
+          "type": "boolean"
+        },
+        "parameter_count": {
+          "exclusiveMinimum": 0,
+          "title": "Parameter Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "parameter_count"
+      ],
+      "title": "M4QwenApiEvidence",
+      "type": "object"
+    },
+    "M4TorchApiEvidence": {
+      "additionalProperties": false,
+      "description": "PyTorch APIs required before implementing the M4 training path.",
+      "properties": {
+        "dcp_load_importable": {
+          "const": true,
+          "default": true,
+          "title": "Dcp Load Importable",
+          "type": "boolean"
+        },
+        "dcp_save_importable": {
+          "const": true,
+          "default": true,
+          "title": "Dcp Save Importable",
+          "type": "boolean"
+        },
+        "distributed_available": {
+          "const": true,
+          "default": true,
+          "title": "Distributed Available",
+          "type": "boolean"
+        },
+        "fully_shard_importable": {
+          "const": true,
+          "default": true,
+          "title": "Fully Shard Importable",
+          "type": "boolean"
+        }
+      },
+      "title": "M4TorchApiEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Public, privacy-safe result of the bounded M4 dependency Smoke.",
+  "properties": {
+    "fixed_qwen3_8b_revision_verified": {
+      "const": false,
+      "default": false,
+      "title": "Fixed Qwen3 8B Revision Verified",
+      "type": "boolean"
+    },
+    "network_accessed": {
+      "const": false,
+      "default": false,
+      "title": "Network Accessed",
+      "type": "boolean"
+    },
+    "packages": {
+      "$ref": "#/$defs/M4PackageVersions"
+    },
+    "profile": {
+      "const": "m4-fsdp2-qwen",
+      "default": "m4-fsdp2-qwen",
+      "title": "Profile",
+      "type": "string"
+    },
+    "python_version": {
+      "pattern": "^3\\.11\\.",
+      "title": "Python Version",
+      "type": "string"
+    },
+    "qwen_apis": {
+      "$ref": "#/$defs/M4QwenApiEvidence"
+    },
+    "remote_model_assets_loaded": {
+      "const": false,
+      "default": false,
+      "title": "Remote Model Assets Loaded",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "pass",
+      "default": "pass",
+      "title": "Status",
+      "type": "string"
+    },
+    "torch_apis": {
+      "$ref": "#/$defs/M4TorchApiEvidence"
+    },
+    "torch_cuda_available": {
+      "title": "Torch Cuda Available",
+      "type": "boolean"
+    },
+    "torch_cuda_runtime": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Torch Cuda Runtime"
+    },
+    "torch_nccl_version": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Torch Nccl Version"
+    }
+  },
+  "required": [
+    "python_version",
+    "packages",
+    "torch_cuda_runtime",
+    "torch_cuda_available",
+    "torch_nccl_version",
+    "torch_apis",
+    "qwen_apis"
+  ],
+  "title": "M4DependencySmokeResult",
+  "type": "object"
+}

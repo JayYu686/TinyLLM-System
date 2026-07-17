@@ -27,11 +27,12 @@ def test_public_artifact_check_redacts_violation_value(tmp_path: Path) -> None:
     assert "sitonholy" not in violations[0]
 
 
-def test_repository_checks_ignore_isolated_baseline_environment(tmp_path: Path) -> None:
-    private = tmp_path / ".venv-baseline" / "package"
-    private.mkdir(parents=True)
-    (private / "README.md").write_text("[missing](missing.md)\n", encoding="utf-8")
-    (private / "metadata.txt").write_text("host: sitonholy\n", encoding="utf-8")
+def test_repository_checks_ignore_isolated_dependency_environments(tmp_path: Path) -> None:
+    for environment in (".venv-baseline", ".venv-m4"):
+        private = tmp_path / environment / "package"
+        private.mkdir(parents=True)
+        (private / "README.md").write_text("[missing](missing.md)\n", encoding="utf-8")
+        (private / "metadata.txt").write_text("host: sitonholy\n", encoding="utf-8")
     public = tmp_path / "README.md"
     public.write_text("# Public\n", encoding="utf-8")
 

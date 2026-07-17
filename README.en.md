@@ -35,7 +35,7 @@ missing results stay explicitly unevaluated.
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
 | M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
-| M4 FSDP2 | In progress | Two-process CPU/Gloo Tiny Model correctness passes; no CUDA, DCP, Qwen3-8B, or four-GPU result is claimed |
+| M4 FSDP2 | In progress | Isolated dependencies and single-GPU BF16 CUDA/NCCL pass; multi-GPU communication, DCP, Qwen3-8B, and four-GPU gates remain open |
 | M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
 
 The complete M0 evidence is in the
@@ -93,8 +93,11 @@ eight-GPU and controlled cross-NUMA claims.
 
 The first [M4 FSDP2 CPU/Gloo correctness report](reports/m4/fsdp2_cpu_correctness.md) verifies an
 explicit CPU DeviceMesh, DTensor shard coverage, forward/backward, optimizer steps, reduced Loss,
-full-state reconstruction, and World Size mismatch refusal across two processes. It does not claim
-CUDA, DCP, Qwen3-8B, or four-GPU support.
+full-state reconstruction, and World Size mismatch refusal across two processes. The subsequent
+[isolated dependency and CUDA readiness report](reports/m4/fsdp2_cuda_readiness.md) verifies the
+separate `.venv-m4`, network-free Tiny Qwen autograd, and a single-GPU BF16 CUDA/NCCL path while
+retaining a busy-GPU preflight refusal. It does not claim multi-GPU communication, DCP, Qwen3-8B,
+or four-GPU support.
 
 ## System boundary
 

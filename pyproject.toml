@@ -32,6 +32,12 @@ baseline = [
   "tokenizers>=0.22.2,<0.23",
   "transformers>=4.57.6,<4.58",
 ]
+m4 = [
+  "accelerate>=1.12,<2",
+  "safetensors>=0.6,<0.7",
+  "tokenizers>=0.22.2,<0.23",
+  "transformers>=4.57.6,<4.58",
+]
 dev = [
   "mypy>=1.11,<2",
   "pip-audit>=2.9,<3",

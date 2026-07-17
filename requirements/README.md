@@ -9,6 +9,7 @@ updated.
 | `constraints/runtime.txt` | Direct runtime dependency versions | CPU CI and RTX 3090 development environment |
 | `constraints/dev.txt` | Direct quality-tool versions | CPU CI and RTX 3090 development environment |
 | `constraints/baseline.txt` | Qwen3 and lm-eval Baseline dependencies | RTX 3090 M2.4c compatibility Smoke |
+| `constraints/m4.txt` | FSDP2/DCP and Qwen3 training dependencies | Isolated M4 CPU/API compatibility Smoke |
 | `torch-cpu.txt` | CPU-only CI and local smoke tests | CPU CI |
 | `torch-cu118.txt` | RTX 3090 CUDA 11.8 profile | M0 hardware smoke |
 | `torch-v100-cu118.txt` | Prospective V100 FP16 profile | Not validated; cannot be used for a release claim |
@@ -27,7 +28,8 @@ not evidence that the wheel has no vulnerabilities. PyTorch revisions remain pin
 must be reviewed against upstream security advisories before a release.
 
 Install the CPU profile with `make bootstrap-cpu`, the main RTX 3090 profile with
-`make bootstrap-gpu`, or the M2.4c model-evaluation profile with `make bootstrap-baseline`.
+`make bootstrap-gpu`, the M2.4c model-evaluation profile with `make bootstrap-baseline`, or the
+isolated FSDP2/Qwen profile with `make bootstrap-m4`.
 The Baseline uses `.venv-baseline` because its reviewed Transformers 4.57 line requires
 Tokenizers 0.22, while deterministic M2 data builds remain pinned to Tokenizers 0.21.4 in the
 default `.venv`. Run Baseline commands through `.venv-baseline/bin/tinyllm`; do not reuse that
@@ -38,8 +40,10 @@ The Baseline dependency audit and its narrowly scoped, time-bounded advisory exc
 documented in [baseline_security_exceptions.md](baseline_security_exceptions.md). Run it with
 `make audit-baseline`; an exception is not a claim that the dependency is vulnerability-free.
 
-M4 FSDP2 dependencies are intentionally not treated as validated by either the core or Baseline
-profile. M4 uses a separate `.venv-m4`; its constraints file will be committed only after the
-PyTorch FSDP2/DCP, Transformers Qwen, Safetensors, and CPU/Gloo compatibility smoke described in
-[the M4 contract](../docs/m4_fsdp2_contract.md) passes. Until then, the presence of an importable
-API is readiness evidence, not a model-training support claim.
+M4 FSDP2 dependencies are not treated as validated by either the core or Baseline profile. M4
+uses a separate `.venv-m4`. The committed direct constraints passed the PyTorch FSDP2/DCP,
+Transformers Qwen, Safetensors, Tiny Qwen forward/backward, and CPU/Gloo compatibility gates
+described in [the M4 contract](../docs/m4_fsdp2_contract.md). This is dependency-readiness
+evidence only: it does not prove that the fixed Qwen3-8B revision has been acquired or fits on
+four RTX 3090 GPUs. Run `make m4-dependency-smoke` and `make audit-m4`; the scoped audit exceptions
+are documented in [m4_security_exceptions.md](m4_security_exceptions.md).

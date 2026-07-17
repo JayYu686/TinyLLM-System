@@ -1,5 +1,9 @@
 # M4 隔离依赖与 CUDA 就绪性报告
 
+> 本报告冻结的是 2026-07-16 的依赖与单卡就绪性证据。后续真实双卡通信、Activation
+> Checkpointing 和 Rank 故障结果见
+> [M4.1 双卡报告](fsdp2_multigpu_activation_failure.md)；下文的“尚未验证”保留为当时边界。
+
 ## 1. 结论
 
 M4 的独立依赖环境和单卡 CUDA/NCCL API 路径已经通过真实 Smoke，但 M4.1 仍未完成：

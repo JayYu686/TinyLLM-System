@@ -5,6 +5,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- added non-reentrant Transformer-block activation checkpointing, strict wrapped-module evidence,
+  and a forced nonzero-Rank exit diagnostic; passed real two-RTX-3090 BF16 CUDA/NCCL FSDP2
+  correctness and Rank-failure runs while keeping DCP, Qwen3-8B, memory, and throughput unclaimed;
 - froze an isolated M4 dependency profile with a network-free Tiny Qwen autograd gate, dedicated
   audit policy, schema snapshot, and CI job; revalidated CPU/Gloo and passed a real single-RTX-3090
   BF16 CUDA/NCCL FSDP2 Smoke while retaining a two-GPU busy-card preflight refusal;

@@ -161,9 +161,10 @@ M3 阻塞 M4；完成后开始正式投递。
 
 ## 9. Milestone 4：FSDP2 分片训练（Week 7）
 
-状态：`IN_PROGRESS`。M1–M3 前置门禁已解除；M4.1 两进程 CPU/Gloo、独立依赖环境和
-单卡 BF16 CUDA/NCCL Tiny Model 已通过，双卡请求在忙卡 Preflight 被正确拒绝。下一门禁
-是真实双卡通信、Activation Checkpointing 和 Rank 失败；尚未产生 Qwen3-8B 显存或吞吐结论。
+状态：`IN_PROGRESS`。M1–M3 前置门禁已解除；M4.1 已取得两进程 CPU/Gloo、独立依赖、
+单卡以及真实双卡 BF16 CUDA/NCCL Tiny Model 证据，并验证 Activation Checkpointing 和
+Rank 1 中途退出诊断。下一门禁是 M4.2 DCP Sharded Checkpoint/Exact Resume；尚未产生
+Qwen3-8B 显存或吞吐结论。
 
 输入：M1/M2/M3，通过 revision/许可证/依赖 Smoke 的 Qwen3-8B。
 

@@ -1,0 +1,341 @@
+{
+  "$defs": {
+    "FSDP2CheckpointConfig": {
+      "additionalProperties": false,
+      "description": "DCP publication and rolling-retention policy for M4.2.",
+      "properties": {
+        "keep_last": {
+          "exclusiveMinimum": 0,
+          "title": "Keep Last",
+          "type": "integer"
+        },
+        "save_steps": {
+          "exclusiveMinimum": 0,
+          "title": "Save Steps",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "save_steps",
+        "keep_last"
+      ],
+      "title": "FSDP2CheckpointConfig",
+      "type": "object"
+    },
+    "FSDP2PolicyConfig": {
+      "additionalProperties": false,
+      "description": "Explicit FSDP2 sharding policy for the bounded correctness gate.",
+      "properties": {
+        "activation_checkpointing": {
+          "default": false,
+          "title": "Activation Checkpointing",
+          "type": "boolean"
+        },
+        "backend": {
+          "enum": [
+            "gloo",
+            "nccl"
+          ],
+          "title": "Backend",
+          "type": "string"
+        },
+        "cpu_offload": {
+          "const": false,
+          "default": false,
+          "title": "Cpu Offload",
+          "type": "boolean"
+        },
+        "device_type": {
+          "enum": [
+            "cpu",
+            "cuda"
+          ],
+          "title": "Device Type",
+          "type": "string"
+        },
+        "reshard_after_forward": {
+          "const": true,
+          "default": true,
+          "title": "Reshard After Forward",
+          "type": "boolean"
+        },
+        "strategy": {
+          "const": "fsdp2",
+          "title": "Strategy",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "default": 120,
+          "maximum": 1800,
+          "minimum": 10,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "world_size": {
+          "maximum": 4,
+          "minimum": 1,
+          "title": "World Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "strategy",
+        "backend",
+        "device_type",
+        "world_size"
+      ],
+      "title": "FSDP2PolicyConfig",
+      "type": "object"
+    },
+    "PrecisionConfig": {
+      "additionalProperties": false,
+      "description": "Numerical precision policy for one hardware profile.",
+      "properties": {
+        "allow_tf32": {
+          "title": "Allow Tf32",
+          "type": "boolean"
+        },
+        "dtype": {
+          "enum": [
+            "fp32",
+            "bf16",
+            "fp16"
+          ],
+          "title": "Dtype",
+          "type": "string"
+        },
+        "use_grad_scaler": {
+          "title": "Use Grad Scaler",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dtype",
+        "allow_tf32",
+        "use_grad_scaler"
+      ],
+      "title": "PrecisionConfig",
+      "type": "object"
+    },
+    "RunConfig": {
+      "additionalProperties": false,
+      "description": "Human identity and random seed for one training run.",
+      "properties": {
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "seed"
+      ],
+      "title": "RunConfig",
+      "type": "object"
+    },
+    "TinyGPTConfig": {
+      "additionalProperties": false,
+      "description": "Strict, immutable architecture parameters for TinyGPT.",
+      "properties": {
+        "dropout": {
+          "default": 0.0,
+          "exclusiveMaximum": 1.0,
+          "minimum": 0.0,
+          "title": "Dropout",
+          "type": "number"
+        },
+        "hidden_size": {
+          "default": 192,
+          "exclusiveMinimum": 0,
+          "title": "Hidden Size",
+          "type": "integer"
+        },
+        "intermediate_size": {
+          "default": 512,
+          "exclusiveMinimum": 0,
+          "title": "Intermediate Size",
+          "type": "integer"
+        },
+        "max_sequence_length": {
+          "default": 128,
+          "minimum": 2,
+          "title": "Max Sequence Length",
+          "type": "integer"
+        },
+        "num_heads": {
+          "default": 6,
+          "exclusiveMinimum": 0,
+          "title": "Num Heads",
+          "type": "integer"
+        },
+        "num_layers": {
+          "default": 4,
+          "exclusiveMinimum": 0,
+          "title": "Num Layers",
+          "type": "integer"
+        },
+        "rms_norm_epsilon": {
+          "default": 1e-06,
+          "exclusiveMinimum": 0,
+          "title": "Rms Norm Epsilon",
+          "type": "number"
+        },
+        "rope_theta": {
+          "default": 10000.0,
+          "exclusiveMinimum": 0,
+          "title": "Rope Theta",
+          "type": "number"
+        },
+        "tie_word_embeddings": {
+          "default": true,
+          "title": "Tie Word Embeddings",
+          "type": "boolean"
+        },
+        "vocab_size": {
+          "default": 256,
+          "minimum": 2,
+          "title": "Vocab Size",
+          "type": "integer"
+        }
+      },
+      "title": "TinyGPTConfig",
+      "type": "object"
+    },
+    "ToyDataConfig": {
+      "additionalProperties": false,
+      "description": "Configuration for deterministic synthetic token data.",
+      "properties": {
+        "kind": {
+          "const": "toy",
+          "title": "Kind",
+          "type": "string"
+        },
+        "num_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Num Samples",
+          "type": "integer"
+        },
+        "sequence_length": {
+          "minimum": 2,
+          "title": "Sequence Length",
+          "type": "integer"
+        },
+        "vocab_size": {
+          "minimum": 2,
+          "title": "Vocab Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "vocab_size",
+        "sequence_length",
+        "num_samples"
+      ],
+      "title": "ToyDataConfig",
+      "type": "object"
+    },
+    "TrainingLoopConfig": {
+      "additionalProperties": false,
+      "description": "Optimizer-step semantics for M1.",
+      "properties": {
+        "gradient_accumulation_steps": {
+          "exclusiveMinimum": 0,
+          "title": "Gradient Accumulation Steps",
+          "type": "integer"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "max_grad_norm": {
+          "exclusiveMinimum": 0,
+          "title": "Max Grad Norm",
+          "type": "number"
+        },
+        "max_steps": {
+          "exclusiveMinimum": 0,
+          "title": "Max Steps",
+          "type": "integer"
+        },
+        "micro_batch_size": {
+          "exclusiveMinimum": 0,
+          "title": "Micro Batch Size",
+          "type": "integer"
+        },
+        "warmup_steps": {
+          "minimum": 0,
+          "title": "Warmup Steps",
+          "type": "integer"
+        },
+        "weight_decay": {
+          "minimum": 0,
+          "title": "Weight Decay",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_steps",
+        "micro_batch_size",
+        "gradient_accumulation_steps",
+        "learning_rate",
+        "weight_decay",
+        "max_grad_norm",
+        "warmup_steps"
+      ],
+      "title": "TrainingLoopConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "M4.2 correctness config with mandatory sharded Checkpoint policy.",
+  "properties": {
+    "checkpoint": {
+      "$ref": "#/$defs/FSDP2CheckpointConfig"
+    },
+    "data": {
+      "$ref": "#/$defs/ToyDataConfig"
+    },
+    "distributed": {
+      "$ref": "#/$defs/FSDP2PolicyConfig"
+    },
+    "model": {
+      "$ref": "#/$defs/TinyGPTConfig"
+    },
+    "precision": {
+      "$ref": "#/$defs/PrecisionConfig"
+    },
+    "run": {
+      "$ref": "#/$defs/RunConfig"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "training": {
+      "$ref": "#/$defs/TrainingLoopConfig"
+    }
+  },
+  "required": [
+    "schema_version",
+    "run",
+    "model",
+    "data",
+    "training",
+    "precision",
+    "distributed",
+    "checkpoint"
+  ],
+  "title": "FSDP2RecoveryConfig",
+  "type": "object"
+}

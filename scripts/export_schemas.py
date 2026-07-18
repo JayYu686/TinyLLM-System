@@ -79,7 +79,8 @@ from tinyllm.training.ddp_schema import (
     DDPPartitionEvidence,
     DDPTrainingResult,
 )
-from tinyllm.training.fsdp2_config import FSDP2CorrectnessConfig
+from tinyllm.training.fsdp2_config import FSDP2CorrectnessConfig, FSDP2RecoveryConfig
+from tinyllm.training.fsdp2_recovery_schema import FSDP2RecoveryResult
 from tinyllm.training.fsdp2_schema import (
     FSDP2CorrectnessSummary,
     FSDP2RankEvidence,
@@ -127,6 +128,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "general-task-result-v1.schema.json": GeneralTaskResult,
     "fsdp2-correctness-config-v1.schema.json": FSDP2CorrectnessConfig,
     "fsdp2-correctness-summary-v1.schema.json": FSDP2CorrectnessSummary,
+    "fsdp2-recovery-config-v1.schema.json": FSDP2RecoveryConfig,
+    "fsdp2-recovery-result-v1.schema.json": FSDP2RecoveryResult,
     "fsdp2-rank-evidence-v1.schema.json": FSDP2RankEvidence,
     "fsdp2-rank-failure-evidence-v1.schema.json": FSDP2RankFailureEvidence,
     "fsdp2-training-result-v1.schema.json": FSDP2TrainingResult,

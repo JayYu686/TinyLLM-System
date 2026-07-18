@@ -7,7 +7,9 @@ import pytest
 from tinyllm.training.fsdp2_config import (
     FSDP2ConfigError,
     fsdp2_config_from_mapping,
+    fsdp2_recovery_config_from_mapping,
     load_fsdp2_config,
+    load_fsdp2_recovery_config,
 )
 
 
@@ -124,3 +126,22 @@ def test_fsdp2_config_rejects_non_yaml_extension(tmp_path: Path) -> None:
 
     with pytest.raises(FSDP2ConfigError, match=".yaml"):
         load_fsdp2_config(path)
+
+
+def test_load_fsdp2_dcp_recovery_config() -> None:
+    config = load_fsdp2_recovery_config(
+        Path("configs/fsdp2/tinygpt_debug_gloo_dcp_recovery_smoke.yaml")
+    )
+
+    assert config.training.max_steps == 6
+    assert config.checkpoint.save_steps == 2
+    assert config.checkpoint.keep_last == 2
+    assert config.distributed.activation_checkpointing is True
+
+
+def test_fsdp2_recovery_requires_periodic_checkpoint_before_final_step() -> None:
+    mapping = valid_mapping()
+    mapping["checkpoint"] = {"save_steps": 2, "keep_last": 2}
+
+    with pytest.raises(FSDP2ConfigError, match="before training.max_steps"):
+        fsdp2_recovery_config_from_mapping(mapping)

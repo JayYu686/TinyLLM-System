@@ -17,11 +17,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--fail-rank", type=int)
+    parser.add_argument("--fail-after-step", type=int)
     args = parser.parse_args()
     try:
         result = run_fsdp2_correctness(
             config_path=args.config,
             output_root=args.output_root,
+            fail_rank=args.fail_rank,
+            fail_after_step=args.fail_after_step,
         )
     except Exception as exc:
         if os.environ.get("LOCAL_RANK", "0") == "0":

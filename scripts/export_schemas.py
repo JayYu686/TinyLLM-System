@@ -83,6 +83,7 @@ from tinyllm.training.fsdp2_config import FSDP2CorrectnessConfig
 from tinyllm.training.fsdp2_schema import (
     FSDP2CorrectnessSummary,
     FSDP2RankEvidence,
+    FSDP2RankFailureEvidence,
     FSDP2TrainingResult,
 )
 from tinyllm.training.m4_dependencies import M4DependencySmokeResult
@@ -127,6 +128,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "fsdp2-correctness-config-v1.schema.json": FSDP2CorrectnessConfig,
     "fsdp2-correctness-summary-v1.schema.json": FSDP2CorrectnessSummary,
     "fsdp2-rank-evidence-v1.schema.json": FSDP2RankEvidence,
+    "fsdp2-rank-failure-evidence-v1.schema.json": FSDP2RankFailureEvidence,
     "fsdp2-training-result-v1.schema.json": FSDP2TrainingResult,
     "human-rubric-scorer-v1.schema.json": HumanRubricScorer,
     "human-rubric-judgment-v1.schema.json": HumanRubricJudgment,

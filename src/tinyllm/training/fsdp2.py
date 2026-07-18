@@ -8,12 +8,18 @@ import os
 import shutil
 import uuid
 from datetime import UTC, datetime, timedelta
+from functools import partial
 from pathlib import Path
 from typing import Literal, cast
 
 import torch
 from torch import Tensor, nn
 from torch import distributed as dist
+from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
+    CheckpointImpl,
+    apply_activation_checkpointing,
+    checkpoint_wrapper,
+)
 from torch.distributed.device_mesh import init_device_mesh
 from torch.distributed.fsdp import MixedPrecisionPolicy, fully_shard
 from torch.distributed.tensor import DTensor
@@ -22,6 +28,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 from tinyllm.data import ToyTokenDataset
 from tinyllm.lineage import read_git_identity
 from tinyllm.models.tinygpt import TinyGPT
+from tinyllm.models.tinygpt.layers import TransformerBlock
 from tinyllm.schemas import canonical_config_hash, generate_run_id
 from tinyllm.training.distributed import (
     all_gather_objects,
@@ -37,6 +44,7 @@ from tinyllm.training.fsdp2_config import FSDP2CorrectnessConfig, load_fsdp2_con
 from tinyllm.training.fsdp2_schema import (
     FSDP2CorrectnessSummary,
     FSDP2RankEvidence,
+    FSDP2RankFailureEvidence,
     FSDP2TrainingResult,
 )
 from tinyllm.training.metrics import TrainingStepMetrics
@@ -167,6 +175,41 @@ def _mixed_precision_policy(config: FSDP2CorrectnessConfig) -> MixedPrecisionPol
     return MixedPrecisionPolicy()
 
 
+def _apply_activation_checkpointing(
+    model: TinyGPT,
+    *,
+    config: FSDP2CorrectnessConfig,
+) -> tuple[Literal["TransformerBlock"] | None, int]:
+    """Wrap each TinyGPT TransformerBlock with non-reentrant activation checkpointing."""
+
+    if not config.distributed.activation_checkpointing:
+        return None, 0
+    expected = sum(isinstance(module, TransformerBlock) for module in model.modules())
+    if expected != config.model.num_layers or expected <= 0:
+        raise TrainingError(
+            TrainingErrorCode.DISTRIBUTED_STATE_MISMATCH,
+            "activation checkpointing target count does not match the model config",
+            context={"actual": expected, "expected": config.model.num_layers},
+        )
+    wrapper = partial(
+        checkpoint_wrapper,
+        checkpoint_impl=CheckpointImpl.NO_REENTRANT,
+    )
+    apply_activation_checkpointing(
+        model,
+        checkpoint_wrapper_fn=wrapper,
+        check_fn=lambda module: isinstance(module, TransformerBlock),
+    )
+    wrapped = sum(hasattr(module, "_checkpoint_wrapped_module") for module in model.modules())
+    if wrapped != expected:
+        raise TrainingError(
+            TrainingErrorCode.DISTRIBUTED_STATE_MISMATCH,
+            "activation checkpointing did not wrap every TransformerBlock",
+            context={"actual": wrapped, "expected": expected},
+        )
+    return "TransformerBlock", wrapped
+
+
 def _apply_fully_shard(
     model: TinyGPT,
     *,
@@ -207,6 +250,7 @@ def _new_rank_zero_run(
     artifact_dir = (output_root / run_id).resolve()
     artifact_dir.mkdir(parents=False, exist_ok=False)
     (artifact_dir / "checkpoints").mkdir()
+    (artifact_dir / "failures").mkdir()
     shutil.copyfile(config_path, artifact_dir / "config.original.yaml")
     _atomic_json(artifact_dir / "config.resolved.json", config.to_dict())
     _atomic_json(
@@ -285,10 +329,31 @@ def _require_finite_scalar_loss(loss: Tensor | None, *, global_step: int) -> Ten
     return loss
 
 
+def _validate_failure_injection(
+    *,
+    fail_rank: int | None,
+    fail_after_step: int | None,
+    world_size: int,
+    max_steps: int,
+) -> None:
+    """Validate the bounded M4.1 nonzero-Rank failure interface."""
+
+    if (fail_rank is None) != (fail_after_step is None):
+        raise ValueError("fail-rank and fail-after-step must be provided together")
+    if fail_rank is None:
+        return
+    if not 1 <= fail_rank < world_size:
+        raise ValueError("fail-rank must select a nonzero Rank inside world_size")
+    if fail_after_step is None or not 1 <= fail_after_step < max_steps:
+        raise ValueError("fail-after-step must be before training.max_steps")
+
+
 def run_fsdp2_correctness(
     *,
     config_path: Path,
     output_root: Path,
+    fail_rank: int | None = None,
+    fail_after_step: int | None = None,
 ) -> FSDP2TrainingResult | None:
     """Run one bounded torchrun FSDP2 gate and return the Rank-zero result."""
 
@@ -307,9 +372,16 @@ def run_fsdp2_correctness(
                 "expected_world_size": config.distributed.world_size,
             },
         )
+    _validate_failure_injection(
+        fail_rank=fail_rank,
+        fail_after_step=fail_after_step,
+        world_size=launch.world_size,
+        max_steps=config.training.max_steps,
+    )
     device = _select_device(config, local_rank=launch.local_rank)
     _initialize_process_group(config, device=device)
     artifact_dir: Path | None = None
+    failure_armed = False
     try:
         config_hash = canonical_config_hash(config)
         git_commit, git_dirty = read_git_identity(config_path.parent)
@@ -379,6 +451,10 @@ def run_fsdp2_correctness(
             all_gather_objects(model_state_sha256(model), world_size=launch.world_size),
             stage="initialization",
         )
+        activation_block_type, activation_block_count = _apply_activation_checkpointing(
+            model,
+            config=config,
+        )
         _apply_fully_shard(model, config=config)
         optimizer = build_adamw(model, config.training)
         scheduler = build_warmup_cosine_scheduler(optimizer, config.training)
@@ -443,6 +519,51 @@ def run_fsdp2_correctness(
                 _append_jsonl(artifact_dir / "metrics.jsonl", metric.to_dict())
                 durable_metrics += 1
 
+            if fail_after_step == global_step:
+                if fail_rank is None:  # pragma: no cover - validated before launch
+                    raise RuntimeError("validated FSDP2 failure Rank is missing")
+                failure_armed = True
+                if launch.rank == 0:
+                    if artifact_dir is None:
+                        raise RuntimeError("rank-zero FSDP2 Artifact directory is missing")
+                    failure = FSDP2RankFailureEvidence(
+                        run_id=run_id,
+                        config_sha256=config_hash,
+                        git_commit=git_commit,
+                        world_size=launch.world_size,
+                        rank=fail_rank,
+                        global_step=global_step,
+                    )
+                    _atomic_json(
+                        artifact_dir / "failures" / f"rank-{fail_rank}-step-{global_step:08d}.json",
+                        failure.to_dict(),
+                    )
+                    _append_jsonl(artifact_dir / "events.jsonl", failure.to_dict())
+                    _atomic_json(
+                        artifact_dir / "run.json",
+                        {
+                            "schema_version": "1.0",
+                            "run_id": run_id,
+                            "status": "failure_injected",
+                            "strategy": "fsdp2",
+                            "world_size": launch.world_size,
+                            "global_step": global_step,
+                            "config_hash": config_hash,
+                            "dataset_version": f"toy-fsdp2-{config_hash[:8]}",
+                            "git_commit": git_commit,
+                            "git_dirty": git_dirty,
+                            "checkpoint_status": "not_evaluated_m4_1",
+                            "reason": "forced_rank_exit",
+                            "failure_rank": fail_rank,
+                            "forced_exit_code": 17,
+                            "resumable": False,
+                        },
+                    )
+                distributed_barrier(device, launch)
+                if launch.rank == fail_rank:
+                    os._exit(17)
+                distributed_barrier(device, launch)
+
         final_hash = _require_identical_hashes(
             all_gather_objects(
                 full_fsdp2_state_sha256(model),
@@ -478,6 +599,9 @@ def run_fsdp2_correctness(
                 local_shard_parameter_sum=sum(item.local_shard_numel for item in rank_evidence),
                 initial_full_parameter_sha256=initial_hash,
                 final_full_parameter_sha256=final_hash,
+                activation_checkpointing=config.distributed.activation_checkpointing,
+                activation_checkpointed_block_type=activation_block_type,
+                activation_checkpointed_block_count=activation_block_count,
                 rank_evidence=rank_evidence,
                 max_loss_reduction_abs_diff=max_loss_diff,
                 max_gradient_norm_abs_diff=max_gradient_norm_diff,
@@ -521,20 +645,25 @@ def run_fsdp2_correctness(
         return result_value
     except Exception as exc:
         if launch.rank == 0 and artifact_dir is not None:
-            _atomic_json(
-                artifact_dir / "run.json",
-                {
-                    "schema_version": "1.0",
-                    "status": "failed",
-                    "strategy": "fsdp2",
-                    "world_size": launch.world_size,
-                    "error_type": type(exc).__name__,
-                },
-            )
             _append_jsonl(
                 artifact_dir / "events.jsonl",
-                {"event": "fsdp2_run_failed", "error_type": type(exc).__name__},
+                {
+                    "event": "fsdp2_run_failed",
+                    "error_type": type(exc).__name__,
+                    "failure_injection_armed": failure_armed,
+                },
             )
+            if not failure_armed:
+                _atomic_json(
+                    artifact_dir / "run.json",
+                    {
+                        "schema_version": "1.0",
+                        "status": "failed",
+                        "strategy": "fsdp2",
+                        "world_size": launch.world_size,
+                        "error_type": type(exc).__name__,
+                    },
+                )
         raise
     finally:
         if dist.is_initialized():

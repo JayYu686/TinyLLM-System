@@ -40,6 +40,7 @@ from tinyllm.training.fsdp2_config import (
 from tinyllm.training.fsdp2_schema import (
     FSDP2CorrectnessSummary,
     FSDP2RankEvidence,
+    FSDP2RankFailureEvidence,
     FSDP2TrainingResult,
 )
 from tinyllm.training.m4_dependencies import (
@@ -79,6 +80,7 @@ __all__ = [
     "FSDP2CorrectnessSummary",
     "FSDP2PolicyConfig",
     "FSDP2RankEvidence",
+    "FSDP2RankFailureEvidence",
     "FSDP2TrainingResult",
     "LoadedDDPCheckpoint",
     "M4DependencySmokeResult",

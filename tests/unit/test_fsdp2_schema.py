@@ -7,6 +7,7 @@ import pytest
 from tinyllm.training.fsdp2_schema import (
     FSDP2CorrectnessSummary,
     FSDP2RankEvidence,
+    FSDP2RankFailureEvidence,
     FSDP2TrainingResult,
 )
 
@@ -84,3 +85,42 @@ def test_fsdp2_training_result_binds_run_id_to_config_hash() -> None:
         FSDP2TrainingResult.model_validate(
             {**result.model_dump(mode="python"), "config_sha256": "c" * 64}
         )
+
+
+def test_fsdp2_summary_binds_activation_checkpointing_evidence() -> None:
+    summary = valid_summary()
+    activated = FSDP2CorrectnessSummary.model_validate(
+        {
+            **summary.model_dump(mode="python"),
+            "activation_checkpointing": True,
+            "activation_checkpointed_block_type": "TransformerBlock",
+            "activation_checkpointed_block_count": 2,
+        }
+    )
+    assert activated.activation_checkpointed_block_count == 2
+
+    with pytest.raises(ValueError, match="cannot report wrapped blocks"):
+        FSDP2CorrectnessSummary.model_validate(
+            {
+                **summary.model_dump(mode="python"),
+                "activation_checkpointed_block_count": 2,
+            }
+        )
+
+
+def test_fsdp2_rank_failure_evidence_rejects_rank_zero_and_out_of_range() -> None:
+    evidence = FSDP2RankFailureEvidence(
+        run_id="20260717T000000Z-fsdp2-rank-failure-aaaaaaaa-beef",
+        config_sha256="a" * 64,
+        git_commit="b" * 40,
+        world_size=2,
+        rank=1,
+        global_step=1,
+    )
+    assert evidence.resumable is False
+    assert evidence.checkpoint_status == "not_evaluated_m4_1"
+
+    with pytest.raises(ValueError):
+        FSDP2RankFailureEvidence.model_validate({**evidence.model_dump(mode="python"), "rank": 0})
+    with pytest.raises(ValueError, match="member of world_size"):
+        FSDP2RankFailureEvidence.model_validate({**evidence.model_dump(mode="python"), "rank": 2})

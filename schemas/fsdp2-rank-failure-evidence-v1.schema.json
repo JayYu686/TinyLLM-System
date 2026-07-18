@@ -1,0 +1,77 @@
+{
+  "additionalProperties": false,
+  "description": "Durable diagnostic written before one nonzero FSDP2 Rank exits.",
+  "properties": {
+    "checkpoint_status": {
+      "const": "not_evaluated_m4_1",
+      "default": "not_evaluated_m4_1",
+      "title": "Checkpoint Status",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "event": {
+      "const": "forced_rank_exit",
+      "default": "forced_rank_exit",
+      "title": "Event",
+      "type": "string"
+    },
+    "exit_code": {
+      "const": 17,
+      "default": 17,
+      "title": "Exit Code",
+      "type": "integer"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "global_step": {
+      "exclusiveMinimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "rank": {
+      "minimum": 1,
+      "title": "Rank",
+      "type": "integer"
+    },
+    "resumable": {
+      "const": false,
+      "default": false,
+      "title": "Resumable",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^(?P<timestamp>\\d{8}T\\d{6}Z)-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<config_hash>[a-f0-9]{8})-(?P<nonce>[a-f0-9]{4})$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "world_size": {
+      "maximum": 4,
+      "minimum": 2,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "config_sha256",
+    "git_commit",
+    "world_size",
+    "rank",
+    "global_step"
+  ],
+  "title": "FSDP2RankFailureEvidence",
+  "type": "object"
+}

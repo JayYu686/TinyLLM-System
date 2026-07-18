@@ -16,6 +16,7 @@ def _torchrun(
     config: Path,
     output_root: Path,
     processes: int,
+    extra: tuple[str, ...] = (),
 ) -> subprocess.CompletedProcess[str]:
     executable = Path(sys.executable).with_name("torchrun")
     assert executable.is_file(), "the constrained PyTorch environment must provide torchrun"
@@ -32,6 +33,7 @@ def _torchrun(
             str(config),
             "--output-root",
             str(output_root),
+            *extra,
         ],
         check=False,
         capture_output=True,
@@ -97,3 +99,55 @@ def test_fsdp2_world_size_mismatch_fails_before_artifact_creation(tmp_path: Path
     assert completed.returncode != 0
     assert "WORLD_SIZE does not match" in completed.stderr
     assert not tmp_path.exists() or not tuple(tmp_path.iterdir())
+
+
+@pytest.mark.integration
+def test_two_process_gloo_fsdp2_activation_checkpointing(tmp_path: Path) -> None:
+    completed = _torchrun(
+        config=Path(
+            "configs/fsdp2/tinygpt_debug_gloo_activation_checkpointing_smoke.yaml"
+        ).resolve(),
+        output_root=tmp_path,
+        processes=2,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    result = FSDP2TrainingResult.model_validate_json(completed.stdout)
+    assert result.summary.activation_checkpointing is True
+    assert result.summary.activation_checkpointed_block_type == "TransformerBlock"
+    assert result.summary.activation_checkpointed_block_count == 2
+    assert result.summary.local_shard_parameter_sum == result.summary.logical_parameter_count
+
+
+@pytest.mark.integration
+def test_two_process_gloo_fsdp2_nonzero_rank_exit_retains_diagnostics(
+    tmp_path: Path,
+) -> None:
+    completed = _torchrun(
+        config=Path(
+            "configs/fsdp2/tinygpt_debug_gloo_activation_checkpointing_smoke.yaml"
+        ).resolve(),
+        output_root=tmp_path,
+        processes=2,
+        extra=("--fail-rank", "1", "--fail-after-step", "1"),
+    )
+
+    assert completed.returncode != 0
+    assert "rank      : 1" in completed.stderr
+    assert "exitcode  : 17" in completed.stderr
+    run_dirs = tuple(path for path in tmp_path.iterdir() if path.is_dir())
+    assert len(run_dirs) == 1
+    run_dir = run_dirs[0]
+    failure_files = tuple((run_dir / "failures").glob("*.json"))
+    assert len(failure_files) == 1
+    failure = json.loads(failure_files[0].read_text(encoding="utf-8"))
+    assert failure["event"] == "forced_rank_exit"
+    assert failure["rank"] == 1
+    assert failure["exit_code"] == 17
+    assert failure["global_step"] == 1
+    assert failure["resumable"] is False
+    assert failure["checkpoint_status"] == "not_evaluated_m4_1"
+    run = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+    assert run["status"] == "failure_injected"
+    assert run["resumable"] is False
+    assert not tuple((run_dir / "checkpoints").iterdir())

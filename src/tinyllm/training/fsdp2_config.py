@@ -27,7 +27,7 @@ class FSDP2PolicyConfig(StrictSchema):
     timeout_seconds: int = Field(default=120, ge=10, le=1800)
     reshard_after_forward: Literal[True] = True
     cpu_offload: Literal[False] = False
-    activation_checkpointing: Literal[False] = False
+    activation_checkpointing: bool = False
 
     @model_validator(mode="after")
     def validate_backend_device(self) -> FSDP2PolicyConfig:

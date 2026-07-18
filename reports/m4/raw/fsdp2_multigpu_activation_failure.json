@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "status": "pass",
+  "scope": "m4_1_two_gpu_activation_and_rank_failure",
+  "run": {
+    "config_path": "configs/fsdp2/tinygpt_debug_nccl_bf16_two_gpu_activation_checkpointing_smoke.yaml",
+    "config_sha256": "8e9254ac8065830fc780f586cbbafa6dfdcd7ab030a7746e101681c191da3e8d",
+    "git_commit": "7ce1b9621070e5d97ec2359aa5c4a4597ad89e01",
+    "git_dirty": false
+  },
+  "environment": {
+    "python": "3.11.14",
+    "torch": "2.7.1+cu118",
+    "cuda_runtime": "11.8",
+    "nccl": "2.21.5",
+    "driver": "535.261.03",
+    "gpu_model": "NVIDIA GeForce RTX 3090",
+    "physical_gpu_indices": [6, 7],
+    "numa_node": 1,
+    "pair_topology": "PIX"
+  },
+  "success_preflight": {
+    "status": "pass",
+    "thresholds": {
+      "memory_used_mib_lte": 1024,
+      "utilization_percent_lte": 10,
+      "temperature_c_lte": 79
+    },
+    "gpus": [
+      {"index": 6, "memory_used_mib": 461, "utilization_percent": 0, "temperature_c": 32},
+      {"index": 7, "memory_used_mib": 281, "utilization_percent": 6, "temperature_c": 31}
+    ]
+  },
+  "success_run": {
+    "run_id": "20260717T024830Z-tinygpt-debug-fsdp2-nccl-bf16-two-gpu-activation-8e9254ac-2537",
+    "duration_seconds": 7.049,
+    "summary": {
+      "schema_version": "1.0",
+      "status": "pass",
+      "backend": "nccl",
+      "device_type": "cuda",
+      "world_size": 2,
+      "global_batch_size": 4,
+      "optimizer_steps": 2,
+      "durable_metric_records": 2,
+      "durable_writer_rank": 0,
+      "logical_parameter_count": 86336,
+      "local_shard_parameter_sum": 86336,
+      "initial_full_parameter_sha256": "6d08111b98de593d58881fdd222ce084ffada2b9ed24f0217bb2d2adca71337f",
+      "final_full_parameter_sha256": "50abf896f83904a243064f0a263ed24e36bd6c9d972dfded19a05ec97b603762",
+      "reshard_after_forward": true,
+      "cpu_offload": false,
+      "activation_checkpointing": true,
+      "activation_checkpointed_block_type": "TransformerBlock",
+      "activation_checkpointed_block_count": 2,
+      "rank_evidence": [
+        {
+          "schema_version": "1.0",
+          "rank": 0,
+          "device_type": "cuda",
+          "parameters_are_dtensor": true,
+          "local_shard_numel": 43168,
+          "local_shard_sha256": "7d911aee22bce703991afea03af49896cc724f42553316c82877e50d700cca1e"
+        },
+        {
+          "schema_version": "1.0",
+          "rank": 1,
+          "device_type": "cuda",
+          "parameters_are_dtensor": true,
+          "local_shard_numel": 43168,
+          "local_shard_sha256": "de1b3503f0f16a4d21f904b732283635460c2ea9f267d9f55b125bd2e91aa89c"
+        }
+      ],
+      "max_loss_reduction_abs_diff": 0.0,
+      "max_gradient_norm_abs_diff": 0.0,
+      "loss_reduction_atol": 1e-12,
+      "gradient_norm_atol": 1e-6,
+      "checkpoint_status": "not_evaluated_m4_1"
+    }
+  },
+  "rank_failure_preflight": {
+    "status": "pass",
+    "gpus": [
+      {"index": 6, "memory_used_mib": 461, "utilization_percent": 3, "temperature_c": 33},
+      {"index": 7, "memory_used_mib": 281, "utilization_percent": 0, "temperature_c": 30}
+    ]
+  },
+  "rank_failure_run": {
+    "run_id": "20260717T024854Z-tinygpt-debug-fsdp2-nccl-bf16-two-gpu-activation-8e9254ac-ac21",
+    "torchrun_exit_code": 1,
+    "run_status": "failure_injected",
+    "correctness_published": false,
+    "checkpoint_file_count": 0,
+    "diagnostic": {
+      "schema_version": "1.0",
+      "event": "forced_rank_exit",
+      "config_sha256": "8e9254ac8065830fc780f586cbbafa6dfdcd7ab030a7746e101681c191da3e8d",
+      "git_commit": "7ce1b9621070e5d97ec2359aa5c4a4597ad89e01",
+      "world_size": 2,
+      "rank": 1,
+      "exit_code": 17,
+      "global_step": 1,
+      "resumable": false,
+      "checkpoint_status": "not_evaluated_m4_1"
+    }
+  },
+  "validation": {
+    "non_gpu_tests_passed": 385,
+    "gpu_tests_deselected": 2,
+    "branch_coverage_percent": 85.06,
+    "ruff": "pass",
+    "format": "pass",
+    "mypy": "pass",
+    "schema_snapshots": "pass",
+    "markdown_links": "pass",
+    "public_artifact_policy": "pass"
+  },
+  "not_evaluated": [
+    "DCP sharded checkpoint and exact resume",
+    "Qwen3-8B model loading or memory fit",
+    "four-GPU FSDP2",
+    "peak training memory",
+    "training throughput",
+    "Safetensors deployment export"
+  ]
+}

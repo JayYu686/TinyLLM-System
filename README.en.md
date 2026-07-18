@@ -35,7 +35,7 @@ missing results stay explicitly unevaluated.
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
 | M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
-| M4 FSDP2 | In progress | Isolated dependencies and single-GPU BF16 CUDA/NCCL pass; multi-GPU communication, DCP, Qwen3-8B, and four-GPU gates remain open |
+| M4 FSDP2 | In progress | Two-GPU BF16/NCCL, activation checkpointing, and Rank-failure diagnostics pass; DCP, Qwen3-8B, and four-GPU gates remain open |
 | M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
 
 The complete M0 evidence is in the
@@ -98,6 +98,11 @@ full-state reconstruction, and World Size mismatch refusal across two processes.
 separate `.venv-m4`, network-free Tiny Qwen autograd, and a single-GPU BF16 CUDA/NCCL path while
 retaining a busy-GPU preflight refusal. It does not claim multi-GPU communication, DCP, Qwen3-8B,
 or four-GPU support.
+
+The subsequent [M4.1 two-GPU report](reports/m4/fsdp2_multigpu_activation_failure.md) verifies real
+two-Rank CUDA/NCCL on physical GPUs 6 and 7, activation checkpointing, complete shard coverage, and
+diagnostics for a forced Rank 1 exit with code 17. That failed Run is explicitly non-resumable;
+DCP Exact Resume remains M4.2 work.
 
 ## System boundary
 

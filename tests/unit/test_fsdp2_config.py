@@ -68,6 +68,17 @@ def test_load_fsdp2_gloo_smoke_config() -> None:
     assert config.to_dict()["distributed"]["reshard_after_forward"] is True
 
 
+def test_fsdp2_config_accepts_explicit_activation_checkpointing() -> None:
+    mapping = valid_mapping()
+    distributed = mapping["distributed"]
+    assert isinstance(distributed, dict)
+    distributed["activation_checkpointing"] = True
+
+    config = fsdp2_config_from_mapping(mapping)
+
+    assert config.distributed.activation_checkpointing is True
+
+
 def test_fsdp2_config_rejects_unknown_and_coerced_fields() -> None:
     mapping = valid_mapping()
     mapping["surprise"] = True

@@ -87,7 +87,11 @@ from tinyllm.training.fsdp2_schema import (
     FSDP2RankFailureEvidence,
     FSDP2TrainingResult,
 )
+from tinyllm.training.m4_dataset import M4DatasetViewManifest
 from tinyllm.training.m4_dependencies import M4DependencySmokeResult
+from tinyllm.training.m4_model_schema import M4ModelArtifactFile, M4ModelArtifactManifest
+from tinyllm.training.m4_qwen_config import M4QwenFSDP2Config
+from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -145,6 +149,12 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m2-tokenization-config-v1.schema.json": M2TokenizationConfig,
     "m1-training-config-v1.schema.json": M1TrainingConfig,
     "m4-dependency-smoke-result-v1.schema.json": M4DependencySmokeResult,
+    "m4-dataset-view-manifest-v1.schema.json": M4DatasetViewManifest,
+    "m4-model-artifact-file-v1.schema.json": M4ModelArtifactFile,
+    "m4-model-artifact-manifest-v1.schema.json": M4ModelArtifactManifest,
+    "m4-qwen-fsdp2-config-v1.schema.json": M4QwenFSDP2Config,
+    "m4-qwen-rank-memory-v1.schema.json": M4QwenRankMemory,
+    "m4-qwen-run-result-v1.schema.json": M4QwenRunResult,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,

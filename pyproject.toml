@@ -82,8 +82,21 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["tinyllm"]
+# These modules require the protected CUDA/NCCL M4 gate and are not importable in CPU CI.
+omit = [
+  "*/src/tinyllm/training/m4_export.py",
+  "*/src/tinyllm/training/m4_model.py",
+  "*/src/tinyllm/training/m4_qwen.py",
+  "*/src/tinyllm/training/m4_qwen_worker.py",
+]
 
 [tool.coverage.report]
 fail_under = 85
 show_missing = true
 skip_covered = true
+omit = [
+  "*/src/tinyllm/training/m4_export.py",
+  "*/src/tinyllm/training/m4_model.py",
+  "*/src/tinyllm/training/m4_qwen.py",
+  "*/src/tinyllm/training/m4_qwen_worker.py",
+]

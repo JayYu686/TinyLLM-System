@@ -1,0 +1,227 @@
+{
+  "$defs": {
+    "M4QwenRankMemory": {
+      "additionalProperties": false,
+      "description": "Peak CUDA memory and physical identity for one logical Rank.",
+      "properties": {
+        "final_allocated_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Final Allocated Bytes",
+          "type": "integer"
+        },
+        "final_reserved_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Final Reserved Bytes",
+          "type": "integer"
+        },
+        "peak_allocated_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Peak Allocated Bytes",
+          "type": "integer"
+        },
+        "peak_reserved_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Peak Reserved Bytes",
+          "type": "integer"
+        },
+        "physical_gpu_index": {
+          "maximum": 9,
+          "minimum": 0,
+          "title": "Physical Gpu Index",
+          "type": "integer"
+        },
+        "rank": {
+          "maximum": 3,
+          "minimum": 0,
+          "title": "Rank",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rank",
+        "physical_gpu_index",
+        "peak_allocated_bytes",
+        "peak_reserved_bytes",
+        "final_allocated_bytes",
+        "final_reserved_bytes"
+      ],
+      "title": "M4QwenRankMemory",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Rank-zero result for a Probe, interruption, or completed M4.3 phase.",
+  "properties": {
+    "activation_checkpointed_layers": {
+      "const": 36,
+      "title": "Activation Checkpointed Layers",
+      "type": "integer"
+    },
+    "artifact_dir": {
+      "format": "path",
+      "title": "Artifact Dir",
+      "type": "string"
+    },
+    "checkpoint_id": {
+      "anyOf": [
+        {
+          "pattern": "^checkpoint-step-\\d{8}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checkpoint Id"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "data_view_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Data View Sha256",
+      "type": "string"
+    },
+    "durable_metric_records": {
+      "maximum": 50,
+      "minimum": 1,
+      "title": "Durable Metric Records",
+      "type": "integer"
+    },
+    "export_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Export Sha256"
+    },
+    "git_commit": {
+      "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "global_step": {
+      "maximum": 50,
+      "minimum": 1,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "mode": {
+      "enum": [
+        "probe",
+        "fresh",
+        "exact_resume"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "model_parameter_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Parameter Sha256"
+    },
+    "rank_memory": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M4QwenRankMemory"
+        },
+        {
+          "$ref": "#/$defs/M4QwenRankMemory"
+        },
+        {
+          "$ref": "#/$defs/M4QwenRankMemory"
+        },
+        {
+          "$ref": "#/$defs/M4QwenRankMemory"
+        }
+      ],
+      "title": "Rank Memory",
+      "type": "array"
+    },
+    "resumed_from_step": {
+      "anyOf": [
+        {
+          "maximum": 49,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resumed From Step"
+    },
+    "run_id": {
+      "pattern": "^(?P<timestamp>\\d{8}T\\d{6}Z)-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<config_hash>[a-f0-9]{8})-(?P<nonce>[a-f0-9]{4})$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "probe_succeeded",
+        "interrupted",
+        "succeeded"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "world_size": {
+      "const": 4,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "status",
+    "mode",
+    "run_id",
+    "artifact_dir",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "model_artifact_sha256",
+    "data_view_sha256",
+    "world_size",
+    "global_step",
+    "durable_metric_records",
+    "activation_checkpointed_layers",
+    "rank_memory"
+  ],
+  "title": "M4QwenRunResult",
+  "type": "object"
+}

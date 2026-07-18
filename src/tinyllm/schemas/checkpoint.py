@@ -110,10 +110,13 @@ class CheckpointManifest(StrictSchema):
         if len(paths) != len(set(paths)):
             raise ValueError("checkpoint manifest contains duplicate file paths")
         rank_state_paths = sorted(entry.path for entry in self.files if entry.role == "rank_state")
-        if self.strategy == "ddp":
+        if self.strategy in {"ddp", "fsdp2"}:
             expected_rank_paths = [f"rank-{rank:05d}.pt" for rank in range(self.world_size)]
             if rank_state_paths != expected_rank_paths:
-                raise ValueError("DDP checkpoint must contain one contiguous state file per Rank")
+                raise ValueError(
+                    f"{self.strategy.upper()} checkpoint must contain one contiguous "
+                    "state file per Rank"
+                )
         elif rank_state_paths:
-            raise ValueError("only DDP checkpoints may contain rank_state files")
+            raise ValueError("only distributed checkpoints may contain rank_state files")
         return self

@@ -92,11 +92,50 @@ class FSDP2CorrectnessConfig(StrictSchema):
         return self.model_dump(mode="json")
 
 
+class FSDP2CheckpointConfig(StrictSchema):
+    """DCP publication and rolling-retention policy for M4.2."""
+
+    save_steps: int = Field(gt=0)
+    keep_last: int = Field(gt=0)
+
+
+class FSDP2RecoveryConfig(FSDP2CorrectnessConfig):
+    """M4.2 correctness config with mandatory sharded Checkpoint policy."""
+
+    checkpoint: FSDP2CheckpointConfig
+
+    @model_validator(mode="after")
+    def validate_recovery_boundary(self) -> FSDP2RecoveryConfig:
+        """Require at least one periodic DCP boundary before the final step."""
+
+        if self.checkpoint.save_steps >= self.training.max_steps:
+            raise ValueError("checkpoint.save_steps must be before training.max_steps")
+        return self
+
+
 def fsdp2_config_from_mapping(raw: object) -> FSDP2CorrectnessConfig:
     """Validate one decoded YAML object as an M4.1 correctness configuration."""
 
     try:
         return FSDP2CorrectnessConfig.model_validate(raw)
+    except ValidationError as exc:
+        messages: list[str] = []
+        for error in exc.errors(include_url=False, include_context=False):
+            location = ".".join(str(part) for part in error["loc"])
+            if error["type"] == "extra_forbidden":
+                messages.append(f"unknown config field: {location}")
+            elif location:
+                messages.append(f"{location}: {error['msg']}")
+            else:
+                messages.append(str(error["msg"]))
+        raise FSDP2ConfigError("; ".join(messages)) from exc
+
+
+def fsdp2_recovery_config_from_mapping(raw: object) -> FSDP2RecoveryConfig:
+    """Validate one decoded YAML object as an M4.2 recovery configuration."""
+
+    try:
+        return FSDP2RecoveryConfig.model_validate(raw)
     except ValidationError as exc:
         messages: list[str] = []
         for error in exc.errors(include_url=False, include_context=False):
@@ -124,3 +163,19 @@ def load_fsdp2_config(path: Path) -> FSDP2CorrectnessConfig:
     except yaml.YAMLError as exc:
         raise FSDP2ConfigError(f"invalid YAML in FSDP2 config: {path}") from exc
     return fsdp2_config_from_mapping(decoded)
+
+
+def load_fsdp2_recovery_config(path: Path) -> FSDP2RecoveryConfig:
+    """Load and validate an M4.2 DCP recovery YAML file."""
+
+    if path.suffix.lower() not in {".yaml", ".yml"}:
+        raise FSDP2ConfigError("FSDP2 config must use a .yaml or .yml extension")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise FSDP2ConfigError(f"cannot read FSDP2 config: {path}") from exc
+    try:
+        decoded = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise FSDP2ConfigError(f"invalid YAML in FSDP2 config: {path}") from exc
+    return fsdp2_recovery_config_from_mapping(decoded)

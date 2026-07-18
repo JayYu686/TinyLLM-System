@@ -31,12 +31,17 @@ from tinyllm.training.ddp_schema import (
 from tinyllm.training.distributed import TorchrunEnvironment, validate_sampler_partitions
 from tinyllm.training.errors import TrainingError, TrainingErrorCode
 from tinyllm.training.fsdp2 import run_fsdp2_correctness
+from tinyllm.training.fsdp2_checkpoint import FSDP2CheckpointStore, LoadedFSDP2Checkpoint
 from tinyllm.training.fsdp2_config import (
+    FSDP2CheckpointConfig,
     FSDP2ConfigError,
     FSDP2CorrectnessConfig,
     FSDP2PolicyConfig,
+    FSDP2RecoveryConfig,
     load_fsdp2_config,
+    load_fsdp2_recovery_config,
 )
+from tinyllm.training.fsdp2_recovery_schema import FSDP2RecoveryResult
 from tinyllm.training.fsdp2_schema import (
     FSDP2CorrectnessSummary,
     FSDP2RankEvidence,
@@ -76,13 +81,18 @@ __all__ = [
     "DDPRecoveryResult",
     "DDPTrainingResult",
     "FSDP2ConfigError",
+    "FSDP2CheckpointConfig",
+    "FSDP2CheckpointStore",
     "FSDP2CorrectnessConfig",
     "FSDP2CorrectnessSummary",
     "FSDP2PolicyConfig",
+    "FSDP2RecoveryConfig",
+    "FSDP2RecoveryResult",
     "FSDP2RankEvidence",
     "FSDP2RankFailureEvidence",
     "FSDP2TrainingResult",
     "LoadedDDPCheckpoint",
+    "LoadedFSDP2Checkpoint",
     "M4DependencySmokeResult",
     "M4PackageVersions",
     "M4QwenApiEvidence",
@@ -101,6 +111,7 @@ __all__ = [
     "build_rank_state",
     "load_training_config",
     "load_fsdp2_config",
+    "load_fsdp2_recovery_config",
     "restore_from_config",
     "restore_ddp_trainer",
     "restore_local_rng_state",

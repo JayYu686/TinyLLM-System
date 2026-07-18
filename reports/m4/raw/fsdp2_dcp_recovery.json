@@ -1,0 +1,62 @@
+{
+  "baseline": {
+    "final_global_step": 6,
+    "final_model_parameter_sha256": "fff26c6809c359695fa6536d89b65119cc83fa23062918260e70e305d1dea256",
+    "run_id": "20260718T082029Z-tinygpt-debug-fsdp2-gloo-dcp-recovery-372c6045-6084"
+  },
+  "checkpoint_step_2": {
+    "dcp_metadata_bytes": 36258,
+    "rank_state_files": 2,
+    "shards": [
+      {
+        "sha256": "8abd92db49a5e07adbff498009415f84858a18f4a160459959c29a2af0b1d9d2",
+        "size_bytes": 603481
+      },
+      {
+        "sha256": "9c4545c9f0b7ff6579b91d201563a5be7520a40649318106a6228684613b42f9",
+        "size_bytes": 662139
+      }
+    ],
+    "state_coverage": {
+      "config_snapshot": true,
+      "cuda_rng": true,
+      "environment": true,
+      "grad_scaler": true,
+      "model": true,
+      "numpy_rng": true,
+      "optimizer": true,
+      "python_rng": true,
+      "sampler": true,
+      "scheduler": true,
+      "torch_rng": true
+    }
+  },
+  "config_sha256": "372c60457b76f04b98bd87937b8c6db2620aad90e66e2887c0a23b6717a4f747",
+  "failure_paths": [
+    "corrupt_shard",
+    "missing_commit_marker",
+    "missing_rank_state",
+    "wrong_world_size",
+    "config_drift",
+    "dataset_version_drift"
+  ],
+  "git_commit": "cf0f96c8b4f2cb71f335c4de9814f6cc40cf5e9f",
+  "metrics_exact_match": true,
+  "recovery": {
+    "final_global_step": 6,
+    "final_model_parameter_sha256": "fff26c6809c359695fa6536d89b65119cc83fa23062918260e70e305d1dea256",
+    "metric_steps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "resumed_from_step": 2,
+    "run_id": "20260718T082048Z-tinygpt-debug-fsdp2-gloo-dcp-recovery-372c6045-adf8"
+  },
+  "schema_version": "1.0",
+  "status": "pass",
+  "world_size": 2
+}

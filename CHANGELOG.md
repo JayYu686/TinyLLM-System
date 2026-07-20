@@ -5,6 +5,14 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- completed M4 with a real four-RTX-3090 Qwen3-8B BF16 FULL_SHARD run: a strict idle/NUMA
+  memory probe, 50 optimizer steps, atomic Step 25 and Step 50 DCP checkpoints, fresh-process
+  Step 25→50 resume, per-Rank peak-memory evidence, and an independently loaded Safetensors export;
+- added a pinned Qwen3-8B artifact/data-view contract, strict four-GPU supervisor, versioned result
+  schemas, public redacted evidence, and explicit limits excluding throughput, quality, eight-GPU,
+  changed-World-Size, and ZeRO-3 claims;
+- added atomic FSDP2 DCP sharded checkpoints with complete optimizer/scheduler/RNG/Sampler lineage,
+  same-World-Size Exact Resume, integrity validation, retention, and CPU/Gloo bitwise recovery tests;
 - added non-reentrant Transformer-block activation checkpointing, strict wrapped-module evidence,
   and a forced nonzero-Rank exit diagnostic; passed real two-RTX-3090 BF16 CUDA/NCCL FSDP2
   correctness and Rank-failure runs while keeping DCP, Qwen3-8B, memory, and throughput unclaimed;

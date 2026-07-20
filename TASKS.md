@@ -20,8 +20,8 @@
 | M1 单卡闭环 | `COMPLETE` | 原生 Trainer、完整 Checkpoint、CPU Exact Resume、3090 BF16 与真实 SIGTERM/SIGKILL | 无；`v0.1.0-alpha.1` 后进入 M2 |
 | M2 数据与评测前置 | `COMPLETE` | 固定来源/许可导入、确定性处理与 Registry、完整离线重建、冻结 300 条领域集、真实 Exact 污染扫描、clean-main 全量 Qwen3 Baseline 与 40/40 人工判断 | 无；M1/M2 已解除 M3 前置阻塞 |
 | M3 DDP 与正式扩展 | `COMPLETE` | M3.1 正确性、M3.2 Exact Resume/Rank Failure、M3.3–M3.4 正式 1/2/4 卡 Strong/Weak、Profiler、失败留存、中文报告与 PR #55 | 无；8 卡与跨 NUMA 为非阻塞增强项 |
-| M4 FSDP2 | `IN_PROGRESS` | M4.1 CPU/Gloo、隔离依赖、单/双卡 BF16 CUDA/NCCL、Activation Checkpointing 与 Rank 失败诊断通过 | #16–#18；下一步完成 DCP 分片 Checkpoint/Exact Resume，再做 Qwen3-8B 四卡显存 Probe |
-| M5–M8 | `NOT_STARTED` | 设计文档 | 对应前置里程碑与 Issue；不得提前绕过 M4 正确性顺序 |
+| M4 FSDP2 | `COMPLETE` | M4.1 正确性/Rank 失败、M4.2 原子 DCP/失败矩阵、M4.3 Qwen3-8B 四卡 Probe、50 Step、Step 25→50 Resume、显存与导出证据 | 无；8 卡、ZeRO-3、Changed World Size 与吞吐为非阻塞增强项 |
+| M5–M8 | `NOT_STARTED` | 设计文档；M4 已解除 M5 分片能力前置阻塞 | 对应里程碑与 Issue；下一步进入 M5，不把 M4 Smoke 当作质量结果 |
 
 ## Week 1：专业化基础
 

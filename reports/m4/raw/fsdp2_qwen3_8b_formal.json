@@ -1,0 +1,165 @@
+{
+  "schema_version": "1.0",
+  "status": "pass",
+  "git": {
+    "commit": "c8f2b002c3a8b40ebfea4546f5a0599423cf2318",
+    "dirty": false
+  },
+  "config": {
+    "path": "configs/fsdp2/qwen3_8b_four_gpu_formal.yaml",
+    "sha256": "59f4821028d05721d646d296488a7547386a6dc415d962bf6e830ce3aab98941",
+    "world_size": 4,
+    "sequence_length": 512,
+    "max_steps": 50,
+    "checkpoint_step": 25,
+    "dtype": "bf16",
+    "activation_checkpointing": true
+  },
+  "software": {
+    "python": "3.11.14",
+    "torch": "2.7.1+cu118",
+    "cuda_runtime": "11.8",
+    "driver": "535.261.03",
+    "transformers": "4.57.6",
+    "safetensors": "0.6.2"
+  },
+  "model": {
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "license": "Apache-2.0",
+    "architecture": "Qwen3ForCausalLM",
+    "parameter_count": 8190735360,
+    "tensor_count": 399,
+    "weight_bytes": 16381470720,
+    "artifact_sha256": "d3dfde74f554d22794ac0591d88c5eac23b864f7f90013b9769b4b3f40ac8d1a"
+  },
+  "data": {
+    "parent_dataset_version": "m2-sft-v1-f82ff32e",
+    "view_version": "m2-sft-v1-f82ff32e-m4view-5cef2562",
+    "view_sha256": "5cef25622986f75fb882a3aa98decd710e3c3f6e22cd90021fecff22a4e0c2f9",
+    "sequence_count": 512,
+    "sequence_length": 512,
+    "supervised_token_count": 88184,
+    "assistant_only_loss": true
+  },
+  "hardware": {
+    "gpu_model": "NVIDIA GeForce RTX 3090",
+    "physical_gpu_indices": [5, 6, 7, 8],
+    "numa_nodes": [1, 1, 1, 1],
+    "memory_total_bytes_per_gpu": 25438126080,
+    "compute_capability": "8.6",
+    "preflight_thresholds": {
+      "memory_used_mib_lte": 1024,
+      "utilization_percent_lte": 10,
+      "temperature_c_lte": 79
+    },
+    "probe_preflight": [
+      {"index": 5, "memory_used_mib": 1, "utilization_percent": 0, "temperature_c": 29},
+      {"index": 6, "memory_used_mib": 1, "utilization_percent": 0, "temperature_c": 29},
+      {"index": 7, "memory_used_mib": 1, "utilization_percent": 0, "temperature_c": 30},
+      {"index": 8, "memory_used_mib": 1, "utilization_percent": 0, "temperature_c": 31}
+    ]
+  },
+  "probe": {
+    "run_id": "20260720T064617Z-qwen3-8b-fsdp2-four-gpu-formal-59f48210-9e84",
+    "status": "probe_succeeded",
+    "global_step": 1,
+    "duration_seconds": 97.672,
+    "activation_checkpointed_layers": 36,
+    "peak_allocated_bytes_per_rank": [20805166592, 20805166592, 20805166592, 20805166592],
+    "peak_reserved_bytes_per_rank": [24859639808, 24859639808, 24859639808, 24859639808]
+  },
+  "formal_run": {
+    "run_id": "20260720T064722Z-qwen3-8b-fsdp2-four-gpu-formal-59f48210-b57f",
+    "status": "succeeded",
+    "fresh_phase": {
+      "status": "interrupted",
+      "duration_seconds": 739.84,
+      "global_step": 25,
+      "checkpoint_id": "checkpoint-step-00000025",
+      "model_parameter_sha256": "fe25c886d8ee3405adc7b0d1d93064ee1160d35aea0ba69ca539d4f309542531",
+      "peak_allocated_bytes_per_rank": [21460408832, 21460408832, 21460408832, 21460408832],
+      "peak_reserved_bytes_per_rank": [24859639808, 24859639808, 24859639808, 24859639808]
+    },
+    "resume_phase": {
+      "status": "succeeded",
+      "duration_seconds": 1337.453,
+      "resumed_from_step": 25,
+      "global_step": 50,
+      "checkpoint_id": "checkpoint-step-00000050",
+      "model_parameter_sha256": "2405de7ffbb4aefc92eb8b3e199e83a4262f3f0d55826f673f5d96280f52f2cf",
+      "peak_allocated_bytes_per_rank": [21462505984, 21462505984, 21462505984, 21462505984],
+      "peak_reserved_bytes_per_rank": [24717033472, 24717033472, 24717033472, 24717033472]
+    },
+    "metrics": {
+      "record_count": 50,
+      "global_steps": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50],
+      "finite_loss": true,
+      "finite_gradient_norm": true,
+      "first_loss": 1.317255899310112,
+      "last_loss": 1.77720495313406,
+      "min_loss": 0.7098261713981628,
+      "max_loss": 5.846294328570366,
+      "tokens_seen": 102400,
+      "per_step_duration_collected": false
+    }
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint-step-00000025",
+      "global_step": 25,
+      "world_size": 4,
+      "resume_capability": "exact",
+      "pinned": true,
+      "pin_reason": "interruption",
+      "file_count": 12,
+      "rank_state_file_count": 4,
+      "shard_count": 4,
+      "total_bytes": 49153987502,
+      "state_coverage_complete": true
+    },
+    {
+      "checkpoint_id": "checkpoint-step-00000050",
+      "global_step": 50,
+      "world_size": 4,
+      "resume_capability": "exact",
+      "pinned": true,
+      "pin_reason": "final",
+      "file_count": 12,
+      "rank_state_file_count": 4,
+      "shard_count": 4,
+      "total_bytes": 49153987502,
+      "state_coverage_complete": true
+    }
+  ],
+  "export": {
+    "purpose": "deployment_export_not_training_checkpoint",
+    "filename": "model.safetensors",
+    "size_bytes": 16381517232,
+    "sha256": "f811603cfdb084fa56da15e72f8968b39fd26839b50846471bea13dc92b89933",
+    "tensor_count": 399,
+    "independent_safetensors_validation": true,
+    "independent_transformers_load": true,
+    "loaded_architecture": "Qwen3ForCausalLM",
+    "loaded_parameter_count": 8190735360,
+    "loaded_dtype": "torch.bfloat16"
+  },
+  "failure_paths": {
+    "busy_gpu_preflight": "pass",
+    "forced_rank_exit": "pass",
+    "corrupt_shard": "pass",
+    "missing_commit_marker": "pass",
+    "missing_rank_state": "pass",
+    "wrong_world_size": "pass",
+    "config_drift": "pass",
+    "dataset_version_drift": "pass"
+  },
+  "limitations": {
+    "throughput_benchmark_claimed": false,
+    "uninterrupted_bf16_numerical_equivalence_claimed": false,
+    "model_quality_improvement_claimed": false,
+    "eight_gpu_support_claimed": false,
+    "zero3_support_claimed": false,
+    "changed_world_size_resume_claimed": false
+  }
+}

@@ -161,10 +161,11 @@ M3 阻塞 M4；完成后开始正式投递。
 
 ## 9. Milestone 4：FSDP2 分片训练（Week 7）
 
-状态：`IN_PROGRESS`。M1–M3 前置门禁已解除；M4.1 已取得两进程 CPU/Gloo、独立依赖、
-单卡以及真实双卡 BF16 CUDA/NCCL Tiny Model 证据，并验证 Activation Checkpointing 和
-Rank 1 中途退出诊断。下一门禁是 M4.2 DCP Sharded Checkpoint/Exact Resume；尚未产生
-Qwen3-8B 显存或吞吐结论。
+状态：`COMPLETE`。M4.1 已取得 CPU/Gloo、隔离依赖、单/双卡 BF16 CUDA/NCCL、
+Activation Checkpointing 与 Rank 失败证据；M4.2 已完成原子 DCP 分片 Checkpoint、逐位
+CPU Exact Resume 和失败矩阵；M4.3 已在物理 GPU 5–8 上真实完成固定 Qwen3-8B 四卡
+Memory Probe、50 Step、Step 25→50 新进程恢复和独立 Safetensors 加载。未采集吞吐，
+也不声称 8 卡、Changed World Size Resume 或质量提升。
 
 输入：M1/M2/M3，通过 revision/许可证/依赖 Smoke 的 Qwen3-8B。
 

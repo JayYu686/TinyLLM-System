@@ -1,0 +1,49 @@
+schema_version: "1.0"
+
+run:
+  name: qwen3-8b-fsdp2-four-gpu-formal
+  seed: 42
+
+model:
+  repository: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  model_type: qwen3
+  license: Apache-2.0
+  trust_remote_code: false
+
+data:
+  dataset_version: m2-sft-v1-f82ff32e
+  split: train
+  sequence_length: 512
+  max_sequences: 512
+  pad_token_id: 151643
+  assistant_only_loss: true
+  slice_position_ids_reset: true
+
+training:
+  max_steps: 50
+  micro_batch_size: 1
+  gradient_accumulation_steps: 1
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  warmup_steps: 5
+
+precision:
+  dtype: bf16
+  allow_tf32: true
+  use_grad_scaler: false
+
+distributed:
+  strategy: fsdp2
+  backend: nccl
+  device_type: cuda
+  world_size: 4
+  timeout_seconds: 1800
+  reshard_after_forward: true
+  cpu_offload: false
+  activation_checkpointing: true
+
+checkpoint:
+  save_steps: 25
+  keep_last: 2

@@ -16,8 +16,8 @@ FSDP2 分片模型与优化器状态，并把 Scheduler、训练进度、各 Ran
 - 两者最终完整模型 SHA256 均为
   `fff26c6809c359695fa6536d89b65119cc83fa23062918260e70e305d1dea256`。
 
-该结论只证明当前 Tiny Model CPU/Gloo 契约的逐位 Exact Resume；Qwen3-8B BF16 四卡容差
-仍必须由 M4.3 的真实重复基线确定。
+该结论证明当前 Tiny Model CPU/Gloo 契约的逐位 Exact Resume。后续 M4.3 四卡门禁验证
+Qwen3-8B 完整状态恢复和连续推进，但不声称 BF16 与未中断四卡 Run 数值等价。
 
 ## 2. 正式运行身份
 
@@ -93,6 +93,6 @@ Rank 连续性与 DCP 元数据，计算逐文件 Hash，写 Manifest 和 Commit
 
 ## 7. M4 边界
 
-M4.2 完成不等于 M4 完成。M4.3 仍需真实四卡完成：固定 Revision Qwen3-8B Memory
-Probe、50 Step、Step 25 到 Step 50 恢复、每 Rank Peak Memory 和独立 Safetensors 导出。
-在这些证据产生前，项目不得宣称 Qwen3-8B 四卡训练已通过。
+M4.2 完成当时不等于 M4 完成。后续 M4.3 已真实完成固定 Revision Qwen3-8B 四卡
+Memory Probe、50 Step、Step 25 到 Step 50 恢复、每 Rank Peak Memory 和独立
+Safetensors 加载，见 [M4.3 四卡正式报告](fsdp2_qwen3_8b_formal.md)。

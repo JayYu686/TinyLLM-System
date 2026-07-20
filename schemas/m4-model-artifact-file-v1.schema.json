@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "description": "One local immutable file used by the pinned Qwen model.",
+  "properties": {
+    "path": {
+      "title": "Path",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "path",
+    "size_bytes",
+    "sha256"
+  ],
+  "title": "M4ModelArtifactFile",
+  "type": "object"
+}

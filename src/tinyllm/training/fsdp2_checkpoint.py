@@ -10,7 +10,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, Protocol, cast
 
 import torch
 from pydantic import ValidationError
@@ -51,11 +51,17 @@ from tinyllm.training.ddp_checkpoint import (
     restore_local_rng_state,
     validate_local_rng_state,
 )
-from tinyllm.training.fsdp2_config import FSDP2RecoveryConfig
 from tinyllm.training.metrics import TrainerState
 
 RUNTIME_STATE_FILENAME = "runtime_state.pt"
 DCP_METADATA_FILENAME = ".metadata"
+
+
+class CheckpointableFSDP2Config(Protocol):
+    """Structural config boundary shared by TinyGPT and formal Qwen FSDP2 runs."""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the complete resolved config as canonical JSON values."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,7 +140,7 @@ class FSDP2CheckpointStore:
         trainer_state: TrainerState,
         sampler: StatefulDistributedSampler,
         device: torch.device,
-        config: FSDP2RecoveryConfig,
+        config: CheckpointableFSDP2Config,
         context: CheckpointContext,
         rank: int,
         pin_reason: Literal["interruption", "final"] | None = None,
@@ -208,7 +214,7 @@ class FSDP2CheckpointStore:
                     "environment": dict(context.environment),
                     "strategy": "fsdp2",
                     "world_size": context.world_size,
-                    "precision": config.precision.to_dict(),
+                    "precision": cast(dict[str, object], config.to_dict()["precision"]),
                 }
                 runtime_path = temporary / RUNTIME_STATE_FILENAME
                 torch.save(runtime, runtime_path)
@@ -262,7 +268,7 @@ class FSDP2CheckpointStore:
         destination: Path,
         checkpoint_id: str,
         trainer_state: TrainerState,
-        config: FSDP2RecoveryConfig,
+        config: CheckpointableFSDP2Config,
         context: CheckpointContext,
         pin_reason: Literal["interruption", "final"] | None,
         created_at: datetime | None,
@@ -443,7 +449,7 @@ class FSDP2CheckpointStore:
         scheduler: LRScheduler,
         sampler: StatefulDistributedSampler,
         device: torch.device,
-        config: FSDP2RecoveryConfig,
+        config: CheckpointableFSDP2Config,
         context: CheckpointContext,
         rank: int,
     ) -> TrainerState:
@@ -618,7 +624,9 @@ class FSDP2CheckpointStore:
             )
         try:
             progress = TrainerState.model_validate(raw["trainer_state"])
-            payload_config = FSDP2RecoveryConfig.model_validate(raw["config"])
+            if not isinstance(raw["config"], dict):
+                raise ValueError("FSDP2 runtime config must be an object")
+            payload_config = cast(dict[str, object], raw["config"])
             environment = json.loads(
                 (self.root / manifest.checkpoint_id / ENVIRONMENT_FILENAME).read_text(
                     encoding="utf-8"
@@ -640,7 +648,7 @@ class FSDP2CheckpointStore:
             and raw["environment"] == environment
             and raw["strategy"] == "fsdp2"
             and raw["world_size"] == manifest.world_size
-            and raw["precision"] == payload_config.precision.to_dict()
+            and raw["precision"] == payload_config.get("precision")
             and progress.global_step == manifest.global_step
             and progress.micro_step == manifest.micro_step
             and progress.epoch == manifest.epoch

@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "description": "Peak CUDA memory and physical identity for one logical Rank.",
+  "properties": {
+    "final_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Final Allocated Bytes",
+      "type": "integer"
+    },
+    "final_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Final Reserved Bytes",
+      "type": "integer"
+    },
+    "peak_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "rank": {
+      "maximum": 3,
+      "minimum": 0,
+      "title": "Rank",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "rank",
+    "physical_gpu_index",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes",
+    "final_allocated_bytes",
+    "final_reserved_bytes"
+  ],
+  "title": "M4QwenRankMemory",
+  "type": "object"
+}

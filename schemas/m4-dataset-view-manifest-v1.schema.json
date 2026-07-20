@@ -1,0 +1,87 @@
+{
+  "additionalProperties": false,
+  "description": "Content and transformation identity for the bounded M4 Train view.",
+  "properties": {
+    "assistant_only_loss": {
+      "const": true,
+      "title": "Assistant Only Loss",
+      "type": "boolean"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "max_sequences": {
+      "exclusiveMinimum": 0,
+      "title": "Max Sequences",
+      "type": "integer"
+    },
+    "pad_token_id": {
+      "const": 151643,
+      "title": "Pad Token Id",
+      "type": "integer"
+    },
+    "parent_content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Parent Content Sha256",
+      "type": "string"
+    },
+    "parent_dataset_version": {
+      "title": "Parent Dataset Version",
+      "type": "string"
+    },
+    "rejected_unsupervised_slices": {
+      "minimum": 0,
+      "title": "Rejected Unsupervised Slices",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Count",
+      "type": "integer"
+    },
+    "sequence_length": {
+      "const": 512,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "slice_position_ids_reset": {
+      "const": true,
+      "title": "Slice Position Ids Reset",
+      "type": "boolean"
+    },
+    "split": {
+      "const": "train",
+      "title": "Split",
+      "type": "string"
+    },
+    "supervised_token_count": {
+      "exclusiveMinimum": 0,
+      "title": "Supervised Token Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "parent_dataset_version",
+    "parent_content_sha256",
+    "split",
+    "sequence_length",
+    "pad_token_id",
+    "assistant_only_loss",
+    "slice_position_ids_reset",
+    "max_sequences",
+    "sequence_count",
+    "supervised_token_count",
+    "rejected_unsupervised_slices",
+    "content_sha256"
+  ],
+  "title": "M4DatasetViewManifest",
+  "type": "object"
+}

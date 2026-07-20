@@ -48,6 +48,7 @@ from tinyllm.training.fsdp2_schema import (
     FSDP2RankFailureEvidence,
     FSDP2TrainingResult,
 )
+from tinyllm.training.m4_dataset import M4DatasetViewManifest, M4RegisteredDatasetView
 from tinyllm.training.m4_dependencies import (
     M4DependencySmokeResult,
     M4PackageVersions,
@@ -55,6 +56,15 @@ from tinyllm.training.m4_dependencies import (
     M4TorchApiEvidence,
     run_m4_dependency_smoke,
 )
+from tinyllm.training.m4_model_schema import M4ModelArtifactFile, M4ModelArtifactManifest
+from tinyllm.training.m4_qwen_config import (
+    M4QwenConfigError,
+    M4QwenDataConfig,
+    M4QwenFSDP2Config,
+    M4QwenModelConfig,
+    load_m4_qwen_config,
+)
+from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
 from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.run import run_single_device_training
@@ -94,8 +104,18 @@ __all__ = [
     "LoadedDDPCheckpoint",
     "LoadedFSDP2Checkpoint",
     "M4DependencySmokeResult",
+    "M4DatasetViewManifest",
+    "M4ModelArtifactFile",
+    "M4ModelArtifactManifest",
     "M4PackageVersions",
+    "M4QwenConfigError",
+    "M4QwenDataConfig",
+    "M4QwenFSDP2Config",
+    "M4QwenModelConfig",
+    "M4QwenRankMemory",
+    "M4QwenRunResult",
     "M4QwenApiEvidence",
+    "M4RegisteredDatasetView",
     "M4TorchApiEvidence",
     "ResumeMode",
     "SingleDeviceTrainer",
@@ -112,6 +132,7 @@ __all__ = [
     "load_training_config",
     "load_fsdp2_config",
     "load_fsdp2_recovery_config",
+    "load_m4_qwen_config",
     "restore_from_config",
     "restore_ddp_trainer",
     "restore_local_rng_state",

@@ -35,7 +35,7 @@ missing results stay explicitly unevaluated.
 | M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
 | M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
-| M4 FSDP2 | In progress | Two-GPU BF16/NCCL, activation checkpointing, and Rank-failure diagnostics pass; DCP, Qwen3-8B, and four-GPU gates remain open |
+| M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD, Step 25→50 DCP resume, and independent Safetensors loading pass |
 | M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
 
 The complete M0 evidence is in the
@@ -102,7 +102,12 @@ or four-GPU support.
 The subsequent [M4.1 two-GPU report](reports/m4/fsdp2_multigpu_activation_failure.md) verifies real
 two-Rank CUDA/NCCL on physical GPUs 6 and 7, activation checkpointing, complete shard coverage, and
 diagnostics for a forced Rank 1 exit with code 17. That failed Run is explicitly non-resumable;
-DCP Exact Resume remains M4.2 work.
+the [M4.2 DCP report](reports/m4/fsdp2_dcp_recovery.md) subsequently verifies atomic sharded
+checkpoints, bitwise CPU/Gloo Exact Resume, and corruption/drift refusal. The final
+[M4.3 four-GPU report](reports/m4/fsdp2_qwen3_8b_formal.md) records a fixed Qwen3-8B revision on
+physical GPUs 5–8 completing a memory probe, 50 steps, a fresh-process Step 25→50 resume, and an
+independent Safetensors load. It makes no throughput, quality-improvement, eight-GPU, or changed
+World Size claim.
 
 ## System boundary
 

@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "M4ModelArtifactFile": {
+      "additionalProperties": false,
+      "description": "One local immutable file used by the pinned Qwen model.",
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M4ModelArtifactFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Verified identity of the complete local Qwen3-8B snapshot.",
+  "properties": {
+    "architecture": {
+      "title": "Architecture",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/M4ModelArtifactFile"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "hidden_size": {
+      "exclusiveMinimum": 0,
+      "title": "Hidden Size",
+      "type": "integer"
+    },
+    "intermediate_size": {
+      "exclusiveMinimum": 0,
+      "title": "Intermediate Size",
+      "type": "integer"
+    },
+    "license": {
+      "title": "License",
+      "type": "string"
+    },
+    "model_type": {
+      "title": "Model Type",
+      "type": "string"
+    },
+    "num_attention_heads": {
+      "exclusiveMinimum": 0,
+      "title": "Num Attention Heads",
+      "type": "integer"
+    },
+    "num_hidden_layers": {
+      "exclusiveMinimum": 0,
+      "title": "Num Hidden Layers",
+      "type": "integer"
+    },
+    "num_key_value_heads": {
+      "exclusiveMinimum": 0,
+      "title": "Num Key Value Heads",
+      "type": "integer"
+    },
+    "repository": {
+      "title": "Repository",
+      "type": "string"
+    },
+    "revision": {
+      "title": "Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tensor_count": {
+      "exclusiveMinimum": 0,
+      "title": "Tensor Count",
+      "type": "integer"
+    },
+    "vocab_size": {
+      "exclusiveMinimum": 0,
+      "title": "Vocab Size",
+      "type": "integer"
+    },
+    "weight_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Weight Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "repository",
+    "revision",
+    "license",
+    "model_type",
+    "architecture",
+    "hidden_size",
+    "num_hidden_layers",
+    "num_attention_heads",
+    "num_key_value_heads",
+    "intermediate_size",
+    "vocab_size",
+    "weight_bytes",
+    "tensor_count",
+    "files",
+    "content_sha256"
+  ],
+  "title": "M4ModelArtifactManifest",
+  "type": "object"
+}

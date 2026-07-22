@@ -131,7 +131,10 @@ def _restore_rng(value: dict[str, object]) -> None:
         raise M5AblationError("M5 Checkpoint RNG state is incomplete")
     random.setstate(cast(tuple[Any, ...], value["python"]))
     np.random.set_state(cast(tuple[Any, ...], value["numpy"]))
-    torch.set_rng_state(cast(Tensor, value["torch"]))
+    # Checkpoint payloads are mapped to the training device so model and
+    # optimizer tensors resume without a second copy. The default CPU
+    # generator is the exception: torch.set_rng_state requires a CPU ByteTensor.
+    torch.set_rng_state(cast(Tensor, value["torch"]).cpu())
     torch.cuda.set_rng_state_all(cast(list[Tensor], value["cuda"]))
 
 

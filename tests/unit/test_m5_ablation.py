@@ -3,9 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import torch
 
 from tinyllm.training.m5_ablation import (
+    _capture_rng,
     _record_attempt_result,
+    _restore_rng,
     group_loss_scale,
     token_learning_rate,
 )
@@ -72,6 +75,17 @@ def test_accumulation_loss_scale_is_token_weighted() -> None:
     assert group_loss_scale(25, 100) == 0.25
     with pytest.raises(ValueError, match="invalid"):
         group_loss_scale(0, 100)
+
+
+def test_rng_restore_returns_default_generator_state_to_cpu() -> None:
+    state = _capture_rng()
+    torch.manual_seed(123456)
+
+    _restore_rng(state)
+
+    expected = state["torch"]
+    assert isinstance(expected, torch.Tensor)
+    assert torch.equal(torch.get_rng_state(), expected.cpu())
 
 
 def test_success_result_requires_exact_budget_and_export() -> None:

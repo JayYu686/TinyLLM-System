@@ -199,7 +199,7 @@ class M5CheckpointConfig(StrictSchema):
 class M5EvaluationConfig(StrictSchema):
     """Development-only selection suite kept separate from M6 tests."""
 
-    reasoning_dev_version: Literal["m5-reasoning-dev-v1"]
+    reasoning_dev_version: Literal["m5-reasoning-dev-v1-53ddf557"]
     compare_modes_separately: Literal[True]
     consume_m6_frozen_results: Literal[False]
 

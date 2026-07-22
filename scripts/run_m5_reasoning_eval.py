@@ -150,7 +150,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--reasoning-config",
         type=Path,
-        default=Path("configs/data/m5_reasoning.yaml"),
+        default=Path("configs/data/m5_reasoning_label_vocabulary_v2.yaml"),
     )
     parser.add_argument(
         "--baseline-config",

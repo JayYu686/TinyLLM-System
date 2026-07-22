@@ -23,12 +23,14 @@ from tinyllm.data import (
     generate_reasoning_pilot_tasks,
     load_m5_reasoning_data_config,
     parse_teacher_output,
+    reasoning_config_sha256,
     verify_reasoning_answer,
 )
 from tinyllm.data.reasoning_schema import TeacherFinishReason
 
 CONFIG_PATH = Path("configs/data/m5_reasoning.yaml")
 PILOT_100_CONFIG_PATH = Path("configs/data/m5_reasoning_pilot_100.yaml")
+LABEL_VOCABULARY_V2_CONFIG_PATH = Path("configs/data/m5_reasoning_label_vocabulary_v2.yaml")
 
 
 def _config() -> M5ReasoningDataConfig:
@@ -76,6 +78,9 @@ def test_formal_config_freezes_teacher_verifier_and_dev_distribution(tmp_path: P
         "python": 40,
     }
     assert config.dev.language_counts_per_family == {"en": 28, "zh": 12}
+    assert reasoning_config_sha256(config) == (
+        "ac2a33f8be42941cb0e4e2b6ac97a37797c8670cf26af29f95d228ea182a7717"
+    )
 
     with pytest.raises(ReasoningDataError, match="extension"):
         load_m5_reasoning_data_config(tmp_path / "config.json")
@@ -168,6 +173,29 @@ def test_m5_2_pilot_100_identity_is_clean_against_frozen_dev() -> None:
     assert report.dev_task_set_version == "m5-reasoning-dev-v1-3eb153c2"
     assert report.status == "pass"
     assert report.matches == ()
+
+
+def test_m5_2_label_vocabulary_amendment_is_versioned_and_unambiguous() -> None:
+    config = load_m5_reasoning_data_config(LABEL_VOCABULARY_V2_CONFIG_PATH)
+    pilot = generate_reasoning_pilot_tasks(
+        seed=config.pilot_task_seed,
+        tasks_per_family=20,
+        task_contract_version=config.task_contract_version,
+    )
+    dev = generate_reasoning_dev_tasks(config)
+    report = check_reasoning_split_contamination(pilot, dev, config=config)
+
+    assert config.task_contract_version == "label_vocabulary_v2"
+    assert reasoning_config_sha256(config) == (
+        "aa4cdfa68fd639e273150f4abb1228a4e6c625676aafda21bc219585a0aaf6a1"
+    )
+    assert report.pilot_task_set_version == "m5-reasoning-pilot-tasks-v1-39967737"
+    assert report.dev_task_set_version == "m5-reasoning-dev-v1-53ddf557"
+    assert report.status == "pass"
+    for family in ("config", "linux", "log_diagnosis"):
+        task = next(item for item in pilot if item.task_family == family)
+        assert task.template_family.endswith(".v2")
+        assert "selected_value" in task.prompt or "所选代码" in task.prompt
 
 
 def test_reasoning_task_schema_binds_split_canonical_json_and_hashes() -> None:

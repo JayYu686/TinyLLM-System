@@ -27,6 +27,7 @@ from tinyllm.data.reasoning_schema import (
     ReasoningSample,
     ReasoningSplit,
     ReasoningTask,
+    ReasoningTaskContractVersion,
     ReasoningTaskFamily,
     ReasoningTaskSetManifest,
     ReasoningVerifierResult,
@@ -91,6 +92,15 @@ def load_m5_reasoning_data_config(path: Path) -> M5ReasoningDataConfig:
         raise ReasoningDataError("; ".join(messages)) from exc
 
 
+def reasoning_config_sha256(config: M5ReasoningDataConfig) -> str:
+    """Hash M5 reasoning config while preserving the historical v1 identity."""
+
+    payload = config.to_dict()
+    if config.task_contract_version == "placeholder_v1":
+        payload.pop("task_contract_version")
+    return content_sha256(payload)
+
+
 def _make_task(
     *,
     namespace: str,
@@ -100,6 +110,7 @@ def _make_task(
     prompt: str,
     answer: dict[str, object],
     template_name: str,
+    task_contract_version: ReasoningTaskContractVersion,
 ) -> ReasoningTask:
     prompt = (
         f"{prompt} Keep the visible reasoning under 192 tokens."
@@ -113,7 +124,10 @@ def _make_task(
         split=split,
         task_family=task_family,
         language=language,
-        template_family=f"{namespace}.{task_family}.{template_name}.v1",
+        template_family=(
+            f"{namespace}.{task_family}.{template_name}."
+            f"{'v1' if task_contract_version == 'placeholder_v1' else 'v2'}"
+        ),
         prompt=prompt,
         prompt_sha256=hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
         expected_answer_json=answer_json,
@@ -126,6 +140,7 @@ def _python_task(
     language: ReasoningLanguage,
     index: int,
     rng: random.Random,
+    task_contract_version: ReasoningTaskContractVersion,
 ) -> ReasoningTask:
     values = [rng.randint(1, 12) for _ in range(4)]
     offset = rng.randint(1, 5)
@@ -149,6 +164,7 @@ def _python_task(
         prompt=prompt,
         answer={"result": result},
         template_name="trace-accumulator",
+        task_contract_version=task_contract_version,
     )
 
 
@@ -157,6 +173,7 @@ def _json_task(
     language: ReasoningLanguage,
     index: int,
     rng: random.Random,
+    task_contract_version: ReasoningTaskContractVersion,
 ) -> ReasoningTask:
     target = rng.randint(10, 999)
     position = rng.randint(0, 2)
@@ -181,6 +198,7 @@ def _json_task(
         prompt=prompt,
         answer={"value": target},
         template_name="nested-lookup",
+        task_contract_version=task_contract_version,
     )
 
 
@@ -189,6 +207,7 @@ def _linux_task(
     language: ReasoningLanguage,
     index: int,
     rng: random.Random,
+    task_contract_version: ReasoningTaskContractVersion,
 ) -> ReasoningTask:
     cases = (
         ("cat: /srv/app/config.yaml: Permission denied", "permission_denied"),
@@ -198,7 +217,22 @@ def _linux_task(
     )
     evidence, diagnosis = cases[index % len(cases)]
     case_reference = f"LNX-{rng.randrange(1_000_000):06d}"
-    if language == "en":
+    if task_contract_version == "label_vocabulary_v2" and language == "en":
+        prompt = (
+            f"Case {case_reference}. Diagnose the primary Linux failure from this synthetic "
+            f"message: {evidence}. Choose the diagnosis value from exactly one of "
+            "permission_denied, command_not_found, disk_full, connection_refused. "
+            'Do not propose or execute a command. Return only {"diagnosis":"selected_value"} '
+            "as JSON, replacing selected_value with the chosen code."
+        )
+    elif task_contract_version == "label_vocabulary_v2":
+        prompt = (
+            f"案例 {case_reference}。根据这条合成 Linux 信息判断首要故障：{evidence}。"
+            "diagnosis 的值必须且只能从 permission_denied、command_not_found、disk_full、"
+            "connection_refused 中选择一个。不要提出或执行命令，只返回 "
+            '{"diagnosis":"所选代码"} 形式的 JSON，并用所选代码替换占位文字。'
+        )
+    elif language == "en":
         prompt = (
             f"Case {case_reference}. Diagnose the primary Linux failure from this synthetic "
             f"message: {evidence}. "
@@ -218,6 +252,7 @@ def _linux_task(
         prompt=prompt,
         answer={"diagnosis": diagnosis},
         template_name="error-classification",
+        task_contract_version=task_contract_version,
     )
 
 
@@ -226,6 +261,7 @@ def _config_task(
     language: ReasoningLanguage,
     index: int,
     rng: random.Random,
+    task_contract_version: ReasoningTaskContractVersion,
 ) -> ReasoningTask:
     cases = (
         ("precision: bf16\ndevice: v100", "unsupported_precision"),
@@ -235,7 +271,23 @@ def _config_task(
     )
     snippet, issue = cases[index % len(cases)]
     case_reference = f"CFG-{rng.randrange(1_000_000):06d}"
-    if language == "en":
+    if task_contract_version == "label_vocabulary_v2" and language == "en":
+        prompt = (
+            f"Case {case_reference}. Inspect this synthetic YAML fragment:\n{snippet}\n"
+            "Identify its single contract violation. Choose the issue value from exactly one of "
+            "unsupported_precision, world_size_mismatch, forbidden_truncation, "
+            "missing_checkpoint. "
+            'Return only {"issue":"selected_value"} as JSON, replacing selected_value with '
+            "the chosen code."
+        )
+    elif task_contract_version == "label_vocabulary_v2":
+        prompt = (
+            f"案例 {case_reference}。检查这段合成 YAML：\n{snippet}\n识别唯一的契约错误。"
+            "issue 的值必须且只能从 unsupported_precision、world_size_mismatch、"
+            "forbidden_truncation、missing_checkpoint 中选择一个。只返回 "
+            '{"issue":"所选代码"} 形式的 JSON，并用所选代码替换占位文字。'
+        )
+    elif language == "en":
         prompt = (
             f"Case {case_reference}. Inspect this synthetic YAML fragment:\n{snippet}\n"
             "Identify its single contract violation. "
@@ -255,6 +307,7 @@ def _config_task(
         prompt=prompt,
         answer={"issue": issue},
         template_name="contract-violation",
+        task_contract_version=task_contract_version,
     )
 
 
@@ -263,6 +316,7 @@ def _log_task(
     language: ReasoningLanguage,
     index: int,
     rng: random.Random,
+    task_contract_version: ReasoningTaskContractVersion,
 ) -> ReasoningTask:
     cases = (
         ("step=91 loss=2.1\nstep=92 loss=nan grad_norm=inf", "non_finite_gradient"),
@@ -272,7 +326,22 @@ def _log_task(
     )
     log_text, root_cause = cases[index % len(cases)]
     case_reference = f"LOG-{rng.randrange(1_000_000):06d}"
-    if language == "en":
+    if task_contract_version == "label_vocabulary_v2" and language == "en":
+        prompt = (
+            f"Case {case_reference}. Find the primary root cause in this synthetic training "
+            f"log:\n{log_text}\nChoose the root_cause value from exactly one of "
+            "non_finite_gradient, disk_full, collective_timeout, cuda_oom. "
+            'Return only {"root_cause":"selected_value"} as JSON, replacing selected_value '
+            "with the chosen code."
+        )
+    elif task_contract_version == "label_vocabulary_v2":
+        prompt = (
+            f"案例 {case_reference}。判断这段合成训练日志的首要根因：\n{log_text}\n"
+            "root_cause 的值必须且只能从 non_finite_gradient、disk_full、"
+            "collective_timeout、cuda_oom 中选择一个。只返回 "
+            '{"root_cause":"所选代码"} 形式的 JSON，并用所选代码替换占位文字。'
+        )
+    elif language == "en":
         prompt = (
             f"Case {case_reference}. Find the primary root cause in this synthetic training "
             f"log:\n{log_text}\n"
@@ -292,6 +361,7 @@ def _log_task(
         prompt=prompt,
         answer={"root_cause": root_cause},
         template_name="root-cause",
+        task_contract_version=task_contract_version,
     )
 
 
@@ -301,16 +371,17 @@ def _task_for_family(
     language: ReasoningLanguage,
     index: int,
     rng: random.Random,
+    task_contract_version: ReasoningTaskContractVersion,
 ) -> ReasoningTask:
     if task_family == "python":
-        return _python_task(namespace, language, index, rng)
+        return _python_task(namespace, language, index, rng, task_contract_version)
     if task_family == "json":
-        return _json_task(namespace, language, index, rng)
+        return _json_task(namespace, language, index, rng, task_contract_version)
     if task_family == "linux":
-        return _linux_task(namespace, language, index, rng)
+        return _linux_task(namespace, language, index, rng, task_contract_version)
     if task_family == "config":
-        return _config_task(namespace, language, index, rng)
-    return _log_task(namespace, language, index, rng)
+        return _config_task(namespace, language, index, rng, task_contract_version)
+    return _log_task(namespace, language, index, rng, task_contract_version)
 
 
 def generate_reasoning_dev_tasks(config: M5ReasoningDataConfig) -> tuple[ReasoningTask, ...]:
@@ -323,7 +394,16 @@ def generate_reasoning_dev_tasks(config: M5ReasoningDataConfig) -> tuple[Reasoni
             language: ReasoningLanguage = (
                 "en" if index < config.dev.language_counts_per_family["en"] else "zh"
             )
-            tasks.append(_task_for_family("dev", task_family, language, index, rng))
+            tasks.append(
+                _task_for_family(
+                    "dev",
+                    task_family,
+                    language,
+                    index,
+                    rng,
+                    config.task_contract_version,
+                )
+            )
     return tuple(sorted(tasks, key=lambda task: task.id))
 
 
@@ -331,6 +411,7 @@ def generate_reasoning_pilot_tasks(
     *,
     seed: int,
     tasks_per_family: int,
+    task_contract_version: ReasoningTaskContractVersion = "placeholder_v1",
 ) -> tuple[ReasoningTask, ...]:
     """Build deterministic private-pilot task inputs using namespaces disjoint from Dev."""
 
@@ -342,7 +423,16 @@ def generate_reasoning_pilot_tasks(
     for task_family in REASONING_TASK_FAMILIES:
         for index in range(tasks_per_family):
             language: ReasoningLanguage = "en" if index < english_count else "zh"
-            tasks.append(_task_for_family("pilot", task_family, language, index, rng))
+            tasks.append(
+                _task_for_family(
+                    "pilot",
+                    task_family,
+                    language,
+                    index,
+                    rng,
+                    task_contract_version,
+                )
+            )
     return tuple(sorted(tasks, key=lambda task: task.id))
 
 
@@ -379,7 +469,7 @@ def build_reasoning_task_manifest(
     return ReasoningTaskSetManifest(
         task_set_version=f"m5-reasoning-{namespace}-v1-{tasks_sha256[:8]}",
         split=split,
-        config_sha256=content_sha256(config.to_dict()),
+        config_sha256=reasoning_config_sha256(config),
         tasks_sha256=tasks_sha256,
         task_count=len(ordered),
         task_family_counts=dict(sorted(Counter(task.task_family for task in ordered).items())),
@@ -737,7 +827,7 @@ def build_reasoning_dataset(
         task_set_version=task_manifest.task_set_version,
         dev_task_set_version=contamination.dev_task_set_version,
         thinking_template_id=config.thinking_template_id,
-        config_sha256=content_sha256(config.to_dict()),
+        config_sha256=reasoning_config_sha256(config),
         tasks_sha256=task_manifest.tasks_sha256,
         generations_sha256=generations_sha256,
         verifications_sha256=verifications_sha256,

@@ -122,7 +122,10 @@
       "type": "string"
     },
     "suite_version": {
-      "const": "m5-reasoning-dev-v1-3eb153c2",
+      "enum": [
+        "m5-reasoning-dev-v1-3eb153c2",
+        "m5-reasoning-dev-v1-53ddf557"
+      ],
       "title": "Suite Version",
       "type": "string"
     },

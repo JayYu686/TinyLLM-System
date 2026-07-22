@@ -24,6 +24,7 @@ from tinyllm.data import (
     generate_reasoning_dev_tasks,
     load_m5_reasoning_data_config,
     parse_teacher_output,
+    reasoning_config_sha256,
 )
 from tinyllm.data.reasoning_schema import canonical_json, content_sha256
 from tinyllm.evaluation.m5_reasoning_schema import (
@@ -131,6 +132,15 @@ def select_m5_ablation(
     for candidate in candidates:
         if candidate.model_kind != "ablation_candidate":
             raise M5ReasoningEvaluationError("M5 selection received a non-Candidate result")
+        if (
+            candidate.suite_version != base.suite_version
+            or candidate.config_sha256 != base.config_sha256
+            or candidate.model_revision != base.model_revision
+            or candidate.attention_architecture != base.attention_architecture
+        ):
+            raise M5ReasoningEvaluationError(
+                "M5 Candidate evaluation protocol or model identity differs from Base"
+            )
         ratio = candidate.thinking_fraction_basis_points
         if ratio is None:
             raise M5ReasoningEvaluationError("M5 Candidate is missing its Thinking ratio")
@@ -263,7 +273,7 @@ def run_m5_reasoning_evaluation(
     tasks = generate_reasoning_dev_tasks(reasoning_config)
     if (
         len(tasks) != config.expected_items
-        or content_sha256(reasoning_config.to_dict()) != config.task_config_sha256
+        or reasoning_config_sha256(reasoning_config) != config.task_config_sha256
     ):
         raise M5ReasoningEvaluationError("M5 Dev task identity differs from evaluation config")
     if output_dir.exists():

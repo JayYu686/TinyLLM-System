@@ -78,6 +78,7 @@ from tinyllm.data.reasoning import (
     generate_reasoning_pilot_tasks,
     load_m5_reasoning_data_config,
     parse_teacher_output,
+    reasoning_config_sha256,
     summarize_reasoning_build,
     verify_reasoning_answer,
 )
@@ -288,6 +289,7 @@ __all__ = [
     "process_imported_samples",
     "parse_teacher_output",
     "register_dataset",
+    "reasoning_config_sha256",
     "render_qwen3_nonthinking",
     "render_qwen3_thinking",
     "select_exact_supervised_tokens",

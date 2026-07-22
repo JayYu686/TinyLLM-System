@@ -37,7 +37,10 @@ class M5ReasoningEvaluationConfig(StrictSchema):
     """Frozen 200-item dual-mode M5 Dev protocol that cannot consume M6 metrics."""
 
     schema_version: Literal["1.0"] = "1.0"
-    suite_version: Literal["m5-reasoning-dev-v1-3eb153c2"]
+    suite_version: Literal[
+        "m5-reasoning-dev-v1-3eb153c2",
+        "m5-reasoning-dev-v1-53ddf557",
+    ]
     expected_items: Literal[200]
     task_config_sha256: str = Field(pattern=SHA256_PATTERN)
     model_repository: Literal["Qwen/Qwen3-0.6B"]
@@ -117,7 +120,10 @@ class M5ReasoningEvaluationSummary(StrictSchema):
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     attention_architecture: Literal["gqa"]
-    suite_version: Literal["m5-reasoning-dev-v1-3eb153c2"]
+    suite_version: Literal[
+        "m5-reasoning-dev-v1-3eb153c2",
+        "m5-reasoning-dev-v1-53ddf557",
+    ]
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]

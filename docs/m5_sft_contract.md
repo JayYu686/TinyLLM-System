@@ -66,6 +66,16 @@ Sampling 使用互异 Seed；任意 Exact Prompt 或 Template Family 交叉都�
 证据。该 Smoke 只有一个接受样本，不代表正式 Pilot 规模或模型质量。详见
 [M5.1 中文报告](../reports/m5/m5_reasoning_data.md)。
 
+上述 Dev 身份只属于 M5.1 历史证据。M5.2 在任何 Candidate 训练前运行 100 条 Teacher Pilot
+时发现，Config、Linux 和 Log 三类 Prompt 使用 `"code"` 作为未定义占位值，Teacher 会合理
+地复制占位值或输出语义同义词，导致 100 条中只有 37 条通过 Exact Verifier。该结果不是模型
+质量结论，而是评测/数据任务定义存在客观歧义。
+
+M5.2 因此以显式版本 `task_contract_version=label_vocabulary_v2` 修订 Prompt：三类分类任务均
+列出封闭标签集合，但不改变期望标签、Verifier、采样参数、规模或门禁。修订后的 Dev 身份为
+`m5-reasoning-dev-v1-53ddf557`；旧 Dev、旧 Base 和失败 Pilot 全部保留，但不得与新 Candidate
+混合比较。此修订发生在 Candidate 训练之前，不能根据后续 Candidate 结果再次修改。
+
 ## 4. 配比与训练门禁
 
 正式数据配比不能凭经验指定。先在不接触 M6 冻结测试指标的情况下，对 Thinking Token
@@ -76,7 +86,8 @@ Sampling 使用互异 Seed；任意 Exact Prompt 或 Template Family 交叉都�
 3. 最大化 Thinking Final-answer 分数；
 4. 差异不足 1pp 时选择 Thinking 比例更低者。
 
-M5 Reasoning Dev 固定 200 条，五类任务各 40 条，每类 28 条英文、12 条中文，并与 Train
+M5 Reasoning Dev 固定为 `m5-reasoning-dev-v1-53ddf557` 共 200 条，五类任务各 40 条，每类
+28 条英文、12 条中文，并与 Train
 按模板族隔离。它只用于 M5 选择，不生成最终求职指标。
 
 ### 4.1 M5.2 冻结执行参数
@@ -84,9 +95,11 @@ M5 Reasoning Dev 固定 200 条，五类任务各 40 条，每类 28 条英文�
 M5.2 将私有 Pilot 固定扩展为 100 个输入任务：五类各 20 条，每类 14 条英文、6 条中文。
 Teacher 仍使用固定 Qwen3-8B Thinking 和最多两个候选；只有接受率至少 80%，且五类均有
 通过样本时，Pilot 才通过扩展门禁。被拒绝任务、候选和原因全部保留，不用合成答案填补。
-扩容任务使用独立配置 `configs/data/m5_reasoning_pilot_100.yaml` 和 Pilot Task Seed
-`20260728`，同时保持冻结 Dev Seed 与 Dev 内容身份不变。原 M5.1 Seed `20260723` 在 100 条
-扩容预跑中产生一条 Python Exact Prompt 碰撞，因此被污染门禁诚实拒绝；它不再用于 M5.2。
+扩容任务使用独立配置 `configs/data/m5_reasoning_label_vocabulary_v2.yaml` 和 Pilot Task Seed
+`20260728`，同时保持冻结 Dev Seed 不变。原 M5.1 Seed `20260723` 在 100 条扩容预跑中产生
+一条 Python Exact Prompt 碰撞，因此被污染门禁诚实拒绝；随后无碰撞的 Placeholder v1 Pilot
+又因上述标签歧义仅接受 37 条。两个失败均保留，不用于训练。混合构建器会重新执行 100 条、
+80% 接受率和五类覆盖门禁，不能只依赖公开摘要。
 
 三份消融数据各包含精确 1,000,000 个移位后实际参与 Causal LM Loss 的 Assistant Token。
 Thinking 目标分别是 0、300,000 和 500,000 Token，剩余来自只读 M2 Train。配比按 Token
@@ -99,7 +112,7 @@ Cosine 和 Gradient Clipping 1.0；每 500K Token 保存一次完整训练 Check
 中断点和最终点 Pin。Checkpoint 保存模型、Optimizer、RNG、数据顺序、序列游标、配置、
 数据身份和 Git 身份；恢复时任一身份漂移都拒绝 Exact Resume。
 
-训练前 Base 和六个训练结果都只在 `m5-reasoning-dev-v1-3eb153c2` 上分别运行 Thinking 与
+训练前 Base 和六个训练结果都只在 `m5-reasoning-dev-v1-53ddf557` 上分别运行 Thinking 与
 Non-thinking。Thinking 固定 Seed `20260726`、Temperature 0.6、Top-p 0.95、Top-k 20、
 最大 896 New Tokens；Non-thinking 使用 Greedy 和最大 128 New Tokens。批大小固定为 4。
 该评测不读取 M6 冻结结果。实现配置见

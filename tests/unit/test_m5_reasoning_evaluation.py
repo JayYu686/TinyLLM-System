@@ -3,8 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
+import pytest
+
 from tinyllm.data import generate_reasoning_dev_tasks, load_m5_reasoning_data_config
 from tinyllm.evaluation.m5_reasoning import (
+    M5ReasoningEvaluationError,
     load_m5_reasoning_evaluation_config,
     score_m5_response,
     select_m5_ablation,
@@ -71,6 +74,7 @@ def test_eval_config_freezes_m5_only_suite() -> None:
     config = load_m5_reasoning_evaluation_config(Path("configs/eval/m5_reasoning_dev.yaml"))
 
     assert config.expected_items == 200
+    assert config.suite_version == "m5-reasoning-dev-v1-53ddf557"
     assert config.consume_m6_frozen_results is False
     assert config.generation.thinking_max_new_tokens == 896
 
@@ -188,3 +192,18 @@ def test_selection_applies_lower_ratio_tie_break_after_gates() -> None:
     assert selection.status == "selected"
     assert selection.selected_thinking_fraction_basis_points == 0
     assert selection.selection_reason == "lower_ratio_within_one_percentage_point"
+
+
+def test_selection_rejects_candidate_from_superseded_dev_protocol() -> None:
+    base = _summary(kind="base", identity="base", nonthinking=5000, thinking=3000)
+    candidate = _summary(
+        kind="ablation_candidate",
+        identity="candidate",
+        nonthinking=5000,
+        thinking=4000,
+        ratio=0,
+        seed=1,
+    ).model_copy(update={"suite_version": "m5-reasoning-dev-v1-53ddf557"})
+
+    with pytest.raises(M5ReasoningEvaluationError, match="differs from Base"):
+        select_m5_ablation(base, (candidate,))

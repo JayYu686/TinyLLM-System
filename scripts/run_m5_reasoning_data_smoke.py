@@ -27,6 +27,7 @@ def build_smoke_payload(config_path: Path) -> dict[str, object]:
     pilot_tasks = generate_reasoning_pilot_tasks(
         seed=config.pilot_task_seed,
         tasks_per_family=10,
+        task_contract_version=config.task_contract_version,
     )
     generations = build_synthetic_teacher_generations(pilot_tasks, config=config)
     build = build_reasoning_dataset(

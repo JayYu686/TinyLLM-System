@@ -14,6 +14,7 @@ from tinyllm.schemas.base import StrictSchema
 ReasoningTaskFamily = Literal["config", "json", "linux", "log_diagnosis", "python"]
 ReasoningLanguage = Literal["en", "zh"]
 ReasoningSplit = Literal["pilot_train", "reasoning_dev"]
+ReasoningTaskContractVersion = Literal["placeholder_v1", "label_vocabulary_v2"]
 TeacherGenerationStatus = Literal["succeeded", "failed"]
 TeacherFinishReason = Literal["stop", "length", "error"]
 VerifierReason = Literal["accepted", "answer_mismatch", "invalid_final_json"]
@@ -146,6 +147,7 @@ class M5ReasoningDataConfig(StrictSchema):
     """Complete M5.1 task, teacher, verifier, and sequence-length contract."""
 
     schema_version: Literal["1.0"] = "1.0"
+    task_contract_version: ReasoningTaskContractVersion = "placeholder_v1"
     parent_dataset_version: Literal["m2-sft-v1-f82ff32e"]
     thinking_template_id: Literal["qwen3-chatml-thinking-v1"]
     thinking_template_sha256: Literal[
@@ -175,7 +177,7 @@ class ReasoningTask(StrictSchema):
     split: ReasoningSplit
     task_family: ReasoningTaskFamily
     language: ReasoningLanguage
-    template_family: str = Field(pattern=r"^(pilot|dev)\.[a-z0-9][a-z0-9._-]+\.v1$")
+    template_family: str = Field(pattern=r"^(pilot|dev)\.[a-z0-9][a-z0-9._-]+\.v[12]$")
     prompt: str = Field(min_length=1, max_length=8192)
     prompt_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     expected_answer_json: str = Field(min_length=2, max_length=4096)

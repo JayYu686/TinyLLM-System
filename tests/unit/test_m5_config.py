@@ -78,7 +78,7 @@ def _full_formal_mapping() -> dict[str, object]:
             "resume": "auto",
         },
         "evaluation": {
-            "reasoning_dev_version": "m5-reasoning-dev-v1",
+            "reasoning_dev_version": "m5-reasoning-dev-v1-53ddf557",
             "compare_modes_separately": True,
             "consume_m6_frozen_results": False,
         },

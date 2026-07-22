@@ -235,6 +235,40 @@ def test_invalid_private_pilot_is_rejected_before_training(tmp_path: Path) -> No
         )
 
 
+def test_expanded_pilot_gate_rejects_low_acceptance_or_missing_family() -> None:
+    families = ("config", "json", "linux", "log_diagnosis", "python")
+    samples = tuple(
+        SimpleNamespace(task_family=families[index % len(families)]) for index in range(80)
+    )
+    manifest = SimpleNamespace(
+        input_tasks=100,
+        task_family_counts={family: 20 for family in families},
+        language_counts={"en": 70, "zh": 30},
+        accepted_samples=80,
+    )
+    pilot = cast(M5PilotInput, SimpleNamespace(manifest=manifest, samples=samples))
+
+    mixture_module._validate_expanded_pilot_gate(pilot)
+    low_acceptance = cast(
+        M5PilotInput,
+        SimpleNamespace(
+            manifest=SimpleNamespace(**{**vars(manifest), "accepted_samples": 79}),
+            samples=samples[:-1],
+        ),
+    )
+    with pytest.raises(M5MixtureError, match="80%"):
+        mixture_module._validate_expanded_pilot_gate(low_acceptance)
+    missing_family = cast(
+        M5PilotInput,
+        SimpleNamespace(
+            manifest=manifest,
+            samples=tuple(SimpleNamespace(task_family="json") for _ in range(80)),
+        ),
+    )
+    with pytest.raises(M5MixtureError, match="five-family"):
+        mixture_module._validate_expanded_pilot_gate(missing_family)
+
+
 def test_nonthinking_candidate_view_uses_only_supervised_train_samples(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

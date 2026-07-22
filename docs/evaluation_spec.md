@@ -205,7 +205,10 @@ M5 新增 Thinking 评测时不得改写上述冻结身份。正式配置必须�
 M6 对双模式分别报告：Thinking Candidate 对比同模型 Base-Thinking；Non-thinking Candidate
 对比同模型 Base-Non-thinking。Thinking 格式有效率至少 99%，Non-thinking 可见推理泄漏率
 必须为零；最终 Candidate 仍需满足领域提升、Bootstrap CI、通用回归、JSON Valid Rate 和
-完整血缘门禁。详细协议见 [M5 契约](m5_sft_contract.md)。
+完整血缘门禁。M5.2 在 Candidate 训练前因分类 Prompt 的标签占位值歧义，将 M5-only Dev
+内容身份修订为 `m5-reasoning-dev-v1-53ddf557`；旧身份
+`m5-reasoning-dev-v1-3eb153c2` 仅保留为历史证据，禁止跨身份比较。详细协议与修订依据见
+[M5 契约](m5_sft_contract.md)。
 
 ## 11. M2.4c 训练前 Baseline 契约
 

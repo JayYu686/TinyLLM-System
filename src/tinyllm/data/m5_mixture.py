@@ -25,6 +25,7 @@ from tinyllm.data.reasoning import (
     load_m5_reasoning_data_config,
 )
 from tinyllm.data.reasoning_schema import (
+    REASONING_TASK_FAMILIES,
     M5ReasoningDatasetManifest,
     ReasoningSample,
     ReasoningTask,
@@ -70,6 +71,24 @@ class M5PilotInput:
 
     manifest: M5ReasoningDatasetManifest
     samples: tuple[ReasoningSample, ...]
+
+
+def _validate_expanded_pilot_gate(pilot: M5PilotInput) -> None:
+    """Require the preregistered 100-task, 80%, five-family M5.2 Pilot gate."""
+
+    expected_families = {family: 20 for family in REASONING_TASK_FAMILIES}
+    accepted_families = {sample.task_family for sample in pilot.samples}
+    if (
+        pilot.manifest.input_tasks != 100
+        or pilot.manifest.task_family_counts != expected_families
+        or pilot.manifest.language_counts != {"en": 70, "zh": 30}
+        or pilot.manifest.accepted_samples != len(pilot.samples)
+        or len(pilot.samples) < 80
+        or accepted_families != set(REASONING_TASK_FAMILIES)
+    ):
+        raise M5MixtureError(
+            "private reasoning Pilot failed the 100-task, 80%, or five-family M5.2 gate"
+        )
 
 
 def _sha256_file(path: Path) -> str:
@@ -179,9 +198,9 @@ def load_verified_reasoning_pilot(*, raw_artifact: Path, reasoning_config: Path)
     )
     if rebuilt.manifest != declared:
         raise M5MixtureError("private reasoning Pilot manifest does not match rebuilt content")
-    if not rebuilt.samples:
-        raise M5MixtureError("private reasoning Pilot contains no accepted samples")
-    return M5PilotInput(manifest=rebuilt.manifest, samples=rebuilt.samples)
+    pilot = M5PilotInput(manifest=rebuilt.manifest, samples=rebuilt.samples)
+    _validate_expanded_pilot_gate(pilot)
+    return pilot
 
 
 def _nonthinking_candidates(*, artifact_root: Path) -> tuple[tuple[M5MixtureSequence, ...], str]:

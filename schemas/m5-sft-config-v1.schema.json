@@ -106,7 +106,7 @@
           "type": "boolean"
         },
         "reasoning_dev_version": {
-          "const": "m5-reasoning-dev-v1",
+          "const": "m5-reasoning-dev-v1-53ddf557",
           "title": "Reasoning Dev Version",
           "type": "string"
         }

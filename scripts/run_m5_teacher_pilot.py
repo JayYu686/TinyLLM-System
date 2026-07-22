@@ -23,8 +23,8 @@ from tinyllm.data import (
     generate_reasoning_dev_tasks,
     generate_reasoning_pilot_tasks,
     load_m5_reasoning_data_config,
+    reasoning_config_sha256,
 )
-from tinyllm.data.reasoning_schema import content_sha256
 from tinyllm.lineage import read_git_identity
 from tinyllm.training.smoke_preflight import inspect_gpus, validate_gpu_preflight
 
@@ -95,6 +95,7 @@ def _worker(args: argparse.Namespace) -> int:
     tasks = generate_reasoning_pilot_tasks(
         seed=config.pilot_task_seed,
         tasks_per_family=args.tasks_per_family,
+        task_contract_version=config.task_contract_version,
     )
     dev_tasks = generate_reasoning_dev_tasks(config)
     contamination = check_reasoning_split_contamination(tasks, dev_tasks, config=config)
@@ -231,7 +232,7 @@ def _worker(args: argparse.Namespace) -> int:
         generated_at=datetime.now(UTC),
         model=config.teacher,
         sampling=config.sampling,
-        config_sha256=content_sha256(config.to_dict()),
+        config_sha256=reasoning_config_sha256(config),
         git_commit=git_commit,
         git_dirty=git_dirty,
         physical_gpu_index=args.gpu_index,

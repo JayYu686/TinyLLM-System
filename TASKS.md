@@ -81,7 +81,8 @@ Step 25 退出/恢复到 50 → Peak Memory/导出 → 正式四卡报告；8 �
 
 - [x] M5.0：冻结 GQA + Thinking/Non-thinking 双模式 ADR、Schema 和 Template；M2 历史身份不变。
 - [x] M5.1：冻结可验证 Reasoning Pilot 契约、200 条独立 Dev、污染门禁和双模式数据身份；完成 CPU 合成链路与真实 Qwen3-8B Teacher Smoke。
-- M5.2：运行训练前双模式 Baseline，以及 0%/30%/50% Thinking Token 配比消融。
+- M5.2：运行训练前双模式 Baseline，以及 0%/30%/50% Thinking Token 配比消融（实现与
+  CPU/失败路径测试已完成，等待真实 Pilot、双 Seed 训练和 Dev 结果后验收）。
 - M5.3：Qwen3-0.6B 四卡 DDP Full SFT，50M Tokens 下限，按 10M 门禁，100M 上限。
 - M5.4：Qwen3-8B 单卡 LoRA，10M Tokens 正式预算，最多 30M；NF4 仅为有证据的 OOM 回退。
 

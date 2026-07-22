@@ -88,6 +88,8 @@ omit = [
   "*/src/tinyllm/training/m4_model.py",
   "*/src/tinyllm/training/m4_qwen.py",
   "*/src/tinyllm/training/m4_qwen_worker.py",
+  "*/src/tinyllm/training/m5_ablation.py",
+  "*/src/tinyllm/evaluation/m5_reasoning.py",
 ]
 
 [tool.coverage.report]
@@ -99,4 +101,6 @@ omit = [
   "*/src/tinyllm/training/m4_model.py",
   "*/src/tinyllm/training/m4_qwen.py",
   "*/src/tinyllm/training/m4_qwen_worker.py",
+  "*/src/tinyllm/training/m5_ablation.py",
+  "*/src/tinyllm/evaluation/m5_reasoning.py",
 ]

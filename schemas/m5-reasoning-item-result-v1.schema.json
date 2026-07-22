@@ -1,0 +1,90 @@
+{
+  "additionalProperties": false,
+  "description": "One private response and deterministic M5 Dev score.",
+  "properties": {
+    "final_answer_correct": {
+      "title": "Final Answer Correct",
+      "type": "boolean"
+    },
+    "final_json_valid": {
+      "title": "Final Json Valid",
+      "type": "boolean"
+    },
+    "finish_reason": {
+      "enum": [
+        "eos",
+        "length"
+      ],
+      "title": "Finish Reason",
+      "type": "string"
+    },
+    "format_valid": {
+      "title": "Format Valid",
+      "type": "boolean"
+    },
+    "generated_tokens": {
+      "minimum": 0,
+      "title": "Generated Tokens",
+      "type": "integer"
+    },
+    "item_id": {
+      "pattern": "^m5-reasoning:dev:[a-z0-9][a-z0-9._-]{2,95}$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "prompt_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "prompt_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Prompt Tokens",
+      "type": "integer"
+    },
+    "response": {
+      "maxLength": 32768,
+      "title": "Response",
+      "type": "string"
+    },
+    "response_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Response Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "visible_reasoning_leakage": {
+      "title": "Visible Reasoning Leakage",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "item_id",
+    "mode",
+    "prompt_sha256",
+    "response",
+    "response_sha256",
+    "prompt_tokens",
+    "generated_tokens",
+    "finish_reason",
+    "format_valid",
+    "final_json_valid",
+    "final_answer_correct",
+    "visible_reasoning_leakage"
+  ],
+  "title": "M5ReasoningItemResult",
+  "type": "object"
+}

@@ -79,6 +79,29 @@ Sampling 使用互异 Seed；任意 Exact Prompt 或 Template Family 交叉都�
 M5 Reasoning Dev 固定 200 条，五类任务各 40 条，每类 28 条英文、12 条中文，并与 Train
 按模板族隔离。它只用于 M5 选择，不生成最终求职指标。
 
+### 4.1 M5.2 冻结执行参数
+
+M5.2 将私有 Pilot 固定扩展为 100 个输入任务：五类各 20 条，每类 14 条英文、6 条中文。
+Teacher 仍使用固定 Qwen3-8B Thinking 和最多两个候选；只有接受率至少 80%，且五类均有
+通过样本时，Pilot 才通过扩展门禁。被拒绝任务、候选和原因全部保留，不用合成答案填补。
+
+三份消融数据各包含精确 1,000,000 个移位后实际参与 Causal LM Loss 的 Assistant Token。
+Thinking 目标分别是 0、300,000 和 500,000 Token，剩余来自只读 M2 Train。配比按 Token
+而不是样本数计算；为精确达到预算，只允许在最后一条序列尾部追加 Label Mask，并在
+Manifest 中记录复用和部分 Mask 次数。数据构建 Seed 固定为 `20260725`。
+
+训练 Seed 固定为 `42` 和 `20260727`。每个消融臂使用单卡 BF16、Micro Batch 4、梯度累积
+2、AdamW、Learning Rate `2e-5`、Weight Decay `0.01`、50K Token Warmup、Token-indexed
+Cosine 和 Gradient Clipping 1.0；每 500K Token 保存一次完整训练 Checkpoint，保留最近两个，
+中断点和最终点 Pin。Checkpoint 保存模型、Optimizer、RNG、数据顺序、序列游标、配置、
+数据身份和 Git 身份；恢复时任一身份漂移都拒绝 Exact Resume。
+
+训练前 Base 和六个训练结果都只在 `m5-reasoning-dev-v1-3eb153c2` 上分别运行 Thinking 与
+Non-thinking。Thinking 固定 Seed `20260726`、Temperature 0.6、Top-p 0.95、Top-k 20、
+最大 896 New Tokens；Non-thinking 使用 Greedy 和最大 128 New Tokens。批大小固定为 4。
+该评测不读取 M6 冻结结果。实现配置见
+[`configs/eval/m5_reasoning_dev.yaml`](../configs/eval/m5_reasoning_dev.yaml)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

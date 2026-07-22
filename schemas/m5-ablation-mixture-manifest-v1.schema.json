@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "M5MixtureArtifactFile": {
+      "additionalProperties": false,
+      "description": "One immutable private mixture payload.",
+      "properties": {
+        "path": {
+          "const": "sequences.npz",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M5MixtureArtifactFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Content-addressed M5.2 mixture with exact supervised-token accounting.",
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/M5MixtureArtifactFile"
+    },
+    "build_seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Build Seed",
+      "type": "integer"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_name": {
+      "const": "m5-ablation-mixture",
+      "default": "m5-ablation-mixture",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "mixture_version": {
+      "pattern": "^m5-ablation-mixture-v1-[0-9a-f]{8}$",
+      "title": "Mixture Version",
+      "type": "string"
+    },
+    "nonthinking_reuse_count": {
+      "minimum": 0,
+      "title": "Nonthinking Reuse Count",
+      "type": "integer"
+    },
+    "nonthinking_sequence_count": {
+      "minimum": 0,
+      "title": "Nonthinking Sequence Count",
+      "type": "integer"
+    },
+    "nonthinking_source_sequences": {
+      "exclusiveMinimum": 0,
+      "title": "Nonthinking Source Sequences",
+      "type": "integer"
+    },
+    "nonthinking_supervised_tokens": {
+      "minimum": 0,
+      "title": "Nonthinking Supervised Tokens",
+      "type": "integer"
+    },
+    "nonthinking_template_id": {
+      "const": "qwen3-chatml-nonthinking-v1",
+      "title": "Nonthinking Template Id",
+      "type": "string"
+    },
+    "pad_token_id": {
+      "const": 151643,
+      "title": "Pad Token Id",
+      "type": "integer"
+    },
+    "parent_content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Parent Content Sha256",
+      "type": "string"
+    },
+    "parent_dataset_version": {
+      "const": "m2-sft-v1-f82ff32e",
+      "title": "Parent Dataset Version",
+      "type": "string"
+    },
+    "partially_masked_sequences": {
+      "maximum": 2,
+      "minimum": 0,
+      "title": "Partially Masked Sequences",
+      "type": "integer"
+    },
+    "pilot_content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Pilot Content Sha256",
+      "type": "string"
+    },
+    "pilot_dataset_version": {
+      "pattern": "^m5-reasoning-pilot-v1-[0-9a-f]{8}$",
+      "title": "Pilot Dataset Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Count",
+      "type": "integer"
+    },
+    "sequence_length": {
+      "const": 1024,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "target_supervised_tokens": {
+      "const": 1000000,
+      "title": "Target Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_fraction_basis_points": {
+      "enum": [
+        0,
+        3000,
+        5000
+      ],
+      "title": "Thinking Fraction Basis Points",
+      "type": "integer"
+    },
+    "thinking_reuse_count": {
+      "minimum": 0,
+      "title": "Thinking Reuse Count",
+      "type": "integer"
+    },
+    "thinking_sequence_count": {
+      "minimum": 0,
+      "title": "Thinking Sequence Count",
+      "type": "integer"
+    },
+    "thinking_source_sequences": {
+      "exclusiveMinimum": 0,
+      "title": "Thinking Source Sequences",
+      "type": "integer"
+    },
+    "thinking_supervised_tokens": {
+      "minimum": 0,
+      "title": "Thinking Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_template_id": {
+      "const": "qwen3-chatml-thinking-v1",
+      "title": "Thinking Template Id",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "mixture_version",
+    "parent_dataset_version",
+    "parent_content_sha256",
+    "pilot_dataset_version",
+    "pilot_content_sha256",
+    "tokenizer_revision",
+    "nonthinking_template_id",
+    "thinking_template_id",
+    "sequence_length",
+    "pad_token_id",
+    "target_supervised_tokens",
+    "thinking_fraction_basis_points",
+    "nonthinking_supervised_tokens",
+    "thinking_supervised_tokens",
+    "sequence_count",
+    "nonthinking_sequence_count",
+    "thinking_sequence_count",
+    "nonthinking_source_sequences",
+    "thinking_source_sequences",
+    "nonthinking_reuse_count",
+    "thinking_reuse_count",
+    "partially_masked_sequences",
+    "build_seed",
+    "content_sha256",
+    "artifact"
+  ],
+  "title": "M5MixtureManifest",
+  "type": "object"
+}

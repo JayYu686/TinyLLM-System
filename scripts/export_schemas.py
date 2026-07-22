@@ -36,9 +36,11 @@ from tinyllm.data import (
     M2PackingConfig,
     M2ProcessingConfig,
     M2TokenizationConfig,
+    M5MixtureManifest,
     M5ReasoningContaminationReport,
     M5ReasoningDataConfig,
     M5ReasoningDatasetManifest,
+    M5TeacherPilotResult,
     M5TeacherSmokeResult,
     OASST1ImportConfig,
     PackedSequence,
@@ -79,6 +81,12 @@ from tinyllm.evaluation import (
     MultipleChoiceScorer,
     RequiredTermsScorer,
 )
+from tinyllm.evaluation.m5_reasoning_schema import (
+    M5AblationSelection,
+    M5ReasoningEvaluationConfig,
+    M5ReasoningEvaluationSummary,
+    M5ReasoningItemResult,
+)
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
 from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
@@ -103,6 +111,7 @@ from tinyllm.training.m4_dependencies import M4DependencySmokeResult
 from tinyllm.training.m4_model_schema import M4ModelArtifactFile, M4ModelArtifactManifest
 from tinyllm.training.m4_qwen_config import M4QwenFSDP2Config
 from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
+from tinyllm.training.m5_ablation_schema import M5AblationRunResult, M5CheckpointManifest
 from tinyllm.training.m5_config import M5SFTConfig
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
@@ -168,10 +177,18 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m4-qwen-rank-memory-v1.schema.json": M4QwenRankMemory,
     "m4-qwen-run-result-v1.schema.json": M4QwenRunResult,
     "m5-sft-config-v1.schema.json": M5SFTConfig,
+    "m5-ablation-mixture-manifest-v1.schema.json": M5MixtureManifest,
+    "m5-ablation-run-result-v1.schema.json": M5AblationRunResult,
+    "m5-ablation-selection-v1.schema.json": M5AblationSelection,
+    "m5-checkpoint-manifest-v1.schema.json": M5CheckpointManifest,
+    "m5-reasoning-evaluation-config-v1.schema.json": M5ReasoningEvaluationConfig,
+    "m5-reasoning-evaluation-summary-v1.schema.json": M5ReasoningEvaluationSummary,
+    "m5-reasoning-item-result-v1.schema.json": M5ReasoningItemResult,
     "m5-reasoning-data-config-v1.schema.json": M5ReasoningDataConfig,
     "m5-reasoning-contamination-report-v1.schema.json": M5ReasoningContaminationReport,
     "m5-reasoning-dataset-manifest-v1.schema.json": M5ReasoningDatasetManifest,
     "m5-teacher-smoke-result-v1.schema.json": M5TeacherSmokeResult,
+    "m5-teacher-pilot-result-v1.schema.json": M5TeacherPilotResult,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,

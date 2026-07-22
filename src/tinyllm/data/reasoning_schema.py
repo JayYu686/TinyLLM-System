@@ -660,3 +660,89 @@ class M5TeacherSmokeResult(StrictSchema):
         elif self.dataset_version is not None and self.accepted_samples == 0:
             raise ValueError("failed teacher smoke cannot claim an empty dataset version")
         return self
+
+
+class M5TeacherPilotResult(StrictSchema):
+    """Public, content-free evidence for the real M5.2 private Pilot expansion."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["pass", "fail"]
+    generated_at: datetime
+    model: ReasoningTeacherIdentity
+    sampling: ReasoningTeacherSampling
+    config_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    git_dirty: bool
+    physical_gpu_index: int = Field(ge=0)
+    gpu_name: str = Field(min_length=1, max_length=128)
+    torch_version: str = Field(min_length=1, max_length=64)
+    transformers_version: str = Field(min_length=1, max_length=64)
+    tasks_per_family: int = Field(ge=10)
+    input_tasks: int = Field(ge=50)
+    generation_attempts: int = Field(ge=1)
+    accepted_samples: int = Field(ge=0)
+    rejected_tasks: int = Field(ge=0)
+    task_family_counts: dict[str, int]
+    language_counts: dict[str, int]
+    accepted_task_family_counts: dict[str, int]
+    accepted_language_counts: dict[str, int]
+    rejection_counts: dict[str, int]
+    dataset_version: str = Field(pattern=r"^m5-reasoning-pilot-v1-[0-9a-f]{8}$")
+    duration_seconds: float = Field(gt=0.0)
+    peak_allocated_bytes: int = Field(gt=0)
+    peak_reserved_bytes: int = Field(gt=0)
+    raw_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @field_validator("generated_at")
+    @classmethod
+    def require_pilot_utc(cls, value: datetime) -> datetime:
+        """Require timezone-aware UTC Pilot evidence."""
+
+        offset = value.utcoffset()
+        if value.tzinfo is None or offset is None or offset.total_seconds() != 0:
+            raise ValueError("teacher Pilot timestamp must use UTC")
+        return value
+
+    @field_validator(
+        "task_family_counts",
+        "language_counts",
+        "accepted_task_family_counts",
+        "accepted_language_counts",
+        "rejection_counts",
+    )
+    @classmethod
+    def validate_pilot_counts(cls, value: dict[str, int]) -> dict[str, int]:
+        """Require deterministic sorted sparse count mappings."""
+
+        if list(value) != sorted(value) or any(
+            not key or count <= 0 for key, count in value.items()
+        ):
+            raise ValueError("teacher Pilot count mappings must be sorted and positive")
+        return value
+
+    @model_validator(mode="after")
+    def validate_pilot(self) -> M5TeacherPilotResult:
+        """Bind pass status to clean lineage and complete task accounting."""
+
+        if self.input_tasks != self.tasks_per_family * len(REASONING_TASK_FAMILIES):
+            raise ValueError("teacher Pilot task count does not match family allocation")
+        if sum(self.task_family_counts.values()) != self.input_tasks:
+            raise ValueError("teacher Pilot family counts do not equal input tasks")
+        if sum(self.language_counts.values()) != self.input_tasks:
+            raise ValueError("teacher Pilot language counts do not equal input tasks")
+        if self.accepted_samples + self.rejected_tasks != self.input_tasks:
+            raise ValueError("teacher Pilot accepted and rejected tasks must equal inputs")
+        if sum(self.accepted_task_family_counts.values()) != self.accepted_samples:
+            raise ValueError("teacher Pilot accepted family counts do not equal accepted samples")
+        if sum(self.accepted_language_counts.values()) != self.accepted_samples:
+            raise ValueError("teacher Pilot accepted language counts do not equal accepted samples")
+        if self.peak_reserved_bytes < self.peak_allocated_bytes:
+            raise ValueError("teacher Pilot reserved memory cannot be below allocated memory")
+        acceptance_passed = self.accepted_samples * 10_000 >= self.input_tasks * 8_000
+        family_covered = set(self.accepted_task_family_counts) == set(REASONING_TASK_FAMILIES)
+        expected_status = (
+            "pass" if acceptance_passed and family_covered and not self.git_dirty else "fail"
+        )
+        if self.status != expected_status:
+            raise ValueError("teacher Pilot status does not match the 80% and family-coverage gate")
+        return self

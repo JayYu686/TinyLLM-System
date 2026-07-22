@@ -197,6 +197,15 @@ def test_m5_2_label_vocabulary_amendment_is_versioned_and_unambiguous() -> None:
         assert task.template_family.endswith(".v2")
         assert "selected_value" in task.prompt or "所选代码" in task.prompt
 
+    smoke_tasks = pilot[:1]
+    smoke = build_reasoning_dataset(
+        smoke_tasks,
+        build_synthetic_teacher_generations(smoke_tasks, config=config),
+        config=config,
+        dev_tasks=dev,
+    )
+    assert smoke.samples[0].template_family.endswith(".v2")
+
 
 def test_reasoning_task_schema_binds_split_canonical_json_and_hashes() -> None:
     task = generate_reasoning_pilot_tasks(seed=1, tasks_per_family=10)[0]

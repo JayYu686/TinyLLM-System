@@ -416,7 +416,7 @@ class ReasoningSample(StrictSchema):
     task_family: ReasoningTaskFamily
     language: ReasoningLanguage
     split: Literal["pilot_train"]
-    template_family: str = Field(pattern=r"^pilot\.[a-z0-9][a-z0-9._-]+\.v1$")
+    template_family: str = Field(pattern=r"^pilot\.[a-z0-9][a-z0-9._-]+\.v[12]$")
     prompt: str = Field(min_length=1, max_length=8192)
     reasoning_content: str = Field(min_length=1, max_length=24576)
     final_answer: str = Field(min_length=1, max_length=4096)

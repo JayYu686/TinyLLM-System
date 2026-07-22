@@ -36,6 +36,15 @@ QWEN3_NONTHINKING_TEMPLATE_SPEC: dict[str, object] = {
 QWEN3_NONTHINKING_TEMPLATE_SHA256 = (
     "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33"
 )
+QWEN3_THINKING_TEMPLATE_SPEC: dict[str, object] = {
+    "add_generation_prompt": False,
+    "assistant_supervision": "think_tags_reasoning_final_and_im_end",
+    "id": "qwen3-chatml-thinking-v1",
+    "message_format": _QWEN3_MESSAGE_FORMAT,
+    "mode": "thinking",
+    "reasoning_format": "<think>\n{reasoning_content}\n</think>\n\n{content}",
+}
+QWEN3_THINKING_TEMPLATE_SHA256 = "4786143dbb7adb72a922d5efdcbe6596f2d65dcdc35d7bbf1b22830b795c2af9"
 
 
 class TokenizerContractError(ValueError):
@@ -100,6 +109,16 @@ def _sha256_file(path: Path) -> str:
 def _template_hash() -> str:
     payload = json.dumps(
         QWEN3_NONTHINKING_TEMPLATE_SPEC,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _thinking_template_hash() -> str:
+    payload = json.dumps(
+        QWEN3_THINKING_TEMPLATE_SPEC,
         ensure_ascii=False,
         separators=(",", ":"),
         sort_keys=True,
@@ -226,6 +245,60 @@ def render_qwen3_nonthinking(messages: tuple[ImportedMessage, ...]) -> RenderedC
     return RenderedConversation(text="".join(parts), assistant_spans=tuple(assistant_spans))
 
 
+def render_qwen3_thinking(
+    messages: tuple[ImportedMessage, ...],
+    *,
+    assistant_reasoning: tuple[str, ...],
+) -> RenderedConversation:
+    """Render the frozen Qwen3 Thinking subset and mark the full Assistant payload."""
+
+    if _thinking_template_hash() != QWEN3_THINKING_TEMPLATE_SHA256:
+        raise TokenizerContractError("built-in Thinking Chat Template hash is invalid")
+    assistant_count = sum(message.role == "assistant" for message in messages)
+    if assistant_count == 0:
+        raise TokenizerContractError(
+            "Thinking conversation requires at least one Assistant message"
+        )
+    if len(assistant_reasoning) != assistant_count:
+        raise TokenizerContractError(
+            "assistant reasoning count must match the number of Assistant messages"
+        )
+
+    parts: list[str] = []
+    assistant_spans: list[tuple[int, int]] = []
+    length = 0
+    reasoning_index = 0
+    for message in messages:
+        header = f"{_CHATML_START}{message.role}\n"
+        parts.append(header)
+        length += len(header)
+        content_start = length
+        if message.role == "assistant":
+            reasoning = assistant_reasoning[reasoning_index].strip("\n")
+            final_answer = message.content.lstrip("\n")
+            reasoning_index += 1
+            if not reasoning.strip():
+                raise TokenizerContractError("Thinking Assistant reasoning must be non-empty")
+            if not final_answer.strip():
+                raise TokenizerContractError("Thinking Assistant final answer must be non-empty")
+            if any(tag in reasoning or tag in final_answer for tag in ("<think>", "</think>")):
+                raise TokenizerContractError(
+                    "Thinking Assistant fields cannot contain nested Think tags"
+                )
+            content = f"<think>\n{reasoning}\n</think>\n\n{final_answer}"
+        else:
+            content = message.content
+        parts.append(content)
+        length += len(content)
+        parts.append(_CHATML_END)
+        length += len(_CHATML_END)
+        if message.role == "assistant":
+            assistant_spans.append((content_start, length))
+        parts.append("\n")
+        length += 1
+    return RenderedConversation(text="".join(parts), assistant_spans=tuple(assistant_spans))
+
+
 def _validate_backend(backend: OffsetTokenizer, identity: TokenizerIdentity) -> None:
     if backend.vocab_size != identity.vocab_size:
         raise TokenizerContractError("tokenizer backend vocabulary does not match configuration")
@@ -285,6 +358,34 @@ def tokenize_messages(
         encoding=encoding,
         assistant_spans=rendered.assistant_spans,
         vocab_size=config.tokenizer.vocab_size,
+    )
+    return ConversationTokenization(
+        input_ids=encoding.ids,
+        labels=labels,
+        rendered_sha256=hashlib.sha256(rendered.text.encode()).hexdigest(),
+    )
+
+
+def tokenize_thinking_messages(
+    messages: tuple[ImportedMessage, ...],
+    *,
+    assistant_reasoning: tuple[str, ...],
+    backend: OffsetTokenizer,
+    tokenizer: TokenizerIdentity,
+) -> ConversationTokenization:
+    """Tokenize the M5 Thinking renderer while supervising its full Assistant payload."""
+
+    _validate_backend(backend, tokenizer)
+    rendered = render_qwen3_thinking(
+        messages,
+        assistant_reasoning=assistant_reasoning,
+    )
+    encoding = backend.encode(rendered.text)
+    labels = _labels_from_offsets(
+        text=rendered.text,
+        encoding=encoding,
+        assistant_spans=rendered.assistant_spans,
+        vocab_size=tokenizer.vocab_size,
     )
     return ConversationTokenization(
         input_ids=encoding.ids,

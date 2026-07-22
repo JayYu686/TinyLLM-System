@@ -36,7 +36,8 @@ missing results stay explicitly unevaluated.
 | M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
 | M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD, Step 25→50 DCP resume, and independent Safetensors loading pass |
-| M5–M6 | Planned | No training-quality, promotion, or deployment result is claimed yet |
+| M5 dual-mode SFT | Contract in progress | Native Qwen3 GQA is retained; versioned Thinking/Non-thinking data, training, and evaluation contracts are being added, with no quality result yet |
+| M6 evaluation and promotion | Planned | No promotion or deployment result is claimed yet |
 
 The complete M0 evidence is in the
 [acceptance record](reports/m0/m0_acceptance.md),
@@ -108,6 +109,15 @@ checkpoints, bitwise CPU/Gloo Exact Resume, and corruption/drift refusal. The fi
 physical GPUs 5–8 completing a memory probe, 50 steps, a fresh-process Step 25→50 resume, and an
 independent Safetensors load. It makes no throughput, quality-improvement, eight-GPU, or changed
 World Size claim.
+
+M5 retains native Qwen3 GQA under
+[ADR-0005](docs/adr/0005-qwen3-gqa-dual-mode-reasoning.md) instead of converting the frozen
+checkpoints to MLA. Qwen3-0.6B Full SFT and Qwen3-8B LoRA will use explicit Thinking and
+Non-thinking modes. The frozen M2 Non-thinking data and Baseline remain unchanged; the new path
+uses separately versioned reasoning data and templates. Only the
+[M5 contract](docs/m5_sft_contract.md) exists at this point—no training-quality improvement or
+Candidate promotion is claimed. The first implementation batch and its explicit limits are
+recorded in the [Chinese M5.0 review report](reports/m5/m5_dual_mode_contract.md).
 
 ## System boundary
 

@@ -1,0 +1,535 @@
+{
+  "$defs": {
+    "M5CheckpointConfig": {
+      "additionalProperties": false,
+      "description": "Token-based rolling Checkpoint and exact-resume contract.",
+      "properties": {
+        "keep_last": {
+          "const": 2,
+          "title": "Keep Last",
+          "type": "integer"
+        },
+        "resume": {
+          "enum": [
+            "none",
+            "auto",
+            "exact"
+          ],
+          "title": "Resume",
+          "type": "string"
+        },
+        "save_interval_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Save Interval Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "save_interval_tokens",
+        "keep_last",
+        "resume"
+      ],
+      "title": "M5CheckpointConfig",
+      "type": "object"
+    },
+    "M5DataConfig": {
+      "additionalProperties": false,
+      "description": "Immutable dual-mode dataset and token-mixture identity.",
+      "properties": {
+        "assistant_only_loss": {
+          "const": true,
+          "title": "Assistant Only Loss",
+          "type": "boolean"
+        },
+        "dataset_version": {
+          "pattern": "^m5-(reasoning-pilot|dual-sft)-v[0-9]+-[a-f0-9]{8}$",
+          "title": "Dataset Version",
+          "type": "string"
+        },
+        "mix_manifest_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Mix Manifest Sha256",
+          "type": "string"
+        },
+        "mode": {
+          "const": "dual",
+          "title": "Mode",
+          "type": "string"
+        },
+        "parent_dataset_version": {
+          "const": "m2-sft-v1-f82ff32e",
+          "title": "Parent Dataset Version",
+          "type": "string"
+        },
+        "sequence_length": {
+          "const": 1024,
+          "title": "Sequence Length",
+          "type": "integer"
+        },
+        "split": {
+          "const": "train",
+          "title": "Split",
+          "type": "string"
+        },
+        "thinking_token_fraction": {
+          "maximum": 0.5,
+          "minimum": 0.0,
+          "title": "Thinking Token Fraction",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dataset_version",
+        "parent_dataset_version",
+        "split",
+        "sequence_length",
+        "assistant_only_loss",
+        "mode",
+        "thinking_token_fraction",
+        "mix_manifest_sha256"
+      ],
+      "title": "M5DataConfig",
+      "type": "object"
+    },
+    "M5EvaluationConfig": {
+      "additionalProperties": false,
+      "description": "Development-only selection suite kept separate from M6 tests.",
+      "properties": {
+        "compare_modes_separately": {
+          "const": true,
+          "title": "Compare Modes Separately",
+          "type": "boolean"
+        },
+        "consume_m6_frozen_results": {
+          "const": false,
+          "title": "Consume M6 Frozen Results",
+          "type": "boolean"
+        },
+        "reasoning_dev_version": {
+          "const": "m5-reasoning-dev-v1",
+          "title": "Reasoning Dev Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reasoning_dev_version",
+        "compare_modes_separately",
+        "consume_m6_frozen_results"
+      ],
+      "title": "M5EvaluationConfig",
+      "type": "object"
+    },
+    "M5LoRAConfig": {
+      "additionalProperties": false,
+      "description": "Frozen LoRA topology for the Qwen3-8B route.",
+      "properties": {
+        "alpha": {
+          "const": 32,
+          "title": "Alpha",
+          "type": "integer"
+        },
+        "bias": {
+          "const": "none",
+          "default": "none",
+          "title": "Bias",
+          "type": "string"
+        },
+        "dropout": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Dropout",
+          "type": "number"
+        },
+        "rank": {
+          "const": 16,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "target_scope": {
+          "const": "attention_and_mlp_linear",
+          "title": "Target Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rank",
+        "alpha",
+        "dropout",
+        "target_scope"
+      ],
+      "title": "M5LoRAConfig",
+      "type": "object"
+    },
+    "M5ModelConfig": {
+      "additionalProperties": false,
+      "description": "Pinned Qwen3 identity, GQA architecture, and adaptation strategy.",
+      "properties": {
+        "adaptation": {
+          "enum": [
+            "full_sft",
+            "lora",
+            "qlora"
+          ],
+          "title": "Adaptation",
+          "type": "string"
+        },
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "bf16_lora_oom_evidence_run_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bf16 Lora Oom Evidence Run Id"
+        },
+        "license": {
+          "const": "Apache-2.0",
+          "title": "License",
+          "type": "string"
+        },
+        "lora": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M5LoRAConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "model_type": {
+          "const": "qwen3",
+          "title": "Model Type",
+          "type": "string"
+        },
+        "repository": {
+          "enum": [
+            "Qwen/Qwen3-0.6B",
+            "Qwen/Qwen3-8B"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "default": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "model_type",
+        "license",
+        "attention_architecture",
+        "adaptation"
+      ],
+      "title": "M5ModelConfig",
+      "type": "object"
+    },
+    "M5ParallelConfig": {
+      "additionalProperties": false,
+      "description": "Single-GPU or four-GPU DDP launch identity.",
+      "properties": {
+        "backend": {
+          "anyOf": [
+            {
+              "const": "nccl",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Backend"
+        },
+        "device_type": {
+          "const": "cuda",
+          "title": "Device Type",
+          "type": "string"
+        },
+        "strategy": {
+          "enum": [
+            "single",
+            "ddp"
+          ],
+          "title": "Strategy",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "maximum": 1800,
+          "minimum": 10,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "world_size": {
+          "enum": [
+            1,
+            4
+          ],
+          "title": "World Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "strategy",
+        "backend",
+        "device_type",
+        "world_size",
+        "timeout_seconds"
+      ],
+      "title": "M5ParallelConfig",
+      "type": "object"
+    },
+    "M5PrecisionConfig": {
+      "additionalProperties": false,
+      "description": "RTX 3090 numerical policy for both M5 routes.",
+      "properties": {
+        "allow_tf32": {
+          "title": "Allow Tf32",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bf16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "use_grad_scaler": {
+          "const": false,
+          "title": "Use Grad Scaler",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dtype",
+        "allow_tf32",
+        "use_grad_scaler"
+      ],
+      "title": "M5PrecisionConfig",
+      "type": "object"
+    },
+    "M5ReasoningConfig": {
+      "additionalProperties": false,
+      "description": "Frozen native Qwen3 dual-mode rendering and supervision policy.",
+      "properties": {
+        "explicit_mode_selection": {
+          "const": true,
+          "title": "Explicit Mode Selection",
+          "type": "boolean"
+        },
+        "nonthinking_template_id": {
+          "const": "qwen3-chatml-nonthinking-v1",
+          "title": "Nonthinking Template Id",
+          "type": "string"
+        },
+        "nonthinking_template_sha256": {
+          "const": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+          "title": "Nonthinking Template Sha256",
+          "type": "string"
+        },
+        "supervise_visible_reasoning": {
+          "const": true,
+          "title": "Supervise Visible Reasoning",
+          "type": "boolean"
+        },
+        "thinking_template_id": {
+          "const": "qwen3-chatml-thinking-v1",
+          "title": "Thinking Template Id",
+          "type": "string"
+        },
+        "thinking_template_sha256": {
+          "const": "4786143dbb7adb72a922d5efdcbe6596f2d65dcdc35d7bbf1b22830b795c2af9",
+          "title": "Thinking Template Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "explicit_mode_selection",
+        "supervise_visible_reasoning",
+        "nonthinking_template_id",
+        "nonthinking_template_sha256",
+        "thinking_template_id",
+        "thinking_template_sha256"
+      ],
+      "title": "M5ReasoningConfig",
+      "type": "object"
+    },
+    "M5RunConfig": {
+      "additionalProperties": false,
+      "description": "Run identity and declared evidence purpose.",
+      "properties": {
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "purpose": {
+          "enum": [
+            "smoke",
+            "ablation",
+            "formal"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "seed",
+        "purpose"
+      ],
+      "title": "M5RunConfig",
+      "type": "object"
+    },
+    "M5TrainingLoopConfig": {
+      "additionalProperties": false,
+      "description": "Token-budgeted optimizer loop contract for M5.",
+      "properties": {
+        "evaluation_interval_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Evaluation Interval Tokens",
+          "type": "integer"
+        },
+        "gradient_accumulation_steps": {
+          "exclusiveMinimum": 0,
+          "title": "Gradient Accumulation Steps",
+          "type": "integer"
+        },
+        "gradient_checkpointing": {
+          "const": true,
+          "title": "Gradient Checkpointing",
+          "type": "boolean"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "max_grad_norm": {
+          "exclusiveMinimum": 0,
+          "title": "Max Grad Norm",
+          "type": "number"
+        },
+        "max_job_duration_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 43200,
+          "title": "Max Job Duration Seconds",
+          "type": "integer"
+        },
+        "max_train_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Max Train Tokens",
+          "type": "integer"
+        },
+        "micro_batch_size": {
+          "exclusiveMinimum": 0,
+          "title": "Micro Batch Size",
+          "type": "integer"
+        },
+        "warmup_tokens": {
+          "minimum": 0,
+          "title": "Warmup Tokens",
+          "type": "integer"
+        },
+        "weight_decay": {
+          "minimum": 0,
+          "title": "Weight Decay",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_train_tokens",
+        "evaluation_interval_tokens",
+        "micro_batch_size",
+        "gradient_accumulation_steps",
+        "learning_rate",
+        "weight_decay",
+        "max_grad_norm",
+        "warmup_tokens",
+        "gradient_checkpointing",
+        "max_job_duration_seconds"
+      ],
+      "title": "M5TrainingLoopConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete validated configuration for one M5 SFT run.",
+  "properties": {
+    "checkpoint": {
+      "$ref": "#/$defs/M5CheckpointConfig"
+    },
+    "config_kind": {
+      "const": "qwen_sft",
+      "title": "Config Kind",
+      "type": "string"
+    },
+    "data": {
+      "$ref": "#/$defs/M5DataConfig"
+    },
+    "evaluation": {
+      "$ref": "#/$defs/M5EvaluationConfig"
+    },
+    "model": {
+      "$ref": "#/$defs/M5ModelConfig"
+    },
+    "parallel": {
+      "$ref": "#/$defs/M5ParallelConfig"
+    },
+    "precision": {
+      "$ref": "#/$defs/M5PrecisionConfig"
+    },
+    "reasoning": {
+      "$ref": "#/$defs/M5ReasoningConfig"
+    },
+    "run": {
+      "$ref": "#/$defs/M5RunConfig"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "training": {
+      "$ref": "#/$defs/M5TrainingLoopConfig"
+    }
+  },
+  "required": [
+    "config_kind",
+    "schema_version",
+    "run",
+    "model",
+    "data",
+    "reasoning",
+    "training",
+    "precision",
+    "parallel",
+    "checkpoint",
+    "evaluation"
+  ],
+  "title": "M5SFTConfig",
+  "type": "object"
+}

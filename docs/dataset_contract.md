@@ -222,7 +222,8 @@ Tokenizer 后端固定为 `tokenizers==0.21.4` 兼容范围，词表（含 Added
 151645。加载时必须先检查文件大小和 SHA256，再检查词表及特殊 Token ID；不需要下载模型
 权重。
 
-M5 的 SFT 模式固定为 `qwen3-chatml-nonthinking-v1`：
+M2 的 SFT 模式固定为 `qwen3-chatml-nonthinking-v1`；M5 继续把它作为不可变 Non-thinking
+父数据身份：
 
 ```text
 <|im_start|>{role}\n{content}<|im_end|>\n
@@ -246,6 +247,13 @@ Assistant-only Loss 的 Label Mask 规则：
 
 本阶段只产生 `TokenizedSample`，仍不代表最终注册数据。确定性混合、Packing、最终 Manifest
 和 Registry 分别由 M2.3b/M2.3c 完成。
+
+M5 不修改上述 Template 或注册数据，而是按
+[ADR-0005](adr/0005-qwen3-gqa-dual-mode-reasoning.md)新增
+`qwen3-chatml-thinking-v1` 与独立的 `m5-reasoning-pilot-v1-*`、`m5-dual-sft-v1-*`
+数据身份。Thinking Assistant 同时监督 Think 标签、可见推理轨迹、最终答案和结束 Token；
+空/多重 Think 块、空最终答案、验证失败与超长候选必须进入拒绝记录。Reasoning 数据的来源、
+Teacher、Verifier、分组切分、配比消融和污染门禁见 [M5 契约](m5_sft_contract.md)。
 
 ## 14. M2.3b Token 混合与 Packing 契约
 

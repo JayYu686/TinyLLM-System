@@ -197,6 +197,16 @@ Near-Dedup 是后续增强项。只完成 Exact 指纹扫描时必须记录 `nea
 污染为零不等于评测质量合格；300 条内容仍必须经过语言、类别、评分客观性、许可和人工
 质量审查。Baseline 未真实运行时必须保持 `not_evaluated`。
 
+M5 新增 Thinking 评测时不得改写上述冻结身份。正式配置必须显式选择模式：Non-thinking
+继续与 M2 Greedy Baseline 比较；Thinking 使用固定 Qwen3 Sampling 参数、生成 Seed 和
+`qwen3-chatml-thinking-v1`，并保存 Think 块与最终答案的独立解析结果。M5 配比选择只使用
+独立 200 条 Reasoning Dev，不读取 M6 冻结测试结果。
+
+M6 对双模式分别报告：Thinking Candidate 对比同模型 Base-Thinking；Non-thinking Candidate
+对比同模型 Base-Non-thinking。Thinking 格式有效率至少 99%，Non-thinking 可见推理泄漏率
+必须为零；最终 Candidate 仍需满足领域提升、Bootstrap CI、通用回归、JSON Valid Rate 和
+完整血缘门禁。详细协议见 [M5 契约](m5_sft_contract.md)。
+
 ## 11. M2.4c 训练前 Baseline 契约
 
 M2.4c 固定使用 `Qwen/Qwen3-0.6B@c1899de289a04d12100db370d81485cdf75e47ca` 的

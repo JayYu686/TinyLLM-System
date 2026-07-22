@@ -102,6 +102,9 @@ def _worker(args: argparse.Namespace) -> int:
         trust_remote_code=False,
     )
     device = torch.device("cuda", 0)
+    # Initialize the selected context before querying allocator statistics. On the
+    # reviewed CUDA 11.8 stack, resetting an uninitialized explicit device can fail.
+    torch.cuda.set_device(device)
     started = time.monotonic()
     torch.cuda.reset_peak_memory_stats(device)
     model = AutoModelForCausalLM.from_pretrained(

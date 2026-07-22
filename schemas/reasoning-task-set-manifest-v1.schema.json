@@ -1,0 +1,73 @@
+{
+  "additionalProperties": false,
+  "description": "Content-addressed identity and distribution of one deterministic task set.",
+  "properties": {
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "split": {
+      "enum": [
+        "pilot_train",
+        "reasoning_dev"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "task_count": {
+      "exclusiveMinimum": 0,
+      "title": "Task Count",
+      "type": "integer"
+    },
+    "task_family_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Task Family Counts",
+      "type": "object"
+    },
+    "task_set_version": {
+      "pattern": "^m5-reasoning-(pilot-tasks|dev)-v1-[0-9a-f]{8}$",
+      "title": "Task Set Version",
+      "type": "string"
+    },
+    "tasks_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tasks Sha256",
+      "type": "string"
+    },
+    "template_family_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Template Family Counts",
+      "type": "object"
+    }
+  },
+  "required": [
+    "task_set_version",
+    "split",
+    "config_sha256",
+    "tasks_sha256",
+    "task_count",
+    "task_family_counts",
+    "language_counts",
+    "template_family_counts"
+  ],
+  "title": "ReasoningTaskSetManifest",
+  "type": "object"
+}

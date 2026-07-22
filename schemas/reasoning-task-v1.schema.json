@@ -1,0 +1,84 @@
+{
+  "additionalProperties": false,
+  "description": "One deterministic reasoning prompt and its non-executable expected answer.",
+  "properties": {
+    "expected_answer_json": {
+      "maxLength": 4096,
+      "minLength": 2,
+      "title": "Expected Answer Json",
+      "type": "string"
+    },
+    "expected_answer_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Answer Sha256",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^m5-reasoning:(pilot|dev):[a-z0-9][a-z0-9._-]{2,95}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "prompt": {
+      "maxLength": 8192,
+      "minLength": 1,
+      "title": "Prompt",
+      "type": "string"
+    },
+    "prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "split": {
+      "enum": [
+        "pilot_train",
+        "reasoning_dev"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "task_family": {
+      "enum": [
+        "config",
+        "json",
+        "linux",
+        "log_diagnosis",
+        "python"
+      ],
+      "title": "Task Family",
+      "type": "string"
+    },
+    "template_family": {
+      "pattern": "^(pilot|dev)\\.[a-z0-9][a-z0-9._-]+\\.v1$",
+      "title": "Template Family",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "split",
+    "task_family",
+    "language",
+    "template_family",
+    "prompt",
+    "prompt_sha256",
+    "expected_answer_json",
+    "expected_answer_sha256"
+  ],
+  "title": "ReasoningTask",
+  "type": "object"
+}

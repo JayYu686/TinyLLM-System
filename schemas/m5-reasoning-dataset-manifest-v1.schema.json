@@ -1,0 +1,361 @@
+{
+  "$defs": {
+    "ReasoningTeacherIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned offline teacher identity used to produce visible reasoning traces.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "thinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode"
+      ],
+      "title": "ReasoningTeacherIdentity",
+      "type": "object"
+    },
+    "ReasoningTeacherSampling": {
+      "additionalProperties": false,
+      "description": "Frozen Qwen3 thinking-mode generation policy for the first M5 pilot.",
+      "properties": {
+        "base_seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 2,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "maximum": 2048,
+          "minimum": 64,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed"
+      ],
+      "title": "ReasoningTeacherSampling",
+      "type": "object"
+    },
+    "ReasoningVerifierIdentity": {
+      "additionalProperties": false,
+      "description": "Deterministic final-answer verifier that never executes generated code.",
+      "properties": {
+        "algorithm": {
+          "const": "canonical-json-object-equality",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "execute_generated_code": {
+          "const": false,
+          "title": "Execute Generated Code",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "verifier_id": {
+          "const": "m5-json-exact-v1",
+          "title": "Verifier Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "verifier_id",
+        "algorithm",
+        "execute_generated_code"
+      ],
+      "title": "ReasoningVerifierIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Content-addressed M5 pilot lineage, counts, hashes, and selection evidence.",
+  "properties": {
+    "accepted_samples": {
+      "minimum": 0,
+      "title": "Accepted Samples",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "contamination_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Contamination Report Sha256",
+      "type": "string"
+    },
+    "contamination_status": {
+      "const": "pass",
+      "title": "Contamination Status",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_name": {
+      "const": "m5-reasoning-pilot",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m5-reasoning-pilot-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "dev_task_set_version": {
+      "pattern": "^m5-reasoning-dev-v1-[0-9a-f]{8}$",
+      "title": "Dev Task Set Version",
+      "type": "string"
+    },
+    "failed_generations": {
+      "minimum": 0,
+      "title": "Failed Generations",
+      "type": "integer"
+    },
+    "generation_attempts": {
+      "minimum": 0,
+      "title": "Generation Attempts",
+      "type": "integer"
+    },
+    "generations_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Generations Sha256",
+      "type": "string"
+    },
+    "input_tasks": {
+      "exclusiveMinimum": 0,
+      "title": "Input Tasks",
+      "type": "integer"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "parent_dataset_version": {
+      "const": "m2-sft-v1-f82ff32e",
+      "title": "Parent Dataset Version",
+      "type": "string"
+    },
+    "rejected_candidates": {
+      "minimum": 0,
+      "title": "Rejected Candidates",
+      "type": "integer"
+    },
+    "rejected_records": {
+      "minimum": 0,
+      "title": "Rejected Records",
+      "type": "integer"
+    },
+    "rejected_tasks": {
+      "minimum": 0,
+      "title": "Rejected Tasks",
+      "type": "integer"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "rejections_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Rejections Sha256",
+      "type": "string"
+    },
+    "samples_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Samples Sha256",
+      "type": "string"
+    },
+    "sampling": {
+      "$ref": "#/$defs/ReasoningTeacherSampling"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "successful_generations": {
+      "minimum": 0,
+      "title": "Successful Generations",
+      "type": "integer"
+    },
+    "task_family_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Task Family Counts",
+      "type": "object"
+    },
+    "task_set_version": {
+      "pattern": "^m5-reasoning-pilot-tasks-v1-[0-9a-f]{8}$",
+      "title": "Task Set Version",
+      "type": "string"
+    },
+    "tasks_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tasks Sha256",
+      "type": "string"
+    },
+    "teacher": {
+      "$ref": "#/$defs/ReasoningTeacherIdentity"
+    },
+    "template_family_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Template Family Counts",
+      "type": "object"
+    },
+    "thinking_template_id": {
+      "const": "qwen3-chatml-thinking-v1",
+      "title": "Thinking Template Id",
+      "type": "string"
+    },
+    "unused_candidates": {
+      "minimum": 0,
+      "title": "Unused Candidates",
+      "type": "integer"
+    },
+    "verifications_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Verifications Sha256",
+      "type": "string"
+    },
+    "verified_candidates": {
+      "minimum": 0,
+      "title": "Verified Candidates",
+      "type": "integer"
+    },
+    "verifier": {
+      "$ref": "#/$defs/ReasoningVerifierIdentity"
+    }
+  },
+  "required": [
+    "dataset_name",
+    "dataset_version",
+    "parent_dataset_version",
+    "task_set_version",
+    "dev_task_set_version",
+    "thinking_template_id",
+    "config_sha256",
+    "tasks_sha256",
+    "generations_sha256",
+    "verifications_sha256",
+    "samples_sha256",
+    "rejections_sha256",
+    "contamination_report_sha256",
+    "contamination_status",
+    "content_sha256",
+    "input_tasks",
+    "generation_attempts",
+    "successful_generations",
+    "failed_generations",
+    "verified_candidates",
+    "unused_candidates",
+    "accepted_samples",
+    "rejected_candidates",
+    "rejected_tasks",
+    "rejected_records",
+    "task_family_counts",
+    "language_counts",
+    "template_family_counts",
+    "rejection_counts",
+    "teacher",
+    "sampling",
+    "verifier"
+  ],
+  "title": "M5ReasoningDatasetManifest",
+  "type": "object"
+}

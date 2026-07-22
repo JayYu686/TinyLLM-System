@@ -1,0 +1,67 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free deterministic verification evidence for one parsed candidate.",
+  "properties": {
+    "expected_answer_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Answer Sha256",
+      "type": "string"
+    },
+    "final_answer_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Final Answer Sha256",
+      "type": "string"
+    },
+    "generation_id": {
+      "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}:candidate-[01]$",
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "reason": {
+      "enum": [
+        "accepted",
+        "answer_mismatch",
+        "invalid_final_json"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}:verify-[01]$",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "verifier_id": {
+      "const": "m5-json-exact-v1",
+      "title": "Verifier Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "verification_id",
+    "task_id",
+    "generation_id",
+    "verifier_id",
+    "expected_answer_sha256",
+    "final_answer_sha256",
+    "passed",
+    "reason"
+  ],
+  "title": "ReasoningVerifierResult",
+  "type": "object"
+}

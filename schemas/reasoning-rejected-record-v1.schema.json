@@ -1,0 +1,123 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free audit evidence for one rejected candidate or exhausted task.",
+  "properties": {
+    "generation_id": {
+      "anyOf": [
+        {
+          "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}:candidate-[01]$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generation Id"
+    },
+    "max_sequence_length": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Sequence Length"
+    },
+    "observed_token_count": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Token Count"
+    },
+    "prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "raw_output_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Output Sha256"
+    },
+    "reason": {
+      "enum": [
+        "empty_final_answer",
+        "empty_reasoning",
+        "invalid_final_json",
+        "missing_think_block",
+        "multiple_think_blocks",
+        "nested_think_tag",
+        "no_candidate_passed",
+        "sequence_too_long",
+        "teacher_generation_failed",
+        "teacher_length_limit",
+        "verifier_failed"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "generation",
+        "parsing",
+        "tokenization",
+        "verification",
+        "selection"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "anyOf": [
+        {
+          "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}:verify-[01]$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verification Id"
+    }
+  },
+  "required": [
+    "task_id",
+    "stage",
+    "reason",
+    "prompt_sha256"
+  ],
+  "title": "ReasoningRejectedRecord",
+  "type": "object"
+}

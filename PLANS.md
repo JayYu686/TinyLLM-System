@@ -187,6 +187,11 @@ GQA，并通过新版本 Thinking 数据与 Template 支持显式 Thinking/Non-t
 冻结的 Non-thinking 数据和 Baseline 保持不可变。先完成可验证 Reasoning Pilot、双模式
 Baseline 和 0%/30%/50% Thinking Token 短程消融，再冻结正式混合比例。
 
+M5.1 已冻结 Reasoning Task/Teacher/Verifier/Rejected/Manifest Schema，建立 200 条独立 Dev、
+Pilot/Dev 污染门禁和公开 CPU 合成链路，并完成一次真实 Qwen3-8B 离线 Teacher Smoke。
+它只解除 M5.2 的数据接口与 Teacher 就绪性阻塞，不构成质量提升；证据见
+[M5.1 中文审查报告](reports/m5/m5_reasoning_data.md)。
+
 Qwen3-0.6B Full SFT：Assistant-only Loss、BF16、Sequence Length 1024、Gradient
 Checkpointing；单卡 Smoke 后使用四卡 DDP。最低 50M Tokens、最高 100M。每 10M Tokens
 检查：验证损失相对改善至少 0.5%，Non-thinking Dev 回退不超过 2pp，否则停止扩展。每段

@@ -55,6 +55,17 @@ Seed、Verifier、输入/输出哈希、拒绝原因和污染结果必须进入 
 不要求跨 CUDA 环境逐位一致；一旦原始生成 Artifact 被接收，后续规范化、验证、Tokenization、
 Packing 和注册必须可确定性重建。
 
+### 3.1 M5.1 已冻结实现
+
+M5.1 使用 `configs/data/m5_reasoning.yaml` 冻结 Task、Teacher、Verifier、Rejected Record、
+Pilot/Dev 污染检查和 Dataset Manifest v1。200 条 Dev 的内容身份为
+`m5-reasoning-dev-v1-3eb153c2`，五类各 40 条，英文 140 条、中文 60 条。Pilot、Dev 和 Teacher
+Sampling 使用互异 Seed；任意 Exact Prompt 或 Template Family 交叉都会阻断构建。
+
+真实离线 Qwen3-8B Teacher Smoke 已验证加载、Thinking 生成、首个通过候选选择和公开脱敏
+证据。该 Smoke 只有一个接受样本，不代表正式 Pilot 规模或模型质量。详见
+[M5.1 中文报告](../reports/m5/m5_reasoning_data.md)。
+
 ## 4. 配比与训练门禁
 
 正式数据配比不能凭经验指定。先在不接触 M6 冻结测试指标的情况下，对 Thinking Token

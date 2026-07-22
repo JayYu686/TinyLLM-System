@@ -1,0 +1,275 @@
+{
+  "$defs": {
+    "ReasoningTeacherIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned offline teacher identity used to produce visible reasoning traces.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "thinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode"
+      ],
+      "title": "ReasoningTeacherIdentity",
+      "type": "object"
+    },
+    "ReasoningTeacherSampling": {
+      "additionalProperties": false,
+      "description": "Frozen Qwen3 thinking-mode generation policy for the first M5 pilot.",
+      "properties": {
+        "base_seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 2,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "maximum": 2048,
+          "minimum": 64,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed"
+      ],
+      "title": "ReasoningTeacherSampling",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Public, path-free evidence from one real offline Qwen3 teacher invocation.",
+  "properties": {
+    "accepted_samples": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Accepted Samples",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "anyOf": [
+        {
+          "pattern": "^m5-reasoning-pilot-v1-[0-9a-f]{8}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dataset Version"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0.0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "generated_token_counts": {
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 2,
+      "minItems": 1,
+      "title": "Generated Token Counts",
+      "type": "array"
+    },
+    "generation_attempts": {
+      "maximum": 2,
+      "minimum": 1,
+      "title": "Generation Attempts",
+      "type": "integer"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "input_token_count": {
+      "exclusiveMinimum": 0,
+      "title": "Input Token Count",
+      "type": "integer"
+    },
+    "model": {
+      "$ref": "#/$defs/ReasoningTeacherIdentity"
+    },
+    "peak_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "raw_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Artifact Sha256",
+      "type": "string"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "sampling": {
+      "$ref": "#/$defs/ReasoningTeacherSampling"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "torch_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Torch Version",
+      "type": "string"
+    },
+    "transformers_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Transformers Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "generated_at",
+    "model",
+    "sampling",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "physical_gpu_index",
+    "gpu_name",
+    "torch_version",
+    "transformers_version",
+    "input_token_count",
+    "generated_token_counts",
+    "generation_attempts",
+    "accepted_samples",
+    "rejection_counts",
+    "duration_seconds",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes",
+    "raw_artifact_sha256"
+  ],
+  "title": "M5TeacherSmokeResult",
+  "type": "object"
+}

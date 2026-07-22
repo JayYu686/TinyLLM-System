@@ -95,7 +95,7 @@ def _worker(args: argparse.Namespace) -> int:
             tasks_per_family=10,
             task_contract_version=config.task_contract_version,
         )
-        if task.task_family == "python" and task.language == "en"
+        if task.task_family == args.task_family and task.language == "en"
     )
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_dir,
@@ -233,6 +233,8 @@ def _supervise(args: argparse.Namespace) -> int:
         str(args.model_dir),
         "--gpu-index",
         str(args.gpu_index),
+        "--task-family",
+        str(args.task_family),
         "--raw-output",
         str(args.raw_output),
         "--public-output",
@@ -257,6 +259,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--model-dir", type=Path, required=True)
     parser.add_argument("--gpu-index", type=int, required=True)
+    parser.add_argument(
+        "--task-family",
+        choices=("config", "json", "linux", "log_diagnosis", "python"),
+        default="python",
+    )
     parser.add_argument("--raw-output", type=Path, required=True)
     parser.add_argument("--public-output", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=900)

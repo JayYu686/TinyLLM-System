@@ -1,0 +1,44 @@
+{
+  "accepted_samples": 1,
+  "config_sha256": "39cdf56b89b731698d10a09c821cb48a96695d6188038a677f0f5d163ee5e282",
+  "dataset_version": "m5-reasoning-pilot-v1-e467c3a1",
+  "duration_seconds": 62.88750462909229,
+  "generated_at": "2026-07-22T07:51:45.883855Z",
+  "generated_token_counts": [
+    381,
+    896
+  ],
+  "generation_attempts": 2,
+  "git_commit": "35dd2efc920382160028d358ed5c775fcb11fa60",
+  "git_dirty": false,
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "input_token_count": 74,
+  "model": {
+    "attention_architecture": "gqa",
+    "dtype": "bfloat16",
+    "local_files_only": true,
+    "mode": "thinking",
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "trust_remote_code": false
+  },
+  "peak_allocated_bytes": 16552429568,
+  "peak_reserved_bytes": 16642998272,
+  "physical_gpu_index": 9,
+  "raw_artifact_sha256": "fb2f165b5dc8cd199797cef8a821cd911dbbc203584398b9df0dd7778a4a07d9",
+  "rejection_counts": {},
+  "sampling": {
+    "base_seed": 20260722,
+    "candidate_count": 2,
+    "do_sample": true,
+    "max_new_tokens": 896,
+    "repetition_penalty": 1.0,
+    "temperature": 0.6,
+    "top_k": 20,
+    "top_p": 0.95
+  },
+  "schema_version": "1.0",
+  "status": "pass",
+  "torch_version": "2.7.1+cu118",
+  "transformers_version": "4.57.6"
+}

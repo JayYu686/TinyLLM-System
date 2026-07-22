@@ -3,6 +3,7 @@ parent_dataset_version: m2-sft-v1-f82ff32e
 thinking_template_id: qwen3-chatml-thinking-v1
 thinking_template_sha256: 478614320637a49649c144d5bfef5d247344356900a615495eade36639845af9
 max_sequence_length: 1024
+pilot_task_seed: 20260723
 dev:
   seed: 20260722
   total_tasks: 200
@@ -31,7 +32,7 @@ sampling:
   repetition_penalty: 1.0
   candidate_count: 2
   max_new_tokens: 896
-  base_seed: 20260722
+  base_seed: 20260724
 verifier:
   verifier_id: m5-json-exact-v1
   schema_version: "1.0"

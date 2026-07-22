@@ -19,6 +19,7 @@ from tinyllm.data import (
     M5TeacherSmokeResult,
     TeacherGenerationRecord,
     build_reasoning_dataset,
+    generate_reasoning_dev_tasks,
     generate_reasoning_pilot_tasks,
     load_m5_reasoning_data_config,
 )
@@ -90,7 +91,7 @@ def _worker(args: argparse.Namespace) -> int:
     task = next(
         task
         for task in generate_reasoning_pilot_tasks(
-            seed=config.sampling.base_seed,
+            seed=config.pilot_task_seed,
             tasks_per_family=10,
         )
         if task.task_family == "python" and task.language == "en"
@@ -165,7 +166,12 @@ def _worker(args: argparse.Namespace) -> int:
             )
         )
     torch.cuda.synchronize(device)
-    build = build_reasoning_dataset([task], records, config=config)
+    build = build_reasoning_dataset(
+        [task],
+        records,
+        config=config,
+        dev_tasks=generate_reasoning_dev_tasks(config),
+    )
     duration_seconds = time.monotonic() - started
     peak_allocated = int(torch.cuda.max_memory_allocated(device))
     peak_reserved = int(torch.cuda.max_memory_reserved(device))
@@ -178,6 +184,7 @@ def _worker(args: argparse.Namespace) -> int:
         "samples": [sample.to_dict() for sample in build.samples],
         "rejected": [record.to_dict() for record in build.rejected],
         "manifest": build.manifest.to_dict(),
+        "contamination_report": build.contamination.to_dict(),
     }
     _write_json(args.raw_output, raw_payload)
     result = M5TeacherSmokeResult(

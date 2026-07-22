@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free identity for one Pilot/Dev prompt or template-family overlap.",
+  "properties": {
+    "dev_identity": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Dev Identity",
+      "type": "string"
+    },
+    "evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Sha256",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "exact_prompt",
+        "template_family"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "pilot_identity": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Pilot Identity",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "pilot_identity",
+    "dev_identity",
+    "evidence_sha256"
+  ],
+  "title": "ReasoningContaminationMatch",
+  "type": "object"
+}

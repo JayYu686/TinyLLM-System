@@ -25,16 +25,22 @@ def build_smoke_payload(config_path: Path) -> dict[str, object]:
     dev_tasks = generate_reasoning_dev_tasks(config)
     dev_manifest = build_reasoning_task_manifest(dev_tasks, config=config)
     pilot_tasks = generate_reasoning_pilot_tasks(
-        seed=config.sampling.base_seed,
+        seed=config.pilot_task_seed,
         tasks_per_family=10,
     )
     generations = build_synthetic_teacher_generations(pilot_tasks, config=config)
-    build = build_reasoning_dataset(pilot_tasks, generations, config=config)
+    build = build_reasoning_dataset(
+        pilot_tasks,
+        generations,
+        config=config,
+        dev_tasks=dev_tasks,
+    )
     return {
         "evidence_kind": "synthetic_cpu_contract_smoke",
         "model_generated": False,
         "quality_metric": False,
         "dev_manifest": dev_manifest.to_dict(),
+        "contamination_report": build.contamination.to_dict(),
         "pilot_smoke": summarize_reasoning_build(build),
     }
 

@@ -18,6 +18,10 @@ def test_m5_reasoning_cpu_smoke_matches_committed_public_evidence() -> None:
     assert payload == committed
     assert payload["model_generated"] is False
     assert payload["quality_metric"] is False
+    contamination = payload["contamination_report"]
+    assert isinstance(contamination, dict)
+    assert contamination["status"] == "pass"
+    assert contamination["matches"] == []
     dev = payload["dev_manifest"]
     assert isinstance(dev, dict)
     assert dev["task_count"] == 200

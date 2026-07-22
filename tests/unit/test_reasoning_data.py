@@ -18,6 +18,7 @@ from tinyllm.data import (
     build_reasoning_dataset,
     build_reasoning_task_manifest,
     build_synthetic_teacher_generations,
+    check_reasoning_split_contamination,
     generate_reasoning_dev_tasks,
     generate_reasoning_pilot_tasks,
     load_m5_reasoning_data_config,
@@ -31,6 +32,10 @@ CONFIG_PATH = Path("configs/data/m5_reasoning.yaml")
 
 def _config() -> M5ReasoningDataConfig:
     return load_m5_reasoning_data_config(CONFIG_PATH)
+
+
+def _dev_tasks(config: M5ReasoningDataConfig) -> tuple[ReasoningTask, ...]:
+    return generate_reasoning_dev_tasks(config)
 
 
 def _generation(
@@ -107,6 +112,33 @@ def test_reasoning_dev_rejects_wrong_size_and_mixed_split() -> None:
         build_reasoning_task_manifest(dev_tasks[:-1], config=config)
     with pytest.raises(ReasoningDataError, match="exactly one split"):
         build_reasoning_task_manifest((*dev_tasks, pilot_tasks[0]), config=config)
+
+
+def test_reasoning_pilot_and_dev_contamination_gate_is_content_free() -> None:
+    config = _config()
+    pilot = generate_reasoning_pilot_tasks(seed=7, tasks_per_family=10)
+    dev = list(_dev_tasks(config))
+
+    clean = check_reasoning_split_contamination(pilot, dev, config=config)
+    assert clean.status == "pass"
+    assert clean.exact_prompt_matches == 0
+    assert clean.template_family_overlaps == 0
+    contaminated = dev[0].model_copy(
+        update={
+            "prompt": pilot[0].prompt,
+            "prompt_sha256": pilot[0].prompt_sha256,
+        }
+    )
+    dev[0] = ReasoningTask.model_validate(contaminated.model_dump())
+
+    report = check_reasoning_split_contamination(pilot, dev, config=config)
+    assert report.status == "fail"
+    assert report.exact_prompt_matches == 1
+    assert report.matches[0].pilot_identity == pilot[0].id
+    assert pilot[0].prompt not in report.model_dump_json()
+    generations = build_synthetic_teacher_generations(pilot, config=config)
+    with pytest.raises(ReasoningDataError, match="contamination gate"):
+        build_reasoning_dataset(pilot, generations, config=config, dev_tasks=dev)
 
 
 def test_pilot_generation_requires_exact_70_30_compatible_size() -> None:
@@ -193,14 +225,21 @@ def test_synthetic_cpu_build_selects_first_passing_candidate_deterministically()
     tasks = generate_reasoning_pilot_tasks(seed=1, tasks_per_family=10)
     generations = build_synthetic_teacher_generations(tasks, config=config)
 
-    first = build_reasoning_dataset(tasks, generations, config=config)
-    second = build_reasoning_dataset(reversed(tasks), reversed(generations), config=config)
+    first = build_reasoning_dataset(tasks, generations, config=config, dev_tasks=_dev_tasks(config))
+    second = build_reasoning_dataset(
+        reversed(tasks),
+        reversed(generations),
+        config=config,
+        dev_tasks=reversed(_dev_tasks(config)),
+    )
 
     assert first == second
     assert first.manifest.input_tasks == 50
     assert first.manifest.accepted_samples == 50
     assert first.manifest.rejected_tasks == 0
     assert first.manifest.rejection_counts == {"invalid_final_json": 10}
+    assert first.manifest.contamination_status == "pass"
+    assert first.contamination.status == "pass"
     assert first.manifest.verified_candidates == 60
     assert first.manifest.unused_candidates == 40
     assert first.manifest.dataset_version.startswith("m5-reasoning-pilot-v1-")
@@ -225,7 +264,9 @@ def test_build_records_generation_parsing_length_and_exhaustion_failures() -> No
     length_output = "<think>partial</think>"
     length = _generation(task, 1, length_output, finish_reason="length")
 
-    build = build_reasoning_dataset([task], [failed, length], config=config)
+    build = build_reasoning_dataset(
+        [task], [failed, length], config=config, dev_tasks=_dev_tasks(config)
+    )
 
     assert build.samples == ()
     assert build.manifest.failed_generations == 1
@@ -252,7 +293,9 @@ def test_build_records_sequence_and_parse_failure_before_accepting_fallback() ->
         f"<think>valid fallback</think>\n\n{task.expected_answer_json}",
     )
 
-    build = build_reasoning_dataset([task], [overlength, fallback], config=config)
+    build = build_reasoning_dataset(
+        [task], [overlength, fallback], config=config, dev_tasks=_dev_tasks(config)
+    )
 
     assert build.manifest.accepted_samples == 1
     assert build.manifest.rejection_counts == {"sequence_too_long": 1}
@@ -268,20 +311,22 @@ def test_generation_lineage_integrity_rejects_unknown_duplicate_and_gapped_candi
     valid = _generation(task, 0, f"<think>x</think>{task.expected_answer_json}")
 
     with pytest.raises(ReasoningDataError, match="unique"):
-        build_reasoning_dataset([task], [valid, valid], config=config)
+        build_reasoning_dataset([task], [valid, valid], config=config, dev_tasks=_dev_tasks(config))
     changed = valid.model_copy(update={"prompt_sha256": "0" * 64})
     with pytest.raises(ReasoningDataError, match="prompt hash"):
-        build_reasoning_dataset([task], [changed], config=config)
+        build_reasoning_dataset([task], [changed], config=config, dev_tasks=_dev_tasks(config))
     candidate_one = _generation(task, 1, f"<think>x</think>{task.expected_answer_json}")
     with pytest.raises(ReasoningDataError, match="contiguous"):
-        build_reasoning_dataset([task], [candidate_one], config=config)
+        build_reasoning_dataset(
+            [task], [candidate_one], config=config, dev_tasks=_dev_tasks(config)
+        )
 
 
 def test_rejection_and_manifest_schemas_reject_incoherent_evidence() -> None:
     config = _config()
     tasks = generate_reasoning_pilot_tasks(seed=5, tasks_per_family=10)
     generations = build_synthetic_teacher_generations(tasks, config=config)
-    build = build_reasoning_dataset(tasks, generations, config=config)
+    build = build_reasoning_dataset(tasks, generations, config=config, dev_tasks=_dev_tasks(config))
 
     with pytest.raises(ValidationError, match="selection-level"):
         ReasoningRejectedRecord(

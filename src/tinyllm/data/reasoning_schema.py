@@ -152,10 +152,19 @@ class M5ReasoningDataConfig(StrictSchema):
         "478614320637a49649c144d5bfef5d247344356900a615495eade36639845af9"
     ]
     max_sequence_length: Literal[1024]
+    pilot_task_seed: int = Field(ge=0, le=2**32 - 1)
     dev: ReasoningDevConfig
     teacher: ReasoningTeacherIdentity
     sampling: ReasoningTeacherSampling
     verifier: ReasoningVerifierIdentity
+
+    @model_validator(mode="after")
+    def validate_seed_domains(self) -> M5ReasoningDataConfig:
+        """Keep Pilot task identities separate from Dev and teacher sampling."""
+
+        if len({self.pilot_task_seed, self.dev.seed, self.sampling.base_seed}) != 3:
+            raise ValueError("Pilot, Dev, and teacher sampling seeds must be distinct")
+        return self
 
 
 class ReasoningTask(StrictSchema):
@@ -251,6 +260,70 @@ class ReasoningTaskSetManifest(StrictSchema):
         ):
             if sum(counts.values()) != self.task_count:
                 raise ValueError("task-set distribution counts must equal task count")
+        return self
+
+
+class ReasoningContaminationMatch(StrictSchema):
+    """Content-free identity for one Pilot/Dev prompt or template-family overlap."""
+
+    kind: Literal["exact_prompt", "template_family"]
+    pilot_identity: str = Field(min_length=1, max_length=160)
+    dev_identity: str = Field(min_length=1, max_length=160)
+    evidence_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def validate_evidence(self) -> ReasoningContaminationMatch:
+        """Bind the evidence hash to match kind and both content-free identities."""
+
+        expected = content_sha256(
+            {
+                "dev_identity": self.dev_identity,
+                "kind": self.kind,
+                "pilot_identity": self.pilot_identity,
+            }
+        )
+        if self.evidence_sha256 != expected:
+            raise ValueError("reasoning contamination match hash does not match identities")
+        return self
+
+
+class M5ReasoningContaminationReport(StrictSchema):
+    """Deterministic Pilot/Dev isolation result required by every M5 pilot Manifest."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    algorithm: Literal["exact-prompt-and-template-family-v1"]
+    pilot_task_set_version: str = Field(pattern=r"^m5-reasoning-pilot-tasks-v1-[0-9a-f]{8}$")
+    dev_task_set_version: str = Field(pattern=r"^m5-reasoning-dev-v1-[0-9a-f]{8}$")
+    pilot_task_count: int = Field(gt=0)
+    dev_task_count: Literal[200]
+    exact_prompt_matches: int = Field(ge=0)
+    template_family_overlaps: int = Field(ge=0)
+    matches: tuple[ReasoningContaminationMatch, ...]
+    status: Literal["pass", "fail"]
+
+    @field_validator("matches")
+    @classmethod
+    def validate_match_order(
+        cls, value: tuple[ReasoningContaminationMatch, ...]
+    ) -> tuple[ReasoningContaminationMatch, ...]:
+        """Require deterministic unique match ordering."""
+
+        keys = tuple((match.kind, match.pilot_identity, match.dev_identity) for match in value)
+        if keys != tuple(sorted(keys)) or len(keys) != len(set(keys)):
+            raise ValueError("reasoning contamination matches must be unique and sorted")
+        return value
+
+    @model_validator(mode="after")
+    def validate_report(self) -> M5ReasoningContaminationReport:
+        """Bind match counts and pass/fail status to retained evidence."""
+
+        exact = sum(match.kind == "exact_prompt" for match in self.matches)
+        template = sum(match.kind == "template_family" for match in self.matches)
+        if exact != self.exact_prompt_matches or template != self.template_family_overlaps:
+            raise ValueError("reasoning contamination counts do not match evidence")
+        expected_status = "pass" if not self.matches else "fail"
+        if self.status != expected_status:
+            raise ValueError("reasoning contamination status does not match evidence")
         return self
 
 
@@ -452,6 +525,7 @@ class M5ReasoningDatasetManifest(StrictSchema):
     dataset_version: str = Field(pattern=r"^m5-reasoning-pilot-v1-[0-9a-f]{8}$")
     parent_dataset_version: Literal["m2-sft-v1-f82ff32e"]
     task_set_version: str = Field(pattern=r"^m5-reasoning-pilot-tasks-v1-[0-9a-f]{8}$")
+    dev_task_set_version: str = Field(pattern=r"^m5-reasoning-dev-v1-[0-9a-f]{8}$")
     thinking_template_id: Literal["qwen3-chatml-thinking-v1"]
     config_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     tasks_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -459,6 +533,8 @@ class M5ReasoningDatasetManifest(StrictSchema):
     verifications_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     samples_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     rejections_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    contamination_report_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    contamination_status: Literal["pass"]
     content_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     input_tasks: int = Field(gt=0)
     generation_attempts: int = Field(ge=0)

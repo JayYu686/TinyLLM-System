@@ -163,6 +163,16 @@
       "title": "Config Sha256",
       "type": "string"
     },
+    "contamination_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Contamination Report Sha256",
+      "type": "string"
+    },
+    "contamination_status": {
+      "const": "pass",
+      "title": "Contamination Status",
+      "type": "string"
+    },
     "content_sha256": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Content Sha256",
@@ -176,6 +186,11 @@
     "dataset_version": {
       "pattern": "^m5-reasoning-pilot-v1-[0-9a-f]{8}$",
       "title": "Dataset Version",
+      "type": "string"
+    },
+    "dev_task_set_version": {
+      "pattern": "^m5-reasoning-dev-v1-[0-9a-f]{8}$",
+      "title": "Dev Task Set Version",
       "type": "string"
     },
     "failed_generations": {
@@ -312,6 +327,7 @@
     "dataset_version",
     "parent_dataset_version",
     "task_set_version",
+    "dev_task_set_version",
     "thinking_template_id",
     "config_sha256",
     "tasks_sha256",
@@ -319,6 +335,8 @@
     "verifications_sha256",
     "samples_sha256",
     "rejections_sha256",
+    "contamination_report_sha256",
+    "contamination_status",
     "content_sha256",
     "input_tasks",
     "generation_attempts",

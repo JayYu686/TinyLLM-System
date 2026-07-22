@@ -205,6 +205,12 @@
       "title": "Parent Dataset Version",
       "type": "string"
     },
+    "pilot_task_seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Pilot Task Seed",
+      "type": "integer"
+    },
     "sampling": {
       "$ref": "#/$defs/ReasoningTeacherSampling"
     },
@@ -236,6 +242,7 @@
     "thinking_template_id",
     "thinking_template_sha256",
     "max_sequence_length",
+    "pilot_task_seed",
     "dev",
     "teacher",
     "sampling",

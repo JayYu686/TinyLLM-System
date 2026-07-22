@@ -16,8 +16,10 @@ from pydantic import ValidationError
 
 from tinyllm.data.reasoning_schema import (
     REASONING_TASK_FAMILIES,
+    M5ReasoningContaminationReport,
     M5ReasoningDataConfig,
     M5ReasoningDatasetManifest,
+    ReasoningContaminationMatch,
     ReasoningLanguage,
     ReasoningRejectedRecord,
     ReasoningRejectionReason,
@@ -52,6 +54,7 @@ class ReasoningDatasetBuild:
     """Selected M5 pilot samples and all content-free audit evidence."""
 
     task_manifest: ReasoningTaskSetManifest
+    contamination: M5ReasoningContaminationReport
     manifest: M5ReasoningDatasetManifest
     samples: tuple[ReasoningSample, ...]
     verifications: tuple[ReasoningVerifierResult, ...]
@@ -181,7 +184,12 @@ def _json_task(
     )
 
 
-def _linux_task(namespace: str, language: ReasoningLanguage, index: int) -> ReasoningTask:
+def _linux_task(
+    namespace: str,
+    language: ReasoningLanguage,
+    index: int,
+    rng: random.Random,
+) -> ReasoningTask:
     cases = (
         ("cat: /srv/app/config.yaml: Permission denied", "permission_denied"),
         ("bash: tinyllm: command not found", "command_not_found"),
@@ -189,14 +197,17 @@ def _linux_task(namespace: str, language: ReasoningLanguage, index: int) -> Reas
         ("Connection refused while contacting 127.0.0.1:5000", "connection_refused"),
     )
     evidence, diagnosis = cases[index % len(cases)]
+    case_reference = f"LNX-{rng.randrange(1_000_000):06d}"
     if language == "en":
         prompt = (
-            f"Diagnose the primary Linux failure from this synthetic message: {evidence}. "
+            f"Case {case_reference}. Diagnose the primary Linux failure from this synthetic "
+            f"message: {evidence}. "
             'Do not propose or execute a command. Return only {"diagnosis":"code"} as JSON.'
         )
     else:
         prompt = (
-            f"根据这条合成 Linux 信息判断首要故障：{evidence}。不要提出或执行命令，只返回 "
+            f"案例 {case_reference}。根据这条合成 Linux 信息判断首要故障：{evidence}。"
+            "不要提出或执行命令，只返回 "
             '{"diagnosis":"代码"} 形式的 JSON。'
         )
     return _make_task(
@@ -210,7 +221,12 @@ def _linux_task(namespace: str, language: ReasoningLanguage, index: int) -> Reas
     )
 
 
-def _config_task(namespace: str, language: ReasoningLanguage, index: int) -> ReasoningTask:
+def _config_task(
+    namespace: str,
+    language: ReasoningLanguage,
+    index: int,
+    rng: random.Random,
+) -> ReasoningTask:
     cases = (
         ("precision: bf16\ndevice: v100", "unsupported_precision"),
         ("world_size: 4\ngpu_ids: [4, 5]", "world_size_mismatch"),
@@ -218,15 +234,17 @@ def _config_task(namespace: str, language: ReasoningLanguage, index: int) -> Rea
         ("resume_mode: exact\ncheckpoint: null", "missing_checkpoint"),
     )
     snippet, issue = cases[index % len(cases)]
+    case_reference = f"CFG-{rng.randrange(1_000_000):06d}"
     if language == "en":
         prompt = (
-            f"Inspect this synthetic YAML fragment:\n{snippet}\n"
+            f"Case {case_reference}. Inspect this synthetic YAML fragment:\n{snippet}\n"
             "Identify its single contract violation. "
             'Return only JSON in the form {"issue":"code"}.'
         )
     else:
         prompt = (
-            f"检查这段合成 YAML：\n{snippet}\n识别唯一的契约错误，只返回 "
+            f"案例 {case_reference}。检查这段合成 YAML：\n{snippet}\n"
+            "识别唯一的契约错误，只返回 "
             '{"issue":"代码"} 形式的 JSON。'
         )
     return _make_task(
@@ -240,7 +258,12 @@ def _config_task(namespace: str, language: ReasoningLanguage, index: int) -> Rea
     )
 
 
-def _log_task(namespace: str, language: ReasoningLanguage, index: int) -> ReasoningTask:
+def _log_task(
+    namespace: str,
+    language: ReasoningLanguage,
+    index: int,
+    rng: random.Random,
+) -> ReasoningTask:
     cases = (
         ("step=91 loss=2.1\nstep=92 loss=nan grad_norm=inf", "non_finite_gradient"),
         ("checkpoint write failed: errno=28", "disk_full"),
@@ -248,14 +271,17 @@ def _log_task(namespace: str, language: ReasoningLanguage, index: int) -> Reason
         ("CUDA out of memory. Tried to allocate 512 MiB", "cuda_oom"),
     )
     log_text, root_cause = cases[index % len(cases)]
+    case_reference = f"LOG-{rng.randrange(1_000_000):06d}"
     if language == "en":
         prompt = (
-            f"Find the primary root cause in this synthetic training log:\n{log_text}\n"
+            f"Case {case_reference}. Find the primary root cause in this synthetic training "
+            f"log:\n{log_text}\n"
             'Return only JSON in the form {"root_cause":"code"}.'
         )
     else:
         prompt = (
-            f"判断这段合成训练日志的首要根因：\n{log_text}\n只返回 "
+            f"案例 {case_reference}。判断这段合成训练日志的首要根因：\n{log_text}\n"
+            "只返回 "
             '{"root_cause":"代码"} 形式的 JSON。'
         )
     return _make_task(
@@ -281,10 +307,10 @@ def _task_for_family(
     if task_family == "json":
         return _json_task(namespace, language, index, rng)
     if task_family == "linux":
-        return _linux_task(namespace, language, index)
+        return _linux_task(namespace, language, index, rng)
     if task_family == "config":
-        return _config_task(namespace, language, index)
-    return _log_task(namespace, language, index)
+        return _config_task(namespace, language, index, rng)
+    return _log_task(namespace, language, index, rng)
 
 
 def generate_reasoning_dev_tasks(config: M5ReasoningDataConfig) -> tuple[ReasoningTask, ...]:
@@ -361,6 +387,72 @@ def build_reasoning_task_manifest(
         template_family_counts=dict(
             sorted(Counter(task.template_family for task in ordered).items())
         ),
+    )
+
+
+def check_reasoning_split_contamination(
+    pilot_tasks: Iterable[ReasoningTask],
+    dev_tasks: Iterable[ReasoningTask],
+    *,
+    config: M5ReasoningDataConfig,
+) -> M5ReasoningContaminationReport:
+    """Reject exact prompt or template-family overlap between Pilot and M5 Dev."""
+
+    pilot = tuple(sorted(pilot_tasks, key=lambda task: task.id))
+    dev = tuple(sorted(dev_tasks, key=lambda task: task.id))
+    pilot_manifest = build_reasoning_task_manifest(pilot, config=config)
+    dev_manifest = build_reasoning_task_manifest(dev, config=config)
+    if pilot_manifest.split != "pilot_train" or dev_manifest.split != "reasoning_dev":
+        raise ReasoningDataError("reasoning contamination inputs must be Pilot then Dev")
+    matches: list[ReasoningContaminationMatch] = []
+    dev_by_prompt: dict[str, list[ReasoningTask]] = defaultdict(list)
+    for task in dev:
+        dev_by_prompt[task.prompt_sha256].append(task)
+    for pilot_task in pilot:
+        for dev_task in dev_by_prompt.get(pilot_task.prompt_sha256, ()):
+            identities = {
+                "dev_identity": dev_task.id,
+                "kind": "exact_prompt",
+                "pilot_identity": pilot_task.id,
+            }
+            matches.append(
+                ReasoningContaminationMatch(
+                    kind="exact_prompt",
+                    pilot_identity=pilot_task.id,
+                    dev_identity=dev_task.id,
+                    evidence_sha256=content_sha256(identities),
+                )
+            )
+    shared_templates = sorted(
+        {task.template_family for task in pilot} & {task.template_family for task in dev}
+    )
+    for template_family in shared_templates:
+        identities = {
+            "dev_identity": template_family,
+            "kind": "template_family",
+            "pilot_identity": template_family,
+        }
+        matches.append(
+            ReasoningContaminationMatch(
+                kind="template_family",
+                pilot_identity=template_family,
+                dev_identity=template_family,
+                evidence_sha256=content_sha256(identities),
+            )
+        )
+    matches.sort(key=lambda match: (match.kind, match.pilot_identity, match.dev_identity))
+    exact_count = sum(match.kind == "exact_prompt" for match in matches)
+    template_count = sum(match.kind == "template_family" for match in matches)
+    return M5ReasoningContaminationReport(
+        algorithm="exact-prompt-and-template-family-v1",
+        pilot_task_set_version=pilot_manifest.task_set_version,
+        dev_task_set_version=dev_manifest.task_set_version,
+        pilot_task_count=len(pilot),
+        dev_task_count=config.dev.total_tasks,
+        exact_prompt_matches=exact_count,
+        template_family_overlaps=template_count,
+        matches=tuple(matches),
+        status="pass" if not matches else "fail",
     )
 
 
@@ -481,6 +573,7 @@ def build_reasoning_dataset(
     generations: Iterable[TeacherGenerationRecord],
     *,
     config: M5ReasoningDataConfig,
+    dev_tasks: Iterable[ReasoningTask],
 ) -> ReasoningDatasetBuild:
     """Select the first verified candidate per task and preserve every failure path."""
 
@@ -488,6 +581,13 @@ def build_reasoning_dataset(
     if any(task.split != "pilot_train" for task in ordered_tasks):
         raise ReasoningDataError("only pilot_train tasks may produce an M5 reasoning dataset")
     task_manifest = build_reasoning_task_manifest(ordered_tasks, config=config)
+    contamination = check_reasoning_split_contamination(
+        ordered_tasks,
+        dev_tasks,
+        config=config,
+    )
+    if contamination.status != "pass":
+        raise ReasoningDataError("reasoning Pilot/Dev contamination gate failed")
     ordered_generations = tuple(sorted(generations, key=lambda item: item.generation_id))
     generations_by_task = _validate_generation_inputs(ordered_tasks, ordered_generations)
 
@@ -620,6 +720,7 @@ def build_reasoning_dataset(
     content_identity = content_sha256(
         {
             "generations_sha256": generations_sha256,
+            "contamination_report_sha256": content_sha256(contamination.to_dict()),
             "rejections_sha256": rejections_sha256,
             "samples_sha256": samples_sha256,
             "tasks_sha256": task_manifest.tasks_sha256,
@@ -634,6 +735,7 @@ def build_reasoning_dataset(
         dataset_version=f"m5-reasoning-pilot-v1-{content_identity[:8]}",
         parent_dataset_version=config.parent_dataset_version,
         task_set_version=task_manifest.task_set_version,
+        dev_task_set_version=contamination.dev_task_set_version,
         thinking_template_id=config.thinking_template_id,
         config_sha256=content_sha256(config.to_dict()),
         tasks_sha256=task_manifest.tasks_sha256,
@@ -641,6 +743,8 @@ def build_reasoning_dataset(
         verifications_sha256=verifications_sha256,
         samples_sha256=samples_sha256,
         rejections_sha256=rejections_sha256,
+        contamination_report_sha256=content_sha256(contamination.to_dict()),
+        contamination_status="pass",
         content_sha256=content_identity,
         input_tasks=len(ordered_tasks),
         generation_attempts=len(ordered_generations),
@@ -662,6 +766,7 @@ def build_reasoning_dataset(
     )
     return ReasoningDatasetBuild(
         task_manifest=task_manifest,
+        contamination=contamination,
         manifest=manifest,
         samples=tuple(samples),
         verifications=tuple(verifications),

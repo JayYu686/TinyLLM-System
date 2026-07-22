@@ -84,6 +84,9 @@ M5 Reasoning Dev 固定 200 条，五类任务各 40 条，每类 28 条英文�
 M5.2 将私有 Pilot 固定扩展为 100 个输入任务：五类各 20 条，每类 14 条英文、6 条中文。
 Teacher 仍使用固定 Qwen3-8B Thinking 和最多两个候选；只有接受率至少 80%，且五类均有
 通过样本时，Pilot 才通过扩展门禁。被拒绝任务、候选和原因全部保留，不用合成答案填补。
+扩容任务使用独立配置 `configs/data/m5_reasoning_pilot_100.yaml` 和 Pilot Task Seed
+`20260728`，同时保持冻结 Dev Seed 与 Dev 内容身份不变。原 M5.1 Seed `20260723` 在 100 条
+扩容预跑中产生一条 Python Exact Prompt 碰撞，因此被污染门禁诚实拒绝；它不再用于 M5.2。
 
 三份消融数据各包含精确 1,000,000 个移位后实际参与 Causal LM Loss 的 Assistant Token。
 Thinking 目标分别是 0、300,000 和 500,000 Token，剩余来自只读 M2 Train。配比按 Token

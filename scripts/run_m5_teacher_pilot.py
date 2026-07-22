@@ -19,6 +19,7 @@ from tinyllm.data import (
     M5TeacherPilotResult,
     TeacherGenerationRecord,
     build_reasoning_dataset,
+    check_reasoning_split_contamination,
     generate_reasoning_dev_tasks,
     generate_reasoning_pilot_tasks,
     load_m5_reasoning_data_config,
@@ -96,6 +97,13 @@ def _worker(args: argparse.Namespace) -> int:
         tasks_per_family=args.tasks_per_family,
     )
     dev_tasks = generate_reasoning_dev_tasks(config)
+    contamination = check_reasoning_split_contamination(tasks, dev_tasks, config=config)
+    if contamination.status != "pass":
+        raise RuntimeError(
+            "teacher Pilot task set failed contamination preflight: "
+            f"exact_prompt_matches={contamination.exact_prompt_matches}, "
+            f"template_family_overlaps={contamination.template_family_overlaps}"
+        )
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_dir,
         local_files_only=True,

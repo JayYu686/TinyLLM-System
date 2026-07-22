@@ -28,6 +28,7 @@ from tinyllm.data import (
 from tinyllm.data.reasoning_schema import TeacherFinishReason
 
 CONFIG_PATH = Path("configs/data/m5_reasoning.yaml")
+PILOT_100_CONFIG_PATH = Path("configs/data/m5_reasoning_pilot_100.yaml")
 
 
 def _config() -> M5ReasoningDataConfig:
@@ -150,6 +151,23 @@ def test_pilot_generation_requires_exact_70_30_compatible_size() -> None:
     assert sum(task.language == "en" for task in tasks) == 35
     assert sum(task.language == "zh" for task in tasks) == 15
     assert all(task.template_family.startswith("pilot.") for task in tasks)
+
+
+def test_m5_2_pilot_100_identity_is_clean_against_frozen_dev() -> None:
+    config = load_m5_reasoning_data_config(PILOT_100_CONFIG_PATH)
+    pilot = generate_reasoning_pilot_tasks(
+        seed=config.pilot_task_seed,
+        tasks_per_family=20,
+    )
+    dev = generate_reasoning_dev_tasks(config)
+    report = check_reasoning_split_contamination(pilot, dev, config=config)
+
+    assert config.pilot_task_seed == 20260728
+    assert len(pilot) == 100
+    assert report.pilot_task_set_version == "m5-reasoning-pilot-tasks-v1-84cef509"
+    assert report.dev_task_set_version == "m5-reasoning-dev-v1-3eb153c2"
+    assert report.status == "pass"
+    assert report.matches == ()
 
 
 def test_reasoning_task_schema_binds_split_canonical_json_and_hashes() -> None:

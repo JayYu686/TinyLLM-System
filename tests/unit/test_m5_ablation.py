@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from tinyllm.training.m5_ablation import group_loss_scale, token_learning_rate
+from tinyllm.training.m5_ablation import (
+    _record_attempt_result,
+    group_loss_scale,
+    token_learning_rate,
+)
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult
 
 
@@ -96,3 +102,33 @@ def test_interrupted_and_exact_resume_result_are_explicit() -> None:
 
     assert result.status == "interrupted"
     assert result.resumed_from_tokens == 50_000
+
+
+def test_attempt_results_preserve_interruption_before_exact_resume(tmp_path: Path) -> None:
+    interrupted_mapping = _result_mapping()
+    interrupted_mapping.update(
+        {
+            "status": "interrupted",
+            "supervised_tokens": 100_000,
+            "latest_checkpoint": "checkpoint-tokens-0000100000",
+            "export_sha256": None,
+        }
+    )
+    interrupted = M5AblationRunResult.model_validate(interrupted_mapping)
+    _record_attempt_result(tmp_path, interrupted)
+
+    resumed_mapping = _result_mapping()
+    resumed_mapping.update({"mode": "exact_resume", "resumed_from_tokens": 100_000})
+    resumed = M5AblationRunResult.model_validate(resumed_mapping)
+    _record_attempt_result(tmp_path, resumed)
+
+    assert (tmp_path / "attempts/fresh-interrupted-tokens-0000100000.json").is_file()
+    assert (tmp_path / "attempts/exact_resume-succeeded-tokens-0001000000.json").is_file()
+    assert (
+        M5AblationRunResult.model_validate_json(
+            (tmp_path / "result.json").read_text(encoding="utf-8")
+        )
+        == resumed
+    )
+    events = (tmp_path / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(events) == 2

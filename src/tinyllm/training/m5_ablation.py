@@ -100,6 +100,23 @@ def _append_jsonl(path: Path, value: object) -> None:
         os.fsync(handle.fileno())
 
 
+def _record_attempt_result(artifact_dir: Path, result: M5AblationRunResult) -> None:
+    """Preserve every interrupted or resumed attempt before updating the latest result."""
+
+    attempt_name = f"{result.mode}-{result.status}-tokens-{result.supervised_tokens:010d}.json"
+    _atomic_json(artifact_dir / "attempts" / attempt_name, result.to_dict())
+    _atomic_json(artifact_dir / "result.json", result.to_dict())
+    _append_jsonl(
+        artifact_dir / "events.jsonl",
+        {
+            "event": f"m5_run_{result.status}",
+            "mode": result.mode,
+            "supervised_tokens": result.supervised_tokens,
+            "attempt_result": f"attempts/{attempt_name}",
+        },
+    )
+
+
 def _capture_rng() -> dict[str, object]:
     return {
         "python": random.getstate(),
@@ -617,7 +634,7 @@ def run_m5_ablation(
         resumed_from_tokens=resumed_from_tokens,
         export_sha256=export_sha256,
     )
-    _atomic_json(artifact_dir / "result.json", result.to_dict())
+    _record_attempt_result(artifact_dir, result)
     _atomic_json(
         artifact_dir / "run.json",
         {

@@ -19,8 +19,8 @@ order, not permission to skip milestone gates when shared GPUs are unavailable.
 | Week 4 | M2 | Deterministic licensed dataset version plus frozen baseline evaluation | — |
 | Weeks 5–6 | M3 | Correct DDP and controlled 1/2/4-GPU scaling evidence | `v0.3.0-beta.1` |
 | Week 7 | M4 | Qwen3-8B FSDP2 four-GPU sharded checkpoint/resume smoke after memory probe | — |
-| Weeks 8–9 | M5 | Qwen3-0.6B Full SFT and Qwen3-8B LoRA with real evaluations | — |
-| Week 10 | M6 | Compare, Candidate gate, reports, resume bullets, and demo | `v0.6.0-rc.1` |
+| Weeks 8–10 | M5 | Qwen3 GQA dual-mode data, Qwen3-0.6B Full SFT, and Qwen3-8B LoRA with real evaluations | — |
+| After M5 | M6 | Compare, Candidate gate, reports, resume bullets, and demo | `v0.6.0-rc.1` |
 
 Job applications can begin after M3 evidence exists. Only merged results and reproducible
 metrics may appear in a resume.
@@ -32,11 +32,12 @@ metrics may appear in a resume.
   instantiated parameter count is recorded.
 - FSDP2 smoke: pinned Qwen3-8B revision, BF16, activation checkpointing, FULL_SHARD,
   sequence length 512, 50 optimizer steps, checkpoint at step 25, and resume to step 50.
-- Full SFT: pinned Qwen3-0.6B revision, post-trained non-thinking mode, assistant-only
-  loss, BF16, sequence length 1024, gradient checkpointing, and staged 10M-token gates.
+- Full SFT: pinned Qwen3-0.6B revision, native GQA, explicit Thinking/Non-thinking modes,
+  assistant-only loss, BF16, sequence length 1024, gradient checkpointing, and staged
+  10M-token gates. The formal Thinking-token ratio is selected by a preregistered short ablation.
 - LoRA: pinned Qwen3-8B revision, BF16 LoRA rank 16/alpha 32/dropout 0.05 over attention
-  and MLP linear layers. NF4 is an explicit fallback only after the defined BF16 setup
-  produces a recorded OOM.
+  and MLP linear layers with the same explicit dual-mode contract. NF4 is an explicit fallback
+  only after the defined BF16 setup produces a recorded OOM.
 
 Model and dataset revision changes require an ADR. Revision availability and licensing
 must be re-verified when M2/M4/M5 implementation starts; this roadmap does not claim the

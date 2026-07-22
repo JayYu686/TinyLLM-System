@@ -96,6 +96,7 @@ from tinyllm.data.stateful_sampler import (
 )
 from tinyllm.data.tokenization import (
     QWEN3_NONTHINKING_TEMPLATE_SHA256,
+    QWEN3_THINKING_TEMPLATE_SHA256,
     ConversationTokenization,
     OffsetTokenizer,
     RenderedConversation,
@@ -105,9 +106,11 @@ from tinyllm.data.tokenization import (
     TokenizersBackend,
     load_m2_tokenization_config,
     render_qwen3_nonthinking,
+    render_qwen3_thinking,
     tokenize_messages,
     tokenize_processed_sample,
     tokenize_processed_samples,
+    tokenize_thinking_messages,
 )
 from tinyllm.data.tokenization_schema import (
     ChatTemplateIdentity,
@@ -128,6 +131,7 @@ __all__ = [
     "OASST1_JSONL_ARTIFACT",
     "OASST1_SOURCE",
     "QWEN3_NONTHINKING_TEMPLATE_SHA256",
+    "QWEN3_THINKING_TEMPLATE_SHA256",
     "QWEN3_TOKENIZER_ARTIFACT",
     "QWEN3_TOKENIZER_CONFIG_ARTIFACT",
     "AcquiredM2Artifacts",
@@ -205,9 +209,11 @@ __all__ = [
     "process_imported_samples",
     "register_dataset",
     "render_qwen3_nonthinking",
+    "render_qwen3_thinking",
     "summarize_registered_dataset",
     "tokenize_processed_sample",
     "tokenize_processed_samples",
     "tokenize_messages",
+    "tokenize_thinking_messages",
     "verify_pinned_artifact",
 ]

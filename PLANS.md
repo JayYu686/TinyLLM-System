@@ -178,20 +178,27 @@ Manifest、内存证据和部署导出。
 
 完成条件：状态分片、DCP 恢复和导出全部验证。ZeRO-3 只进入缓冲期，不阻塞 M5/M6。
 
-## 10. Milestone 5：Qwen 正式后训练（Weeks 8–9）
+## 10. Milestone 5：Qwen 双模式正式后训练（Weeks 8–10）
 
 输入：M2 数据和冻结 Baseline，M1 训练核心，M4 分片能力（仅需要的路径）。
 
-Qwen3-0.6B Full SFT：Non-thinking、Assistant-only Loss、BF16、Sequence Length 1024、
-Gradient Checkpointing；最低 50M Tokens、最高 100M。每 10M Tokens 检查：验证损失相对
-改善至少 0.5%，通用 Dev 回退不超过 2pp，否则停止扩展。每段作业不超过 12 小时。
+根据 [ADR-0005](docs/adr/0005-qwen3-gqa-dual-mode-reasoning.md)，两条路线保留 Qwen3 原生
+GQA，并通过新版本 Thinking 数据与 Template 支持显式 Thinking/Non-thinking 双模式；M2
+冻结的 Non-thinking 数据和 Baseline 保持不可变。先完成可验证 Reasoning Pilot、双模式
+Baseline 和 0%/30%/50% Thinking Token 短程消融，再冻结正式混合比例。
+
+Qwen3-0.6B Full SFT：Assistant-only Loss、BF16、Sequence Length 1024、Gradient
+Checkpointing；单卡 Smoke 后使用四卡 DDP。最低 50M Tokens、最高 100M。每 10M Tokens
+检查：验证损失相对改善至少 0.5%，Non-thinking Dev 回退不超过 2pp，否则停止扩展。每段
+作业不超过 12 小时。
 
 Qwen3-8B LoRA：BF16 Rank 16/Alpha 32/Dropout 0.05，目标 Attention/MLP Linear；
 正式 10M Tokens，最多 30M。只有单卡 Sequence 1024/Micro Batch 1/Gradient
 Checkpointing 的 OOM 有证据后才切 NF4 QLoRA。发布 Adapter 和 Model Card，不发布基础权重。
 
-输出：训练/验证曲线、Checkpoint、Adapter、完整血缘、训练前后评测。TinyGPT-350M
-和 7B 长期 Full SFT 是挑战项，不是完成条件。
+输出：双模式数据与 Baseline、配比消融、训练/验证曲线、Checkpoint、Adapter、完整血缘、
+训练前后评测。TinyGPT-350M、MLA 和 7B 长期 Full SFT 是挑战项，不是完成条件。详细门禁见
+[M5 契约](docs/m5_sft_contract.md)。
 
 ## 11. Milestone 6：评测、晋级与作品交付（Week 10）
 

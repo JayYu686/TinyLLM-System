@@ -65,6 +65,21 @@ from tinyllm.training.m4_qwen_config import (
     load_m4_qwen_config,
 )
 from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
+from tinyllm.training.m5_config import (
+    M5CheckpointConfig,
+    M5ConfigError,
+    M5DataConfig,
+    M5EvaluationConfig,
+    M5LoRAConfig,
+    M5ModelConfig,
+    M5ParallelConfig,
+    M5PrecisionConfig,
+    M5ReasoningConfig,
+    M5RunConfig,
+    M5SFTConfig,
+    M5TrainingLoopConfig,
+    load_m5_sft_config,
+)
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
 from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.run import run_single_device_training
@@ -114,6 +129,18 @@ __all__ = [
     "M4QwenModelConfig",
     "M4QwenRankMemory",
     "M4QwenRunResult",
+    "M5CheckpointConfig",
+    "M5ConfigError",
+    "M5DataConfig",
+    "M5EvaluationConfig",
+    "M5LoRAConfig",
+    "M5ModelConfig",
+    "M5ParallelConfig",
+    "M5PrecisionConfig",
+    "M5ReasoningConfig",
+    "M5RunConfig",
+    "M5SFTConfig",
+    "M5TrainingLoopConfig",
     "M4QwenApiEvidence",
     "M4RegisteredDatasetView",
     "M4TorchApiEvidence",
@@ -133,6 +160,7 @@ __all__ = [
     "load_fsdp2_config",
     "load_fsdp2_recovery_config",
     "load_m4_qwen_config",
+    "load_m5_sft_config",
     "restore_from_config",
     "restore_ddp_trainer",
     "restore_local_rng_state",

@@ -11,6 +11,7 @@ from tokenizers import Tokenizer, models  # type: ignore[import-untyped]
 from tinyllm.data import (
     OASST1_SOURCE,
     QWEN3_NONTHINKING_TEMPLATE_SHA256,
+    QWEN3_THINKING_TEMPLATE_SHA256,
     ImportedMessage,
     ImportedSample,
     ImportedSampleMetadata,
@@ -27,8 +28,10 @@ from tinyllm.data import (
     load_m2_tokenization_config,
     process_imported_samples,
     render_qwen3_nonthinking,
+    render_qwen3_thinking,
     tokenize_processed_sample,
     tokenize_processed_samples,
+    tokenize_thinking_messages,
 )
 
 PROCESSING_CONFIG = Path("configs/data/m2_processing.yaml")
@@ -175,6 +178,75 @@ def test_nonthinking_render_is_exact_and_marks_assistant_content_plus_end() -> N
     assert len(rendered.assistant_spans) == 1
     start, end = rendered.assistant_spans[0]
     assert rendered.text[start:end] == "answer<|im_end|>"
+
+
+def test_thinking_render_is_exact_and_supervises_trace_answer_and_end() -> None:
+    messages = (
+        ImportedMessage(role="system", content="system text"),
+        ImportedMessage(role="user", content="question"),
+        ImportedMessage(role="assistant", content="answer"),
+    )
+    backend = CharacterTokenizer()
+    tokenizer = fake_config().tokenizer
+
+    rendered = render_qwen3_thinking(messages, assistant_reasoning=("reason",))
+    tokenized = tokenize_thinking_messages(
+        messages,
+        assistant_reasoning=("reason",),
+        backend=backend,
+        tokenizer=tokenizer,
+    )
+
+    assert QWEN3_THINKING_TEMPLATE_SHA256 == (
+        "4786143dbb7adb72a922d5efdcbe6596f2d65dcdc35d7bbf1b22830b795c2af9"
+    )
+    assert rendered.text == (
+        "<|im_start|>system\nsystem text<|im_end|>\n"
+        "<|im_start|>user\nquestion<|im_end|>\n"
+        "<|im_start|>assistant\n<think>\nreason\n</think>\n\nanswer<|im_end|>\n"
+    )
+    start, end = rendered.assistant_spans[0]
+    assert rendered.text[start:end] == "<think>\nreason\n</think>\n\nanswer<|im_end|>"
+    encoding = backend.encode(rendered.text)
+    supervised_text = "".join(
+        rendered.text[offset_start:offset_end]
+        for label, (offset_start, offset_end) in zip(
+            tokenized.labels, encoding.offsets, strict=True
+        )
+        if label != -100
+    )
+    assert supervised_text == "<think>\nreason\n</think>\n\nanswer<|im_end|>"
+
+
+@pytest.mark.parametrize(
+    ("reasoning", "answer", "message"),
+    [
+        ((), "answer", "count"),
+        (("   ",), "answer", "non-empty"),
+        (("<think>nested",), "answer", "nested"),
+        (("reason",), "answer</think>", "nested"),
+    ],
+)
+def test_thinking_render_rejects_ambiguous_or_empty_payloads(
+    reasoning: tuple[str, ...],
+    answer: str,
+    message: str,
+) -> None:
+    messages = (
+        ImportedMessage(role="user", content="question"),
+        ImportedMessage(role="assistant", content=answer),
+    )
+
+    with pytest.raises(TokenizerContractError, match=message):
+        render_qwen3_thinking(messages, assistant_reasoning=reasoning)
+
+
+def test_thinking_render_requires_an_assistant_response() -> None:
+    with pytest.raises(TokenizerContractError, match="at least one Assistant"):
+        render_qwen3_thinking(
+            (ImportedMessage(role="user", content="question"),),
+            assistant_reasoning=(),
+        )
 
 
 def test_assistant_only_labels_mask_headers_user_and_trailing_newline() -> None:

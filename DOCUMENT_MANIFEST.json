@@ -14,6 +14,7 @@
     "docs/adr/0002-standard-training-group-8gpus.md",
     "docs/adr/0003-career-release-baselines.md",
     "docs/adr/0004-shared-server-4gpu-acceptance.md",
+    "docs/adr/0005-qwen3-gqa-dual-mode-reasoning.md",
     "docs/architecture.md",
     "docs/benchmark_plan.md",
     "docs/career_release_roadmap.md",
@@ -31,6 +32,7 @@
     "docs/m3_ddp_benchmark_contract.md",
     "docs/m3_ddp_recovery_contract.md",
     "docs/m4_fsdp2_contract.md",
+    "docs/m5_sft_contract.md",
     "docs/nccl_test_plan.md",
     "docs/product_scope.md",
     "docs/public_reporting.md",
@@ -40,5 +42,5 @@
     "requirements/baseline_security_exceptions.md",
     "schemas/README.md"
   ],
-  "file_count": 37
+  "file_count": 39
 }

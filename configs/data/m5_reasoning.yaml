@@ -1,0 +1,39 @@
+schema_version: "1.0"
+parent_dataset_version: m2-sft-v1-f82ff32e
+thinking_template_id: qwen3-chatml-thinking-v1
+thinking_template_sha256: 478614320637a49649c144d5bfef5d247344356900a615495eade36639845af9
+max_sequence_length: 1024
+dev:
+  seed: 20260722
+  total_tasks: 200
+  task_family_counts:
+    config: 40
+    json: 40
+    linux: 40
+    log_diagnosis: 40
+    python: 40
+  language_counts_per_family:
+    en: 28
+    zh: 12
+teacher:
+  repository: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  attention_architecture: gqa
+  trust_remote_code: false
+  local_files_only: true
+  dtype: bfloat16
+  mode: thinking
+sampling:
+  do_sample: true
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 20
+  repetition_penalty: 1.0
+  candidate_count: 2
+  max_new_tokens: 512
+  base_seed: 20260722
+verifier:
+  verifier_id: m5-json-exact-v1
+  schema_version: "1.0"
+  algorithm: canonical-json-object-equality
+  execute_generated_code: false

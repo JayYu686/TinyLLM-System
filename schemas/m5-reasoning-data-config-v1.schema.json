@@ -1,0 +1,246 @@
+{
+  "$defs": {
+    "ReasoningDevConfig": {
+      "additionalProperties": false,
+      "description": "Frozen size, language mix, and family balance for the M5-only Dev set.",
+      "properties": {
+        "language_counts_per_family": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Language Counts Per Family",
+          "type": "object"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "task_family_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Task Family Counts",
+          "type": "object"
+        },
+        "total_tasks": {
+          "const": 200,
+          "title": "Total Tasks",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "seed",
+        "total_tasks",
+        "task_family_counts",
+        "language_counts_per_family"
+      ],
+      "title": "ReasoningDevConfig",
+      "type": "object"
+    },
+    "ReasoningTeacherIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned offline teacher identity used to produce visible reasoning traces.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "thinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode"
+      ],
+      "title": "ReasoningTeacherIdentity",
+      "type": "object"
+    },
+    "ReasoningTeacherSampling": {
+      "additionalProperties": false,
+      "description": "Frozen Qwen3 thinking-mode generation policy for the first M5 pilot.",
+      "properties": {
+        "base_seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 2,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "maximum": 2048,
+          "minimum": 64,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed"
+      ],
+      "title": "ReasoningTeacherSampling",
+      "type": "object"
+    },
+    "ReasoningVerifierIdentity": {
+      "additionalProperties": false,
+      "description": "Deterministic final-answer verifier that never executes generated code.",
+      "properties": {
+        "algorithm": {
+          "const": "canonical-json-object-equality",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "execute_generated_code": {
+          "const": false,
+          "title": "Execute Generated Code",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "verifier_id": {
+          "const": "m5-json-exact-v1",
+          "title": "Verifier Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "verifier_id",
+        "algorithm",
+        "execute_generated_code"
+      ],
+      "title": "ReasoningVerifierIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete M5.1 task, teacher, verifier, and sequence-length contract.",
+  "properties": {
+    "dev": {
+      "$ref": "#/$defs/ReasoningDevConfig"
+    },
+    "max_sequence_length": {
+      "const": 1024,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "parent_dataset_version": {
+      "const": "m2-sft-v1-f82ff32e",
+      "title": "Parent Dataset Version",
+      "type": "string"
+    },
+    "sampling": {
+      "$ref": "#/$defs/ReasoningTeacherSampling"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "teacher": {
+      "$ref": "#/$defs/ReasoningTeacherIdentity"
+    },
+    "thinking_template_id": {
+      "const": "qwen3-chatml-thinking-v1",
+      "title": "Thinking Template Id",
+      "type": "string"
+    },
+    "thinking_template_sha256": {
+      "const": "478614320637a49649c144d5bfef5d247344356900a615495eade36639845af9",
+      "title": "Thinking Template Sha256",
+      "type": "string"
+    },
+    "verifier": {
+      "$ref": "#/$defs/ReasoningVerifierIdentity"
+    }
+  },
+  "required": [
+    "parent_dataset_version",
+    "thinking_template_id",
+    "thinking_template_sha256",
+    "max_sequence_length",
+    "dev",
+    "teacher",
+    "sampling",
+    "verifier"
+  ],
+  "title": "M5ReasoningDataConfig",
+  "type": "object"
+}

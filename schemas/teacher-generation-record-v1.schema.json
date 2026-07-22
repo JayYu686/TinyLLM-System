@@ -1,0 +1,112 @@
+{
+  "additionalProperties": false,
+  "description": "One auditable teacher attempt, including explicit failures and stop reasons.",
+  "properties": {
+    "candidate_index": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Candidate Index",
+      "type": "integer"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9_]{2,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "finish_reason": {
+      "enum": [
+        "stop",
+        "length",
+        "error"
+      ],
+      "title": "Finish Reason",
+      "type": "string"
+    },
+    "generation_id": {
+      "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}:candidate-[01]$",
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "observed_token_count": {
+      "minimum": 0,
+      "title": "Observed Token Count",
+      "type": "integer"
+    },
+    "prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "raw_output": {
+      "anyOf": [
+        {
+          "maxLength": 32768,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Output"
+    },
+    "raw_output_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Output Sha256"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m5-reasoning:pilot:[a-z0-9][a-z0-9._-]{2,95}$",
+      "title": "Task Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_id",
+    "task_id",
+    "candidate_index",
+    "seed",
+    "prompt_sha256",
+    "status",
+    "finish_reason",
+    "observed_token_count"
+  ],
+  "title": "TeacherGenerationRecord",
+  "type": "object"
+}

@@ -30,7 +30,7 @@ sampling:
   top_k: 20
   repetition_penalty: 1.0
   candidate_count: 2
-  max_new_tokens: 512
+  max_new_tokens: 896
   base_seed: 20260722
 verifier:
   verifier_id: m5-json-exact-v1

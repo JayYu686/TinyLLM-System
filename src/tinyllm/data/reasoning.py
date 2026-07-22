@@ -98,6 +98,11 @@ def _make_task(
     answer: dict[str, object],
     template_name: str,
 ) -> ReasoningTask:
+    prompt = (
+        f"{prompt} Keep the visible reasoning under 192 tokens."
+        if language == "en"
+        else f"{prompt} 可见推理过程应控制在 192 个 Token 以内。"
+    )
     answer_json = canonical_json(answer)
     split: ReasoningSplit = "pilot_train" if namespace == "pilot" else "reasoning_dev"
     return ReasoningTask(

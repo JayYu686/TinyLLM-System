@@ -1,6 +1,6 @@
 {
   "dev_manifest": {
-    "config_sha256": "e33ae094971b6ee71e00fca88536c53ce7f970154f70e90f0b71feb0032e697b",
+    "config_sha256": "39cdf56b89b731698d10a09c821cb48a96695d6188038a677f0f5d163ee5e282",
     "language_counts": {
       "en": 140,
       "zh": 60
@@ -15,8 +15,8 @@
       "log_diagnosis": 40,
       "python": 40
     },
-    "task_set_version": "m5-reasoning-dev-v1-22b9221b",
-    "tasks_sha256": "22b9221b3a9904b6438a22e614e6ebeecae33a23acfbbce46edb4d089e435e6b",
+    "task_set_version": "m5-reasoning-dev-v1-0de0437c",
+    "tasks_sha256": "0de0437ccbeea624ac11dbd5fe1ad5c84fcee8df2db8b6151baaf1bbbf801f50",
     "template_family_counts": {
       "dev.config.contract-violation.v1": 40,
       "dev.json.nested-lookup.v1": 40,
@@ -30,13 +30,13 @@
   "pilot_smoke": {
     "manifest": {
       "accepted_samples": 50,
-      "config_sha256": "e33ae094971b6ee71e00fca88536c53ce7f970154f70e90f0b71feb0032e697b",
-      "content_sha256": "6e39a75128f5753d7bfa77ad1d2959c9eea94cea3f7dc06bd74cc26c3dd03b1a",
+      "config_sha256": "39cdf56b89b731698d10a09c821cb48a96695d6188038a677f0f5d163ee5e282",
+      "content_sha256": "e78b45436fda4ad7dc5968e9711691feef63f45ceba7f99c4564a4a7c1bccd4e",
       "dataset_name": "m5-reasoning-pilot",
-      "dataset_version": "m5-reasoning-pilot-v1-6e39a751",
+      "dataset_version": "m5-reasoning-pilot-v1-e78b4543",
       "failed_generations": 0,
       "generation_attempts": 100,
-      "generations_sha256": "f7661dd2a7c296c8e03de7efa5dede2ca8065ae4dc10b7ac7a0ca463b7457ab0",
+      "generations_sha256": "4c627f099565fa34282eea2ed1e61541d76492ee16d5d61f06aec29667fb7469",
       "input_tasks": 50,
       "language_counts": {
         "en": 35,
@@ -49,13 +49,13 @@
       "rejection_counts": {
         "invalid_final_json": 10
       },
-      "rejections_sha256": "e5ab4ff56d4c58c3468714a85c747178a0f94443d93e4c1cd5295a3d6b35f436",
-      "samples_sha256": "8c1e7fa2ce852f542519ed332204ac01b69cfe144717d09b79245c262a987840",
+      "rejections_sha256": "a819a3bfeb990bd07756655ff14083f8402c3c8826b63db835c892e9d0955289",
+      "samples_sha256": "2a1b1fc226f50bd5adecafab72fcd19280fb2294da1a4916e4b82686d05a4357",
       "sampling": {
         "base_seed": 20260722,
         "candidate_count": 2,
         "do_sample": true,
-        "max_new_tokens": 512,
+        "max_new_tokens": 896,
         "repetition_penalty": 1.0,
         "temperature": 0.6,
         "top_k": 20,
@@ -70,8 +70,8 @@
         "log_diagnosis": 10,
         "python": 10
       },
-      "task_set_version": "m5-reasoning-pilot-tasks-v1-bb9f1f75",
-      "tasks_sha256": "bb9f1f75746161d21bcec2a6c5e1617fc0acc2597c649ca05060751e673752ee",
+      "task_set_version": "m5-reasoning-pilot-tasks-v1-e32c955f",
+      "tasks_sha256": "e32c955ffa49c1ba63bfa476b3756c2c50d12f8639c0d0ad8a64f3ec4a6295ed",
       "teacher": {
         "attention_architecture": "gqa",
         "dtype": "bfloat16",
@@ -104,7 +104,7 @@
         "generation_id": "m5-reasoning:pilot:config-en-000:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "43c300929f206500c654fed352635d6953f9afbd8bdb993d14fd485101c6abdb",
+        "prompt_sha256": "546c59c4c4c6c2f09a5f74652085a04723c111a7626aa863acfd42645ed01ff0",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -116,7 +116,7 @@
         "generation_id": "m5-reasoning:pilot:config-en-005:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "c67fbcb064bce47cee85fa7bb8a00ac610bf13778d2bcdfab9fcb519f5cc897c",
+        "prompt_sha256": "b6ad43fbc061934bf9493b19590e160f215a627fa1c6c5e7c55bb130ce779088",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -128,7 +128,7 @@
         "generation_id": "m5-reasoning:pilot:json-en-000:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "7a19d861be0e6ed5e85d55e46ddc5fe1ff8434301e58c7f666f61df2412654af",
+        "prompt_sha256": "7da46c65d38f6533fac30760af498584cb1de63e3d4cb4ddd7337a41da819a93",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -140,7 +140,7 @@
         "generation_id": "m5-reasoning:pilot:json-en-005:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "cb974cf31fa6b1782acf59257cd87ce1641563295a95bfa4b4bdcee57ce59a19",
+        "prompt_sha256": "0f525ce46e08731b6fcd6ca9279dbed4359f44cefaf42c9e66140350045bf3eb",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -152,7 +152,7 @@
         "generation_id": "m5-reasoning:pilot:linux-en-000:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "20c78c16953d44792fb2e05ad62404ae97bbac897b5c905c7c4233f75e85adb9",
+        "prompt_sha256": "209f2d92d466a26c8c7ed86a2532efa1a1afde23ffe055da5859f9258246eae4",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -164,7 +164,7 @@
         "generation_id": "m5-reasoning:pilot:linux-en-005:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "fe9546fbe320abcf53fc2c8fd0fc46f7a397913d4346d4065f02483a563dcb19",
+        "prompt_sha256": "6835449348044b97e543c549e9243cca89f0d5a027f387c0dece7e476a76b93d",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -176,7 +176,7 @@
         "generation_id": "m5-reasoning:pilot:log_diagnosis-en-000:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "8b013fd1ae82d799e6f7066def16d80fe9650d73063f730ca951f54882e5d7cb",
+        "prompt_sha256": "c1478c554c82b0d3b41afce58a868f050d7b61c8af73c760f2792d551e7eb894",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -188,7 +188,7 @@
         "generation_id": "m5-reasoning:pilot:log_diagnosis-en-005:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "296585643aca53756b513fd94f0df275254b9a2eea93bacc9ab94cc94a5e03a0",
+        "prompt_sha256": "98d7b76aa1d1c32ebee72cfca41472f430a266ce6e22e655cf399b170b7ffe3f",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -200,7 +200,7 @@
         "generation_id": "m5-reasoning:pilot:python-en-000:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "8a8b6581f07ffde8297c512e42b3a6d0f909e1a311fb08fdda6ebaf08ed04060",
+        "prompt_sha256": "cf80f578b8b06d92041122a394bef246b888e0585429891e2fcd65196d3216bf",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -212,7 +212,7 @@
         "generation_id": "m5-reasoning:pilot:python-en-005:candidate-0",
         "max_sequence_length": null,
         "observed_token_count": 64,
-        "prompt_sha256": "54425462aff56346a22ed18751df1b168013b156f78ffe092ba9c98076bb45a1",
+        "prompt_sha256": "d4228499c9d8f9de9fd6e529855059a180c10bb69663252fe8227f272f2675a6",
         "raw_output_sha256": "15fde8e74964d9b8763f47613741dc0fc1a3d7b525dbf4b0e2868a3c825254d8",
         "reason": "invalid_final_json",
         "schema_version": "1.0",
@@ -274,7 +274,7 @@
       "m5-reasoning-sample:python-zh-009"
     ],
     "task_manifest": {
-      "config_sha256": "e33ae094971b6ee71e00fca88536c53ce7f970154f70e90f0b71feb0032e697b",
+      "config_sha256": "39cdf56b89b731698d10a09c821cb48a96695d6188038a677f0f5d163ee5e282",
       "language_counts": {
         "en": 35,
         "zh": 15
@@ -289,8 +289,8 @@
         "log_diagnosis": 10,
         "python": 10
       },
-      "task_set_version": "m5-reasoning-pilot-tasks-v1-bb9f1f75",
-      "tasks_sha256": "bb9f1f75746161d21bcec2a6c5e1617fc0acc2597c649ca05060751e673752ee",
+      "task_set_version": "m5-reasoning-pilot-tasks-v1-e32c955f",
+      "tasks_sha256": "e32c955ffa49c1ba63bfa476b3756c2c50d12f8639c0d0ad8a64f3ec4a6295ed",
       "template_family_counts": {
         "pilot.config.contract-violation.v1": 10,
         "pilot.json.nested-lookup.v1": 10,

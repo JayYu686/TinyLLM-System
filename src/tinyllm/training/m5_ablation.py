@@ -132,10 +132,11 @@ def _restore_rng(value: dict[str, object]) -> None:
     random.setstate(cast(tuple[Any, ...], value["python"]))
     np.random.set_state(cast(tuple[Any, ...], value["numpy"]))
     # Checkpoint payloads are mapped to the training device so model and
-    # optimizer tensors resume without a second copy. The default CPU
-    # generator is the exception: torch.set_rng_state requires a CPU ByteTensor.
+    # optimizer tensors resume without a second copy. RNG restoration APIs are
+    # the exception: both CPU and CUDA generators require CPU ByteTensors.
     torch.set_rng_state(cast(Tensor, value["torch"]).cpu())
-    torch.cuda.set_rng_state_all(cast(list[Tensor], value["cuda"]))
+    cuda_states = cast(list[Tensor], value["cuda"])
+    torch.cuda.set_rng_state_all([state.cpu() for state in cuda_states])
 
 
 class M5CheckpointStore:

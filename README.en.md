@@ -119,6 +119,11 @@ uses separately versioned reasoning data and templates. Only the
 Candidate promotion is claimed. The first implementation batch and its explicit limits are
 recorded in the [Chinese M5.0 review report](reports/m5/m5_dual_mode_contract.md).
 
+The [Chinese M5.1 report](reports/m5/m5_reasoning_data.md) freezes the reasoning-data schemas,
+the independent 200-item Dev set, Pilot/Dev contamination gate, and Teacher/Verifier lineage. It
+also records one real offline Qwen3-8B Thinking smoke. That smoke proves pipeline readiness only;
+it is neither a full Pilot corpus nor a model-quality result.
+
 ## System boundary
 
 ```mermaid

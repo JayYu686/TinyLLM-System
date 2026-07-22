@@ -86,6 +86,10 @@ Reasoning 数据和 Template。当前只有[设计契约](docs/m5_sft_contract.m
 推理能力提升或 Candidate 晋级结论。第一批实现与限制见
 [M5.0 中文审查报告](reports/m5/m5_dual_mode_contract.md)。
 
+[M5.1 中文报告](reports/m5/m5_reasoning_data.md)进一步冻结了 Reasoning 数据 Schema、200 条
+独立 Dev、Pilot/Dev 污染门禁和 Teacher/Verifier 血缘，并记录一次真实 Qwen3-8B 离线
+Thinking Smoke。该 Smoke 只证明链路可用，不是正式 Pilot 规模或模型质量结果。
+
 ## 系统主链路
 
 ```mermaid

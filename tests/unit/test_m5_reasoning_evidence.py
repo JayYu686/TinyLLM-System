@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import cast
 
-from tinyllm.data import M5TeacherSmokeResult
+from tinyllm.data import M5TeacherPilotResult, M5TeacherSmokeResult
 
 
 def _json(path: str) -> dict[str, object]:
@@ -57,6 +57,35 @@ def test_m5_public_teacher_evidence_contains_no_raw_reasoning_text() -> None:
         text = (Path("reports/m5/raw") / name).read_text(encoding="utf-8")
         assert "raw_output" not in text
         assert "reasoning_content" not in text
+        assert "/home/" not in text
+        assert "/data/" not in text
+
+
+def test_m5_2_teacher_pilot_retains_failed_and_passing_protocols() -> None:
+    failed = M5TeacherPilotResult.model_validate_json(
+        Path("reports/m5/raw/teacher_pilot_100_placeholder_failure.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    passed = M5TeacherPilotResult.model_validate_json(
+        Path("reports/m5/raw/teacher_pilot_100.json").read_text(encoding="utf-8")
+    )
+
+    assert failed.status == "fail"
+    assert failed.accepted_samples == 37
+    assert set(failed.accepted_task_family_counts) == {"json", "python"}
+    assert passed.status == "pass"
+    assert passed.accepted_samples == 96
+    assert set(passed.accepted_task_family_counts) == {
+        "config",
+        "json",
+        "linux",
+        "log_diagnosis",
+        "python",
+    }
+    for name in ("teacher_pilot_100_placeholder_failure.json", "teacher_pilot_100.json"):
+        text = (Path("reports/m5/raw") / name).read_text(encoding="utf-8")
+        assert "raw_output" not in text
         assert "/home/" not in text
         assert "/data/" not in text
 

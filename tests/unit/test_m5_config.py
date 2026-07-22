@@ -181,6 +181,62 @@ def test_ablation_contract_uses_pilot_data_one_gpu_and_exactly_one_million_token
 
 
 @pytest.mark.parametrize(
+    ("name", "ratio", "seed", "manifest_sha256"),
+    [
+        (
+            "m5_ablation_t0_seed42.yaml",
+            0.0,
+            42,
+            "21cf73b774e7c6e30c1241f2a3b8df3ed5437f0c9ce77e909d78a3e3968d3382",
+        ),
+        (
+            "m5_ablation_t0_seed20260727.yaml",
+            0.0,
+            20260727,
+            "21cf73b774e7c6e30c1241f2a3b8df3ed5437f0c9ce77e909d78a3e3968d3382",
+        ),
+        (
+            "m5_ablation_t30_seed42.yaml",
+            0.3,
+            42,
+            "5a6bfd9bbd720c4a781efe586e190867319c3445941ca6bbc68269d3bd852364",
+        ),
+        (
+            "m5_ablation_t30_seed20260727.yaml",
+            0.3,
+            20260727,
+            "5a6bfd9bbd720c4a781efe586e190867319c3445941ca6bbc68269d3bd852364",
+        ),
+        (
+            "m5_ablation_t50_seed42.yaml",
+            0.5,
+            42,
+            "8615d2aac2ee0bd4bcb1a2942cc6b868b0e1c045e52c3aafd73e78f1778d4626",
+        ),
+        (
+            "m5_ablation_t50_seed20260727.yaml",
+            0.5,
+            20260727,
+            "8615d2aac2ee0bd4bcb1a2942cc6b868b0e1c045e52c3aafd73e78f1778d4626",
+        ),
+    ],
+)
+def test_committed_ablation_configs_freeze_real_mixture_identity(
+    name: str,
+    ratio: float,
+    seed: int,
+    manifest_sha256: str,
+) -> None:
+    config = load_m5_sft_config(Path("configs/sft") / name)
+
+    assert config.run.seed == seed
+    assert config.data.dataset_version == "m5-reasoning-pilot-v1-b4db5ac8"
+    assert config.data.thinking_token_fraction == ratio
+    assert config.data.mix_manifest_sha256 == manifest_sha256
+    assert config.evaluation.reasoning_dev_version == "m5-reasoning-dev-v1-53ddf557"
+
+
+@pytest.mark.parametrize(
     ("mutate", "message"),
     [
         (lambda raw: _section(raw, "model").update({"attention_architecture": "mla"}), "gqa"),

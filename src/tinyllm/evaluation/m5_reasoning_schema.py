@@ -6,8 +6,35 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
+from tinyllm.data.reasoning_schema import (
+    REASONING_LANGUAGES,
+    REASONING_TASK_FAMILIES,
+    ReasoningLanguage,
+    ReasoningTaskFamily,
+)
 from tinyllm.schemas.base import StrictSchema
 from tinyllm.schemas.run import SHA256_PATTERN
+
+M5FormatFailureCategory = Literal[
+    "empty_final_answer",
+    "empty_reasoning",
+    "eos_open_without_close",
+    "length_open_without_close",
+    "missing_open_tag",
+    "multiple_think_blocks",
+    "nested_think_tag",
+    "other_parse_failure",
+]
+M5_FORMAT_FAILURE_CATEGORIES: tuple[M5FormatFailureCategory, ...] = (
+    "empty_final_answer",
+    "empty_reasoning",
+    "eos_open_without_close",
+    "length_open_without_close",
+    "missing_open_tag",
+    "multiple_think_blocks",
+    "nested_think_tag",
+    "other_parse_failure",
+)
 
 
 class M5ReasoningGenerationConfig(StrictSchema):
@@ -199,4 +226,143 @@ class M5AblationSelection(StrictSchema):
             or self.selection_reason != "no_arm_passed_preregistered_gates"
         ):
             raise ValueError("ineligible M5 ablation cannot claim a selected ratio")
+        return self
+
+
+class M5FormatRepairGateResult(StrictSchema):
+    """Two-seed result of the frozen M5.2-R1 reliability gate."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["passed", "rejected"]
+    base_evaluation_id: str = Field(min_length=1, max_length=180)
+    base_nonthinking_score_basis_points: int = Field(ge=0, le=10_000)
+    mixture_version: str = Field(pattern=r"^m5-format-repair-mixture-v1-[0-9a-f]{8}$")
+    mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    training_run_ids: tuple[str, str]
+    training_seeds: tuple[Literal[42, 20260727], Literal[42, 20260727]]
+    evaluation_ids: tuple[str, str]
+    nonthinking_scores_basis_points: tuple[int, int]
+    thinking_format_basis_points: tuple[int, int]
+    thinking_scores_basis_points: tuple[int, int]
+    nonthinking_regression_gate_passed: bool
+    thinking_format_gate_passed: bool
+    mean_thinking_score_basis_points: int = Field(ge=0, le=10_000)
+    gate_reason: Literal[
+        "all_preregistered_gates_passed",
+        "nonthinking_regression_gate_failed",
+        "thinking_format_gate_failed",
+        "multiple_gates_failed",
+    ]
+
+    @model_validator(mode="after")
+    def validate_gate(self) -> M5FormatRepairGateResult:
+        """Bind status, ordered Seeds, and the two unchanged quality gates."""
+
+        if self.training_seeds != (42, 20260727):
+            raise ValueError("M5 format-repair gate requires ordered fixed Seeds")
+        expected_mean = sum(self.thinking_scores_basis_points) // 2
+        if self.mean_thinking_score_basis_points != expected_mean:
+            raise ValueError("M5 format-repair mean score differs from Candidate scores")
+        both_passed = self.nonthinking_regression_gate_passed and self.thinking_format_gate_passed
+        if self.status == "passed" and (
+            not both_passed or self.gate_reason != "all_preregistered_gates_passed"
+        ):
+            raise ValueError("passed M5 format repair must satisfy both gates")
+        if self.status == "rejected" and (
+            both_passed or self.gate_reason == "all_preregistered_gates_passed"
+        ):
+            raise ValueError("rejected M5 format repair cannot satisfy both gates")
+        return self
+
+
+class M5FormatFailureSlice(StrictSchema):
+    """Content-free failure counts for one M5.2 ratio and training Seed."""
+
+    thinking_fraction_basis_points: Literal[3000, 5000]
+    training_seed: Literal[42, 20260727]
+    training_run_id: str = Field(min_length=1, max_length=180)
+    evaluation_id: str = Field(min_length=1, max_length=180)
+    raw_results_sha256: str = Field(pattern=SHA256_PATTERN)
+    evaluated_thinking_items: Literal[200]
+    invalid_format_items: int = Field(gt=0, le=200)
+    category_counts: dict[M5FormatFailureCategory, int]
+    task_family_counts: dict[ReasoningTaskFamily, int]
+    language_counts: dict[ReasoningLanguage, int]
+    generated_tokens_min: int = Field(ge=0)
+    generated_tokens_max: int = Field(ge=0)
+    generated_tokens_total: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_aggregates(self) -> M5FormatFailureSlice:
+        """Require complete taxonomies and consistent content-free counts."""
+
+        if set(self.category_counts) != set(M5_FORMAT_FAILURE_CATEGORIES):
+            raise ValueError("M5 format analysis must emit every failure category")
+        if set(self.task_family_counts) != set(REASONING_TASK_FAMILIES):
+            raise ValueError("M5 format analysis must emit every task family")
+        if set(self.language_counts) != set(REASONING_LANGUAGES):
+            raise ValueError("M5 format analysis must emit every language")
+        count_sets = (
+            sum(self.category_counts.values()),
+            sum(self.task_family_counts.values()),
+            sum(self.language_counts.values()),
+        )
+        if any(value != self.invalid_format_items for value in count_sets):
+            raise ValueError("M5 format failure aggregates do not match invalid item count")
+        if self.generated_tokens_max < self.generated_tokens_min:
+            raise ValueError("M5 generated Token range is inverted")
+        if not (
+            self.generated_tokens_min * self.invalid_format_items
+            <= self.generated_tokens_total
+            <= self.generated_tokens_max * self.invalid_format_items
+        ):
+            raise ValueError("M5 generated Token total is outside the declared range")
+        return self
+
+
+class M5FormatFailureAnalysis(StrictSchema):
+    """Deterministic redacted analysis of four private M5.2 Candidate result files."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["analyzed"] = "analyzed"
+    suite_version: Literal["m5-reasoning-dev-v1-53ddf557"]
+    evaluation_config_sha256: str = Field(pattern=SHA256_PATTERN)
+    model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
+    input_set_sha256: str = Field(pattern=SHA256_PATTERN)
+    slices: tuple[
+        M5FormatFailureSlice,
+        M5FormatFailureSlice,
+        M5FormatFailureSlice,
+        M5FormatFailureSlice,
+    ]
+    total_invalid_format_items: int = Field(gt=0, le=800)
+    total_length_open_without_close_items: int = Field(ge=0, le=800)
+    total_eos_open_without_close_items: int = Field(ge=0, le=800)
+    total_open_without_close_items: int = Field(ge=0, le=800)
+
+    @model_validator(mode="after")
+    def validate_analysis(self) -> M5FormatFailureAnalysis:
+        """Bind slice order and top-level failure totals."""
+
+        identities = tuple(
+            (item.thinking_fraction_basis_points, item.training_seed) for item in self.slices
+        )
+        if identities != (
+            (3000, 42),
+            (3000, 20260727),
+            (5000, 42),
+            (5000, 20260727),
+        ):
+            raise ValueError("M5 format analysis slices must be ordered by ratio and Seed")
+        invalid = sum(item.invalid_format_items for item in self.slices)
+        length_open = sum(item.category_counts["length_open_without_close"] for item in self.slices)
+        eos_open = sum(item.category_counts["eos_open_without_close"] for item in self.slices)
+        if self.total_invalid_format_items != invalid:
+            raise ValueError("M5 format analysis invalid total does not match slices")
+        if self.total_length_open_without_close_items != length_open:
+            raise ValueError("M5 length-limit total does not match slices")
+        if self.total_eos_open_without_close_items != eos_open:
+            raise ValueError("M5 EOS total does not match slices")
+        if self.total_open_without_close_items != length_open + eos_open:
+            raise ValueError("M5 open-without-close total does not match categories")
         return self

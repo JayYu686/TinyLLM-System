@@ -147,7 +147,7 @@ sequenceDiagram
 | M2 数据与评测 | 已完成 | 固定源全量构建与离线重建；300 条冻结领域集；Exact 污染扫描；Qwen3-0.6B Baseline |
 | M3 DDP | 已完成 | 初始化、Sampler、Loss Reduce、Rank 故障恢复和真实 1/2/4 卡扩展 |
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
-| M5 双模式 SFT | 进行中 | 六组短程消融与冻结评测完成；99% Thinking 格式门禁拒绝全部配比，进入格式可靠性修正 |
+| M5 双模式 SFT | 进行中 | M5.2 门禁拒绝已收口；R1 失败归因、格式修复数据和双 Seed 配置已冻结，等待单卡训练 |
 | M6 评测与晋级 | 计划中 | Base/Candidate 比较、回归分析和 Candidate Gate |
 | M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
 | M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |
@@ -173,7 +173,8 @@ sequenceDiagram
 - [M5 双模式契约](docs/m5_sft_contract.md)、
   [M5.0 审查报告](reports/m5/m5_dual_mode_contract.md)、
   [M5.1 数据报告](reports/m5/m5_reasoning_data.md)、
-  [M5.2 消融与选优报告](reports/m5/m5_ablation_selection.md)
+  [M5.2 消融与选优报告](reports/m5/m5_ablation_selection.md)、
+  [M5.2-R1 格式可靠性修正](reports/m5/m5_format_repair_r1.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。

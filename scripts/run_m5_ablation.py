@@ -11,7 +11,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from tinyllm.data import open_m5_ablation_mixture
+from tinyllm.data import m5_mixture_config_dataset_version, open_m5_ablation_mixture
 from tinyllm.evaluation import acquire_baseline_model, load_baseline_config
 from tinyllm.lineage import read_git_identity
 from tinyllm.training.m5_ablation import M5AblationError, run_m5_ablation
@@ -43,7 +43,7 @@ def _supervise(args: argparse.Namespace) -> int:
     mixture = open_m5_ablation_mixture(args.mixture_root)
     mixture_sha256 = hashlib.sha256((args.mixture_root / "manifest.json").read_bytes()).hexdigest()
     if (
-        config.data.dataset_version != mixture.manifest.pilot_dataset_version
+        config.data.dataset_version != m5_mixture_config_dataset_version(mixture.manifest)
         or config.data.mix_manifest_sha256 != mixture_sha256
     ):
         raise M5AblationError("M5 config does not name the verified private mixture")

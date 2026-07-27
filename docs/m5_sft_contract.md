@@ -136,6 +136,24 @@ Non-thinking。Thinking 固定 Seed `20260726`、Temperature 0.6、Top-p 0.95、
 [机器可读选优结果](../reports/m5/raw/m5_ablation_selection.json)。本节记录实际结果，
 不改变训练前冻结的选择顺序、解码参数或门槛。
 
+### 4.3 M5.2-R1 格式可靠性修正
+
+对 30%/50% 四个 Candidate 的私有原始响应完成逐条复算后，38 条 Thinking 格式失败全部
+属于开标签存在但闭标签缺失；其中 35 条达到 896 Token 生成上限，3 条在 EOS 时未闭合。
+公开聚合见
+[失败分析](../reports/m5/raw/m5_format_failure_analysis.json)。
+
+R1 固定从训练侧已验证 Pilot 中选择每类 8 条短而完整的样本：每类英文 5 条、中文 3 条，
+移位后 Assistant 监督不超过 512 Token。总训练预算仍为 1M Token 和 30% Thinking，其中
+700K 来自 M2 Non-thinking、150K 来自完整 Pilot Thinking、150K 来自短格式修复池。数据
+版本为 `m5-format-repair-mixture-v1-1396b60b`，Manifest SHA256 为
+`2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e`。
+
+两个训练 Seed、优化参数、Base、Dev、解码设置和门禁全部沿用 M5.2。两个 Seed 的
+Non-thinking 回退都不超过 2pp 且 Thinking 格式率都至少 99%时，R1 才能解锁 M5.3。
+当前 R1 已完成 CPU 契约与数据构建，真实 GPU 训练和评测尚待执行。详见
+[M5.2-R1 中文报告](../reports/m5/m5_format_repair_r1.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

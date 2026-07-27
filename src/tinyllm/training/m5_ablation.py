@@ -20,7 +20,11 @@ import torch
 from torch import Tensor, nn
 from torch.optim import AdamW, Optimizer
 
-from tinyllm.data import M5AblationDataset, open_m5_ablation_mixture
+from tinyllm.data import (
+    M5AblationDataset,
+    m5_mixture_config_dataset_version,
+    open_m5_ablation_mixture,
+)
 from tinyllm.lineage import read_git_identity
 from tinyllm.schemas import canonical_config_hash, generate_run_id
 from tinyllm.training.m5_ablation_schema import (
@@ -416,7 +420,7 @@ def run_m5_ablation(
     manifest_bytes = (mixture_root / "manifest.json").read_bytes()
     manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
     if (
-        opened.manifest.pilot_dataset_version != config.data.dataset_version
+        m5_mixture_config_dataset_version(opened.manifest) != config.data.dataset_version
         or manifest_sha256 != config.data.mix_manifest_sha256
         or opened.manifest.thinking_fraction_basis_points
         != int(config.data.thinking_token_fraction * 10_000)

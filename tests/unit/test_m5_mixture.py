@@ -10,15 +10,20 @@ from pydantic import ValidationError
 
 from tinyllm.data import (
     M5AblationDataset,
+    M5FormatRepairMixtureManifest,
     M5MixtureError,
     M5MixtureSequence,
+    M5ThinkingCandidate,
     build_m5_ablation_mixture,
+    build_m5_format_repair_mixture,
     open_m5_ablation_mixture,
     select_exact_supervised_tokens,
+    select_short_format_repair_candidates,
 )
 from tinyllm.data import m5_mixture as mixture_module
 from tinyllm.data.m5_mixture import M5PilotInput
 from tinyllm.data.m5_mixture_schema import M5MixtureArtifactFile, M5MixtureManifest
+from tinyllm.data.reasoning_schema import ReasoningLanguage
 from tinyllm.data.tokenization import TokenizersBackend
 
 
@@ -32,6 +37,26 @@ def _sequence(supervised: int, *, mode: int) -> M5MixtureSequence:
         attention_mask=(1,) * 1024,
         mode=mode,
     )
+
+
+def _repair_candidates() -> tuple[M5ThinkingCandidate, ...]:
+    candidates: list[M5ThinkingCandidate] = []
+    language_specs: tuple[tuple[ReasoningLanguage, int], ...] = (
+        ("en", 6),
+        ("zh", 4),
+    )
+    for family in ("config", "json", "linux", "log_diagnosis", "python"):
+        for language, count in language_specs:
+            for index in range(count):
+                candidates.append(
+                    M5ThinkingCandidate(
+                        sample_id=f"sample-{family}-{language}-{index}",
+                        task_family=family,
+                        language=language,
+                        sequence=_sequence(100 + index, mode=1),
+                    )
+                )
+    return tuple(candidates)
 
 
 def _manifest_mapping() -> dict[str, object]:
@@ -198,6 +223,103 @@ def test_private_mixture_build_open_and_corruption_paths(
         open_m5_ablation_mixture(mixture_root)
 
 
+def test_format_repair_selection_is_balanced_short_and_deterministic() -> None:
+    candidates = _repair_candidates() + (
+        M5ThinkingCandidate(
+            sample_id="sample-config-en-too-long",
+            task_family="config",
+            language="en",
+            sequence=_sequence(513, mode=1),
+        ),
+    )
+
+    selected = select_short_format_repair_candidates(candidates)
+
+    assert selected == select_short_format_repair_candidates(candidates)
+    assert len(selected) == 40
+    assert max(item.sequence.supervised_tokens for item in selected) <= 512
+    assert {
+        family: sum(item.task_family == family for item in selected)
+        for family in ("config", "json", "linux", "log_diagnosis", "python")
+    } == {family: 8 for family in ("config", "json", "linux", "log_diagnosis", "python")}
+    assert {
+        language: sum(item.language == language for item in selected) for language in ("en", "zh")
+    } == {"en": 25, "zh": 15}
+
+
+def test_format_repair_builder_commits_exact_auditable_strata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    nonthinking = (_sequence(1000, mode=0), _sequence(997, mode=0))
+    pilot_manifest = SimpleNamespace(
+        dataset_version="m5-reasoning-pilot-v1-a1b2c3d4",
+        content_sha256="b" * 64,
+    )
+    pilot = SimpleNamespace(manifest=pilot_manifest, samples=(object(),))
+    monkeypatch.setattr(
+        mixture_module,
+        "load_verified_reasoning_pilot",
+        lambda **_kwargs: pilot,
+    )
+    monkeypatch.setattr(
+        mixture_module,
+        "_nonthinking_candidates",
+        lambda **_kwargs: (nonthinking, "a" * 64),
+    )
+    monkeypatch.setattr(
+        mixture_module,
+        "_thinking_candidates_with_metadata",
+        lambda **_kwargs: _repair_candidates(),
+    )
+    output_root = tmp_path / "mixtures"
+
+    manifest = build_m5_format_repair_mixture(
+        artifact_root=tmp_path,
+        raw_pilot_artifact=tmp_path / "raw.json",
+        reasoning_config_path=tmp_path / "reasoning.yaml",
+        tokenizer_config_path=tmp_path / "tokenization.yaml",
+        model_dir=tmp_path / "model",
+        output_root=output_root,
+        build_seed=20260727,
+    )
+    opened = open_m5_ablation_mixture(output_root / manifest.mixture_version)
+
+    assert isinstance(opened.manifest, M5FormatRepairMixtureManifest)
+    assert manifest.nonthinking_supervised_tokens == 700_000
+    assert manifest.general_thinking_supervised_tokens == 150_000
+    assert manifest.repair_thinking_supervised_tokens == 150_000
+    assert manifest.repair_source_family_counts == {
+        "config": 8,
+        "json": 8,
+        "linux": 8,
+        "log_diagnosis": 8,
+        "python": 8,
+    }
+    assert (
+        build_m5_format_repair_mixture(
+            artifact_root=tmp_path,
+            raw_pilot_artifact=tmp_path / "raw.json",
+            reasoning_config_path=tmp_path / "reasoning.yaml",
+            tokenizer_config_path=tmp_path / "tokenization.yaml",
+            model_dir=tmp_path / "model",
+            output_root=output_root,
+            build_seed=20260727,
+        )
+        == manifest
+    )
+
+
+def test_format_repair_selection_fails_closed_when_a_stratum_is_missing() -> None:
+    candidates = tuple(
+        item
+        for item in _repair_candidates()
+        if not (item.task_family == "python" and item.language == "zh")
+    )
+
+    with pytest.raises(M5MixtureError, match="lacks enough"):
+        select_short_format_repair_candidates(candidates)
+
+
 def test_mixture_builder_rejects_unregistered_ratio(tmp_path: Path) -> None:
     with pytest.raises(M5MixtureError, match="0.0, 0.3, or 0.5"):
         build_m5_ablation_mixture(
@@ -327,6 +449,9 @@ def test_thinking_candidate_view_tokenizes_accepted_fields(
         ),
     )
     sample = SimpleNamespace(
+        id="m5-reasoning-sample:test",
+        task_family="config",
+        language="en",
         prompt="prompt",
         final_answer='{"value":1}',
         reasoning_content="reason",

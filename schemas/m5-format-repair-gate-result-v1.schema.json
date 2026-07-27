@@ -1,0 +1,177 @@
+{
+  "additionalProperties": false,
+  "description": "Two-seed result of the frozen M5.2-R1 reliability gate.",
+  "properties": {
+    "base_evaluation_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Base Evaluation Id",
+      "type": "string"
+    },
+    "base_nonthinking_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Base Nonthinking Score Basis Points",
+      "type": "integer"
+    },
+    "evaluation_ids": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Evaluation Ids",
+      "type": "array"
+    },
+    "gate_reason": {
+      "enum": [
+        "all_preregistered_gates_passed",
+        "nonthinking_regression_gate_failed",
+        "thinking_format_gate_failed",
+        "multiple_gates_failed"
+      ],
+      "title": "Gate Reason",
+      "type": "string"
+    },
+    "mean_thinking_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Mean Thinking Score Basis Points",
+      "type": "integer"
+    },
+    "mixture_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Mixture Manifest Sha256",
+      "type": "string"
+    },
+    "mixture_version": {
+      "pattern": "^m5-format-repair-mixture-v1-[0-9a-f]{8}$",
+      "title": "Mixture Version",
+      "type": "string"
+    },
+    "nonthinking_regression_gate_passed": {
+      "title": "Nonthinking Regression Gate Passed",
+      "type": "boolean"
+    },
+    "nonthinking_scores_basis_points": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Nonthinking Scores Basis Points",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "thinking_format_basis_points": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Thinking Format Basis Points",
+      "type": "array"
+    },
+    "thinking_format_gate_passed": {
+      "title": "Thinking Format Gate Passed",
+      "type": "boolean"
+    },
+    "thinking_scores_basis_points": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Thinking Scores Basis Points",
+      "type": "array"
+    },
+    "training_run_ids": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Training Run Ids",
+      "type": "array"
+    },
+    "training_seeds": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "enum": [
+            42,
+            20260727
+          ],
+          "type": "integer"
+        },
+        {
+          "enum": [
+            42,
+            20260727
+          ],
+          "type": "integer"
+        }
+      ],
+      "title": "Training Seeds",
+      "type": "array"
+    }
+  },
+  "required": [
+    "status",
+    "base_evaluation_id",
+    "base_nonthinking_score_basis_points",
+    "mixture_version",
+    "mixture_manifest_sha256",
+    "training_run_ids",
+    "training_seeds",
+    "evaluation_ids",
+    "nonthinking_scores_basis_points",
+    "thinking_format_basis_points",
+    "thinking_scores_basis_points",
+    "nonthinking_regression_gate_passed",
+    "thinking_format_gate_passed",
+    "mean_thinking_score_basis_points",
+    "gate_reason"
+  ],
+  "title": "M5FormatRepairGateResult",
+  "type": "object"
+}

@@ -4,8 +4,15 @@ import json
 from pathlib import Path
 from typing import cast
 
-from tinyllm.data import M5TeacherPilotResult, M5TeacherSmokeResult
-from tinyllm.evaluation.m5_reasoning_schema import M5AblationSelection
+from tinyllm.data import (
+    M5FormatRepairMixtureManifest,
+    M5TeacherPilotResult,
+    M5TeacherSmokeResult,
+)
+from tinyllm.evaluation.m5_reasoning_schema import (
+    M5AblationSelection,
+    M5FormatFailureAnalysis,
+)
 
 
 def _json(path: str) -> dict[str, object]:
@@ -117,6 +124,42 @@ def test_m5_2_public_selection_retains_the_rejected_gate_result() -> None:
     assert selection.arms[1].thinking_format_basis_points == (9550, 9700)
     assert selection.arms[1].mean_thinking_score_basis_points == 9425
 
+    public_text = path.read_text(encoding="utf-8")
+    assert "/home/" not in public_text
+    assert "/data/" not in public_text
+
+
+def test_m5_r1_public_failure_analysis_is_redacted_and_reproducible() -> None:
+    path = Path("reports/m5/raw/m5_format_failure_analysis.json")
+    analysis = M5FormatFailureAnalysis.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert analysis.total_invalid_format_items == 38
+    assert analysis.total_length_open_without_close_items == 35
+    assert analysis.total_eos_open_without_close_items == 3
+    assert analysis.total_open_without_close_items == 38
+    assert sum(item.task_family_counts["config"] for item in analysis.slices) == 26
+    public_text = path.read_text(encoding="utf-8")
+    assert "response" not in public_text
+    assert "item_id" not in public_text
+    assert "/home/" not in public_text
+    assert "/data/" not in public_text
+
+
+def test_m5_r1_public_mixture_manifest_records_exact_three_strata() -> None:
+    path = Path("reports/m5/raw/m5_format_repair_mixture.json")
+    manifest = M5FormatRepairMixtureManifest.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert manifest.mixture_version == "m5-format-repair-mixture-v1-1396b60b"
+    assert manifest.nonthinking_supervised_tokens == 700_000
+    assert manifest.general_thinking_supervised_tokens == 150_000
+    assert manifest.repair_thinking_supervised_tokens == 150_000
+    assert manifest.repair_source_family_counts == {
+        "config": 8,
+        "json": 8,
+        "linux": 8,
+        "log_diagnosis": 8,
+        "python": 8,
+    }
     public_text = path.read_text(encoding="utf-8")
     assert "/home/" not in public_text
     assert "/data/" not in public_text

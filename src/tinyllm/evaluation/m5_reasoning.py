@@ -30,12 +30,14 @@ from tinyllm.data.reasoning_schema import canonical_json, content_sha256
 from tinyllm.evaluation.m5_reasoning_schema import (
     M5AblationArmSummary,
     M5AblationSelection,
+    M5FormatRepairGateResult,
     M5ModeSummary,
     M5ReasoningEvaluationConfig,
     M5ReasoningEvaluationSummary,
     M5ReasoningItemResult,
 )
 from tinyllm.lineage import read_git_identity
+from tinyllm.training.m5_ablation_schema import M5AblationRunResult
 
 
 class M5ReasoningEvaluationError(RuntimeError):
@@ -211,6 +213,106 @@ def select_m5_ablation(
         ),
         selected_thinking_fraction_basis_points=selected.thinking_fraction_basis_points,
         selection_reason=reason,
+    )
+
+
+def evaluate_m5_format_repair_gate(
+    base: M5ReasoningEvaluationSummary,
+    candidates: Sequence[M5ReasoningEvaluationSummary],
+    training_results: Sequence[M5AblationRunResult],
+) -> M5FormatRepairGateResult:
+    """Apply the unchanged two-seed regression and 99% format gates to R1."""
+
+    if (
+        base.model_kind != "base"
+        or base.suite_version != "m5-reasoning-dev-v1-53ddf557"
+        or len(candidates) != 2
+        or len(training_results) != 2
+    ):
+        raise M5ReasoningEvaluationError(
+            "M5 format-repair gate requires one frozen Base and two R1 runs"
+        )
+    run_by_id = {item.run_id: item for item in training_results}
+    if len(run_by_id) != 2:
+        raise M5ReasoningEvaluationError("M5 format-repair training Runs are duplicated")
+    paired: list[tuple[M5ReasoningEvaluationSummary, M5AblationRunResult]] = []
+    for candidate in candidates:
+        run = run_by_id.get(str(candidate.training_run_id))
+        if (
+            run is None
+            or run.status != "succeeded"
+            or candidate.model_kind != "ablation_candidate"
+            or candidate.training_seed != run.seed
+            or candidate.thinking_fraction_basis_points != 3000
+            or run.thinking_fraction_basis_points != 3000
+            or candidate.suite_version != base.suite_version
+            or candidate.config_sha256 != base.config_sha256
+            or candidate.model_revision != base.model_revision
+            or candidate.attention_architecture != base.attention_architecture
+        ):
+            raise M5ReasoningEvaluationError(
+                "M5 R1 Candidate lineage or evaluation protocol differs"
+            )
+        paired.append((candidate, run))
+    ordered = sorted(paired, key=lambda item: item[1].seed)
+    if tuple(item[1].seed for item in ordered) != (42, 20260727):
+        raise M5ReasoningEvaluationError("M5 R1 requires Seeds 42 and 20260727")
+    mixture_versions = {item[1].mixture_version for item in ordered}
+    mixture_hashes = {item[1].mixture_manifest_sha256 for item in ordered}
+    if (
+        len(mixture_versions) != 1
+        or len(mixture_hashes) != 1
+        or not next(iter(mixture_versions)).startswith("m5-format-repair-mixture-v1-")
+    ):
+        raise M5ReasoningEvaluationError("M5 R1 runs do not share one format-repair mixture")
+    nonthinking = cast(
+        tuple[int, int],
+        tuple(item[0].nonthinking.final_answer_score_basis_points for item in ordered),
+    )
+    formats = cast(
+        tuple[int, int],
+        tuple(item[0].thinking.format_valid_basis_points for item in ordered),
+    )
+    thinking = cast(
+        tuple[int, int],
+        tuple(item[0].thinking.final_answer_score_basis_points for item in ordered),
+    )
+    nonthinking_passed = all(
+        score >= base.nonthinking.final_answer_score_basis_points - 200 for score in nonthinking
+    )
+    format_passed = all(score >= 9900 for score in formats)
+    if nonthinking_passed and format_passed:
+        status: Literal["passed", "rejected"] = "passed"
+        gate_reason: Literal[
+            "all_preregistered_gates_passed",
+            "nonthinking_regression_gate_failed",
+            "thinking_format_gate_failed",
+            "multiple_gates_failed",
+        ] = "all_preregistered_gates_passed"
+    else:
+        status = "rejected"
+        if not nonthinking_passed and not format_passed:
+            gate_reason = "multiple_gates_failed"
+        elif not nonthinking_passed:
+            gate_reason = "nonthinking_regression_gate_failed"
+        else:
+            gate_reason = "thinking_format_gate_failed"
+    return M5FormatRepairGateResult(
+        status=status,
+        base_evaluation_id=base.evaluation_id,
+        base_nonthinking_score_basis_points=(base.nonthinking.final_answer_score_basis_points),
+        mixture_version=next(iter(mixture_versions)),
+        mixture_manifest_sha256=next(iter(mixture_hashes)),
+        training_run_ids=cast(tuple[str, str], tuple(item[1].run_id for item in ordered)),
+        training_seeds=(42, 20260727),
+        evaluation_ids=cast(tuple[str, str], tuple(item[0].evaluation_id for item in ordered)),
+        nonthinking_scores_basis_points=nonthinking,
+        thinking_format_basis_points=formats,
+        thinking_scores_basis_points=thinking,
+        nonthinking_regression_gate_passed=nonthinking_passed,
+        thinking_format_gate_passed=format_passed,
+        mean_thinking_score_basis_points=sum(thinking) // 2,
+        gate_reason=gate_reason,
     )
 
 

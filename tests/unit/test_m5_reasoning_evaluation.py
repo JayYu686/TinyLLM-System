@@ -8,6 +8,7 @@ import pytest
 from tinyllm.data import generate_reasoning_dev_tasks, load_m5_reasoning_data_config
 from tinyllm.evaluation.m5_reasoning import (
     M5ReasoningEvaluationError,
+    evaluate_m5_format_repair_gate,
     load_m5_reasoning_evaluation_config,
     score_m5_response,
     select_m5_ablation,
@@ -17,6 +18,7 @@ from tinyllm.evaluation.m5_reasoning_schema import (
     M5ModeSummary,
     M5ReasoningEvaluationSummary,
 )
+from tinyllm.training.m5_ablation_schema import M5AblationRunResult
 
 
 def _mode_summary(
@@ -67,6 +69,35 @@ def _summary(
         thinking=_mode_summary("thinking", score=thinking, format_score=thinking_format),
         nonthinking=_mode_summary("nonthinking", score=nonthinking),
         raw_results_sha256="c" * 64,
+    )
+
+
+def _r1_training_result(*, identity: str, seed: int) -> M5AblationRunResult:
+    return M5AblationRunResult(
+        status="succeeded",
+        mode="fresh",
+        run_id=f"run-{identity}",
+        config_sha256="d" * 64,
+        git_commit="b" * 40,
+        git_dirty=False,
+        model_revision="c1899de289a04d12100db370d81485cdf75e47ca",
+        attention_architecture="gqa",
+        mixture_version="m5-format-repair-mixture-v1-a1b2c3d4",
+        mixture_manifest_sha256="e" * 64,
+        thinking_fraction_basis_points=3000,
+        seed=seed,
+        physical_gpu_index=4,
+        gpu_name="NVIDIA GeForce RTX 3090",
+        global_step=10,
+        supervised_tokens=1_000_000,
+        sequence_cursor=100,
+        initial_loss=2.0,
+        final_loss=1.0,
+        duration_seconds=1.0,
+        peak_allocated_bytes=10,
+        peak_reserved_bytes=20,
+        latest_checkpoint="checkpoint-tokens-0001000000",
+        export_sha256="f" * 64,
     )
 
 
@@ -207,3 +238,83 @@ def test_selection_rejects_candidate_from_superseded_dev_protocol() -> None:
 
     with pytest.raises(M5ReasoningEvaluationError, match="differs from Base"):
         select_m5_ablation(base, (candidate,))
+
+
+def test_format_repair_gate_passes_only_both_fixed_seeds_and_unchanged_gates() -> None:
+    base = _summary(kind="base", identity="base", nonthinking=5000, thinking=3000).model_copy(
+        update={"suite_version": "m5-reasoning-dev-v1-53ddf557"}
+    )
+    candidates = (
+        _summary(
+            kind="ablation_candidate",
+            identity="r1-a",
+            nonthinking=4900,
+            thinking=9300,
+            thinking_format=9950,
+            ratio=3000,
+            seed=42,
+        ).model_copy(update={"suite_version": "m5-reasoning-dev-v1-53ddf557"}),
+        _summary(
+            kind="ablation_candidate",
+            identity="r1-b",
+            nonthinking=4800,
+            thinking=9400,
+            thinking_format=9900,
+            ratio=3000,
+            seed=20260727,
+        ).model_copy(update={"suite_version": "m5-reasoning-dev-v1-53ddf557"}),
+    )
+
+    result = evaluate_m5_format_repair_gate(
+        base,
+        candidates,
+        (
+            _r1_training_result(identity="r1-a", seed=42),
+            _r1_training_result(identity="r1-b", seed=20260727),
+        ),
+    )
+
+    assert result.status == "passed"
+    assert result.training_seeds == (42, 20260727)
+    assert result.nonthinking_regression_gate_passed
+    assert result.thinking_format_gate_passed
+    assert result.gate_reason == "all_preregistered_gates_passed"
+
+
+def test_format_repair_gate_rejects_without_lowering_ninety_nine_percent() -> None:
+    base = _summary(kind="base", identity="base", nonthinking=5000, thinking=3000).model_copy(
+        update={"suite_version": "m5-reasoning-dev-v1-53ddf557"}
+    )
+    candidates = (
+        _summary(
+            kind="ablation_candidate",
+            identity="r1-a",
+            nonthinking=5000,
+            thinking=9300,
+            thinking_format=9850,
+            ratio=3000,
+            seed=42,
+        ).model_copy(update={"suite_version": "m5-reasoning-dev-v1-53ddf557"}),
+        _summary(
+            kind="ablation_candidate",
+            identity="r1-b",
+            nonthinking=5000,
+            thinking=9400,
+            thinking_format=10_000,
+            ratio=3000,
+            seed=20260727,
+        ).model_copy(update={"suite_version": "m5-reasoning-dev-v1-53ddf557"}),
+    )
+
+    result = evaluate_m5_format_repair_gate(
+        base,
+        candidates,
+        (
+            _r1_training_result(identity="r1-a", seed=42),
+            _r1_training_result(identity="r1-b", seed=20260727),
+        ),
+    )
+
+    assert result.status == "rejected"
+    assert not result.thinking_format_gate_passed
+    assert result.gate_reason == "thinking_format_gate_failed"

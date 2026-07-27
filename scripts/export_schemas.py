@@ -36,6 +36,7 @@ from tinyllm.data import (
     M2PackingConfig,
     M2ProcessingConfig,
     M2TokenizationConfig,
+    M5FormatRepairMixtureManifest,
     M5MixtureManifest,
     M5ReasoningContaminationReport,
     M5ReasoningDataConfig,
@@ -83,6 +84,8 @@ from tinyllm.evaluation import (
 )
 from tinyllm.evaluation.m5_reasoning_schema import (
     M5AblationSelection,
+    M5FormatFailureAnalysis,
+    M5FormatRepairGateResult,
     M5ReasoningEvaluationConfig,
     M5ReasoningEvaluationSummary,
     M5ReasoningItemResult,
@@ -178,8 +181,11 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m4-qwen-run-result-v1.schema.json": M4QwenRunResult,
     "m5-sft-config-v1.schema.json": M5SFTConfig,
     "m5-ablation-mixture-manifest-v1.schema.json": M5MixtureManifest,
+    "m5-format-repair-mixture-manifest-v1.schema.json": M5FormatRepairMixtureManifest,
     "m5-ablation-run-result-v1.schema.json": M5AblationRunResult,
     "m5-ablation-selection-v1.schema.json": M5AblationSelection,
+    "m5-format-failure-analysis-v1.schema.json": M5FormatFailureAnalysis,
+    "m5-format-repair-gate-result-v1.schema.json": M5FormatRepairGateResult,
     "m5-checkpoint-manifest-v1.schema.json": M5CheckpointManifest,
     "m5-reasoning-evaluation-config-v1.schema.json": M5ReasoningEvaluationConfig,
     "m5-reasoning-evaluation-summary-v1.schema.json": M5ReasoningEvaluationSummary,

@@ -1,0 +1,53 @@
+{
+  "artifact": {
+    "path": "sequences.npz",
+    "sha256": "d14612b5dd06c117940537c5bc1306047e46a8c85ce6e0839b9a76eac1ef3623",
+    "size_bytes": 38251570
+  },
+  "build_seed": 20260727,
+  "content_sha256": "1396b60b7bb308c476466bcefa9de7c7813a15d9c1e244c5d0a57eb3472826b8",
+  "dataset_name": "m5-format-repair-mixture",
+  "general_thinking_reuse_count": 384,
+  "general_thinking_sequence_count": 479,
+  "general_thinking_source_sequences": 96,
+  "general_thinking_supervised_tokens": 150000,
+  "mixture_version": "m5-format-repair-mixture-v1-1396b60b",
+  "nonthinking_reuse_count": 0,
+  "nonthinking_sequence_count": 3063,
+  "nonthinking_source_sequences": 4597,
+  "nonthinking_supervised_tokens": 700000,
+  "nonthinking_template_id": "qwen3-chatml-nonthinking-v1",
+  "pad_token_id": 151643,
+  "parent_content_sha256": "f82ff32ee98cb852fe6779774d9cce75a71e9430da72a6e5e1f4e3f7c2efd108",
+  "parent_dataset_version": "m2-sft-v1-f82ff32e",
+  "partially_masked_sequences": 3,
+  "pilot_content_sha256": "b4db5ac8c9252b701c573de56a1f91629e3b1716e23223e5b2b979c5cc285684",
+  "pilot_dataset_version": "m5-reasoning-pilot-v1-b4db5ac8",
+  "repair_max_supervised_tokens": 512,
+  "repair_policy_id": "short-complete-balanced-v1",
+  "repair_source_family_counts": {
+    "config": 8,
+    "json": 8,
+    "linux": 8,
+    "log_diagnosis": 8,
+    "python": 8
+  },
+  "repair_source_language_counts": {
+    "en": 25,
+    "zh": 15
+  },
+  "repair_source_sha256": "6034faa895a6c01bf5716c82d9aa9b5584b34317fbf2de6eaac3340242bb840a",
+  "repair_thinking_reuse_count": 600,
+  "repair_thinking_sequence_count": 608,
+  "repair_thinking_source_sequences": 40,
+  "repair_thinking_supervised_tokens": 150000,
+  "schema_version": "1.0",
+  "sequence_count": 4150,
+  "sequence_length": 1024,
+  "target_supervised_tokens": 1000000,
+  "thinking_fraction_basis_points": 3000,
+  "thinking_sequence_count": 1087,
+  "thinking_supervised_tokens": 300000,
+  "thinking_template_id": "qwen3-chatml-thinking-v1",
+  "tokenizer_revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+}

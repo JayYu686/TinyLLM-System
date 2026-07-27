@@ -61,7 +61,7 @@
       "type": "string"
     },
     "mixture_version": {
-      "pattern": "^m5-ablation-mixture-v1-[0-9a-f]{8}$",
+      "pattern": "^m5-(ablation|format-repair)-mixture-v1-[0-9a-f]{8}$",
       "title": "Mixture Version",
       "type": "string"
     },

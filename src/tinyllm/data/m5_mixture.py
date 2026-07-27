@@ -18,7 +18,11 @@ from pydantic import ValidationError
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from tinyllm.data.m5_mixture_schema import M5MixtureArtifactFile, M5MixtureManifest
+from tinyllm.data.m5_mixture_schema import (
+    M5FormatRepairMixtureManifest,
+    M5MixtureArtifactFile,
+    M5MixtureManifest,
+)
 from tinyllm.data.reasoning import (
     build_reasoning_dataset,
     generate_reasoning_dev_tasks,
@@ -27,8 +31,10 @@ from tinyllm.data.reasoning import (
 from tinyllm.data.reasoning_schema import (
     REASONING_TASK_FAMILIES,
     M5ReasoningDatasetManifest,
+    ReasoningLanguage,
     ReasoningSample,
     ReasoningTask,
+    ReasoningTaskFamily,
     TeacherGenerationRecord,
     content_sha256,
 )
@@ -71,6 +77,16 @@ class M5PilotInput:
 
     manifest: M5ReasoningDatasetManifest
     samples: tuple[ReasoningSample, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class M5ThinkingCandidate:
+    """One verified Pilot sample paired with its tokenized training sequence."""
+
+    sample_id: str
+    task_family: ReasoningTaskFamily
+    language: ReasoningLanguage
+    sequence: M5MixtureSequence
 
 
 def _validate_expanded_pilot_gate(pilot: M5PilotInput) -> None:
@@ -228,19 +244,19 @@ def _nonthinking_candidates(*, artifact_root: Path) -> tuple[tuple[M5MixtureSequ
     return tuple(sequences), registered.manifest.content_sha256
 
 
-def _thinking_candidates(
+def _thinking_candidates_with_metadata(
     *,
     pilot: M5PilotInput,
     tokenizer_config_path: Path,
     model_dir: Path,
-) -> tuple[M5MixtureSequence, ...]:
+) -> tuple[M5ThinkingCandidate, ...]:
     tokenization = load_m2_tokenization_config(tokenizer_config_path)
     backend = TokenizersBackend.from_files(
         model_dir / tokenization.tokenizer.tokenizer_file,
         model_dir / tokenization.tokenizer.tokenizer_config_file,
         tokenization.tokenizer,
     )
-    sequences: list[M5MixtureSequence] = []
+    candidates: list[M5ThinkingCandidate] = []
     for sample in pilot.samples:
         encoded = tokenize_thinking_messages(
             (
@@ -258,8 +274,68 @@ def _thinking_candidates(
         sequence = _pad_sequence(encoded.input_ids, encoded.labels, mode=1)
         if sequence.supervised_tokens <= 0:
             raise M5MixtureError("accepted Pilot sample lost all supervised labels")
-        sequences.append(sequence)
-    return tuple(sequences)
+        candidates.append(
+            M5ThinkingCandidate(
+                sample_id=sample.id,
+                task_family=sample.task_family,
+                language=sample.language,
+                sequence=sequence,
+            )
+        )
+    return tuple(candidates)
+
+
+def _thinking_candidates(
+    *,
+    pilot: M5PilotInput,
+    tokenizer_config_path: Path,
+    model_dir: Path,
+) -> tuple[M5MixtureSequence, ...]:
+    return tuple(
+        item.sequence
+        for item in _thinking_candidates_with_metadata(
+            pilot=pilot,
+            tokenizer_config_path=tokenizer_config_path,
+            model_dir=model_dir,
+        )
+    )
+
+
+def select_short_format_repair_candidates(
+    candidates: tuple[M5ThinkingCandidate, ...],
+) -> tuple[M5ThinkingCandidate, ...]:
+    """Select the shortest complete 5-en/3-zh examples per task family."""
+
+    selected: list[M5ThinkingCandidate] = []
+    for family in REASONING_TASK_FAMILIES:
+        for language, count in (("en", 5), ("zh", 3)):
+            eligible = sorted(
+                (
+                    item
+                    for item in candidates
+                    if item.task_family == family
+                    and item.language == language
+                    and item.sequence.supervised_tokens <= 512
+                ),
+                key=lambda item: (item.sequence.supervised_tokens, item.sample_id),
+            )
+            if len(eligible) < count:
+                raise M5MixtureError(
+                    "format-repair source lacks enough complete <=512-token samples"
+                )
+            selected.extend(eligible[:count])
+    if len(selected) != 40 or len({item.sample_id for item in selected}) != 40:
+        raise M5MixtureError("format-repair source selection is incomplete or duplicated")
+    return tuple(selected)
+
+
+def _with_mode(sequence: M5MixtureSequence, mode: int) -> M5MixtureSequence:
+    return M5MixtureSequence(
+        input_ids=sequence.input_ids,
+        labels=sequence.labels,
+        attention_mask=sequence.attention_mask,
+        mode=mode,
+    )
 
 
 def _array_content_hash(
@@ -339,7 +415,10 @@ def build_m5_ablation_mixture(
     version = f"m5-ablation-mixture-v1-{identity_hash[:8]}"
     destination = output_root / version
     if destination.exists():
-        return open_m5_ablation_mixture(destination).manifest
+        opened = open_m5_ablation_mixture(destination)
+        if not isinstance(opened.manifest, M5MixtureManifest):
+            raise M5MixtureError("existing ablation destination contains the wrong manifest kind")
+        return opened.manifest
     temporary = output_root / f".{version}.tmp-{uuid.uuid4().hex}"
     temporary.mkdir(parents=True)
     try:
@@ -402,7 +481,170 @@ def build_m5_ablation_mixture(
     except Exception:
         shutil.rmtree(temporary, ignore_errors=True)
         raise
-    return open_m5_ablation_mixture(destination).manifest
+    opened = open_m5_ablation_mixture(destination)
+    if not isinstance(opened.manifest, M5MixtureManifest):
+        raise M5MixtureError("committed ablation destination contains the wrong manifest kind")
+    return opened.manifest
+
+
+def build_m5_format_repair_mixture(
+    *,
+    artifact_root: Path,
+    raw_pilot_artifact: Path,
+    reasoning_config_path: Path,
+    tokenizer_config_path: Path,
+    model_dir: Path,
+    output_root: Path,
+    build_seed: int,
+) -> M5FormatRepairMixtureManifest:
+    """Materialize the preregistered R1 700K/150K/150K training mixture."""
+
+    pilot = load_verified_reasoning_pilot(
+        raw_artifact=raw_pilot_artifact,
+        reasoning_config=reasoning_config_path,
+    )
+    nonthinking, parent_hash = _nonthinking_candidates(artifact_root=artifact_root)
+    thinking_candidates = _thinking_candidates_with_metadata(
+        pilot=pilot,
+        tokenizer_config_path=tokenizer_config_path,
+        model_dir=model_dir,
+    )
+    general_thinking = tuple(item.sequence for item in thinking_candidates)
+    repair_candidates = select_short_format_repair_candidates(thinking_candidates)
+    repair_source_sha256 = content_sha256(
+        {
+            "pilot_content_sha256": pilot.manifest.content_sha256,
+            "policy": "short-complete-balanced-v1",
+            "selected_sample_ids": [item.sample_id for item in repair_candidates],
+        }
+    )
+    selected_non, non_reuse, non_partial = select_exact_supervised_tokens(
+        nonthinking,
+        target=700_000,
+        seed=build_seed,
+    )
+    selected_general, general_reuse, general_partial = select_exact_supervised_tokens(
+        general_thinking,
+        target=150_000,
+        seed=(build_seed + 1) % (2**32),
+    )
+    selected_repair, repair_reuse, repair_partial = select_exact_supervised_tokens(
+        tuple(item.sequence for item in repair_candidates),
+        target=150_000,
+        seed=(build_seed + 2) % (2**32),
+    )
+    combined = list(
+        selected_non + selected_general + tuple(_with_mode(item, 2) for item in selected_repair)
+    )
+    random.Random((build_seed + 3) % (2**32)).shuffle(combined)
+    input_ids = np.asarray([item.input_ids for item in combined], dtype="<i4")
+    labels = np.asarray([item.labels for item in combined], dtype="<i4")
+    attention_masks = np.asarray([item.attention_mask for item in combined], dtype="u1")
+    modes = np.asarray([item.mode for item in combined], dtype="u1")
+    arrays_hash = _array_content_hash(input_ids, labels, attention_masks, modes)
+    identity = {
+        "arrays_sha256": arrays_hash,
+        "build_seed": build_seed,
+        "general_thinking_supervised_tokens": 150_000,
+        "nonthinking_supervised_tokens": 700_000,
+        "parent_content_sha256": parent_hash,
+        "pilot_content_sha256": pilot.manifest.content_sha256,
+        "repair_policy_id": "short-complete-balanced-v1",
+        "repair_source_sha256": repair_source_sha256,
+        "repair_thinking_supervised_tokens": 150_000,
+    }
+    identity_hash = content_sha256(identity)
+    version = f"m5-format-repair-mixture-v1-{identity_hash[:8]}"
+    destination = output_root / version
+    if destination.exists():
+        opened = open_m5_ablation_mixture(destination)
+        if not isinstance(opened.manifest, M5FormatRepairMixtureManifest):
+            raise M5MixtureError("existing R1 destination contains the wrong manifest kind")
+        return opened.manifest
+    temporary = output_root / f".{version}.tmp-{uuid.uuid4().hex}"
+    temporary.mkdir(parents=True)
+    try:
+        sequence_path = temporary / _SEQUENCE_FILE
+        with sequence_path.open("wb") as handle:
+            np.savez(
+                handle,
+                input_ids=input_ids,
+                labels=labels,
+                attention_masks=attention_masks,
+                modes=modes,
+            )
+            handle.flush()
+            os.fsync(handle.fileno())
+        family_counts: dict[ReasoningTaskFamily, int] = {
+            family: sum(item.task_family == family for item in repair_candidates)
+            for family in REASONING_TASK_FAMILIES
+        }
+        language_counts: dict[ReasoningLanguage, int] = {
+            "en": sum(item.language == "en" for item in repair_candidates),
+            "zh": sum(item.language == "zh" for item in repair_candidates),
+        }
+        manifest = M5FormatRepairMixtureManifest(
+            mixture_version=version,
+            parent_dataset_version="m2-sft-v1-f82ff32e",
+            parent_content_sha256=parent_hash,
+            pilot_dataset_version=pilot.manifest.dataset_version,
+            pilot_content_sha256=pilot.manifest.content_sha256,
+            tokenizer_revision="c1899de289a04d12100db370d81485cdf75e47ca",
+            nonthinking_template_id="qwen3-chatml-nonthinking-v1",
+            thinking_template_id="qwen3-chatml-thinking-v1",
+            sequence_length=1024,
+            pad_token_id=151643,
+            target_supervised_tokens=1_000_000,
+            thinking_fraction_basis_points=3000,
+            nonthinking_supervised_tokens=700_000,
+            thinking_supervised_tokens=300_000,
+            general_thinking_supervised_tokens=150_000,
+            repair_thinking_supervised_tokens=150_000,
+            sequence_count=len(combined),
+            nonthinking_sequence_count=len(selected_non),
+            thinking_sequence_count=len(selected_general) + len(selected_repair),
+            general_thinking_sequence_count=len(selected_general),
+            repair_thinking_sequence_count=len(selected_repair),
+            nonthinking_source_sequences=len(nonthinking),
+            general_thinking_source_sequences=len(general_thinking),
+            repair_thinking_source_sequences=40,
+            nonthinking_reuse_count=non_reuse,
+            general_thinking_reuse_count=general_reuse,
+            repair_thinking_reuse_count=repair_reuse,
+            partially_masked_sequences=non_partial + general_partial + repair_partial,
+            repair_policy_id="short-complete-balanced-v1",
+            repair_max_supervised_tokens=512,
+            repair_source_family_counts=family_counts,
+            repair_source_language_counts=language_counts,
+            repair_source_sha256=repair_source_sha256,
+            build_seed=build_seed,
+            content_sha256=identity_hash,
+            artifact=M5MixtureArtifactFile(
+                path="sequences.npz",
+                size_bytes=sequence_path.stat().st_size,
+                sha256=_sha256_file(sequence_path),
+            ),
+        )
+        (temporary / _MANIFEST_FILE).write_text(
+            json.dumps(manifest.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        manifest_sha256 = hashlib.sha256((temporary / _MANIFEST_FILE).read_bytes()).hexdigest()
+        (temporary / _COMMIT_FILE).write_text(
+            json.dumps({"manifest_sha256": manifest_sha256}, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.rename(temporary, destination)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    opened = open_m5_ablation_mixture(destination)
+    if not isinstance(opened.manifest, M5FormatRepairMixtureManifest):
+        raise M5MixtureError("committed R1 destination contains the wrong manifest kind")
+    return opened.manifest
+
+
+M5MixtureManifestType = M5MixtureManifest | M5FormatRepairMixtureManifest
 
 
 @dataclass(frozen=True, slots=True)
@@ -410,7 +652,15 @@ class OpenM5Mixture:
     """Verified memory-mapped M5.2 mixture."""
 
     root: Path
-    manifest: M5MixtureManifest
+    manifest: M5MixtureManifestType
+
+
+def m5_mixture_config_dataset_version(manifest: M5MixtureManifestType) -> str:
+    """Return the dataset identity that a training config must bind."""
+
+    if isinstance(manifest, M5FormatRepairMixtureManifest):
+        return manifest.mixture_version
+    return manifest.pilot_dataset_version
 
 
 def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
@@ -418,7 +668,13 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
 
     try:
         manifest_bytes = (root / _MANIFEST_FILE).read_bytes()
-        manifest = M5MixtureManifest.model_validate_json(manifest_bytes)
+        manifest_mapping = cast(dict[str, object], json.loads(manifest_bytes))
+        if manifest_mapping.get("dataset_name") == "m5-format-repair-mixture":
+            manifest: M5MixtureManifestType = M5FormatRepairMixtureManifest.model_validate(
+                manifest_mapping
+            )
+        else:
+            manifest = M5MixtureManifest.model_validate(manifest_mapping)
         marker = cast(dict[str, str], json.loads((root / _COMMIT_FILE).read_text(encoding="utf-8")))
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
         raise M5MixtureError("mixture metadata is missing or invalid") from exc
@@ -451,27 +707,61 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
                 raise M5MixtureError("mixture Attention Mask array is invalid")
             if bool(np.logical_and(attention_masks == 0, labels != -100).any()):
                 raise M5MixtureError("mixture padding cannot carry supervised labels")
-            if modes.shape != (manifest.sequence_count,) or not set(modes.tolist()) <= {0, 1}:
+            allowed_modes = (
+                {0, 1, 2} if isinstance(manifest, M5FormatRepairMixtureManifest) else {0, 1}
+            )
+            if (
+                modes.shape != (manifest.sequence_count,)
+                or not set(modes.tolist()) <= allowed_modes
+            ):
                 raise M5MixtureError("mixture mode array is invalid")
             valid = labels[:, 1:] != -100
             non_count = int(valid[modes == 0].sum())
-            think_count = int(valid[modes == 1].sum())
+            think_count = int(valid[modes != 0].sum())
             if (
                 non_count != manifest.nonthinking_supervised_tokens
                 or think_count != manifest.thinking_supervised_tokens
             ):
                 raise M5MixtureError("mixture supervised-token counts do not match manifest")
             arrays_hash = _array_content_hash(input_ids, labels, attention_masks, modes)
-            expected_content = content_sha256(
-                {
-                    "arrays_sha256": arrays_hash,
-                    "build_seed": manifest.build_seed,
-                    "nonthinking_supervised_tokens": manifest.nonthinking_supervised_tokens,
-                    "parent_content_sha256": manifest.parent_content_sha256,
-                    "pilot_content_sha256": manifest.pilot_content_sha256,
-                    "thinking_supervised_tokens": manifest.thinking_supervised_tokens,
-                }
-            )
+            if isinstance(manifest, M5FormatRepairMixtureManifest):
+                general_count = int(valid[modes == 1].sum())
+                repair_count = int(valid[modes == 2].sum())
+                if (
+                    general_count != manifest.general_thinking_supervised_tokens
+                    or repair_count != manifest.repair_thinking_supervised_tokens
+                ):
+                    raise M5MixtureError(
+                        "format-repair supervised-token strata do not match manifest"
+                    )
+                expected_content = content_sha256(
+                    {
+                        "arrays_sha256": arrays_hash,
+                        "build_seed": manifest.build_seed,
+                        "general_thinking_supervised_tokens": (
+                            manifest.general_thinking_supervised_tokens
+                        ),
+                        "nonthinking_supervised_tokens": (manifest.nonthinking_supervised_tokens),
+                        "parent_content_sha256": manifest.parent_content_sha256,
+                        "pilot_content_sha256": manifest.pilot_content_sha256,
+                        "repair_policy_id": manifest.repair_policy_id,
+                        "repair_source_sha256": manifest.repair_source_sha256,
+                        "repair_thinking_supervised_tokens": (
+                            manifest.repair_thinking_supervised_tokens
+                        ),
+                    }
+                )
+            else:
+                expected_content = content_sha256(
+                    {
+                        "arrays_sha256": arrays_hash,
+                        "build_seed": manifest.build_seed,
+                        "nonthinking_supervised_tokens": (manifest.nonthinking_supervised_tokens),
+                        "parent_content_sha256": manifest.parent_content_sha256,
+                        "pilot_content_sha256": manifest.pilot_content_sha256,
+                        "thinking_supervised_tokens": manifest.thinking_supervised_tokens,
+                    }
+                )
             if expected_content != manifest.content_sha256:
                 raise M5MixtureError("mixture array content identity differs from manifest")
     except (OSError, ValueError, KeyError) as exc:

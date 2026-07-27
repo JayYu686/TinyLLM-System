@@ -92,7 +92,12 @@ class M5ModelConfig(StrictSchema):
 class M5DataConfig(StrictSchema):
     """Immutable dual-mode dataset and token-mixture identity."""
 
-    dataset_version: str = Field(pattern=r"^m5-(reasoning-pilot|dual-sft)-v[0-9]+-[a-f0-9]{8}$")
+    dataset_version: str = Field(
+        pattern=(
+            r"^m5-(reasoning-pilot|dual-sft|format-repair-mixture)"
+            r"-v[0-9]+-[a-f0-9]{8}$"
+        )
+    )
     parent_dataset_version: Literal["m2-sft-v1-f82ff32e"]
     split: Literal["train"]
     sequence_length: Literal[1024]
@@ -228,8 +233,18 @@ class M5SFTConfig(StrictSchema):
         if self.run.purpose == "ablation":
             if self.model.adaptation != "full_sft":
                 raise ValueError("M5 mixture ablation is restricted to Qwen3-0.6B Full SFT")
-            if not self.data.dataset_version.startswith("m5-reasoning-pilot-"):
-                raise ValueError("ablation requires an m5-reasoning-pilot Dataset Version")
+            if not self.data.dataset_version.startswith(
+                ("m5-reasoning-pilot-", "m5-format-repair-mixture-")
+            ):
+                raise ValueError(
+                    "ablation requires an m5-reasoning-pilot or "
+                    "m5-format-repair-mixture Dataset Version"
+                )
+            if (
+                self.data.dataset_version.startswith("m5-format-repair-mixture-")
+                and self.data.thinking_token_fraction != 0.3
+            ):
+                raise ValueError("M5 format repair is preregistered at 30% Thinking")
             if self.training.max_train_tokens != 1_000_000:
                 raise ValueError("each M5 ablation arm requires exactly 1M Tokens")
             if self.parallel.strategy != "single":

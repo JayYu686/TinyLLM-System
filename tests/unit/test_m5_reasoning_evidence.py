@@ -181,3 +181,15 @@ def test_m5_r1_public_gate_retains_real_rejection() -> None:
     public_text = path.read_text(encoding="utf-8")
     assert "/home/" not in public_text
     assert "/data/" not in public_text
+
+
+def test_m5_r2_design_keeps_diagnostic_and_formal_evaluation_separate() -> None:
+    design = Path("docs/m5_r2_diagnostic_design.md").read_text(encoding="utf-8")
+
+    assert "R2 不训练新模型" in design
+    assert "不降低 99% Thinking 格式门禁" in design
+    assert "896 重放的 Response SHA256" in design
+    assert "前 896 个生成 Token ID" in design
+    assert "1024、1280、1536" in design
+    assert "重新运行 Base、六个 M5.2 Candidate 和两个 R1 Candidate" in design
+    assert "诊断不允许通过字符串补写 `</think>`" in design

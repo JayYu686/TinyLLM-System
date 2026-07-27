@@ -158,6 +158,19 @@ Non-thinking 回退都不超过 2pp 且 Thinking 格式率都至少 99%时，R1 
 [M5.2-R1 中文报告](../reports/m5/m5_format_repair_r1.md)和
 [机器可读 Gate](../reports/m5/raw/m5_format_repair_gate.json)。
 
+### 4.4 M5.2-R2 长度反事实诊断
+
+R2 在设计阶段只诊断 896 Token 上限，不训练新模型。它使用原 R1 模型、失败 Item 所属完整
+Batch、任务顺序和 RNG，先以 896 重放并要求 Response SHA256 与原结果一致，再以 1536
+重放并要求前 896 个 Token ID 完全相同。随后在 1024、1280、1536 三个截断点复算格式和
+Final-answer 指标。
+
+只有两个 Seed 在同一个上限都投影达到至少 99%时，才支持建立新的 Evaluation Protocol；
+新协议仍需完整重跑 Base、六个 M5.2 Candidate 和两个 R1 Candidate。若 1536 仍不达标，
+后续训练修正转向 Config/Log 的新颖简洁 Teacher Trace。若重放不一致，R2 结果无效并优先
+处理环境和 RNG 可复现性。完整协议见
+[M5.2-R2 诊断设计](m5_r2_diagnostic_design.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

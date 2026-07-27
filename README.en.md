@@ -160,7 +160,7 @@ sequenceDiagram
 | M2 data and evaluation | Complete | Pinned-source full build and offline rebuild; frozen 300-item suite; Exact contamination scan; Qwen3-0.6B Baseline |
 | M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
-| M5 dual-mode SFT | In progress | M5.2 and R1 two-seed runs are complete; R1 reached 94.5%/93.5% Thinking-format validity, so the unchanged 99% gate rejected it |
+| M5 dual-mode SFT | In progress | M5.2/R1 were rejected by the 99% format gate; R2 freezes a 896→1536 counterfactual replay design before any new training |
 | M6 evaluation and promotion | Planned | Base/Candidate comparison, regression analysis, and Candidate Gate |
 | M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
 | M8 planner | Enhancement | Static memory estimation and short probe |
@@ -187,7 +187,8 @@ failure paths, real reports, and documentation. Evidence entry points:
   [M5.0 review](reports/m5/m5_dual_mode_contract.md), and
   [M5.1 data report](reports/m5/m5_reasoning_data.md), and
   [M5.2 ablation/selection report](reports/m5/m5_ablation_selection.md), and
-  [M5.2-R1 format-reliability report](reports/m5/m5_format_repair_r1.md)
+  [M5.2-R1 format-reliability report](reports/m5/m5_format_repair_r1.md), and
+  [M5.2-R2 length diagnostic design](docs/m5_r2_diagnostic_design.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured

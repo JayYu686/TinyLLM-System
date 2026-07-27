@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import cast
 
 from tinyllm.data import M5TeacherPilotResult, M5TeacherSmokeResult
+from tinyllm.evaluation.m5_reasoning_schema import M5AblationSelection
 
 
 def _json(path: str) -> dict[str, object]:
@@ -96,3 +97,26 @@ def test_m5_reasoning_report_keeps_smoke_and_quality_claims_separate() -> None:
     assert "不声称模型质量提升" in report
     assert "CPU 合成 Fixture 当作模型输出" in report
     assert "M5.2" in report
+
+
+def test_m5_2_public_selection_retains_the_rejected_gate_result() -> None:
+    path = Path("reports/m5/raw/m5_ablation_selection.json")
+    selection = M5AblationSelection.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert selection.status == "no_eligible_arm"
+    assert selection.selected_thinking_fraction_basis_points is None
+    assert selection.selection_reason == "no_arm_passed_preregistered_gates"
+    assert selection.base_nonthinking_score_basis_points == 3700
+    assert [arm.thinking_fraction_basis_points for arm in selection.arms] == [
+        0,
+        3000,
+        5000,
+    ]
+    assert all(arm.nonthinking_regression_gate_passed for arm in selection.arms)
+    assert all(not arm.thinking_format_gate_passed for arm in selection.arms)
+    assert selection.arms[1].thinking_format_basis_points == (9550, 9700)
+    assert selection.arms[1].mean_thinking_score_basis_points == 9425
+
+    public_text = path.read_text(encoding="utf-8")
+    assert "/home/" not in public_text
+    assert "/data/" not in public_text

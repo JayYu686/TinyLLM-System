@@ -160,7 +160,7 @@ sequenceDiagram
 | M2 data and evaluation | Complete | Pinned-source full build and offline rebuild; frozen 300-item suite; Exact contamination scan; Qwen3-0.6B Baseline |
 | M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
-| M5 dual-mode SFT | In progress | Thinking/Non-thinking contracts and data complete; six short ablation runs complete; frozen evaluation awaiting GPU availability |
+| M5 dual-mode SFT | In progress | Six short ablation runs and frozen evaluation complete; the 99% Thinking-format gate rejected every arm, so format-reliability correction is next |
 | M6 evaluation and promotion | Planned | Base/Candidate comparison, regression analysis, and Candidate Gate |
 | M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
 | M8 planner | Enhancement | Static memory estimation and short probe |
@@ -185,7 +185,8 @@ failure paths, real reports, and documentation. Evidence entry points:
   [Qwen3-8B four-GPU run](reports/m4/fsdp2_qwen3_8b_formal.md)
 - [M5 dual-mode contract](docs/m5_sft_contract.md),
   [M5.0 review](reports/m5/m5_dual_mode_contract.md), and
-  [M5.1 data report](reports/m5/m5_reasoning_data.md)
+  [M5.1 data report](reports/m5/m5_reasoning_data.md), and
+  [M5.2 ablation/selection report](reports/m5/m5_ablation_selection.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -302,10 +303,10 @@ use `extra="forbid"`, and publish snapshots under [schemas/](schemas/README.md).
 
 ## Artifact Store
 
-The private server-side Artifact Store defaults to `/data/yujielun/tinyllm/`:
+The private server-side Artifact Store is configured through `$TINYLLM_ARTIFACT_ROOT`:
 
 ```text
-/data/yujielun/tinyllm/
+$TINYLLM_ARTIFACT_ROOT/
 ├── cache/       # dataset, model, and evaluation caches
 ├── datasets/    # registered immutable dataset versions
 ├── models/      # model inputs and deployment exports

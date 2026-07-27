@@ -5,6 +5,10 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- completed the preregistered M5.2 dual-mode ablation with a 96/100 Qwen3-8B Teacher
+  Pilot, three exact 1M-token mixtures, six Qwen3-0.6B runs, one real Exact Resume, and
+  frozen two-mode evaluation; all arms passed the Non-thinking regression gate while the
+  99% Thinking-format gate rejected every arm, leaving the formal ratio unselected;
 - completed M4 with a real four-RTX-3090 Qwen3-8B BF16 FULL_SHARD run: a strict idle/NUMA
   memory probe, 50 optimizer steps, atomic Step 25 and Step 50 DCP checkpoints, fresh-process
   Step 25→50 resume, per-Rank peak-memory evidence, and an independently loaded Safetensors export;

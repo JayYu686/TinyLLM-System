@@ -118,6 +118,24 @@ Non-thinking。Thinking 固定 Seed `20260726`、Temperature 0.6、Top-p 0.95、
 该评测不读取 M6 冻结结果。实现配置见
 [`configs/eval/m5_reasoning_dev.yaml`](../configs/eval/m5_reasoning_dev.yaml)。
 
+### 4.2 M5.2 实际选优结果
+
+六组 1M Supervised Token 训练和冻结双模式评测均已真实完成。0%、30%、50% 三个配比都
+通过 Non-thinking 回归门禁；两个 Seed 的 Thinking 格式有效率分别为：
+
+- 0%：0.0% / 0.0%；
+- 30%：95.5% / 97.0%；
+- 50%：96.0% / 92.5%。
+
+三个配比都未达到每个 Seed 至少 99%的冻结门槛。预注册选择器返回
+`status=no_eligible_arm` 和退出码 6，没有产生正式 Thinking 配比。M5.2 实验执行已收口为
+门禁拒绝，M5.3 长程 Full SFT 在新的格式可靠性修正批次通过同一门槛前保持阻塞。
+
+本轮完整结果见
+[M5.2 中文报告](../reports/m5/m5_ablation_selection.md)和
+[机器可读选优结果](../reports/m5/raw/m5_ablation_selection.json)。本节记录实际结果，
+不改变训练前冻结的选择顺序、解码参数或门槛。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

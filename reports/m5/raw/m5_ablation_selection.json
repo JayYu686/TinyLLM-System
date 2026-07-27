@@ -1,0 +1,88 @@
+{
+  "arms": [
+    {
+      "mean_thinking_score_basis_points": 0,
+      "nonthinking_regression_gate_passed": true,
+      "nonthinking_scores_basis_points": [
+        4650,
+        4350
+      ],
+      "thinking_format_basis_points": [
+        0,
+        0
+      ],
+      "thinking_format_gate_passed": false,
+      "thinking_fraction_basis_points": 0,
+      "thinking_scores_basis_points": [
+        0,
+        0
+      ],
+      "training_run_ids": [
+        "20260722T110523Z-m5-ablation-t0-seed42-40c0dd61-de8c",
+        "20260722T110724Z-m5-ablation-t0-seed20260727-f878082a-0907"
+      ],
+      "training_seeds": [
+        42,
+        20260727
+      ]
+    },
+    {
+      "mean_thinking_score_basis_points": 9425,
+      "nonthinking_regression_gate_passed": true,
+      "nonthinking_scores_basis_points": [
+        6100,
+        6150
+      ],
+      "thinking_format_basis_points": [
+        9550,
+        9700
+      ],
+      "thinking_format_gate_passed": false,
+      "thinking_fraction_basis_points": 3000,
+      "thinking_scores_basis_points": [
+        9350,
+        9500
+      ],
+      "training_run_ids": [
+        "20260722T110751Z-m5-ablation-t30-seed42-0971057f-7141",
+        "20260722T112257Z-m5-ablation-t30-seed20260727-04c95b94-022b"
+      ],
+      "training_seeds": [
+        42,
+        20260727
+      ]
+    },
+    {
+      "mean_thinking_score_basis_points": 9250,
+      "nonthinking_regression_gate_passed": true,
+      "nonthinking_scores_basis_points": [
+        6050,
+        6050
+      ],
+      "thinking_format_basis_points": [
+        9600,
+        9250
+      ],
+      "thinking_format_gate_passed": false,
+      "thinking_fraction_basis_points": 5000,
+      "thinking_scores_basis_points": [
+        9450,
+        9050
+      ],
+      "training_run_ids": [
+        "20260722T112256Z-m5-ablation-t50-seed42-1b9d49c4-a7e9",
+        "20260722T112327Z-m5-ablation-t50-seed20260727-19cf3892-d6ee"
+      ],
+      "training_seeds": [
+        42,
+        20260727
+      ]
+    }
+  ],
+  "base_evaluation_id": "20260722T110148Z-m5-reasoning-dev-base-4e949c80",
+  "base_nonthinking_score_basis_points": 3700,
+  "schema_version": "1.0",
+  "selected_thinking_fraction_basis_points": null,
+  "selection_reason": "no_arm_passed_preregistered_gates",
+  "status": "no_eligible_arm"
+}

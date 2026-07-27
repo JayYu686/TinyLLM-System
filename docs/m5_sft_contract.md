@@ -88,7 +88,7 @@ M5.2 因此以显式版本 `task_contract_version=label_vocabulary_v2` 修订 Pr
 
 M5 Reasoning Dev 固定为 `m5-reasoning-dev-v1-53ddf557` 共 200 条，五类任务各 40 条，每类
 28 条英文、12 条中文，并与 Train
-按模板族隔离。它只用于 M5 选择，不生成最终求职指标。
+按模板族隔离。它只用于 M5 配比选择，不进入 M6 最终发布指标。
 
 ### 4.1 M5.2 冻结执行参数
 

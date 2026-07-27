@@ -111,7 +111,7 @@ Manifest 必须记录：
 
 不明确许可的数据不得随项目仓库发布。
 
-## 9. 求职版本固定来源
+## 9. 核心版本固定来源
 
 M2 使用 ADR-0003 固定的 OASST1 和 CommitPackFT revision。OASST 按 Conversation
 Tree、CommitPackFT 按 Repository 分组切分，防止同源泄漏。核心必须完成 Exact Dedup
@@ -136,7 +136,7 @@ SHA256 和处理配置哈希。Dataset Card 许可只描述数据集发布物，
   `deleted=false`。
 - 路径必须从 `prompter` 开始，并严格按 `prompter`/`assistant` 交替；缺失父消息、循环、
   空内容或非法角色必须拒绝。
-- M2 求职数据版本只接收 `en` 和 `zh`；最终 70%/30% 语言比例在分组切分和 Token
+- M2 核心数据版本只接收 `en` 和 `zh`；最终 70%/30% 语言比例在分组切分和 Token
   预算阶段实现，导入器不通过复制样本来强行配比。
 - OASST1 样本许可证固定记录为 `apache-2.0`。
 

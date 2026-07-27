@@ -2,160 +2,243 @@
 
 **简体中文** | [English](README.en.md)
 
-> 面向消费级多 GPU 系统的硬件感知大语言模型训练、评测与部署平台。
+> 面向消费级多 GPU 工作站的硬件感知大语言模型训练、评测与部署平台。
 
 [![CI](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml/badge.svg)](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
-TinyLLM-System 是一个以真实证据和可复现性为先的原生 PyTorch 项目，主要运行在
-10 × RTX 3090 工作站上。它关注的不是“再写一组微调脚本”，而是回答以下训练系统问题：
+TinyLLM-System 将数据处理、训练策略、故障恢复、模型评测和版本晋级组织成一条可复现的
+工程链路。项目以原生 PyTorch 为训练核心，主要运行在一台共享的 10 × RTX 3090 24GB
+工作站上，并针对显存容量、GPU 拓扑和资源可用性选择单卡、DDP 或 FSDP2。
 
-- 每次 Run 能否追溯到不可变配置、数据集、Tokenizer、Git Commit、软件环境、硬件环境、
-  Checkpoint 和评测结果？
-- 单卡或分布式作业中断后，能否从经过完整性校验的 Checkpoint 恢复，并避免训练状态静默漂移？
-- 面对真实显存和通信拓扑约束，什么时候应选择 DDP、FSDP2 或 ZeRO-3？
-- 候选模型能否证明目标任务获得提升，同时如实呈现通用能力回退？
-- 部署 Artifact 能否反向追溯到评测、Checkpoint、训练 Run 和数据版本？
+系统为每次实验建立完整血缘：从固定的数据与模型 Revision、经过 Schema 校验的 YAML，
+一直追踪到 Git Commit、软硬件环境、Checkpoint、评测结果和最终导出。公开结论均对应可复查
+的真实运行记录，待验证能力会保留明确状态。
 
-本项目不是 Hugging Face Trainer 的简单包装，不试图从零重写整个 LLM 生态，也不是只展示
-漂亮数字的 Benchmark 榜单。所有指标只能来自真实运行；尚未测量的结果会明确标记为未评估。
+## 项目解决的问题
 
-## 当前进度
+| 工程问题 | TinyLLM-System 的处理方式 |
+| -- | -- |
+| 一次训练由什么产生 | Run Manifest 绑定数据、Tokenizer、配置、代码、环境和硬件身份 |
+| 共享 GPU 上如何安全启动 | `tinyllm doctor`、忙卡/温度检查、拓扑记录和策略 Preflight |
+| 训练中断后如何继续 | 原子 Checkpoint、完整训练状态、完整性校验和显式 Resume 语义 |
+| 多卡如何选择策略 | 单卡可容纳完整状态时使用 DDP；需要状态分片时使用 FSDP2 |
+| 模型训练完成后如何判断价值 | 冻结评测、Base/Candidate 对照、回归分析和 Promotion Gate |
+| 如何复现实验与部署模型 | Artifact Store 保存事实源，部署导出反向链接到训练与评测血缘 |
 
-| 模块 | 状态 | 已验证证据 |
-| -- | -- | -- |
-| M0 主机体检 | 已完成 | 已盘点 10 张 RTX 3090；CUDA/BF16 单卡 Smoke 通过 |
-| M0 Collective | 就绪验证完成 | 已完成 1/2/4/6 卡 NCCL 正确性测试，未报告正确性错误 |
-| M1 模型基础 | 已实现 | TinyGPT-Debug 实际包含 1,820,352 个可训练参数，并通过 CPU 前后向测试 |
-| M1 单卡训练 | 已完成 | CPU Exact Resume 与 RTX 3090 BF16 SIGTERM/SIGKILL 恢复通过 |
-| M2 数据与评测 | 已完成 | 不可变数据构建/重建、冻结 300 条领域集、Exact 污染扫描和完整 Qwen3 Baseline 通过 |
-| M3 DDP | 已完成 | 正确性、Exact Resume/Rank Failure 和真实 1/2/4 卡扩展证据已在 PR #55 验收 |
-| M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD、Step 25→50 DCP 恢复与独立 Safetensors 导出通过 |
-| M5 双模式 SFT | 契约实施中 | 保留 Qwen3 GQA，新增原生 Thinking/Non-thinking 数据、训练与评测契约；尚无质量结果 |
-| M6 评测与晋级 | 计划中 | 尚未声明模型晋级或部署结果 |
-
-M0 的完整证据见 [验收记录](reports/m0/m0_acceptance.md)、
-[RTX 3090 硬件报告](reports/hardware/rtx3090_inventory.md) 和
-[拓扑/NCCL 报告](reports/hardware/nccl_topology.md)。M0 NCCL 数据只证明对应测试协议下的
-工具可用性和 Collective 正确性，不等价于 DDP 训练吞吐。
-
-M1 原生 Trainer 见 [CPU 正确性报告](reports/m1/native_cpu_trainer_report.md)，原子 Checkpoint
-见 [M1.2 报告](reports/m1/atomic_checkpoint_report.md)，Exact Resume 见
-[M1.3 报告](reports/m1/exact_resume_report.md)，合并结论见
-[M1 验收报告](reports/m1/m1_acceptance.md)。
-
-M2 固定数据源和 Dataset Card 哈希见
-[数据源核验报告](reports/m2/source_verification.md)。完整的固定源数据构建见
-[M2 全量数据报告](reports/m2/full_dataset_build.md)：真实数据产品为
-`m2-sft-v1-f82ff32e`，并完成独立文件校验和相同内容身份的离线重建。
-[300 条领域评测集](evals/domain/v1/README.md) 固定了 210/90 中英文比例、七类任务和
-90 组双语任务对；[正式污染报告](reports/m2/domain_eval_contamination.md) 对 4,597 条已验证
-Train 样本执行 Exact 全序列和 Prompt 前缀匹配，结果均为零，Near-Dedup 仍明确标记为
-`not_evaluated`。Qwen3-0.6B 的完整训练前 Baseline 见
-[正式 Baseline 报告](reports/m2/baseline_formal.md)，M2 最终身份和限制见
-[M2 验收报告](reports/m2/m2_acceptance.md)。
-
-M3.1 的真实单卡/双卡 torchrun 证据见
-[DDP 正确性报告](reports/m3/ddp_correctness.md)，覆盖初始化、Sampler 分片、Global Batch、
-Loss 聚合、最终参数同步和仅 Rank 0 持久化日志。M3.2 见
-[DDP 恢复报告](reports/m3/ddp_recovery.md)，覆盖双卡完整 Checkpoint、Step 6 Exact Resume
-和 Rank 1 在 Step 8 强制退出后的恢复。正式
-[DDP 扩展报告](reports/m3/ddp_scaling.md) 保存真实 1/2/4 卡 Strong/Weak 矩阵、Profiler
-观察到的 NCCL 通信和被 Preflight 拒绝的运行；项目不声称已经验证 8 卡或受控跨 NUMA 性能。
-
-M4 的第一道 [FSDP2 CPU/Gloo 正确性报告](reports/m4/fsdp2_cpu_correctness.md) 验证两个
-进程上的显式 CPU DeviceMesh、DTensor 分片覆盖、前后向、Optimizer Step、Loss Reduce、
-完整状态重建和 World Size 错配拒绝。后续
-[隔离依赖与 CUDA 就绪性报告](reports/m4/fsdp2_cuda_readiness.md) 验证 `.venv-m4`、无网络
-Tiny Qwen 前后向和单卡 BF16 CUDA/NCCL 路径，并保留了双卡忙卡 Preflight 拒绝证据；
-它不构成多卡通信、DCP、Qwen3-8B 或四卡结论。
-
-后续 [M4.1 双卡报告](reports/m4/fsdp2_multigpu_activation_failure.md)在物理 GPU 6、7 上
-验证真实双 Rank CUDA/NCCL、Activation Checkpointing、完整 Shard 覆盖，以及 Rank 1
-以代码 17 退出时的故障诊断。该失败 Run 明确不可恢复。[M4.2 DCP 报告](reports/m4/fsdp2_dcp_recovery.md)
-随后验证原子分片 Checkpoint、CPU/Gloo 逐位 Exact Resume 和损坏/漂移拒绝矩阵。最终
-[M4.3 四卡正式报告](reports/m4/fsdp2_qwen3_8b_formal.md)记录固定 Qwen3-8B 在 GPU 5–8 上
-真实完成 Memory Probe、50 Step、Step 25→50 新进程恢复和独立 Safetensors 加载。该结果
-只证明固定配置的正确性，不发布吞吐、质量提升、8 卡或 Changed World Size Resume 结论。
-
-M5 根据 [ADR-0005](docs/adr/0005-qwen3-gqa-dual-mode-reasoning.md)保留 Qwen3 原生 GQA，
-不转换 MLA；Qwen3-0.6B Full SFT 和 Qwen3-8B LoRA 将采用显式 Thinking/Non-thinking
-双模式。M2 已冻结的 Non-thinking 数据与 Baseline 保持不变，新增能力使用独立版本化
-Reasoning 数据和 Template。当前只有[设计契约](docs/m5_sft_contract.md)，尚未产生训练质量、
-推理能力提升或 Candidate 晋级结论。第一批实现与限制见
-[M5.0 中文审查报告](reports/m5/m5_dual_mode_contract.md)。
-
-[M5.1 中文报告](reports/m5/m5_reasoning_data.md)进一步冻结了 Reasoning 数据 Schema、200 条
-独立 Dev、Pilot/Dev 污染门禁和 Teacher/Verifier 血缘，并记录一次真实 Qwen3-8B 离线
-Thinking Smoke。该 Smoke 只证明链路可用，不是正式 Pilot 规模或模型质量结果。
-
-## 系统主链路
+## 系统架构
 
 ```mermaid
 flowchart LR
-    A[版本化数据] --> B[Schema 校验的 YAML 配置]
-    H[硬件与拓扑] --> P[Preflight 与策略选择]
-    B --> P
-    P --> T[单卡 / DDP / FSDP2]
-    T --> C[原子 Checkpoint 与恢复]
-    C --> R[Run 与 Artifact Store]
-    R --> E[版本化评测]
-    E --> G[Candidate 晋级门禁]
-    G --> I[推理与性能门禁]
-    I --> X[可复现公开报告]
-    A --> R
-    H --> R
+    subgraph Inputs["不可变输入"]
+        D[数据版本]
+        M[模型与 Tokenizer Revision]
+        Y[Schema 校验的 YAML]
+    end
+
+    subgraph Planning["硬件感知执行"]
+        H[Doctor 与硬件快照]
+        P[Preflight 与策略选择]
+        T[单卡 / DDP / FSDP2]
+    end
+
+    subgraph Reliability["训练可靠性"]
+        C[原子 Checkpoint]
+        R[Exact / Warm / Transfer Resume]
+        A[Run Artifact Store]
+    end
+
+    subgraph Delivery["质量与交付"]
+        E[冻结评测]
+        G[Candidate Gate]
+        I[推理性能门禁]
+        V[模型注册与版本晋级]
+    end
+
+    D --> P
+    M --> P
+    Y --> P
+    H --> P
+    P --> T
+    T --> C
+    C --> R
+    R --> T
+    T --> A
+    D --> A
+    H --> A
+    A --> E
+    E --> G
+    G --> I
+    I --> V
 ```
 
-核心发布链路为：
+一条完整链路由以下阶段组成：
 
 ```text
 数据版本化
-  → 硬件感知 Preflight
-  → 单卡/分布式训练
-  → Checkpoint 与失败恢复
-  → 评测和回归分析
-  → Candidate 晋级
+  → 硬件体检与训练策略规划
+  → 单卡或分布式训练
+  → Checkpoint 与异常恢复
+  → 自动评测和模型比较
+  → Candidate 质量门禁
   → 推理性能门禁
-  → 实验复现
+  → 模型注册、部署与实验复现
 ```
 
-## 硬件与分布式策略
+## 核心能力
 
-主服务器包含跨两个 NUMA 节点的 10 × RTX 3090 24GB，但它是一台长期共享主机。核心发布
-门禁因此使用经过协调的 1/2/4 卡嵌套空闲集合。8 卡和受控跨 NUMA 实验仅作为增强项：项目
-不能抢占其他用户资源，也不能依赖没有上限的等待时间。公开报告始终记录实际 World Size，
-不会把四卡数据外推为八卡或十卡结果。参见
-[ADR-0004](docs/adr/0004-shared-server-4gpu-acceptance.md)。
+### 可追溯训练
 
-辅助的 8 × V100 32GB 服务器只是条件式兼容目标。RTX 3090 默认使用 BF16，并可按配置启用
-TF32；V100 必须使用 FP16 + GradScaler，并拒绝 BF16。在获得辅助服务器访问权限并完成真实
-Smoke Test 前，本项目不声明任何 V100 结果。
+- 正式实验从 Pydantic Schema 校验后的 YAML 启动。
+- Run ID 由 UTC 时间、Slug、Resolved Config Hash 和随机后缀组成。
+- `run.json`、`config.resolved.json`、`environment.json`、`hardware.json` 和
+  `metrics.jsonl` 共同构成运行事实。
+- 数据、模型和 Tokenizer 使用固定 Revision；配置漂移会改变实验身份。
 
-三种策略的边界如下：
+### 可靠 Checkpoint 与恢复
 
-- **DDP**：完整训练状态能装入单卡时，通过模型复制扩展吞吐；增加 DDP Rank 不会合并显存。
-- **FSDP2**：用于参数、梯度、优化器状态分片，以及 PyTorch 原生分布式 Checkpoint 和恢复。
-- **ZeRO-3**：用于后续 DeepSpeed 兼容和可选 Offload 对照；只有对应 FSDP2 路径通过后才开始。
+- 单卡/DDP 保存完整 PyTorch 训练状态，FSDP2 使用
+  `torch.distributed.checkpoint` 保存分片状态。
+- Checkpoint 覆盖模型、优化器、Scheduler、Scaler、Step/Epoch、随机数状态、Sampler
+  Cursor、数据版本、配置哈希、Git、环境、World Size 和逐文件 SHA256。
+- 写入流程采用临时目录、完整性校验、原子 Rename 和原子 `LATEST` 更新。
+- Exact、Warm、Transfer 三种恢复语义独立校验；Safetensors 用于部署导出。
+
+```mermaid
+sequenceDiagram
+    participant T as Trainer
+    participant TMP as 临时 Checkpoint
+    participant V as 完整性校验
+    participant CKPT as 已提交 Checkpoint
+    participant L as LATEST
+
+    T->>TMP: 写入训练状态与 Manifest
+    TMP->>V: 校验文件、SHA256 与配置身份
+    V-->>TMP: 校验通过
+    TMP->>CKPT: 原子 Rename
+    CKPT->>L: 原子更新指针
+    L-->>T: 提供可恢复位置
+```
+
+### 硬件感知分布式训练
+
+| 策略 | 状态分布 | 适用场景 | 当前项目状态 |
+| -- | -- | -- | -- |
+| 单卡 | 完整状态位于一张 GPU | 正确性基线、小模型训练与快速调试 | 已完成 |
+| DDP | 每个 Rank 持有完整状态 | 模型状态可装入单卡，目标为吞吐扩展 | 已完成 1/2/4 卡验证 |
+| FSDP2 | 参数、梯度和优化器状态分片 | 单卡显存容纳困难的大模型训练 | 已完成 Qwen3-8B 四卡验证 |
+| ZeRO-3 | DeepSpeed 状态分片与可选 Offload | FSDP2 之后的工程和性能对照 | 增强阶段 |
+
+### 数据、评测与晋级
+
+- 原始数据经过规范化、许可过滤、去重、分组切分、Tokenization、Packing 和注册后进入训练。
+- Dataset Manifest 保存输入哈希、处理配置、输出哈希、过滤统计和许可证分布。
+- 评测集独立版本化，训练前冻结，并执行训练集污染检查。
+- Base 与 Candidate 使用相同 Prompt Template、Tokenizer Revision 和解码配置。
+- Promotion Gate 同时检查目标能力提升、通用能力回归、结构化输出质量和血缘完整性。
+
+## 当前进度
+
+| 里程碑 | 状态 | 已验证结果 |
+| -- | -- | -- |
+| M0 硬件体检 | 已完成 | 10 张 RTX 3090 盘点；单卡 CUDA/BF16 Smoke；1/2/4/6 卡 NCCL 正确性 |
+| M1 单卡训练 | 已完成 | TinyGPT-Debug CPU 前后向；CPU Exact Resume；RTX 3090 BF16 SIGTERM/SIGKILL 恢复 |
+| M2 数据与评测 | 已完成 | 固定源全量构建与离线重建；300 条冻结领域集；Exact 污染扫描；Qwen3-0.6B Baseline |
+| M3 DDP | 已完成 | 初始化、Sampler、Loss Reduce、Rank 故障恢复和真实 1/2/4 卡扩展 |
+| M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
+| M5 双模式 SFT | 进行中 | Thinking/Non-thinking 契约与数据完成；六组短程消融训练完成；冻结评测等待 GPU 资源 |
+| M6 评测与晋级 | 计划中 | Base/Candidate 比较、回归分析和 Candidate Gate |
+| M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
+| M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |
+
+当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
+详细证据可从以下入口查看：
+
+- [M0 验收](reports/m0/m0_acceptance.md)、
+  [RTX 3090 清单](reports/hardware/rtx3090_inventory.md)、
+  [拓扑与 NCCL](reports/hardware/nccl_topology.md)
+- [M1 验收](reports/m1/m1_acceptance.md)、
+  [原子 Checkpoint](reports/m1/atomic_checkpoint_report.md)、
+  [Exact Resume](reports/m1/exact_resume_report.md)
+- [M2 验收](reports/m2/m2_acceptance.md)、
+  [全量数据构建](reports/m2/full_dataset_build.md)、
+  [正式 Baseline](reports/m2/baseline_formal.md)
+- [M3 DDP 正确性](reports/m3/ddp_correctness.md)、
+  [故障恢复](reports/m3/ddp_recovery.md)、
+  [扩展实验](reports/m3/ddp_scaling.md)
+- [M4 FSDP2 正确性](reports/m4/fsdp2_cpu_correctness.md)、
+  [DCP 恢复](reports/m4/fsdp2_dcp_recovery.md)、
+  [Qwen3-8B 四卡实验](reports/m4/fsdp2_qwen3_8b_formal.md)
+- [M5 双模式契约](docs/m5_sft_contract.md)、
+  [M5.0 审查报告](reports/m5/m5_dual_mode_contract.md)、
+  [M5.1 数据报告](reports/m5/m5_reasoning_data.md)
+
+每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
+四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
+
+## 一次 Run 如何流转
+
+```mermaid
+flowchart TD
+    A[选择固定数据和模型 Revision] --> B[解析并校验 YAML]
+    B --> C[Doctor / GPU Preflight]
+    C --> D[创建 Run ID 与环境快照]
+    D --> E[执行训练并记录 Metrics]
+    E --> F{到达保存点或收到中断信号}
+    F --> G[原子保存 Checkpoint]
+    G --> H{训练是否完成}
+    H -- 继续 --> E
+    H -- 完成 --> I[导出 Safetensors / Adapter]
+    I --> J[独立评测]
+    J --> K[Base / Candidate 比较]
+    K --> L{Promotion Gate}
+    L -- 通过 --> M[注册 Candidate]
+    L -- 拒绝 --> N[保留 Development 与失败证据]
+```
+
+这种组织方式让故障运行也成为可分析的工程证据：退出原因、最后有效 Checkpoint、恢复模式和
+配置差异都会进入结构化记录。
+
+## 硬件与资源策略
+
+主开发服务器包含跨两个 NUMA 节点的 10 × RTX 3090 24GB，并由多个用户共享。正式扩展实验
+使用经过协调的 1/2/4 卡空闲集合；动态 4–9 号卡可以承担 Smoke、短程训练和评测。8 卡、
+10 卡和受控跨 NUMA 对照放入增强实验队列，所有报告记录实际 GPU 索引、World Size、拓扑、
+温度和后台负载。
+
+辅助目标为 8 × V100 32GB：
+
+| 平台 | 默认精度 | 数值策略 | 角色 |
+| -- | -- | -- | -- |
+| RTX 3090 | BF16，可配置 TF32 | 通常无需 GradScaler | 主开发、训练、评测和部署 |
+| V100 | FP16 | GradScaler | 获得访问权限后的兼容性验证 |
+
+共享服务器上的 GPU 任务先经过资源 Preflight。忙卡拒绝同样会被保存为失败路径证据，避免
+训练进程与其他用户争抢显存。
 
 ## 快速开始
 
-项目开发环境固定为 Python 3.11。默认质量门禁只需要 CPU 环境：
+项目开发环境固定为 Python 3.11。默认 CI 和核心逻辑可以在 CPU 环境验证：
 
 ```bash
 git clone https://github.com/JayYu686/TinyLLM-System.git
 cd TinyLLM-System
 make bootstrap-cpu
 source .venv/bin/activate
+
 tinyllm --help
 tinyllm doctor --json
-tinyllm train --config configs/pretrain/tinygpt_debug_cpu_smoke.yaml \
-  --device cpu --output /tmp/tinyllm-runs --json
+tinyllm train \
+  --config configs/pretrain/tinygpt_debug_cpu_smoke.yaml \
+  --device cpu \
+  --output /tmp/tinyllm-runs \
+  --json
+
 make check
 ```
 
-在 RTX 3090 开发服务器上使用隔离的 CUDA 11.8 Profile：
+RTX 3090 主机使用独立 CUDA 11.8 依赖 Profile：
 
 ```bash
 make bootstrap-gpu
@@ -163,13 +246,13 @@ source .venv/bin/activate
 tinyllm doctor --distributed --json
 ```
 
-`doctor` 是只读命令，不会自动启动高负载 NCCL Benchmark。执行独立 Smoke Test 前必须检查
-GPU 利用率、温度、拓扑、磁盘和软件兼容性。依赖环境规则见
+`tinyllm doctor` 采集只读环境信息。高负载 NCCL Smoke 与训练任务使用独立命令，并在启动前
+确认 GPU 利用率、温度、拓扑、磁盘空间和依赖兼容性。环境说明见
 [requirements/README.md](requirements/README.md)。
 
-## 稳定 CLI 与 Schema
+## CLI 与配置契约
 
-公开 CLI 按里程碑逐步实现：
+公开命令面按里程碑逐步交付：
 
 ```text
 tinyllm doctor
@@ -180,10 +263,12 @@ tinyllm benchmark train
 tinyllm eval
 tinyllm compare
 tinyllm promote
+tinyllm plan
+tinyllm serve
+tinyllm benchmark inference
 ```
 
-缓冲阶段增加 `tinyllm plan`、`tinyllm serve` 和 `tinyllm benchmark inference`。命令提供稳定
-`--json` 输出，并使用统一退出码：
+命令提供稳定 `--json` 输出，便于 Shell、CI 和后续服务集成：
 
 | 退出码 | 含义 |
 | --: | -- |
@@ -194,94 +279,120 @@ tinyllm promote
 | 5 | Checkpoint 或 Resume 完整性失败 |
 | 6 | 评测失败或 Promotion Gate 拒绝 |
 
-正式实验必须从经过 Schema 校验的 YAML 启动。CLI 只允许覆盖 GPU、输出位置、Resume 模式和
-已记录的少量运行时字段。Pydantic JSON Schema Snapshot 保存在
-[schemas/](schemas/README.md)；所有公共 Schema 均带版本字段并拒绝未知字段。
+CLI 覆盖范围集中在 GPU、输出位置、Resume 模式和少量运行时字段。实验定义保存在 YAML；
+公共 Schema 均带版本字段、启用 `extra="forbid"`，并导出快照到
+[schemas/](schemas/README.md)。
 
-## Run 与 Checkpoint 设计
+## Artifact Store
 
-私有 Artifact Store 默认位于 `/data/yujielun/tinyllm/`：
-
-```text
-cache/       共享下载缓存
-datasets/    不可变数据版本
-models/      模型输入和部署导出
-runs/        以 JSON 为事实源的 Run 目录
-registry/    可重建查询索引和晋级记录
-```
-
-Run ID 格式为 `<UTC>-<slug>-<resolved-config-hash8>-<random4>`。每个 Run 设计为保存：
+服务器上的私有 Artifact Store 默认位于 `/data/yujielun/tinyllm/`：
 
 ```text
-run.json                  environment.json
-events.jsonl              hardware.json
-config.original.yaml      metrics.jsonl
-config.resolved.json      checkpoints/ evaluations/ exports/
+/data/yujielun/tinyllm/
+├── cache/       # 数据、模型与评测资源缓存
+├── datasets/    # 已注册的不可变数据版本
+├── models/      # 模型输入与部署导出
+├── runs/        # 训练 Run 与 Checkpoint
+└── registry/    # 可重建索引与晋级记录
 ```
 
-JSON/JSONL 是事实源。M6 引入的 SQLite 只是可从目录重建的查询索引；MLflow 是可选投影，
-永远不是训练依赖。
+典型 Run 目录：
 
-Exact Checkpoint 包含模型、优化器、Scheduler、Scaler、Step/Epoch、Python/NumPy/PyTorch/
-CUDA RNG、Sampler Cursor、数据/配置/代码/环境身份、World Size、逐文件 SHA256 和完成标记。
-系统先写临时目录，校验后原子 Rename，最后才原子更新 `LATEST`。Exact、Warm 和 Transfer
-Resume 是不同操作；Safetensors 导出不是训练 Checkpoint。
+```text
+<run-id>/
+├── run.json
+├── events.jsonl
+├── config.original.yaml
+├── config.resolved.json
+├── environment.json
+├── hardware.json
+├── metrics.jsonl
+├── checkpoints/
+├── evaluations/
+└── exports/
+```
 
-## 求职导向发布路线
+JSON/JSONL 是事实源；SQLite 作为可从目录重建的查询索引，MLflow 可作为观测投影接入。
+公开仓库保存脱敏报告和配置，原始日志、模型权重、数据文件和服务器身份留在私有 Artifact
+Store。
 
-项目采用“十周核心 + 两周缓冲”的路线：
+## 仓库结构
 
-| 里程碑 | 证明的能力 | 核心发布作用 |
+```text
+TinyLLM-System/
+├── configs/       # 数据、训练、评测与 Benchmark YAML
+├── docs/          # 架构、契约、ADR 和设计说明
+├── evals/         # 版本化领域评测集
+├── reports/       # 脱敏的真实运行与验收报告
+├── schemas/       # 公共 Pydantic JSON Schema 快照
+├── scripts/       # 可审查的构建、评测与证据脚本
+├── src/tinyllm/   # Python 包、CLI 和核心实现
+└── tests/         # 单元、集成、失败路径和 GPU Marker 测试
+```
+
+## 版本发布路线
+
+项目按依赖顺序推进 M0–M8，每个阶段交付一个可以独立审查的系统能力：
+
+| 阶段 | 交付能力 | 版本作用 |
 | -- | -- | -- |
-| M1 | 原生单卡 Trainer、原子 Checkpoint、Exact Resume | 正确性基础 |
-| M2 | 合法、确定性数据流水线和冻结评测 | 数据与评测血缘 |
-| M3 | 原生 DDP 和受控 1/2/4 卡扩展 | 首个可正式投递版本 |
-| M4 | Qwen3-8B FSDP2 分片 Checkpoint/Resume Smoke | 高级分布式证据 |
-| M5 | Qwen3-0.6B Full SFT 和 Qwen3-8B LoRA | 实用后训练能力 |
-| M6 | Base/Candidate 比较和 Candidate Gate | `v0.6.0-rc.1` 作品版本 |
-| M7 | vLLM 服务和真实推理门禁 | 缓冲项；Production 的前置条件 |
-| M8 | 静态估算与短 Probe Planner | 缓冲期差异化能力 |
+| M0 | 硬件清单、拓扑、Doctor 和 NCCL Readiness | 建立执行环境基线 |
+| M1 | 原生单卡 Trainer、原子 Checkpoint、Exact Resume | 建立训练正确性 |
+| M2 | 确定性数据流水线、污染检查和冻结评测 | 建立数据与评测血缘 |
+| M3 | 原生 DDP、Rank 故障恢复和 1/2/4 卡扩展 | `v0.3.0-beta.1` 分布式基线 |
+| M4 | Qwen3-8B FSDP2 分片训练与 DCP 恢复 | 建立大模型分片能力 |
+| M5 | Qwen3 双模式 Full SFT 与 LoRA | 建立实际后训练链路 |
+| M6 | Base/Candidate 比较和 Candidate Gate | `v0.6.0-rc.1` 候选版本 |
+| M7 | vLLM 服务和真实推理门禁 | Production 的前置阶段 |
+| M8 | 静态估算与短程 Probe Planner | 资源规划增强 |
 
-M3 已达到开始正式投递的阶段。M7/M8、ZeRO-3、MLflow、V100 验证和 TinyGPT-350M
-不得阻塞 `v0.6.0-rc.1`。完整路线见
-[求职发布路线](docs/career_release_roadmap.md) 和 [项目计划](PLANS.md)。
+M7/M8、ZeRO-3、MLflow、V100 兼容验证和 TinyGPT-350M 按核心链路依赖与资源条件进入后续
+迭代。完整安排见[版本发布路线](docs/release_roadmap.md)。
 
 ## 评测与模型晋级
 
-M6 将在 ARC-Easy、HellaSwag、PIQA 和冻结的 300 条领域集上比较 Base 与训练后模型。领域集
-覆盖 Python、Linux、JSON/配置、日志诊断和无依据拒答。Candidate Gate 的目标是：
+M6 使用 ARC-Easy、HellaSwag、PIQA 和冻结的 300 条领域集比较 Base 与训练后模型。领域集覆盖
+Python、Linux、JSON/配置、日志诊断和无依据拒答，保存 Prompt Template、Tokenizer
+Revision、解码配置、原始输出、评分依据和 Bootstrap 95% 置信区间。
 
-- 领域聚合分数至少提升 3 个百分点，且 Bootstrap 95% 置信区间下界大于零；
-- 通用任务聚合下降不超过 2 个百分点；
-- JSON Valid Rate 至少 98%；
+Candidate Gate 的预注册目标包括：
+
+- 领域聚合分数相对 Base 提升至少 3 个百分点，且 Bootstrap 95% 置信区间下界大于零；
+- 通用任务聚合回退控制在 2 个百分点以内；
+- JSON Valid Rate 达到 98%；
 - 数据、模型、Checkpoint、环境和评测血缘完整。
 
-门禁阈值来自配置，不允许在 README 中临时找例外。未通过的候选模型保留 Development 状态，
-并公开回退和失败样例。Production 晋级必须等待 M7 的真实推理性能门禁。
+门禁拒绝的模型保留 Development 状态，并记录回退指标和失败样例。Candidate 通过 M7 的真实
+推理性能门禁后，才具备 Production 晋级条件。
 
-## 范围控制
+## 核心边界与后续研究
 
-核心项目不实现自研 CUDA Kernel、自研 FlashAttention、MoE、自研 KV Cache、自研 Tensor
-Parallel、多节点/Pipeline Parallel、完整 RLHF、Kubernetes、计费或复杂前端。这些属于 Future
-Work、研究挑战或其他项目职责。通用 FastAPI 不是早期里程碑；M7 使用 vLLM 原生
-OpenAI-compatible API，并增加轻量的血缘感知启动包装。
+当前核心版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、模型晋级和推理
+部署。以下方向位于后续研究清单：
+
+- MoE、Pipeline Parallel 和多节点训练；
+- 自研 KV Cache、Tensor Parallel、FlashAttention 与 CUDA Kernel；
+- 完整 RLHF；
+- Kubernetes、多租户计费和复杂前端管理系统。
+
+M7 直接集成 vLLM 的 OpenAI-compatible API，并在其外层增加血缘感知的启动与 Benchmark
+包装。范围管理依据见 [Future Work](docs/future/) 和 [ADR](docs/adr/)。
 
 ## 文档入口
 
-本文件是公开中文主入口，[README.en.md](README.en.md) 提供完整英文版本。面向项目维护者和
-审查者的设计文档与报告以中文为主；稳定 CLI/Schema 字段和机器可读 JSON Key 保持英文。
+本文件是公开中文主入口，[README.en.md](README.en.md) 提供英文版本。设计文档与人工审查
+报告以中文为主；CLI、Schema 和机器可读 JSON Key 保持英文。
 
-- [贡献与 PR 流程](CONTRIBUTING.md)
-- [Agent 与代码审查规则](AGENTS.md)
-- [里程碑计划](PLANS.md) 与 [任务摘要](TASKS.md)
-- [系统架构](docs/architecture.md)、[训练设计](docs/training_design.md) 与
-  [M4 FSDP2 契约](docs/m4_fsdp2_contract.md)
-- [数据契约](docs/dataset_contract.md)、[评测规范](docs/evaluation_spec.md) 与
+- [贡献、PR 与代码审查流程](CONTRIBUTING.md)
+- [版本发布路线](docs/release_roadmap.md)与[能力证据映射](docs/capability_map.md)
+- [系统架构](docs/architecture.md)、[训练设计](docs/training_design.md)与
+  [M5 SFT 契约](docs/m5_sft_contract.md)
+- [数据契约](docs/dataset_contract.md)、[评测规范](docs/evaluation_spec.md)与
   [实验血缘](docs/experiment_lineage.md)
-- [硬件策略](docs/hardware_strategy.md) 与 [Benchmark 规范](docs/benchmark_plan.md)
-- [公开报告规范](docs/public_reporting.md) 与 [安全策略](SECURITY.md)
+- [硬件策略](docs/hardware_strategy.md)与[Benchmark 规范](docs/benchmark_plan.md)
+- [公开报告规范](docs/public_reporting.md)与[安全策略](SECURITY.md)
 
 ## 许可证
 
-项目采用 [Apache License 2.0](LICENSE)。数据集和模型许可证相互独立；每个注册数据集和公开
-Adapter 都必须保留其来源、固定 Revision 和许可证元数据。
+项目采用 [Apache License 2.0](LICENSE)。数据集与模型许可证独立管理；每个注册数据集和公开
+Adapter 都保存来源、固定 Revision 和许可证元数据。

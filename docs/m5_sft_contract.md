@@ -151,8 +151,12 @@ R1 固定从训练侧已验证 Pilot 中选择每类 8 条短而完整的样本�
 
 两个训练 Seed、优化参数、Base、Dev、解码设置和门禁全部沿用 M5.2。两个 Seed 的
 Non-thinking 回退都不超过 2pp 且 Thinking 格式率都至少 99%时，R1 才能解锁 M5.3。
-当前 R1 已完成 CPU 契约与数据构建，真实 GPU 训练和评测尚待执行。详见
-[M5.2-R1 中文报告](../reports/m5/m5_format_repair_r1.md)。
+两组真实训练和冻结评测已经完成：Non-thinking 分数为 64.0%/66.0%，Thinking 格式率为
+94.5%/93.5%，Thinking 分数均为 93.0%。自动 Gate 以
+`gate_reason=thinking_format_gate_failed` 和退出码 6 拒绝 R1。24 条格式失败全部达到
+896 Token 上限且缺少闭标签；短完整样本复用策略未改善格式率，M5.3 继续保持阻塞。详见
+[M5.2-R1 中文报告](../reports/m5/m5_format_repair_r1.md)和
+[机器可读 Gate](../reports/m5/raw/m5_format_repair_gate.json)。
 
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做

@@ -12,6 +12,7 @@ from tinyllm.data import (
 from tinyllm.evaluation.m5_reasoning_schema import (
     M5AblationSelection,
     M5FormatFailureAnalysis,
+    M5FormatRepairGateResult,
 )
 
 
@@ -160,6 +161,23 @@ def test_m5_r1_public_mixture_manifest_records_exact_three_strata() -> None:
         "log_diagnosis": 8,
         "python": 8,
     }
+    public_text = path.read_text(encoding="utf-8")
+    assert "/home/" not in public_text
+    assert "/data/" not in public_text
+
+
+def test_m5_r1_public_gate_retains_real_rejection() -> None:
+    path = Path("reports/m5/raw/m5_format_repair_gate.json")
+    gate = M5FormatRepairGateResult.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert gate.status == "rejected"
+    assert gate.gate_reason == "thinking_format_gate_failed"
+    assert gate.training_seeds == (42, 20260727)
+    assert gate.nonthinking_scores_basis_points == (6400, 6600)
+    assert gate.thinking_format_basis_points == (9450, 9350)
+    assert gate.thinking_scores_basis_points == (9300, 9300)
+    assert gate.nonthinking_regression_gate_passed
+    assert not gate.thinking_format_gate_passed
     public_text = path.read_text(encoding="utf-8")
     assert "/home/" not in public_text
     assert "/data/" not in public_text

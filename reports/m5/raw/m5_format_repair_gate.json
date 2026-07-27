@@ -1,0 +1,36 @@
+{
+  "base_evaluation_id": "20260722T110148Z-m5-reasoning-dev-base-4e949c80",
+  "base_nonthinking_score_basis_points": 3700,
+  "evaluation_ids": [
+    "20260727T090313Z-m5-reasoning-dev-ablation_candidate-3707f186",
+    "20260727T090251Z-m5-reasoning-dev-ablation_candidate-e70ef06d"
+  ],
+  "gate_reason": "thinking_format_gate_failed",
+  "mean_thinking_score_basis_points": 9300,
+  "mixture_manifest_sha256": "2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e",
+  "mixture_version": "m5-format-repair-mixture-v1-1396b60b",
+  "nonthinking_regression_gate_passed": true,
+  "nonthinking_scores_basis_points": [
+    6400,
+    6600
+  ],
+  "schema_version": "1.0",
+  "status": "rejected",
+  "thinking_format_basis_points": [
+    9450,
+    9350
+  ],
+  "thinking_format_gate_passed": false,
+  "thinking_scores_basis_points": [
+    9300,
+    9300
+  ],
+  "training_run_ids": [
+    "20260727T075422Z-m5-format-repair-r1-seed42-7c825907-1c02",
+    "20260727T075432Z-m5-format-repair-r1-seed20260727-59c6d0e9-3af2"
+  ],
+  "training_seeds": [
+    42,
+    20260727
+  ]
+}

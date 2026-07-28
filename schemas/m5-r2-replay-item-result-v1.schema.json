@@ -1,0 +1,239 @@
+{
+  "$defs": {
+    "M5R2ThresholdItemResult": {
+      "additionalProperties": false,
+      "description": "Private score for one original failure at one counterfactual limit.",
+      "properties": {
+        "closing_tag_end_token": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 1536,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Closing Tag End Token"
+        },
+        "final_answer_correct": {
+          "title": "Final Answer Correct",
+          "type": "boolean"
+        },
+        "final_json_valid": {
+          "title": "Final Json Valid",
+          "type": "boolean"
+        },
+        "finish_reason": {
+          "enum": [
+            "eos",
+            "length"
+          ],
+          "title": "Finish Reason",
+          "type": "string"
+        },
+        "format_valid": {
+          "title": "Format Valid",
+          "type": "boolean"
+        },
+        "generated_tokens": {
+          "exclusiveMinimum": 0,
+          "maximum": 1536,
+          "title": "Generated Tokens",
+          "type": "integer"
+        },
+        "max_new_tokens": {
+          "enum": [
+            1024,
+            1280,
+            1536
+          ],
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "response": {
+          "minLength": 1,
+          "title": "Response",
+          "type": "string"
+        },
+        "response_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Response Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "max_new_tokens",
+        "response",
+        "response_sha256",
+        "generated_tokens",
+        "finish_reason",
+        "format_valid",
+        "final_json_valid",
+        "final_answer_correct"
+      ],
+      "title": "M5R2ThresholdItemResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Private replay evidence for one item in a replayed four-item Batch.",
+  "properties": {
+    "batch_offset": {
+      "exclusiveMaximum": 200,
+      "minimum": 0,
+      "title": "Batch Offset",
+      "type": "integer"
+    },
+    "item_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "prompt_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "replay_1536_prefix_exact": {
+      "const": true,
+      "title": "Replay 1536 Prefix Exact",
+      "type": "boolean"
+    },
+    "replay_1536_prefix_tokens_compared": {
+      "exclusiveMinimum": 0,
+      "maximum": 896,
+      "title": "Replay 1536 Prefix Tokens Compared",
+      "type": "integer"
+    },
+    "replay_896_exact": {
+      "const": true,
+      "title": "Replay 896 Exact",
+      "type": "boolean"
+    },
+    "replay_896_finish_reason": {
+      "enum": [
+        "eos",
+        "length"
+      ],
+      "title": "Replay 896 Finish Reason",
+      "type": "string"
+    },
+    "replay_896_generated_tokens": {
+      "exclusiveMinimum": 0,
+      "maximum": 896,
+      "title": "Replay 896 Generated Tokens",
+      "type": "integer"
+    },
+    "replay_896_response_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Replay 896 Response Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_final_answer_correct": {
+      "title": "Source Final Answer Correct",
+      "type": "boolean"
+    },
+    "source_final_json_valid": {
+      "title": "Source Final Json Valid",
+      "type": "boolean"
+    },
+    "source_finish_reason": {
+      "enum": [
+        "eos",
+        "length"
+      ],
+      "title": "Source Finish Reason",
+      "type": "string"
+    },
+    "source_format_valid": {
+      "title": "Source Format Valid",
+      "type": "boolean"
+    },
+    "source_generated_tokens": {
+      "exclusiveMinimum": 0,
+      "maximum": 896,
+      "title": "Source Generated Tokens",
+      "type": "integer"
+    },
+    "source_response_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Response Sha256",
+      "type": "string"
+    },
+    "task_family": {
+      "enum": [
+        "config",
+        "json",
+        "linux",
+        "log_diagnosis",
+        "python"
+      ],
+      "title": "Task Family",
+      "type": "string"
+    },
+    "thresholds": {
+      "anyOf": [
+        {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/M5R2ThresholdItemResult"
+            },
+            {
+              "$ref": "#/$defs/M5R2ThresholdItemResult"
+            },
+            {
+              "$ref": "#/$defs/M5R2ThresholdItemResult"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Thresholds"
+    }
+  },
+  "required": [
+    "item_id",
+    "task_family",
+    "language",
+    "batch_offset",
+    "prompt_sha256",
+    "source_response_sha256",
+    "source_generated_tokens",
+    "source_finish_reason",
+    "source_format_valid",
+    "source_final_json_valid",
+    "source_final_answer_correct",
+    "replay_896_response_sha256",
+    "replay_896_generated_tokens",
+    "replay_896_finish_reason",
+    "replay_896_exact",
+    "replay_1536_prefix_tokens_compared",
+    "replay_1536_prefix_exact"
+  ],
+  "title": "M5R2ReplayItemResult",
+  "type": "object"
+}

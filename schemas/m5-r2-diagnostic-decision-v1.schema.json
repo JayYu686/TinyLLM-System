@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "M5R2SeedProjection": {
+      "additionalProperties": false,
+      "description": "One Seed's projected format score at the selected diagnostic limit.",
+      "properties": {
+        "projected_format_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Projected Format Basis Points",
+          "type": "integer"
+        },
+        "projected_score_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Projected Score Basis Points",
+          "type": "integer"
+        },
+        "source_evaluation_id": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Source Evaluation Id",
+          "type": "string"
+        },
+        "training_seed": {
+          "enum": [
+            42,
+            20260727
+          ],
+          "title": "Training Seed",
+          "type": "integer"
+        },
+        "unresolved_format_items": {
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Unresolved Format Items",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "training_seed",
+        "source_evaluation_id",
+        "projected_format_basis_points",
+        "projected_score_basis_points",
+        "unresolved_format_items"
+      ],
+      "title": "M5R2SeedProjection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Combined two-seed conclusion without changing the formal protocol.",
+  "properties": {
+    "decision_reason": {
+      "enum": [
+        "both_seeds_pass_at_or_below_conditionally_approved_limit",
+        "both_seeds_pass_only_at_tradeoff_limit",
+        "at_least_one_seed_fails_at_diagnostic_limit"
+      ],
+      "title": "Decision Reason",
+      "type": "string"
+    },
+    "diagnostic_version": {
+      "const": "m5-r2-length-replay-v1",
+      "title": "Diagnostic Version",
+      "type": "string"
+    },
+    "formal_protocol_changed": {
+      "const": false,
+      "default": false,
+      "title": "Formal Protocol Changed",
+      "type": "boolean"
+    },
+    "projections": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5R2SeedProjection"
+        },
+        {
+          "$ref": "#/$defs/M5R2SeedProjection"
+        }
+      ],
+      "title": "Projections",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_max_new_tokens": {
+      "anyOf": [
+        {
+          "enum": [
+            1024,
+            1280,
+            1536
+          ],
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Selected Max New Tokens"
+    },
+    "status": {
+      "enum": [
+        "supports_eval_protocol_revision",
+        "tradeoff_review_required",
+        "length_ceiling_insufficient"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "summary_sha256": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        }
+      ],
+      "title": "Summary Sha256",
+      "type": "array"
+    },
+    "training_seeds": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "const": 42,
+          "type": "integer"
+        },
+        {
+          "const": 20260727,
+          "type": "integer"
+        }
+      ],
+      "title": "Training Seeds",
+      "type": "array"
+    }
+  },
+  "required": [
+    "status",
+    "diagnostic_version",
+    "summary_sha256",
+    "training_seeds",
+    "projections",
+    "decision_reason"
+  ],
+  "title": "M5R2DiagnosticDecision",
+  "type": "object"
+}

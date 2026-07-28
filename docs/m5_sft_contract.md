@@ -171,6 +171,12 @@ Final-answer 指标。
 处理环境和 RNG 可复现性。完整协议见
 [M5.2-R2 诊断设计](m5_r2_diagnostic_design.md)。
 
+D1 离线分析已完成：两个 Seed 的 24 条失败全部触及 896 Token 上限，失败输出的平均重复
+8-gram 比例为 25.82%/24.95%，同任务族格式有效对照为 1.28%/1.24%。该结果同时支持长度
+触顶和重复生成风险，尚不能替代 D2 GPU 重放结论。若 D2 证明两个 Seed 在 1280 都达到
+99%，已条件允许建立上限为 1280 的新协议；生效前必须完成全部 Base/Candidate 重跑和性能
+成本评估。详见[M5.2-R2 中文报告](../reports/m5/m5_r2_diagnostic.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

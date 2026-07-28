@@ -82,6 +82,13 @@ from tinyllm.evaluation import (
     MultipleChoiceScorer,
     RequiredTermsScorer,
 )
+from tinyllm.evaluation.m5_r2_schema import (
+    M5R2DiagnosticDecision,
+    M5R2OfflineAnalysis,
+    M5R2ReplayConfig,
+    M5R2ReplayItemResult,
+    M5R2ReplaySummary,
+)
 from tinyllm.evaluation.m5_reasoning_schema import (
     M5AblationSelection,
     M5FormatFailureAnalysis,
@@ -190,6 +197,11 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-reasoning-evaluation-config-v1.schema.json": M5ReasoningEvaluationConfig,
     "m5-reasoning-evaluation-summary-v1.schema.json": M5ReasoningEvaluationSummary,
     "m5-reasoning-item-result-v1.schema.json": M5ReasoningItemResult,
+    "m5-r2-diagnostic-decision-v1.schema.json": M5R2DiagnosticDecision,
+    "m5-r2-offline-analysis-v1.schema.json": M5R2OfflineAnalysis,
+    "m5-r2-replay-config-v1.schema.json": M5R2ReplayConfig,
+    "m5-r2-replay-item-result-v1.schema.json": M5R2ReplayItemResult,
+    "m5-r2-replay-summary-v1.schema.json": M5R2ReplaySummary,
     "m5-reasoning-data-config-v1.schema.json": M5ReasoningDataConfig,
     "m5-reasoning-contamination-report-v1.schema.json": M5ReasoningContaminationReport,
     "m5-reasoning-dataset-manifest-v1.schema.json": M5ReasoningDatasetManifest,

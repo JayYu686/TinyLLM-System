@@ -1,0 +1,29 @@
+schema_version: "1.0"
+diagnostic_version: m5-r2-length-replay-v1
+source_suite_version: m5-reasoning-dev-v1-53ddf557
+source_evaluation_config_sha256: 3735a34e70c06059fbc09f62d02fabc296fd97e79a45d60f3d00dede21108d51
+source_mixture_version: m5-format-repair-mixture-v1-1396b60b
+source_mixture_manifest_sha256: 2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e
+seed42_training_run_id: 20260727T075422Z-m5-format-repair-r1-seed42-7c825907-1c02
+seed42_source_evaluation_id: 20260727T090313Z-m5-reasoning-dev-ablation_candidate-3707f186
+seed42_source_raw_results_sha256: 87e478b92c3992fa4f1196d05e32686291f2f2a4b559777e559fbc80988bd50d
+seed42_model_export_sha256: 46d5ca599bec9cfcad12a3ed001fcb59b4646232d873377d7554219d7ce34f45
+seed20260727_training_run_id: 20260727T075432Z-m5-format-repair-r1-seed20260727-59c6d0e9-3af2
+seed20260727_source_evaluation_id: 20260727T090251Z-m5-reasoning-dev-ablation_candidate-e70ef06d
+seed20260727_source_raw_results_sha256: 1e1fd1d43d170ddad4752114222c0655e1c814cebc23f8f3208575548c6b8cd7
+seed20260727_model_export_sha256: e39a14ee2cbb15d45b312ea1edc4adf298f9c27692b324630264ea0d483720f4
+model_revision: c1899de289a04d12100db370d81485cdf75e47ca
+attention_architecture: gqa
+thinking_batch_size: 4
+thinking_base_seed: 20260726
+original_max_new_tokens: 896
+diagnostic_max_new_tokens: 1536
+score_thresholds:
+  - 1024
+  - 1280
+  - 1536
+formal_candidate_max_new_tokens: 1280
+format_gate_basis_points: 9900
+require_896_response_match: true
+require_1536_prefix_match: true
+consume_m6_frozen_results: false

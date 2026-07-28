@@ -244,8 +244,9 @@ R2 诊断阶段不包含：
 - 使用 M6 冻结结果调参；
 - 将诊断结果标记为 Candidate 或 Production。
 
-## 9. 待确认的架构问题
+## 9. 条件确认
 
-当前唯一需要产品侧确认的问题是：若 1280 Token 能让两个 Seed 达到 99%，正式 Thinking
-评测是否允许把最大生成长度从 896 提高到 1280。该变更会增加最坏生成预算约 42.9%，必须以
-新 Evaluation Protocol、完整 Base/Candidate 重跑和推理性能数据为前提。
+用户已条件确认：若 1280 Token 能让两个 Seed 都达到 99%，允许在新的 Evaluation
+Protocol Version 中把正式 Thinking 最大生成长度从 896 提高到 1280。该确认不直接修改
+现有协议；新版本生效前仍必须完成 Base、六个 M5.2 Candidate、两个 R1 Candidate 的完整
+重跑，并报告生成 Token、评测时长和后续推理性能成本。旧结果不得覆盖。

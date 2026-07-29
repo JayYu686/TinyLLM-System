@@ -7,7 +7,13 @@ from typing import Any, cast
 
 import pytest
 
-from scripts.run_m5_r3_p0 import _verify_model_directory, build_parser
+from scripts.run_m5_r3_p0 import (
+    M5R3P0EnvironmentError,
+    _subprocess_command,
+    _verify_model_directory,
+    _verify_policy_python,
+    build_parser,
+)
 from tinyllm.data.m5_r3_p0 import (
     M5R3P0Error,
     build_m5_r3_p0_dataset,
@@ -392,6 +398,29 @@ def test_p0_generation_seed_and_cli_are_stable() -> None:
     assert args.config == CONFIG
     assert args.gpu_index == 7
     assert args.timeout_seconds == 7200
+    assert args.policy_python == Path(".venv/bin/python")
+
+    command = _subprocess_command(
+        args,
+        interpreter=Path("/runtime/python"),
+        mode="--worker",
+        generation_output=Path("/private/generations.json"),
+    )
+    assert command[0] == "/runtime/python"
+    assert command[-1] == "--worker"
+    assert "/private/generations.json" in command
+
+
+def test_p0_policy_python_preflight_is_fail_closed(tmp_path: Path) -> None:
+    _verify_policy_python(Path(".venv/bin/python"), Path.cwd())
+
+    failing = tmp_path / "python"
+    failing.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    failing.chmod(0o755)
+    with pytest.raises(M5R3P0EnvironmentError, match="tokenizers 0.21.4"):
+        _verify_policy_python(failing, Path.cwd())
+    with pytest.raises(M5R3P0EnvironmentError, match="unavailable"):
+        _verify_policy_python(tmp_path / "missing", Path.cwd())
 
 
 def test_p0_teacher_snapshot_requires_pinned_qwen3_gqa(tmp_path: Path) -> None:

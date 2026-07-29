@@ -32,7 +32,6 @@ from tinyllm.data.m5_r3_p0 import (
     load_m5_r3_p0_config,
     m5_r3_p0_config_sha256,
     m5_r3_p0_generation_seed,
-    select_m5_r3_p0_candidate,
 )
 from tinyllm.data.m5_r3_p0_schema import M5R3P0Result
 from tinyllm.lineage import read_git_identity
@@ -109,12 +108,33 @@ def _verify_frozen_inputs(args: argparse.Namespace) -> None:
             raise M5R3P0Error("M5 R3 P0 frozen input SHA256 differs")
 
 
+def _load_historical_tasks(args: argparse.Namespace) -> tuple[ReasoningTask, ...]:
+    load_verified_reasoning_pilot(
+        raw_artifact=args.historical_pilot_artifact,
+        reasoning_config=args.reasoning_config,
+    )
+    try:
+        historical_payload = cast(
+            dict[str, object],
+            json.loads(args.historical_pilot_artifact.read_text(encoding="utf-8")),
+        )
+        return tuple(
+            ReasoningTask.model_validate(value)
+            for value in cast(list[object], historical_payload["tasks"])
+        )
+    except (OSError, KeyError, TypeError, json.JSONDecodeError, ValueError) as exc:
+        raise M5R3P0Error("M5 R3 P0 historical tasks cannot be reconstructed") from exc
+
+
 def _worker(args: argparse.Namespace) -> int:
+    import tokenizers as teacher_tokenizers  # type: ignore[import-untyped]
     import torch
     import transformers  # type: ignore[import-not-found]
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     project_root = Path(__file__).resolve().parents[1]
+    if args.generation_output is None:
+        raise M5R3P0Error("M5 R3 P0 worker requires a generation output")
     config = load_m5_r3_p0_config(args.config)
     reasoning_config = load_m5_reasoning_data_config(args.reasoning_config)
     git_commit, git_dirty = read_git_identity(project_root)
@@ -124,23 +144,9 @@ def _worker(args: argparse.Namespace) -> int:
     _verify_model_directory(args.model_dir, config.teacher.revision)
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
         raise M5R3P0EnvironmentError("M5 R3 P0 worker requires one visible CUDA device")
-    load_verified_reasoning_pilot(
-        raw_artifact=args.historical_pilot_artifact,
-        reasoning_config=args.reasoning_config,
-    )
+    historical_tasks = _load_historical_tasks(args)
     tasks = generate_m5_r3_p0_tasks(config)
     dev_tasks = generate_reasoning_dev_tasks(reasoning_config)
-    try:
-        historical_payload = cast(
-            dict[str, object],
-            json.loads(args.historical_pilot_artifact.read_text(encoding="utf-8")),
-        )
-        historical_tasks = tuple(
-            ReasoningTask.model_validate(value)
-            for value in cast(list[object], historical_payload["tasks"])
-        )
-    except (OSError, KeyError, TypeError, json.JSONDecodeError, ValueError) as exc:
-        raise M5R3P0Error("M5 R3 P0 historical tasks cannot be reconstructed") from exc
     contamination = check_m5_r3_p0_contamination(
         tasks,
         dev_tasks=dev_tasks,
@@ -148,12 +154,6 @@ def _worker(args: argparse.Namespace) -> int:
     )
     if contamination.status != "pass":
         raise M5R3P0Error("M5 R3 P0 contamination preflight failed")
-    tokenization = load_m2_tokenization_config(args.tokenization_config)
-    policy_tokenizer = TokenizersBackend.from_files(
-        args.tokenizer_dir / tokenization.tokenizer.tokenizer_file,
-        args.tokenizer_dir / tokenization.tokenizer.tokenizer_config_file,
-        tokenization.tokenizer,
-    )
     teacher_tokenizer = AutoTokenizer.from_pretrained(
         args.model_dir,
         local_files_only=True,
@@ -173,7 +173,6 @@ def _worker(args: argparse.Namespace) -> int:
     ).to(device)
     model.eval()
     generations: list[TeacherGenerationRecord] = []
-    accepted_trace_hashes: set[str] = set()
     for task_index, task in enumerate(tasks):
         rendered = teacher_tokenizer.apply_chat_template(
             [{"role": "user", "content": task.prompt}],
@@ -243,17 +242,6 @@ def _worker(args: argparse.Namespace) -> int:
                 )
                 torch.cuda.empty_cache()
             task_records.append(record)
-            selection = select_m5_r3_p0_candidate(
-                task,
-                task_records,
-                config=config,
-                reasoning_config=reasoning_config,
-                tokenizer=policy_tokenizer,
-                existing_trace_hashes=frozenset(accepted_trace_hashes),
-            )
-            if selection.sample is not None:
-                accepted_trace_hashes.add(cast(str, selection.normalized_trace_sha256))
-                break
         generations.extend(task_records)
         if (task_index + 1) % 5 == 0:
             print(
@@ -267,6 +255,90 @@ def _worker(args: argparse.Namespace) -> int:
                 flush=True,
             )
     torch.cuda.synchronize(device)
+    duration_seconds = time.monotonic() - started
+    generation_payload = {
+        "schema_version": "1.0",
+        "pilot_version": config.pilot_version,
+        "config_sha256": m5_r3_p0_config_sha256(config),
+        "git_commit": git_commit,
+        "git_dirty": git_dirty,
+        "physical_gpu_index": args.gpu_index,
+        "gpu_name": torch.cuda.get_device_name(device),
+        "torch_version": torch.__version__,
+        "transformers_version": transformers.__version__,
+        "teacher_tokenizers_version": teacher_tokenizers.__version__,
+        "duration_seconds": duration_seconds,
+        "peak_allocated_bytes": int(torch.cuda.max_memory_allocated(device)),
+        "peak_reserved_bytes": int(torch.cuda.max_memory_reserved(device)),
+        "tasks": [item.to_dict() for item in tasks],
+        "generations": [item.to_dict() for item in generations],
+    }
+    _atomic_json(args.generation_output, generation_payload)
+    print(
+        json.dumps(
+            {
+                "status": "generated",
+                "generation_attempts": len(generations),
+                "generation_artifact_sha256": _sha256_file(args.generation_output),
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+def _finalize(args: argparse.Namespace) -> int:
+    project_root = Path(__file__).resolve().parents[1]
+    if args.generation_output is None:
+        raise M5R3P0Error("M5 R3 P0 finalizer requires a generation output")
+    config = load_m5_r3_p0_config(args.config)
+    reasoning_config = load_m5_reasoning_data_config(args.reasoning_config)
+    git_commit, git_dirty = read_git_identity(project_root)
+    if git_dirty:
+        raise M5R3P0Error("M5 R3 P0 requires a clean Git worktree")
+    _verify_frozen_inputs(args)
+    historical_tasks = _load_historical_tasks(args)
+    try:
+        generation_payload = cast(
+            dict[str, object],
+            json.loads(args.generation_output.read_text(encoding="utf-8")),
+        )
+        tasks = tuple(
+            ReasoningTask.model_validate(value)
+            for value in cast(list[object], generation_payload["tasks"])
+        )
+        generations = tuple(
+            TeacherGenerationRecord.model_validate(value)
+            for value in cast(list[object], generation_payload["generations"])
+        )
+        physical_gpu_index = int(cast(int, generation_payload["physical_gpu_index"]))
+        gpu_name = str(generation_payload["gpu_name"])
+        torch_version = str(generation_payload["torch_version"])
+        transformers_version = str(generation_payload["transformers_version"])
+        teacher_tokenizers_version = str(generation_payload["teacher_tokenizers_version"])
+        duration_seconds = float(cast(float, generation_payload["duration_seconds"]))
+        peak_allocated_bytes = int(cast(int, generation_payload["peak_allocated_bytes"]))
+        peak_reserved_bytes = int(cast(int, generation_payload["peak_reserved_bytes"]))
+    except (OSError, KeyError, TypeError, json.JSONDecodeError, ValueError) as exc:
+        raise M5R3P0Error("M5 R3 P0 generation artifact cannot be reconstructed") from exc
+    if (
+        generation_payload.get("schema_version") != "1.0"
+        or generation_payload.get("pilot_version") != config.pilot_version
+        or generation_payload.get("config_sha256") != m5_r3_p0_config_sha256(config)
+        or generation_payload.get("git_commit") != git_commit
+        or generation_payload.get("git_dirty") is not False
+        or physical_gpu_index != args.gpu_index
+        or len(tasks) != 40
+        or len(generations) != 80
+    ):
+        raise M5R3P0Error("M5 R3 P0 generation artifact identity differs")
+    dev_tasks = generate_reasoning_dev_tasks(reasoning_config)
+    tokenization = load_m2_tokenization_config(args.tokenization_config)
+    policy_tokenizer = TokenizersBackend.from_files(
+        args.tokenizer_dir / tokenization.tokenizer.tokenizer_file,
+        args.tokenizer_dir / tokenization.tokenizer.tokenizer_config_file,
+        tokenization.tokenizer,
+    )
     build = build_m5_r3_p0_dataset(
         tasks,
         generations,
@@ -276,11 +348,11 @@ def _worker(args: argparse.Namespace) -> int:
         historical_tasks=historical_tasks,
         tokenizer=policy_tokenizer,
     )
-    duration_seconds = time.monotonic() - started
     raw_payload = {
         "schema_version": "1.0",
         "pilot_version": config.pilot_version,
         "config_sha256": m5_r3_p0_config_sha256(config),
+        "generation_artifact_sha256": _sha256_file(args.generation_output),
         "task_set_sha256": build.task_set_sha256,
         "samples_sha256": build.samples_sha256,
         "tasks": [item.to_dict() for item in build.tasks],
@@ -303,10 +375,12 @@ def _worker(args: argparse.Namespace) -> int:
         model=config.teacher,
         sampling=config.sampling,
         tokenizer_revision=config.tokenizer_revision,
-        physical_gpu_index=args.gpu_index,
-        gpu_name=torch.cuda.get_device_name(device),
-        torch_version=torch.__version__,
-        transformers_version=transformers.__version__,
+        physical_gpu_index=physical_gpu_index,
+        gpu_name=gpu_name,
+        torch_version=torch_version,
+        transformers_version=transformers_version,
+        teacher_tokenizers_version=teacher_tokenizers_version,
+        policy_tokenizers_version="0.21.4",
         input_tasks=40,
         generation_attempts=len(build.generations),
         accepted_samples=len(build.samples),
@@ -317,8 +391,8 @@ def _worker(args: argparse.Namespace) -> int:
         task_set_sha256=build.task_set_sha256,
         samples_sha256=build.samples_sha256,
         duration_seconds=duration_seconds,
-        peak_allocated_bytes=int(torch.cuda.max_memory_allocated(device)),
-        peak_reserved_bytes=int(torch.cuda.max_memory_reserved(device)),
+        peak_allocated_bytes=peak_allocated_bytes,
+        peak_reserved_bytes=peak_reserved_bytes,
         raw_artifact_sha256=_sha256_file(args.raw_output),
     )
     _atomic_json(args.public_output, result.to_dict())
@@ -326,22 +400,41 @@ def _worker(args: argparse.Namespace) -> int:
     return 0 if result.status == "pass" else 6
 
 
-def _supervise(args: argparse.Namespace) -> int:
-    project_root = Path(__file__).resolve().parents[1]
-    _, dirty = read_git_identity(project_root)
-    if dirty:
-        raise M5R3P0Error("M5 R3 P0 requires a clean Git worktree")
-    if args.raw_output.exists() or args.public_output.exists():
-        raise M5R3P0Error("M5 R3 P0 output already exists")
-    _verify_frozen_inputs(args)
+def _verify_policy_python(policy_python: Path, project_root: Path) -> None:
+    if not policy_python.is_file() or not os.access(policy_python, os.X_OK):
+        raise M5R3P0EnvironmentError("M5 R3 P0 policy Python is unavailable")
     try:
-        validate_gpu_preflight(inspect_gpus((args.gpu_index,)))
-    except RuntimeError as exc:
-        raise M5R3P0EnvironmentError(str(exc)) from exc
-    environment = os.environ.copy()
-    environment["CUDA_VISIBLE_DEVICES"] = str(args.gpu_index)
-    command = [
-        sys.executable,
+        completed = subprocess.run(
+            [
+                str(policy_python),
+                "-c",
+                (
+                    "import tokenizers; "
+                    "assert tokenizers.__version__ == '0.21.4', tokenizers.__version__; "
+                    "import tinyllm.data"
+                ),
+            ],
+            cwd=project_root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise M5R3P0EnvironmentError("M5 R3 P0 policy Python preflight failed") from exc
+    if completed.returncode != 0:
+        raise M5R3P0EnvironmentError("M5 R3 P0 policy Python must provide tokenizers 0.21.4")
+
+
+def _subprocess_command(
+    args: argparse.Namespace,
+    *,
+    interpreter: Path,
+    mode: str,
+    generation_output: Path,
+) -> list[str]:
+    return [
+        str(interpreter),
         str(Path(__file__).resolve()),
         "--config",
         str(args.config),
@@ -361,12 +454,42 @@ def _supervise(args: argparse.Namespace) -> int:
         str(args.tokenizer_dir),
         "--gpu-index",
         str(args.gpu_index),
+        "--generation-output",
+        str(generation_output),
         "--raw-output",
         str(args.raw_output),
         "--public-output",
         str(args.public_output),
-        "--worker",
+        mode,
     ]
+
+
+def _supervise(args: argparse.Namespace) -> int:
+    project_root = Path(__file__).resolve().parents[1]
+    _, dirty = read_git_identity(project_root)
+    if dirty:
+        raise M5R3P0Error("M5 R3 P0 requires a clean Git worktree")
+    generation_output = (
+        args.generation_output
+        if args.generation_output is not None
+        else args.raw_output.with_name(f"{args.raw_output.stem}.generations.json")
+    )
+    if generation_output.exists() or args.raw_output.exists() or args.public_output.exists():
+        raise M5R3P0Error("M5 R3 P0 output already exists")
+    _verify_frozen_inputs(args)
+    _verify_policy_python(args.policy_python, project_root)
+    try:
+        validate_gpu_preflight(inspect_gpus((args.gpu_index,)))
+    except RuntimeError as exc:
+        raise M5R3P0EnvironmentError(str(exc)) from exc
+    environment = os.environ.copy()
+    environment["CUDA_VISIBLE_DEVICES"] = str(args.gpu_index)
+    command = _subprocess_command(
+        args,
+        interpreter=Path(sys.executable),
+        mode="--worker",
+        generation_output=generation_output,
+    )
     try:
         completed = subprocess.run(
             command,
@@ -378,7 +501,28 @@ def _supervise(args: argparse.Namespace) -> int:
         )
     except subprocess.TimeoutExpired as exc:
         raise M5R3P0EnvironmentError("M5 R3 P0 exceeded its timeout") from exc
-    return completed.returncode
+    if completed.returncode != 0:
+        return completed.returncode
+    finalizer_environment = os.environ.copy()
+    finalizer_environment.pop("CUDA_VISIBLE_DEVICES", None)
+    finalizer = _subprocess_command(
+        args,
+        interpreter=args.policy_python,
+        mode="--finalize",
+        generation_output=generation_output,
+    )
+    try:
+        finalized = subprocess.run(
+            finalizer,
+            cwd=project_root,
+            env=finalizer_environment,
+            check=False,
+            text=True,
+            timeout=300,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise M5R3P0EnvironmentError("M5 R3 P0 finalizer exceeded its timeout") from exc
+    return finalized.returncode
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -416,8 +560,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gpu-index", type=int, required=True)
     parser.add_argument("--raw-output", type=Path, required=True)
     parser.add_argument("--public-output", type=Path, required=True)
+    parser.add_argument(
+        "--policy-python",
+        type=Path,
+        default=Path(".venv/bin/python"),
+    )
     parser.add_argument("--timeout-seconds", type=int, default=7200)
+    parser.add_argument("--generation-output", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--finalize", action="store_true", help=argparse.SUPPRESS)
     return parser
 
 
@@ -426,7 +577,13 @@ def main() -> int:
 
     args = build_parser().parse_args()
     try:
-        return _worker(args) if args.worker else _supervise(args)
+        if args.worker and args.finalize:
+            raise M5R3P0Error("M5 R3 P0 internal modes are mutually exclusive")
+        if args.worker:
+            return _worker(args)
+        if args.finalize:
+            return _finalize(args)
+        return _supervise(args)
     except M5R3P0EnvironmentError as exc:
         print(json.dumps({"status": "error", "message": str(exc)}), file=sys.stderr)
         return 3

@@ -168,4 +168,6 @@ R3 不是 M6 Candidate Gate。即使通过，也只确定 M5.3 可采用的训�
 
 当前已完成前三步：固定 40 条任务及独立身份、Dev/历史 Pilot 污染检查、严格 Schema、
 CPU 合成契约 Smoke 和失败路径。CPU Smoke 只证明接口与门禁逻辑，不代表 Teacher 质量。
+真实运行使用隔离的两阶段环境：Teacher 环境只生成候选，冻结 `tokenizers=0.21.4` 的
+Policy 环境负责 Token 计数、Trace 选择和 Gate；禁止为了复用单一环境而绕过版本校验。
 下一步是执行真实 Qwen3-8B R3-P0；P0 通过前不实现 240 条扩展，不启动 R3 训练。

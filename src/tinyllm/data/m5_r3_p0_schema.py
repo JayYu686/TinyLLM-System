@@ -290,6 +290,8 @@ class M5R3P0Result(StrictSchema):
     gpu_name: str = Field(min_length=1, max_length=128)
     torch_version: str = Field(min_length=1, max_length=64)
     transformers_version: str = Field(min_length=1, max_length=64)
+    teacher_tokenizers_version: str = Field(min_length=1, max_length=64)
+    policy_tokenizers_version: Literal["0.21.4"]
     input_tasks: Literal[40]
     generation_attempts: int = Field(ge=1, le=80)
     accepted_samples: int = Field(ge=0, le=40)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any, cast
 
@@ -412,7 +413,7 @@ def test_p0_generation_seed_and_cli_are_stable() -> None:
 
 
 def test_p0_policy_python_preflight_is_fail_closed(tmp_path: Path) -> None:
-    _verify_policy_python(Path(".venv/bin/python"), Path.cwd())
+    _verify_policy_python(Path(sys.executable), Path.cwd())
 
     failing = tmp_path / "python"
     failing.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")

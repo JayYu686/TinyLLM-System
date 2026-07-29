@@ -6,6 +6,7 @@ from typing import cast
 
 from tinyllm.data import (
     M5FormatRepairMixtureManifest,
+    M5R3P0Result,
     M5R3SourceAudit,
     M5TeacherPilotResult,
     M5TeacherSmokeResult,
@@ -254,16 +255,42 @@ def test_m5_r3_design_keeps_one_variable_and_frozen_evaluation() -> None:
     assert "最大 896 New Tokens" in design
     assert "可见推理不超过 192 Token" in design
     assert "同一来源最多出现四次" in design
-    assert "P0 通过前不实现 240 条扩展，不启动 R3 训练" in design
+    assert "该诊断通过前不实现" in design
+    assert "240 条扩展，不启动 R3 训练" in design
     assert "`SOURCE_AUDIT_REJECTED_NEW_TEACHER_REQUIRED`" in report
     assert "CPU Fixture 为合成契约 Smoke" in report
     assert "R3-P0" in report
 
 
-def test_m5_r3_p0_report_does_not_claim_gpu_results_before_execution() -> None:
+def test_m5_r3_p0_real_result_retains_rejected_gate() -> None:
+    path = Path("reports/m5/raw/m5_r3_p0.json")
+    result = M5R3P0Result.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert result.status == "fail"
+    assert result.git_dirty is False
+    assert result.accepted_samples == 10
+    assert result.rejected_tasks == 30
+    assert [item.accepted_items for item in result.family_results] == [5, 5]
+    assert [item.gate_passed for item in result.family_results] == [False, False]
+    assert result.rejection_counts == {
+        "no_candidate_passed": 30,
+        "reasoning_over_192_tokens": 52,
+        "teacher_length_limit": 11,
+    }
+    public = path.read_text(encoding="utf-8")
+    assert "raw_output" not in public
+    assert "reasoning_content" not in public
+    assert "/home/" not in public
+    assert "/data/" not in public
+
+
+def test_m5_r3_p0_report_records_real_rejection_and_next_boundary() -> None:
     report = Path("reports/m5/m5_r3_p0.md").read_text(encoding="utf-8")
 
-    assert "`IMPLEMENTED_AWAITING_REAL_TEACHER_PILOT`" in report
-    assert "尚未产生真实 Qwen3-8B Teacher 结果" in report
+    assert "`COMPLETED_GATE_REJECTED`" in report
+    assert "10/40" in report
+    assert "52" in report
+    assert "11" in report
     assert "`model_generated=false`" in report
     assert "`quality_metric=false`" in report
+    assert "不进入每类 120 条、合计 240 条的正式扩展" in report

@@ -166,8 +166,13 @@ R3 不是 M6 Candidate Gate。即使通过，也只确定 M5.3 可采用的训�
 → 自动 Gate
 ```
 
-当前已完成前三步：固定 40 条任务及独立身份、Dev/历史 Pilot 污染检查、严格 Schema、
-CPU 合成契约 Smoke 和失败路径。CPU Smoke 只证明接口与门禁逻辑，不代表 Teacher 质量。
+当前已完成 R3-P0：固定 40 条任务及独立身份、Dev/历史 Pilot 污染检查、严格 Schema、
+CPU 合成契约 Smoke、失败路径和真实 Qwen3-8B Teacher Pilot。P0 只接受 10/40 条，Config
+与 Log Diagnosis 各 5 条，两个任务族均未通过门禁；正式 240 条扩展保持阻断。
 真实运行使用隔离的两阶段环境：Teacher 环境只生成候选，冻结 `tokenizers=0.21.4` 的
 Policy 环境负责 Token 计数、Trace 选择和 Gate；禁止为了复用单一环境而绕过版本校验。
-下一步是执行真实 Qwen3-8B R3-P0；P0 通过前不实现 240 条扩展，不启动 R3 训练。
+
+下一步先冻结 P0-R1 Prompt 控制诊断：使用新的 Task/Template 版本，把“简洁推理”改为
+“先给结论，再用一个直接证据说明，不枚举备选项”的双语结构约束。Teacher、采样、候选数、
+192 Token Trace 上限、384 Token 生成上限和污染规则全部保持不变。该诊断通过前不实现
+240 条扩展，不启动 R3 训练。

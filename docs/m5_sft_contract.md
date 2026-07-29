@@ -190,10 +190,14 @@ R3 保持 R1 的 1M Token、30% Thinking、训练参数、双 Seed、冻结 Dev 
 CPU 审计显示，19 条 Config 和 20 条 Log Trace 中分别只有 2 条和 4 条满足 192 Token、
 低重复和唯一性规则，远低于每类 80 条的来源门禁，因此禁止直接复用。
 
-40 任务 R3-P0 已完成固定任务生成器、污染检查、严格 Schema、CPU 合成契约 Smoke 和失败
-路径；真实 Qwen3-8B Teacher Pilot 尚未产生结果。P0 通过后才扩展到 240 个任务并选择
-160 条 Config/Log Trace。正式评测上限继续保持 896，M5.3 在 R3 双 Seed Gate 通过前继续
-阻塞。
+40 任务 R3-P0 已完成固定任务生成器、污染检查、严格 Schema、CPU 合成契约 Smoke、失败
+路径和真实 Qwen3-8B Teacher Pilot。真实实验只接受 10/40 条：Config 5 条、Log 5 条；
+英文 9 条、中文 1 条。52 个候选因推理超过 192 Token 被拒，11 个候选触及 384 Token
+生成上限。两个任务族均未达到 14 条及 10/4 语言门禁，因此正式 240 条扩展保持阻断。
+
+下一批只允许建立新的 Prompt 控制诊断，保持 Teacher、采样、192 Token Trace 上限、384
+Token 生成上限和污染规则不变；新 Prompt 必须使用独立版本与身份。正式评测上限继续保持
+896，M5.3 在 R3 双 Seed Gate 通过前继续阻塞。
 完整协议见[R3 定向修复设计](m5_r3_targeted_repair_design.md)，真实审计见
 [R3 中文报告](../reports/m5/m5_r3_targeted_repair.md)，P0 实验状态见
 [R3-P0 中文报告](../reports/m5/m5_r3_p0.md)。

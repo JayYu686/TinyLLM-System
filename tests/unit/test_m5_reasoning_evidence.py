@@ -6,6 +6,7 @@ from typing import cast
 
 from tinyllm.data import (
     M5FormatRepairMixtureManifest,
+    M5R3SourceAudit,
     M5TeacherPilotResult,
     M5TeacherSmokeResult,
 )
@@ -225,3 +226,34 @@ def test_m5_r2_report_records_completed_gpu_replay_without_protocol_change() -> 
     assert "98.0%" in report
     assert "96.5%" in report
     assert "formal_protocol_changed: false" in report
+
+
+def test_m5_r3_public_source_audit_requires_new_teacher_data() -> None:
+    path = Path("reports/m5/raw/m5_r3_source_audit.json")
+    result = M5R3SourceAudit.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert result.status == "insufficient_requires_new_source"
+    assert result.eligible_source_items == 6
+    assert result.required_source_items == 160
+    assert result.new_teacher_source_required is True
+    assert tuple(item.eligible_items for item in result.family_audits) == (2, 4)
+    assert result.family_audits[0].eligible_language_counts == {"en": 2, "zh": 0}
+    public = path.read_text(encoding="utf-8")
+    assert "reasoning_content" not in public
+    assert "prompt" not in public
+    assert "/home/" not in public
+    assert "/data/" not in public
+
+
+def test_m5_r3_design_keeps_one_variable_and_frozen_evaluation() -> None:
+    design = Path("docs/m5_r3_targeted_repair_design.md").read_text(encoding="utf-8")
+    report = Path("reports/m5/m5_r3_targeted_repair.md").read_text(encoding="utf-8")
+
+    assert "700,000" in design
+    assert "150,000" in design
+    assert "最大 896 New Tokens" in design
+    assert "可见推理不超过 192 Token" in design
+    assert "同一来源最多出现四次" in design
+    assert "当前没有" in design
+    assert "`SOURCE_AUDIT_REJECTED_NEW_TEACHER_REQUIRED`" in report
+    assert "R3-P0" in report

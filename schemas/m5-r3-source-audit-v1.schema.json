@@ -1,0 +1,245 @@
+{
+  "$defs": {
+    "M5R3FamilySourceAudit": {
+      "additionalProperties": false,
+      "description": "Content-free trace distribution and eligibility counts for one family.",
+      "properties": {
+        "eligible_items": {
+          "minimum": 0,
+          "title": "Eligible Items",
+          "type": "integer"
+        },
+        "eligible_language_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "en",
+              "zh"
+            ]
+          },
+          "title": "Eligible Language Counts",
+          "type": "object"
+        },
+        "exclusion_reason_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "duplicate_normalized_trace",
+              "identical_line_repetition",
+              "reasoning_over_192_tokens",
+              "repeated_8gram_over_500bp"
+            ]
+          },
+          "title": "Exclusion Reason Counts",
+          "type": "object"
+        },
+        "normalized_unique_traces": {
+          "exclusiveMinimum": 0,
+          "title": "Normalized Unique Traces",
+          "type": "integer"
+        },
+        "reasoning_tokens_max": {
+          "exclusiveMinimum": 0,
+          "title": "Reasoning Tokens Max",
+          "type": "integer"
+        },
+        "reasoning_tokens_min": {
+          "exclusiveMinimum": 0,
+          "title": "Reasoning Tokens Min",
+          "type": "integer"
+        },
+        "reasoning_tokens_p50": {
+          "exclusiveMinimum": 0,
+          "title": "Reasoning Tokens P50",
+          "type": "number"
+        },
+        "reasoning_tokens_p90": {
+          "exclusiveMinimum": 0,
+          "title": "Reasoning Tokens P90",
+          "type": "integer"
+        },
+        "repeated_8gram_ratio_mean_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Repeated 8Gram Ratio Mean Basis Points",
+          "type": "integer"
+        },
+        "source_items": {
+          "exclusiveMinimum": 0,
+          "title": "Source Items",
+          "type": "integer"
+        },
+        "source_language_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "en",
+              "zh"
+            ]
+          },
+          "title": "Source Language Counts",
+          "type": "object"
+        },
+        "task_family": {
+          "enum": [
+            "config",
+            "log_diagnosis"
+          ],
+          "title": "Task Family",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_family",
+        "source_items",
+        "source_language_counts",
+        "reasoning_tokens_min",
+        "reasoning_tokens_p50",
+        "reasoning_tokens_p90",
+        "reasoning_tokens_max",
+        "repeated_8gram_ratio_mean_basis_points",
+        "normalized_unique_traces",
+        "eligible_items",
+        "eligible_language_counts",
+        "exclusion_reason_counts"
+      ],
+      "title": "M5R3FamilySourceAudit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Public path-free decision on whether the existing Pilot can supply R3.",
+  "properties": {
+    "audit_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Audit Config Sha256",
+      "type": "string"
+    },
+    "audit_version": {
+      "const": "m5-r3-source-audit-v1",
+      "title": "Audit Version",
+      "type": "string"
+    },
+    "consumes_m6_frozen_results": {
+      "const": false,
+      "default": false,
+      "title": "Consumes M6 Frozen Results",
+      "type": "boolean"
+    },
+    "decision_reason": {
+      "enum": [
+        "existing_pilot_meets_targeted_source_gate",
+        "existing_pilot_lacks_concise_diverse_config_log_traces"
+      ],
+      "title": "Decision Reason",
+      "type": "string"
+    },
+    "eligible_source_items": {
+      "minimum": 0,
+      "title": "Eligible Source Items",
+      "type": "integer"
+    },
+    "family_audits": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5R3FamilySourceAudit"
+        },
+        {
+          "$ref": "#/$defs/M5R3FamilySourceAudit"
+        }
+      ],
+      "title": "Family Audits",
+      "type": "array"
+    },
+    "new_teacher_source_required": {
+      "title": "New Teacher Source Required",
+      "type": "boolean"
+    },
+    "r2_decision_sha256": {
+      "const": "04165538efce811240b4d4501b13f74151758af7373704c12d6df882e3044ed6",
+      "title": "R2 Decision Sha256",
+      "type": "string"
+    },
+    "required_source_items": {
+      "const": 160,
+      "title": "Required Source Items",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_pilot_content_sha256": {
+      "const": "b4db5ac8c9252b701c573de56a1f91629e3b1716e23223e5b2b979c5cc285684",
+      "title": "Source Pilot Content Sha256",
+      "type": "string"
+    },
+    "source_pilot_dataset_version": {
+      "const": "m5-reasoning-pilot-v1-b4db5ac8",
+      "title": "Source Pilot Dataset Version",
+      "type": "string"
+    },
+    "source_raw_artifact_sha256": {
+      "const": "5e4e75df8a0843376d95a9e47e6d91c0d0456e5066d944e315e5b96173530411",
+      "title": "Source Raw Artifact Sha256",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "sufficient_for_targeted_mixture",
+        "insufficient_requires_new_source"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "target_families": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "const": "config",
+          "type": "string"
+        },
+        {
+          "const": "log_diagnosis",
+          "type": "string"
+        }
+      ],
+      "title": "Target Families",
+      "type": "array"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "audit_version",
+    "audit_config_sha256",
+    "source_pilot_dataset_version",
+    "source_pilot_content_sha256",
+    "source_raw_artifact_sha256",
+    "tokenizer_revision",
+    "r2_decision_sha256",
+    "target_families",
+    "family_audits",
+    "eligible_source_items",
+    "required_source_items",
+    "new_teacher_source_required",
+    "decision_reason"
+  ],
+  "title": "M5R3SourceAudit",
+  "type": "object"
+}

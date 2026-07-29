@@ -254,6 +254,16 @@ def test_m5_r3_design_keeps_one_variable_and_frozen_evaluation() -> None:
     assert "最大 896 New Tokens" in design
     assert "可见推理不超过 192 Token" in design
     assert "同一来源最多出现四次" in design
-    assert "当前没有" in design
+    assert "P0 通过前不实现 240 条扩展，不启动 R3 训练" in design
     assert "`SOURCE_AUDIT_REJECTED_NEW_TEACHER_REQUIRED`" in report
+    assert "CPU Fixture 为合成契约 Smoke" in report
     assert "R3-P0" in report
+
+
+def test_m5_r3_p0_report_does_not_claim_gpu_results_before_execution() -> None:
+    report = Path("reports/m5/m5_r3_p0.md").read_text(encoding="utf-8")
+
+    assert "`IMPLEMENTED_AWAITING_REAL_TEACHER_PILOT`" in report
+    assert "尚未产生真实 Qwen3-8B Teacher 结果" in report
+    assert "`model_generated=false`" in report
+    assert "`quality_metric=false`" in report

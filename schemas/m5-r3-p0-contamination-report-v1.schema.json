@@ -1,0 +1,85 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free collision counts against frozen Dev and historical Pilot.",
+  "properties": {
+    "algorithm": {
+      "const": "m5-r3-exact-normalized-template-v1",
+      "title": "Algorithm",
+      "type": "string"
+    },
+    "dev_exact_prompt_matches": {
+      "minimum": 0,
+      "title": "Dev Exact Prompt Matches",
+      "type": "integer"
+    },
+    "dev_task_count": {
+      "const": 200,
+      "title": "Dev Task Count",
+      "type": "integer"
+    },
+    "dev_template_family_overlaps": {
+      "minimum": 0,
+      "title": "Dev Template Family Overlaps",
+      "type": "integer"
+    },
+    "historical_exact_prompt_matches": {
+      "minimum": 0,
+      "title": "Historical Exact Prompt Matches",
+      "type": "integer"
+    },
+    "historical_normalized_prompt_matches": {
+      "minimum": 0,
+      "title": "Historical Normalized Prompt Matches",
+      "type": "integer"
+    },
+    "historical_pilot_task_count": {
+      "const": 100,
+      "title": "Historical Pilot Task Count",
+      "type": "integer"
+    },
+    "historical_template_family_overlaps": {
+      "minimum": 0,
+      "title": "Historical Template Family Overlaps",
+      "type": "integer"
+    },
+    "p0_task_count": {
+      "const": 40,
+      "title": "P0 Task Count",
+      "type": "integer"
+    },
+    "p0_tasks_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "P0 Tasks Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "algorithm",
+    "p0_tasks_sha256",
+    "p0_task_count",
+    "dev_task_count",
+    "historical_pilot_task_count",
+    "dev_exact_prompt_matches",
+    "dev_template_family_overlaps",
+    "historical_exact_prompt_matches",
+    "historical_normalized_prompt_matches",
+    "historical_template_family_overlaps",
+    "status"
+  ],
+  "title": "M5R3P0ContaminationReport",
+  "type": "object"
+}

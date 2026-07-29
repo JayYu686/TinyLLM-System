@@ -64,22 +64,24 @@ R3 采用两阶段数据生成：
 R3 Mixture 仍为 700K Non-thinking、150K 原完整 Thinking、150K 新 Targeted Thinking，
 总体 Thinking 比例和总训练预算不变。同一来源最多复用四次。
 
-## 5. 下一批验收范围
+## 5. P0 实现进展
 
-下一批只实现：
+以下 P0 前置工作已经完成：
 
 - 新 Config/Log 任务生成器和独立身份；
 - 至少六种证据变体/标签；
 - Dev 与历史 Pilot 的污染检查；
 - R3-P0 严格 Schema、CLI、CPU Fixture 和失败路径；
-- 中文 P0 内容审查包。
+- 公开结果与私有 Raw Artifact 分离。
 
-完成这些代码后再向用户提供一次性 GPU Teacher Pilot 命令。P0 未通过前不构建正式 Mixture，
-不启动两个 Seed 训练。
+CPU Fixture 为合成契约 Smoke，不加载模型、不使用 GPU，也不构成质量指标。真实
+Qwen3-8B Teacher Pilot 的结果和中文汇总独立记录在
+[R3-P0 实验报告](m5_r3_p0.md)。P0 未通过前不构建正式 Mixture，不启动两个 Seed 训练。
 
 ## 6. 证据索引
 
 - 机器审计：[m5_r3_source_audit.json](raw/m5_r3_source_audit.json)
+- P0 CPU Smoke：[m5_r3_p0_cpu_smoke.json](raw/m5_r3_p0_cpu_smoke.json)
 - 冻结配置：[m5_r3_targeted_repair.yaml](../../configs/data/m5_r3_targeted_repair.yaml)
 - 设计契约：[m5_r3_targeted_repair_design.md](../../docs/m5_r3_targeted_repair_design.md)
 - R2 诊断：[m5_r2_diagnostic.md](m5_r2_diagnostic.md)

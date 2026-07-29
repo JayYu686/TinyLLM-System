@@ -160,7 +160,7 @@ sequenceDiagram
 | M2 data and evaluation | Complete | Pinned-source full build and offline rebuild; frozen 300-item suite; Exact contamination scan; Qwen3-0.6B Baseline |
 | M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
-| M5 dual-mode SFT | In progress | M5.2/R1 were rejected by the 99% format gate; R2 D1 is complete and deterministic D2 GPU replay is pending |
+| M5 dual-mode SFT | In progress | M5.2/R1 failed the 99% format gate; two-Seed R2 replay found that a longer limit alone is insufficient |
 | M6 evaluation and promotion | Planned | Base/Candidate comparison, regression analysis, and Candidate Gate |
 | M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
 | M8 planner | Enhancement | Static memory estimation and short probe |

@@ -9,6 +9,7 @@ from tinyllm.data import (
     M5TeacherPilotResult,
     M5TeacherSmokeResult,
 )
+from tinyllm.evaluation.m5_r2_schema import M5R2DiagnosticDecision
 from tinyllm.evaluation.m5_reasoning_schema import (
     M5AblationSelection,
     M5FormatFailureAnalysis,
@@ -193,3 +194,34 @@ def test_m5_r2_design_keeps_diagnostic_and_formal_evaluation_separate() -> None:
     assert "1024、1280、1536" in design
     assert "重新运行 Base、六个 M5.2 Candidate 和两个 R1 Candidate" in design
     assert "诊断不允许通过字符串补写 `</think>`" in design
+
+
+def test_m5_r2_public_decision_retains_real_length_rejection() -> None:
+    path = Path("reports/m5/raw/m5_r2_length_diagnostic.json")
+    decision = M5R2DiagnosticDecision.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert decision.status == "length_ceiling_insufficient"
+    assert decision.selected_max_new_tokens is None
+    assert decision.training_seeds == (42, 20260727)
+    assert decision.formal_protocol_changed is False
+    assert tuple(item.projected_format_basis_points for item in decision.projections) == (
+        9800,
+        9650,
+    )
+    assert tuple(item.unresolved_format_items for item in decision.projections) == (4, 7)
+    public_text = path.read_text(encoding="utf-8")
+    assert "response" not in public_text
+    assert "item_id" not in public_text
+    assert "/home/" not in public_text
+    assert "/data/" not in public_text
+
+
+def test_m5_r2_report_records_completed_gpu_replay_without_protocol_change() -> None:
+    report = Path("reports/m5/m5_r2_diagnostic.md").read_text(encoding="utf-8")
+
+    assert "`COMPLETED_DIAGNOSTIC_REJECTED`" in report
+    assert "40 / 40" in report
+    assert "36 / 36" in report
+    assert "98.0%" in report
+    assert "96.5%" in report
+    assert "formal_protocol_changed: false" in report

@@ -8,6 +8,7 @@ from typing import Literal
 import pytest
 
 from tinyllm.data import generate_reasoning_dev_tasks, load_m5_reasoning_data_config
+from tinyllm.evaluation.m5_r2_diagnostic import M5R2DiagnosticError
 from tinyllm.evaluation.m5_r2_offline import (
     analyze_m5_r2_failures,
     build_repetition_distribution,
@@ -110,6 +111,25 @@ def test_repetition_distribution_reports_duplicate_ngrams_and_lines() -> None:
     assert distribution.unique_token_ratio_mean_basis_points == 5000
     assert distribution.repeated_8gram_ratio_mean_basis_points == 1111
     assert distribution.max_identical_line_hash_repetitions == 2
+
+
+def test_repetition_distribution_rejects_empty_inputs() -> None:
+    with pytest.raises(M5R2DiagnosticError, match="empty or misaligned"):
+        build_repetition_distribution(
+            generated_tokens=(),
+            token_sequences=(),
+            responses=(),
+        )
+
+
+def test_offline_analysis_requires_exactly_two_evaluations() -> None:
+    with pytest.raises(M5R2DiagnosticError, match="requires two R1 evaluations"):
+        analyze_m5_r2_failures(
+            evaluation_directories=(),
+            reasoning_config_path=REASONING_CONFIG,
+            replay_config_path=Path("configs/eval/m5_r2_length_replay.yaml"),
+            tokenizer=_CharacterTokenizer(),
+        )
 
 
 def test_offline_analysis_validates_sources_and_redacts_private_content(

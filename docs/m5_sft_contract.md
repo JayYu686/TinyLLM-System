@@ -177,6 +177,12 @@ D1 离线分析已完成：两个 Seed 的 24 条失败全部触及 896 Token �
 99%，已条件允许建立上限为 1280 的新协议；生效前必须完成全部 Base/Candidate 重跑和性能
 成本评估。详见[M5.2-R2 中文报告](../reports/m5/m5_r2_diagnostic.md)。
 
+D2 已在两个 Seed 上完成真实 RTX 3090 重放。896 输出和 1536 前缀分别以 40/40、36/36
+全部精确一致；但两个 Seed 在 1536 的投影格式率只有 98.0%和 96.5%。冻结选择器返回
+`length_ceiling_insufficient`、`formal_protocol_changed=false` 和退出码 6。正式上限不改为
+1280 或 1536，后续修正必须面向 Config/Log 的高重复和过长推理，不能继续把增加解码预算
+作为主要方案。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

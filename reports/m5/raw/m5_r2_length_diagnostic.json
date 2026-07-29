@@ -1,0 +1,32 @@
+{
+  "decision_reason": "at_least_one_seed_fails_at_diagnostic_limit",
+  "diagnostic_version": "m5-r2-length-replay-v1",
+  "formal_protocol_changed": false,
+  "projections": [
+    {
+      "projected_format_basis_points": 9800,
+      "projected_score_basis_points": 9550,
+      "source_evaluation_id": "20260727T090313Z-m5-reasoning-dev-ablation_candidate-3707f186",
+      "training_seed": 42,
+      "unresolved_format_items": 4
+    },
+    {
+      "projected_format_basis_points": 9650,
+      "projected_score_basis_points": 9400,
+      "source_evaluation_id": "20260727T090251Z-m5-reasoning-dev-ablation_candidate-e70ef06d",
+      "training_seed": 20260727,
+      "unresolved_format_items": 7
+    }
+  ],
+  "schema_version": "1.0",
+  "selected_max_new_tokens": null,
+  "status": "length_ceiling_insufficient",
+  "summary_sha256": [
+    "d1a9e0b66720e0150e61d2c43564595ce8439c6e4b4643abdbe79fbbb4c88588",
+    "f3c7c97f110839b22c210a924e763f380e51d483df58746a81bf70d5bd9ec88a"
+  ],
+  "training_seeds": [
+    42,
+    20260727
+  ]
+}

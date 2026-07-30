@@ -21,6 +21,7 @@ from tinyllm.data.m5_r3_p0 import (
     check_m5_r3_p0_contamination,
     generate_m5_r3_p0_tasks,
     load_m5_r3_p0_config,
+    m5_r3_p0_config_sha256,
     m5_r3_p0_generation_seed,
     select_m5_r3_p0_candidate,
 )
@@ -33,6 +34,7 @@ from tinyllm.data.reasoning_schema import TeacherFinishReason, TeacherGeneration
 from tinyllm.data.tokenization import OffsetTokenizer, TokenEncoding
 
 CONFIG = Path("configs/data/m5_r3_p0.yaml")
+R1_CONFIG = Path("configs/data/m5_r3_p0_r1.yaml")
 REASONING_CONFIG = Path("configs/data/m5_reasoning_label_vocabulary_v2.yaml")
 REVISION = "b968826d9c46dd6066d109eabc6255188de91218"
 
@@ -103,8 +105,10 @@ def _record(
     )
 
 
-def _inputs() -> tuple[Any, Any, tuple[Any, ...], tuple[Any, ...], tuple[Any, ...]]:
-    config = load_m5_r3_p0_config(CONFIG)
+def _inputs(
+    config_path: Path = CONFIG,
+) -> tuple[Any, Any, tuple[Any, ...], tuple[Any, ...], tuple[Any, ...]]:
+    config = load_m5_r3_p0_config(config_path)
     reasoning = load_m5_reasoning_data_config(REASONING_CONFIG)
     tasks = generate_m5_r3_p0_tasks(config)
     dev = generate_reasoning_dev_tasks(reasoning)
@@ -129,6 +133,56 @@ def test_p0_tasks_are_deterministic_balanced_and_diverse() -> None:
     assert all("192" in item.prompt for item in tasks)
 
 
+def test_p0_r1_has_independent_identity_and_only_changes_prompt_control() -> None:
+    p0_config, _reasoning, p0_tasks, _dev, _historical = _inputs()
+    r1_config, _reasoning, r1_tasks, r1_dev, r1_historical = _inputs(R1_CONFIG)
+
+    assert r1_config.pilot_version == "m5-r3-p0-r1-v1"
+    assert r1_config.parent_p0_public_result_sha256 == (
+        "5eff250ef4cde98d044c992a0aaf7e2eb75342faa9c377d265a25945a3d4388b"
+    )
+    assert m5_r3_p0_config_sha256(p0_config) == (
+        "ffd32c3d3ac9e7a235243f643be9018c1554909e2214f23c281039b83e5a9219"
+    )
+    assert m5_r3_p0_config_sha256(r1_config) == (
+        "6f890910fba0120003133217d788ad4f30e2f0b932f5fd28a47f98bf5513880a"
+    )
+    assert r1_config.teacher == p0_config.teacher
+    assert r1_config.verifier == p0_config.verifier
+    assert r1_config.trace_policy == p0_config.trace_policy
+    assert r1_config.gate == p0_config.gate
+    assert r1_config.sampling.model_dump(exclude={"base_seed"}) == (
+        p0_config.sampling.model_dump(exclude={"base_seed"})
+    )
+    assert r1_config.task_seed != p0_config.task_seed
+    assert r1_config.sampling.base_seed != p0_config.sampling.base_seed
+    assert len(r1_tasks) == len(p0_tasks) == 40
+    assert {item.id for item in r1_tasks}.isdisjoint(item.id for item in p0_tasks)
+    assert {item.template_family for item in r1_tasks} == {
+        "pilot.config.r3-targeted-p0r1.v1",
+        "pilot.log_diagnosis.r3-targeted-p0r1.v1",
+    }
+    assert all(item.id.startswith("m5-reasoning:pilot:r3p0r1-") for item in r1_tasks)
+    english = tuple(item for item in r1_tasks if item.language == "en")
+    chinese = tuple(item for item in r1_tasks if item.language == "zh")
+    assert all("state the selected label first" in item.prompt for item in english)
+    assert all("cite exactly one direct evidence fragment" in item.prompt for item in english)
+    assert all("do not discuss other labels" in item.prompt for item in english)
+    assert all("先给出所选标签" in item.prompt for item in chinese)
+    assert all("引用输入中的一处直接证据" in item.prompt for item in chinese)
+    assert all("不要讨论其他标签" in item.prompt for item in chinese)
+
+    contamination = check_m5_r3_p0_contamination(
+        r1_tasks,
+        dev_tasks=r1_dev,
+        historical_tasks=r1_historical,
+    )
+    assert contamination.status == "pass"
+    assert contamination.p0_tasks_sha256 == (
+        "4cc14273c8351b94c3221c3b7c0e934afb026169534f9a0cc2d8d862b46d0688"
+    )
+
+
 def test_p0_config_loader_fails_closed(tmp_path: Path) -> None:
     with pytest.raises(M5R3P0Error, match="must use YAML"):
         load_m5_r3_p0_config(tmp_path / "config.json")
@@ -144,6 +198,17 @@ def test_p0_config_loader_fails_closed(tmp_path: Path) -> None:
     invalid_schema.write_text("schema_version: '1.0'\n", encoding="utf-8")
     with pytest.raises(M5R3P0Error, match="violates its schema"):
         load_m5_r3_p0_config(invalid_schema)
+
+    mismatched_seed = tmp_path / "mismatched-seed.yaml"
+    mismatched_seed.write_text(
+        R1_CONFIG.read_text(encoding="utf-8").replace(
+            "base_seed: 20260802",
+            "base_seed: 20260731",
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(M5R3P0Error, match="violates its schema"):
+        load_m5_r3_p0_config(mismatched_seed)
 
 
 def test_p0_contamination_passes_and_detects_historical_collision() -> None:
@@ -400,6 +465,7 @@ def test_p0_generation_seed_and_cli_are_stable() -> None:
     assert args.gpu_index == 7
     assert args.timeout_seconds == 7200
     assert args.policy_python == Path(".venv/bin/python")
+    assert args.parent_p0_result == Path("reports/m5/raw/m5_r3_p0.json")
 
     command = _subprocess_command(
         args,

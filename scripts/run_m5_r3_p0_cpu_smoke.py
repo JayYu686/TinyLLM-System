@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build deterministic content-free CPU contract evidence for M5.2-R3-P0."""
+"""Build deterministic content-free CPU contract evidence for M5.2-R3-P0/P0-R1."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def build_smoke_payload(
     config_path: Path,
     reasoning_config_path: Path,
 ) -> dict[str, object]:
-    """Exercise P0 generation, contamination, selection, and family Gates on CPU."""
+    """Exercise P0/P0-R1 generation, contamination, selection, and family Gates on CPU."""
 
     config = load_m5_r3_p0_config(config_path)
     reasoning_config = load_m5_reasoning_data_config(reasoning_config_path)

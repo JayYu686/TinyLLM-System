@@ -3,7 +3,7 @@
   "description": "Private candidate-level selection evidence without duplicating raw output.",
   "properties": {
     "generation_id": {
-      "pattern": "^m5-reasoning:pilot:r3p0-(config|log)-[a-z]{2}-\\d{3}:candidate-[01]$",
+      "pattern": "^m5-reasoning:pilot:r3p0(?:r1)?-(config|log)-[a-z]{2}-\\d{3}:candidate-[01]$",
       "title": "Generation Id",
       "type": "string"
     },
@@ -104,7 +104,7 @@
       "type": "string"
     },
     "task_id": {
-      "pattern": "^m5-reasoning:pilot:r3p0-(config|log)-[a-z]{2}-\\d{3}$",
+      "pattern": "^m5-reasoning:pilot:r3p0(?:r1)?-(config|log)-[a-z]{2}-\\d{3}$",
       "title": "Task Id",
       "type": "string"
     },

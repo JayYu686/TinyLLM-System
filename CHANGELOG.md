@@ -5,6 +5,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- merged the full M5.2/R1/R2/R3-P0 evidence stack, then froze an independently versioned
+  P0-R1 bilingual prompt-control diagnostic that preserves the Teacher, sampling distribution,
+  trace policy, contamination checks, and source gates while binding its rejected parent result;
 - completed the preregistered M5.2 dual-mode ablation with a 96/100 Qwen3-8B Teacher
   Pilot, three exact 1M-token mixtures, six Qwen3-0.6B runs, one real Exact Resume, and
   frozen two-mode evaluation; all arms passed the Non-thinking regression gate while the

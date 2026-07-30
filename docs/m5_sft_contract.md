@@ -202,6 +202,13 @@ Token 生成上限和污染规则不变；新 Prompt 必须使用独立版本与
 [R3 中文报告](../reports/m5/m5_r3_targeted_repair.md)，P0 实验状态见
 [R3-P0 中文报告](../reports/m5/m5_r3_p0.md)。
 
+P0-R1 已冻结为 `m5-r3-p0-r1-v1`：新 Task/Template/Case Reference、Task Seed `20260801`
+和 Generation Base Seed `20260802` 与父 P0 分离，父 P0 公开结果哈希写入配置并在运行前
+校验。Prompt 唯一变化是要求“先给结论、引用一处直接证据、不讨论其他标签”；Teacher、
+采样分布、候选数、192/384 Token、任务分布、Verifier、污染检查和 14/10/4 Gate 均保持
+不变。CPU 合成契约与失败路径已通过，当前只解锁 40 条真实 GPU Pilot，不解锁 240 条扩展。
+准备证据见[P0-R1 中文报告](../reports/m5/m5_r3_p0_r1.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

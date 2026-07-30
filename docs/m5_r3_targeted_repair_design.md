@@ -176,3 +176,18 @@ Policy 环境负责 Token 计数、Trace 选择和 Gate；禁止为了复用单�
 “先给结论，再用一个直接证据说明，不枚举备选项”的双语结构约束。Teacher、采样、候选数、
 192 Token Trace 上限、384 Token 生成上限和污染规则全部保持不变。该诊断通过前不实现
 240 条扩展，不启动 R3 训练。
+
+P0-R1 设计现已冻结并实现：
+
+- Pilot Version：`m5-r3-p0-r1-v1`；
+- Task/Generation Seed：`20260801` / `20260802`；
+- Template：`pilot.<family>.r3-targeted-p0r1.v1`；
+- 父 P0 公开结果以 SHA256 绑定并在加载模型前校验；
+- 确定性任务集 SHA256：
+  `4cc14273c8351b94c3221c3b7c0e934afb026169534f9a0cc2d8d862b46d0688`；
+- Dev 与历史 Pilot 的 Exact、Normalized 和 Template 污染计数全部为 0；
+- CPU 合成契约 Smoke 通过，但不构成 Teacher 质量证据。
+
+下一步是一次 40 条真实 Qwen3-8B GPU Pilot。只有 Config 和 Log 都满足 14 条总接受、
+10 条英文和 4 条中文门禁，才进入人工内容审查与 240 条来源扩展。详见
+[P0-R1 中文准备报告](../reports/m5/m5_r3_p0_r1.md)。

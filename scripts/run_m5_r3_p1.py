@@ -420,11 +420,11 @@ def _finalize(args: argparse.Namespace) -> int:
             json.loads(args.generation_output.read_text(encoding="utf-8")),
         )
         contexts = tuple(
-            M5R3P1TaskContext.model_validate(value)
+            M5R3P1TaskContext.model_validate_json(json.dumps(value, sort_keys=True))
             for value in cast(list[object], payload["contexts"])
         )
         generations = tuple(
-            M5R3P1StageGeneration.model_validate(value)
+            M5R3P1StageGeneration.model_validate_json(json.dumps(value, sort_keys=True))
             for value in cast(list[object], payload["generations"])
         )
         physical_gpu_index = int(cast(int, payload["physical_gpu_index"]))

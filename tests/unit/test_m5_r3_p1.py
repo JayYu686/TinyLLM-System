@@ -22,7 +22,7 @@ from tinyllm.data.m5_r3_p1 import (
     generate_m5_r3_p1_contexts,
     m5_r3_p1_stage_seed,
 )
-from tinyllm.data.m5_r3_p1_schema import M5R3P1StageGeneration
+from tinyllm.data.m5_r3_p1_schema import M5R3P1StageGeneration, M5R3P1TaskContext
 from tinyllm.data.m5_r3_source_strategy import (
     load_m5_r3_teacher_source_strategy_config,
 )
@@ -162,6 +162,24 @@ def test_p1_tasks_are_balanced_deterministic_and_disjoint() -> None:
     assert contamination.status == "pass"
     assert contamination.task_set_sha256 == (
         "7aed1d35698b39b60027454e0e29976a6415d867da51f93e423ca50959d7df3d"
+    )
+
+
+def test_p1_private_artifacts_survive_strict_json_round_trip() -> None:
+    config = load_m5_r3_teacher_source_strategy_config(CONFIG)
+    context = generate_m5_r3_p1_contexts(config)[0]
+    generation = _generations()[0]
+
+    decoded_context = json.loads(json.dumps(context.to_dict(), sort_keys=True))
+    decoded_generation = json.loads(json.dumps(generation.to_dict(), sort_keys=True))
+
+    assert (
+        M5R3P1TaskContext.model_validate_json(json.dumps(decoded_context, sort_keys=True))
+        == context
+    )
+    assert (
+        M5R3P1StageGeneration.model_validate_json(json.dumps(decoded_generation, sort_keys=True))
+        == generation
     )
 
 

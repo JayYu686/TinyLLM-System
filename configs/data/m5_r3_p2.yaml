@@ -1,0 +1,64 @@
+schema_version: "1.0"
+pilot_version: m5-r3-p2-fallback-isolated-v1
+parent_p1_result_sha256: c57b13d5a84a6b06450ad01ae7e9158ccc700736686575893b85aa27b92dfd95
+parent_p1_generation_artifact_sha256: 4d59d3d1d317ffc85cb1c5560bf14237b6455db30f30aeeed660f197e459e73e
+task_set_sha256: ac2d020c5cf2653f67e061c3b536af2ceccc12602d668f42eead62e8812e836f
+fallback_solver:
+  repository: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  attention_architecture: gqa
+  trust_remote_code: false
+  local_files_only: true
+  dtype: bfloat16
+  mode: thinking
+  do_sample: true
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 20
+  repetition_penalty: 1.0
+  candidate_count: 1
+  max_new_tokens: 896
+  base_seed: 20260806
+  prompt_protocol: m5-r3-concise-solver-v2
+  trigger_reasons:
+    - solver_answer_mismatch
+    - solver_invalid_output
+    - solver_length_limit
+    - solver_runtime_error
+isolated_compressor:
+  repository: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  attention_architecture: gqa
+  trust_remote_code: false
+  local_files_only: true
+  dtype: bfloat16
+  mode: nonthinking
+  do_sample: false
+  candidate_count: 1
+  max_new_tokens: 256
+  base_seed: 20260807
+  input_protocol: verified-evidence-answer-only-v1
+  output_protocol: m5-r3-compressed-rationale-json-v2
+trace_policy:
+  max_reasoning_tokens: 192
+  max_repeated_8gram_basis_points: 500
+  max_identical_line_hash_repetitions: 1
+  require_unique_normalized_trace: true
+  require_exact_evidence_anchor: true
+  reject_other_labels: true
+  max_training_sequence_tokens: 1024
+gate:
+  accepted_per_family:
+    config: 14
+    log_diagnosis: 14
+  accepted_languages_per_family:
+    config:
+      en: 10
+      zh: 4
+    log_diagnosis:
+      en: 10
+      zh: 4
+formal_source_expansion_authorized: false
+r3_mixture_authorized: false
+r3_training_authorized: false
+consume_m6_frozen_results: false

@@ -9,6 +9,7 @@ from tinyllm.data import (
     M5R3P0Result,
     M5R3P1CPUSmoke,
     M5R3P1Result,
+    M5R3P2CPUSmoke,
     M5R3SourceAudit,
     M5R3TeacherSourceStrategyReview,
     M5TeacherPilotResult,
@@ -428,3 +429,27 @@ def test_m5_r3_p1_report_keeps_cpu_contract_and_quality_separate() -> None:
     assert "接受 11 条" in report
     assert "`formal_source_expansion_authorized=false`" in report
     assert "正式 240 条扩展、R3 Mixture 和训练继续阻断" in report
+
+
+def test_m5_r3_p2_cpu_smoke_authorizes_only_real_gpu_execution() -> None:
+    path = Path("reports/m5/raw/m5_r3_p2_cpu_smoke.json")
+    smoke = M5R3P2CPUSmoke.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert smoke.model_generated is False
+    assert smoke.quality_metric is False
+    assert smoke.fallback_solver_items == 6
+    assert smoke.isolated_compressor_items == 40
+    assert smoke.accepted_samples == 40
+    assert smoke.p2_gpu_pilot_authorized is True
+    assert smoke.formal_source_expansion_authorized is False
+    assert smoke.r3_mixture_authorized is False
+    assert smoke.r3_training_authorized is False
+
+
+def test_m5_r3_p2_report_keeps_cpu_and_gpu_evidence_separate() -> None:
+    report = Path("reports/m5/m5_r3_p2.md").read_text(encoding="utf-8")
+
+    assert "`READY_FOR_GPU_PILOT`" in report
+    assert "`model_generated=false`" in report
+    assert "`quality_metric=false`" in report
+    assert "P2 真实通过只允许人工内容审查" in report

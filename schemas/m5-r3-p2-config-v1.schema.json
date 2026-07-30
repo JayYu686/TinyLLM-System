@@ -1,0 +1,398 @@
+{
+  "$defs": {
+    "M5R3P1Gate": {
+      "additionalProperties": false,
+      "description": "Frozen per-family and per-language P1 feasibility gate.",
+      "properties": {
+        "accepted_languages_per_family": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "en",
+                "zh"
+              ]
+            },
+            "type": "object"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Accepted Languages Per Family",
+          "type": "object"
+        },
+        "accepted_per_family": {
+          "additionalProperties": {
+            "const": 14,
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Accepted Per Family",
+          "type": "object"
+        }
+      },
+      "required": [
+        "accepted_per_family",
+        "accepted_languages_per_family"
+      ],
+      "title": "M5R3P1Gate",
+      "type": "object"
+    },
+    "M5R3P1TracePolicy": {
+      "additionalProperties": false,
+      "description": "Acceptance policy for model-distilled P1 visible rationales.",
+      "properties": {
+        "max_identical_line_hash_repetitions": {
+          "const": 1,
+          "title": "Max Identical Line Hash Repetitions",
+          "type": "integer"
+        },
+        "max_reasoning_tokens": {
+          "const": 192,
+          "title": "Max Reasoning Tokens",
+          "type": "integer"
+        },
+        "max_repeated_8gram_basis_points": {
+          "const": 500,
+          "title": "Max Repeated 8Gram Basis Points",
+          "type": "integer"
+        },
+        "max_training_sequence_tokens": {
+          "const": 1024,
+          "title": "Max Training Sequence Tokens",
+          "type": "integer"
+        },
+        "reject_other_labels": {
+          "const": true,
+          "title": "Reject Other Labels",
+          "type": "boolean"
+        },
+        "require_exact_evidence_anchor": {
+          "const": true,
+          "title": "Require Exact Evidence Anchor",
+          "type": "boolean"
+        },
+        "require_unique_normalized_trace": {
+          "const": true,
+          "title": "Require Unique Normalized Trace",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "max_reasoning_tokens",
+        "max_repeated_8gram_basis_points",
+        "max_identical_line_hash_repetitions",
+        "require_unique_normalized_trace",
+        "require_exact_evidence_anchor",
+        "reject_other_labels",
+        "max_training_sequence_tokens"
+      ],
+      "title": "M5R3P1TracePolicy",
+      "type": "object"
+    },
+    "M5R3P2FallbackSolver": {
+      "additionalProperties": false,
+      "description": "One bounded second solver candidate for rejected P1 solver outputs.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_seed": {
+          "const": 20260806,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 1,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 896,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "mode": {
+          "const": "thinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "prompt_protocol": {
+          "const": "m5-r3-concise-solver-v2",
+          "title": "Prompt Protocol",
+          "type": "string"
+        },
+        "repetition_penalty": {
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "temperature": {
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "title": "Top P",
+          "type": "number"
+        },
+        "trigger_reasons": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "const": "solver_answer_mismatch",
+              "type": "string"
+            },
+            {
+              "const": "solver_invalid_output",
+              "type": "string"
+            },
+            {
+              "const": "solver_length_limit",
+              "type": "string"
+            },
+            {
+              "const": "solver_runtime_error",
+              "type": "string"
+            }
+          ],
+          "title": "Trigger Reasons",
+          "type": "array"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode",
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed",
+        "prompt_protocol",
+        "trigger_reasons"
+      ],
+      "title": "M5R3P2FallbackSolver",
+      "type": "object"
+    },
+    "M5R3P2IsolatedCompressor": {
+      "additionalProperties": false,
+      "description": "Greedy compressor that cannot see alternatives or raw solver reasoning.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_seed": {
+          "const": 20260807,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 1,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": false,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "input_protocol": {
+          "const": "verified-evidence-answer-only-v1",
+          "title": "Input Protocol",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 256,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "mode": {
+          "const": "nonthinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "output_protocol": {
+          "const": "m5-r3-compressed-rationale-json-v2",
+          "title": "Output Protocol",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode",
+        "do_sample",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed",
+        "input_protocol",
+        "output_protocol"
+      ],
+      "title": "M5R3P2IsolatedCompressor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable P2 protocol bound to the real rejected P1 evidence.",
+  "properties": {
+    "consume_m6_frozen_results": {
+      "const": false,
+      "title": "Consume M6 Frozen Results",
+      "type": "boolean"
+    },
+    "fallback_solver": {
+      "$ref": "#/$defs/M5R3P2FallbackSolver"
+    },
+    "formal_source_expansion_authorized": {
+      "const": false,
+      "title": "Formal Source Expansion Authorized",
+      "type": "boolean"
+    },
+    "gate": {
+      "$ref": "#/$defs/M5R3P1Gate"
+    },
+    "isolated_compressor": {
+      "$ref": "#/$defs/M5R3P2IsolatedCompressor"
+    },
+    "parent_p1_generation_artifact_sha256": {
+      "const": "4d59d3d1d317ffc85cb1c5560bf14237b6455db30f30aeeed660f197e459e73e",
+      "title": "Parent P1 Generation Artifact Sha256",
+      "type": "string"
+    },
+    "parent_p1_result_sha256": {
+      "const": "c57b13d5a84a6b06450ad01ae7e9158ccc700736686575893b85aa27b92dfd95",
+      "title": "Parent P1 Result Sha256",
+      "type": "string"
+    },
+    "pilot_version": {
+      "const": "m5-r3-p2-fallback-isolated-v1",
+      "title": "Pilot Version",
+      "type": "string"
+    },
+    "r3_mixture_authorized": {
+      "const": false,
+      "title": "R3 Mixture Authorized",
+      "type": "boolean"
+    },
+    "r3_training_authorized": {
+      "const": false,
+      "title": "R3 Training Authorized",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_set_sha256": {
+      "const": "ac2d020c5cf2653f67e061c3b536af2ceccc12602d668f42eead62e8812e836f",
+      "title": "Task Set Sha256",
+      "type": "string"
+    },
+    "trace_policy": {
+      "$ref": "#/$defs/M5R3P1TracePolicy"
+    }
+  },
+  "required": [
+    "schema_version",
+    "pilot_version",
+    "parent_p1_result_sha256",
+    "parent_p1_generation_artifact_sha256",
+    "task_set_sha256",
+    "fallback_solver",
+    "isolated_compressor",
+    "trace_policy",
+    "gate",
+    "formal_source_expansion_authorized",
+    "r3_mixture_authorized",
+    "r3_training_authorized",
+    "consume_m6_frozen_results"
+  ],
+  "title": "M5R3P2Config",
+  "type": "object"
+}

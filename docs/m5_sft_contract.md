@@ -227,6 +227,12 @@ Solver 长度上限和 Compressor JSON 失败组成。四路污染和规则控�
 未达到 14/10/4 门禁，因此正式扩展、Mixture 和训练继续阻断。P1 证据见
 [P1 中文报告](../reports/m5/m5_r3_p1.md)。
 
+P2 采用父 Artifact 绑定的最小修复：只为 P1 的 6 个失败 Solver 生成第二候选，并让新
+Compressor 只读取已验证答案、原始证据和 Evidence Anchor。它不接收完整 Solver 推理，
+也看不到未选标签。CPU 合成契约已验证 6/6 回退、40/40 隔离压缩及父 Hash、Seed 和输入
+泄漏失败路径，只授权真实 GPU Pilot；14/10/4、192 Token、污染和 99%门禁均未改变。
+详见 [P2 中文准备报告](../reports/m5/m5_r3_p2.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

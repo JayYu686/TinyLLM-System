@@ -1,0 +1,149 @@
+{
+  "accepted_samples": 33,
+  "config_sha256": "fbdbc4ab64c50dff8ab129f2705b455369b0855d07390c48a07ed1691cd0dae5",
+  "consumes_m6_frozen_results": false,
+  "contamination": {
+    "algorithm": "m5-r3-p1-exact-normalized-template-v1",
+    "dev_exact_prompt_matches": 0,
+    "dev_task_count": 200,
+    "dev_template_family_overlaps": 0,
+    "historical_exact_prompt_matches": 0,
+    "historical_normalized_prompt_matches": 0,
+    "historical_pilot_task_count": 100,
+    "historical_template_family_overlaps": 0,
+    "p0_exact_prompt_matches": 0,
+    "p0_normalized_prompt_matches": 0,
+    "p0_r1_exact_prompt_matches": 0,
+    "p0_r1_normalized_prompt_matches": 0,
+    "p0_r1_template_family_overlaps": 0,
+    "p0_template_family_overlaps": 0,
+    "p1_task_count": 40,
+    "parent_p0_r1_task_count": 40,
+    "parent_p0_task_count": 40,
+    "schema_version": "1.0",
+    "status": "pass",
+    "task_set_sha256": "7aed1d35698b39b60027454e0e29976a6415d867da51f93e423ca50959d7df3d"
+  },
+  "control": {
+    "input_tasks": 40,
+    "reasoning_tokens_max": 32,
+    "source_kind": "deterministic_rule_trace",
+    "status": "pass",
+    "structural_passes": 40,
+    "training_source_authorized": false,
+    "unique_trace_count": 40
+  },
+  "duration_seconds": 206.3884454369545,
+  "fallback_solver": {
+    "attention_architecture": "gqa",
+    "base_seed": 20260806,
+    "candidate_count": 1,
+    "do_sample": true,
+    "dtype": "bfloat16",
+    "local_files_only": true,
+    "max_new_tokens": 896,
+    "mode": "thinking",
+    "prompt_protocol": "m5-r3-concise-solver-v2",
+    "repetition_penalty": 1.0,
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "temperature": 0.6,
+    "top_k": 20,
+    "top_p": 0.95,
+    "trigger_reasons": [
+      "solver_answer_mismatch",
+      "solver_invalid_output",
+      "solver_length_limit",
+      "solver_runtime_error"
+    ],
+    "trust_remote_code": false
+  },
+  "fallback_solver_attempts": 6,
+  "fallback_trigger_counts": {
+    "solver_length_limit": 6
+  },
+  "family_results": [
+    {
+      "accepted_items": 17,
+      "accepted_language_counts": {
+        "en": 13,
+        "zh": 4
+      },
+      "gate_passed": true,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 27,
+      "reasoning_tokens_min": 7,
+      "reasoning_tokens_p50": 13.0,
+      "reasoning_tokens_p90": 20,
+      "task_family": "config"
+    },
+    {
+      "accepted_items": 16,
+      "accepted_language_counts": {
+        "en": 11,
+        "zh": 5
+      },
+      "gate_passed": true,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 17,
+      "reasoning_tokens_min": 5,
+      "reasoning_tokens_p50": 9.0,
+      "reasoning_tokens_p90": 14,
+      "task_family": "log_diagnosis"
+    }
+  ],
+  "formal_source_expansion_authorized": true,
+  "generated_at": "2026-07-30T10:10:18.392354Z",
+  "generation_delta_sha256": "e9a1a7bc1712003e8e9bc159c105427345c51a536a998c58a68a0ad5c7f90353",
+  "git_commit": "f063947420d5c42eef883cba3d58cebe5baa79fb",
+  "git_dirty": false,
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "input_tasks": 40,
+  "isolated_compressor": {
+    "attention_architecture": "gqa",
+    "base_seed": 20260807,
+    "candidate_count": 1,
+    "do_sample": false,
+    "dtype": "bfloat16",
+    "input_protocol": "verified-evidence-answer-only-v1",
+    "local_files_only": true,
+    "max_new_tokens": 256,
+    "mode": "nonthinking",
+    "output_protocol": "m5-r3-compressed-rationale-json-v2",
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "trust_remote_code": false
+  },
+  "isolated_compressor_attempts": 38,
+  "parent_p1_generation_artifact_sha256": "4d59d3d1d317ffc85cb1c5560bf14237b6455db30f30aeeed660f197e459e73e",
+  "parent_p1_result_sha256": "c57b13d5a84a6b06450ad01ae7e9158ccc700736686575893b85aa27b92dfd95",
+  "parent_solver_attempts": 40,
+  "peak_allocated_bytes": 16552560640,
+  "peak_reserved_bytes": 16642998272,
+  "physical_gpu_index": 7,
+  "pilot_version": "m5-r3-p2-fallback-isolated-v1",
+  "policy_tokenizers_version": "0.21.4",
+  "r3_mixture_authorized": false,
+  "r3_training_authorized": false,
+  "raw_artifact_sha256": "2b693da607c880fa456b6701ad8bc2449ed1927d5b07aab33dc662ef2127a7b5",
+  "rejected_tasks": 7,
+  "rejection_counts": {
+    "compressor_invalid_json": 5,
+    "solver_length_limit": 2
+  },
+  "samples_sha256": "2d73a4d62b657b98e9da2539d7cf10fdc8a2f3af369e4db4956348b5b79c3ea8",
+  "schema_version": "1.0",
+  "status": "pass",
+  "task_set_sha256": "ac2d020c5cf2653f67e061c3b536af2ceccc12602d668f42eead62e8812e836f",
+  "teacher_tokenizers_version": "0.22.2",
+  "torch_version": "2.7.1+cu118",
+  "transformers_version": "4.57.6"
+}

@@ -9,7 +9,7 @@ import random
 import re
 import statistics
 from collections import Counter, defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -69,6 +69,7 @@ _FAMILY_ORDER: tuple[M5R3TargetFamily, M5R3TargetFamily] = (
     "config",
     "log_diagnosis",
 )
+_STAGE_ORDER: tuple[M5R3P1Stage, M5R3P1Stage] = ("solver", "compressor")
 
 
 def _normalized(value: str) -> str:
@@ -128,6 +129,9 @@ def _make_context(
 
 
 LiteralLabelKey = Literal["issue", "root_cause"]
+M5R3P1StageSeedKey = tuple[str, M5R3P1Stage]
+M5R3P1StagePromptKey = tuple[str, M5R3P1Stage]
+M5R3P1CompressorPromptBuilder = Callable[[M5R3P1TaskContext, str, str], str]
 
 
 def generate_m5_r3_p1_contexts(
@@ -199,6 +203,20 @@ def build_m5_r3_p1_compressor_prompt(
         f"Original task:\n{context.task.prompt}\n\n"
         f"Verified solver reasoning:\n{solver_reasoning}\n\n"
         f"Verified final answer:\n{verified_final_answer}"
+    )
+
+
+def _default_compressor_prompt_builder(
+    context: M5R3P1TaskContext,
+    solver_reasoning: str,
+    verified_final_answer: str,
+) -> str:
+    """Adapt the keyword-only P1 prompt builder to the shared selector interface."""
+
+    return build_m5_r3_p1_compressor_prompt(
+        context,
+        solver_reasoning=solver_reasoning,
+        verified_final_answer=verified_final_answer,
     )
 
 
@@ -321,17 +339,24 @@ def _select_p1_task(
     context: M5R3P1TaskContext,
     records: dict[M5R3P1Stage, M5R3P1StageGeneration],
     *,
-    task_index: int,
     config: M5R3TeacherSourceStrategyConfig,
     tokenizer: OffsetTokenizer,
     existing_trace_hashes: frozenset[str],
+    expected_stage_seeds: Mapping[M5R3P1StageSeedKey, int],
+    expected_stage_prompt_sha256: Mapping[M5R3P1StagePromptKey, str] | None,
+    compressor_prompt_builder: M5R3P1CompressorPromptBuilder,
 ) -> tuple[ReasoningSample | None, M5R3P1CandidateAudit, str | None]:
     solver = records.get("solver")
     if solver is None:
         raise M5R3P1Error("M5 R3 P1 solver record is missing")
+    expected_solver_prompt_sha256 = (
+        context.task.prompt_sha256
+        if expected_stage_prompt_sha256 is None
+        else expected_stage_prompt_sha256[(context.task.id, "solver")]
+    )
     if (
-        solver.seed != m5_r3_p1_stage_seed(config.pilot.solver.base_seed, task_index)
-        or solver.prompt_sha256 != context.task.prompt_sha256
+        solver.seed != expected_stage_seeds[(context.task.id, "solver")]
+        or solver.prompt_sha256 != expected_solver_prompt_sha256
     ):
         raise M5R3P1Error("M5 R3 P1 solver lineage differs")
     if solver.status == "failed":
@@ -353,14 +378,21 @@ def _select_p1_task(
     compressor = records.get("compressor")
     if compressor is None:
         raise M5R3P1Error("M5 R3 P1 compressor record is missing after solver acceptance")
-    compressor_prompt = build_m5_r3_p1_compressor_prompt(
+    compressor_prompt = compressor_prompt_builder(
         context,
-        solver_reasoning=parsed.reasoning_content,
-        verified_final_answer=solver_answer,
+        parsed.reasoning_content,
+        solver_answer,
+    )
+    compressor_prompt_sha256 = hashlib.sha256(compressor_prompt.encode()).hexdigest()
+    expected_compressor_prompt_sha256 = (
+        compressor_prompt_sha256
+        if expected_stage_prompt_sha256 is None
+        else expected_stage_prompt_sha256[(context.task.id, "compressor")]
     )
     if (
-        compressor.seed != m5_r3_p1_stage_seed(config.pilot.compressor.base_seed, task_index)
-        or compressor.prompt_sha256 != hashlib.sha256(compressor_prompt.encode()).hexdigest()
+        compressor.seed != expected_stage_seeds[(context.task.id, "compressor")]
+        or compressor.prompt_sha256 != expected_compressor_prompt_sha256
+        or compressor.prompt_sha256 != compressor_prompt_sha256
     ):
         raise M5R3P1Error("M5 R3 P1 compressor lineage differs")
     if compressor.status == "failed":
@@ -595,6 +627,9 @@ def build_m5_r3_p1_dataset(
     p0_tasks: Iterable[ReasoningTask],
     p0_r1_tasks: Iterable[ReasoningTask],
     tokenizer: OffsetTokenizer,
+    expected_stage_seeds: Mapping[M5R3P1StageSeedKey, int] | None = None,
+    expected_stage_prompt_sha256: Mapping[M5R3P1StagePromptKey, str] | None = None,
+    compressor_prompt_builder: M5R3P1CompressorPromptBuilder = (_default_compressor_prompt_builder),
 ) -> M5R3P1Build:
     """Build deterministic P1 evidence from private two-stage generations."""
 
@@ -619,17 +654,49 @@ def build_m5_r3_p1_dataset(
     task_ids = {item.task.id for item in ordered_contexts}
     if not set(grouped).issubset(task_ids):
         raise M5R3P1Error("M5 R3 P1 generations contain an unknown task")
+    if expected_stage_seeds is None:
+        resolved_stage_seeds: Mapping[M5R3P1StageSeedKey, int] = {
+            (context.task.id, stage): m5_r3_p1_stage_seed(
+                (
+                    config.pilot.solver.base_seed
+                    if stage == "solver"
+                    else config.pilot.compressor.base_seed
+                ),
+                task_index,
+            )
+            for task_index, context in enumerate(ordered_contexts)
+            for stage in _STAGE_ORDER
+        }
+    else:
+        expected_keys = {
+            (context.task.id, stage)
+            for context in ordered_contexts
+            for stage in ("solver", "compressor")
+        }
+        if set(expected_stage_seeds) != expected_keys:
+            raise M5R3P1Error("M5 R3 P1 expected stage seed mapping differs")
+        resolved_stage_seeds = expected_stage_seeds
+    if expected_stage_prompt_sha256 is not None:
+        expected_prompt_keys = {
+            (context.task.id, stage)
+            for context in ordered_contexts
+            for stage in ("solver", "compressor")
+        }
+        if set(expected_stage_prompt_sha256) != expected_prompt_keys:
+            raise M5R3P1Error("M5 R3 P1 expected stage prompt mapping differs")
     samples: list[ReasoningSample] = []
     audits: list[M5R3P1CandidateAudit] = []
     hashes: set[str] = set()
-    for task_index, context in enumerate(ordered_contexts):
+    for context in ordered_contexts:
         sample, audit, trace_hash = _select_p1_task(
             context,
             grouped.get(context.task.id, {}),
-            task_index=task_index,
             config=config,
             tokenizer=tokenizer,
             existing_trace_hashes=frozenset(hashes),
+            expected_stage_seeds=resolved_stage_seeds,
+            expected_stage_prompt_sha256=expected_stage_prompt_sha256,
+            compressor_prompt_builder=compressor_prompt_builder,
         )
         audits.append(audit)
         if sample is not None:

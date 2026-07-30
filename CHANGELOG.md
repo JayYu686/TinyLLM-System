@@ -5,6 +5,10 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- implemented and ran the parent-bound M5 R3 P2 protocol, which retries only rejected P1
+  solvers and prevents raw solver reasoning or alternative labels from entering the isolated
+  compressor input; the real Qwen3-8B pilot accepted 33/40, passed both family/language gates
+  and authorized content review plus formal source expansion without authorizing training;
 - implemented and ran the bounded M5 R3 P1 solve/compress pipeline with four-way contamination
   checks, rule-trace control, strict lineage, and CPU contract Smoke; the real Qwen3-8B Pilot
   accepted 11/40 and was gate-rejected without authorizing source expansion or training;

@@ -1,0 +1,242 @@
+{
+  "$defs": {
+    "M5R3P1StageGeneration": {
+      "additionalProperties": false,
+      "description": "One private solver or compressor generation with explicit lineage.",
+      "properties": {
+        "error_code": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9_]{2,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "finish_reason": {
+          "enum": [
+            "stop",
+            "length",
+            "error"
+          ],
+          "title": "Finish Reason",
+          "type": "string"
+        },
+        "generated_token_count": {
+          "minimum": 0,
+          "title": "Generated Token Count",
+          "type": "integer"
+        },
+        "generation_id": {
+          "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}:(solver|compressor)$",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "input_token_count": {
+          "minimum": 0,
+          "title": "Input Token Count",
+          "type": "integer"
+        },
+        "prompt_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "raw_output": {
+          "anyOf": [
+            {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Output"
+        },
+        "raw_output_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Output Sha256"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "solver",
+            "compressor"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "succeeded",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "generation_id",
+        "task_id",
+        "stage",
+        "seed",
+        "prompt_sha256",
+        "status",
+        "finish_reason",
+        "input_token_count",
+        "generated_token_count"
+      ],
+      "title": "M5R3P1StageGeneration",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Private P2-only GPU outputs linked to the complete P1 generation artifact.",
+  "properties": {
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "fallback_solvers": {
+      "items": {
+        "$ref": "#/$defs/M5R3P1StageGeneration"
+      },
+      "title": "Fallback Solvers",
+      "type": "array"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "isolated_compressors": {
+      "items": {
+        "$ref": "#/$defs/M5R3P1StageGeneration"
+      },
+      "title": "Isolated Compressors",
+      "type": "array"
+    },
+    "parent_p1_generation_artifact_sha256": {
+      "const": "4d59d3d1d317ffc85cb1c5560bf14237b6455db30f30aeeed660f197e459e73e",
+      "title": "Parent P1 Generation Artifact Sha256",
+      "type": "string"
+    },
+    "peak_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "pilot_version": {
+      "const": "m5-r3-p2-fallback-isolated-v1",
+      "title": "Pilot Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_set_sha256": {
+      "const": "ac2d020c5cf2653f67e061c3b536af2ceccc12602d668f42eead62e8812e836f",
+      "title": "Task Set Sha256",
+      "type": "string"
+    },
+    "teacher_tokenizers_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Teacher Tokenizers Version",
+      "type": "string"
+    },
+    "torch_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Torch Version",
+      "type": "string"
+    },
+    "transformers_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Transformers Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pilot_version",
+    "config_sha256",
+    "parent_p1_generation_artifact_sha256",
+    "task_set_sha256",
+    "git_commit",
+    "git_dirty",
+    "physical_gpu_index",
+    "gpu_name",
+    "torch_version",
+    "transformers_version",
+    "teacher_tokenizers_version",
+    "duration_seconds",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes",
+    "fallback_solvers",
+    "isolated_compressors"
+  ],
+  "title": "M5R3P2GenerationDelta",
+  "type": "object"
+}

@@ -1,0 +1,92 @@
+{
+  "accepted_samples": 40,
+  "config_sha256": "fbdbc4ab64c50dff8ab129f2705b455369b0855d07390c48a07ed1691cd0dae5",
+  "consumes_m6_frozen_results": false,
+  "contamination": {
+    "algorithm": "m5-r3-p1-exact-normalized-template-v1",
+    "dev_exact_prompt_matches": 0,
+    "dev_task_count": 200,
+    "dev_template_family_overlaps": 0,
+    "historical_exact_prompt_matches": 0,
+    "historical_normalized_prompt_matches": 0,
+    "historical_pilot_task_count": 100,
+    "historical_template_family_overlaps": 0,
+    "p0_exact_prompt_matches": 0,
+    "p0_normalized_prompt_matches": 0,
+    "p0_r1_exact_prompt_matches": 0,
+    "p0_r1_normalized_prompt_matches": 0,
+    "p0_r1_template_family_overlaps": 0,
+    "p0_template_family_overlaps": 0,
+    "p1_task_count": 40,
+    "parent_p0_r1_task_count": 40,
+    "parent_p0_task_count": 40,
+    "schema_version": "1.0",
+    "status": "pass",
+    "task_set_sha256": "7aed1d35698b39b60027454e0e29976a6415d867da51f93e423ca50959d7df3d"
+  },
+  "control": {
+    "input_tasks": 40,
+    "reasoning_tokens_max": 14,
+    "source_kind": "deterministic_rule_trace",
+    "status": "pass",
+    "structural_passes": 40,
+    "training_source_authorized": false,
+    "unique_trace_count": 40
+  },
+  "evidence_kind": "synthetic_cpu_contract_smoke",
+  "fallback_solver_items": 6,
+  "family_results": [
+    {
+      "accepted_items": 20,
+      "accepted_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "gate_passed": true,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 10,
+      "reasoning_tokens_min": 7,
+      "reasoning_tokens_p50": 7.0,
+      "reasoning_tokens_p90": 8,
+      "task_family": "config"
+    },
+    {
+      "accepted_items": 20,
+      "accepted_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "gate_passed": true,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 12,
+      "reasoning_tokens_min": 6,
+      "reasoning_tokens_p50": 8.0,
+      "reasoning_tokens_p90": 11,
+      "task_family": "log_diagnosis"
+    }
+  ],
+  "formal_source_expansion_authorized": false,
+  "isolated_compressor_items": 40,
+  "model_generated": false,
+  "p2_gpu_pilot_authorized": true,
+  "parent_p1_result_sha256": "c57b13d5a84a6b06450ad01ae7e9158ccc700736686575893b85aa27b92dfd95",
+  "pilot_version": "m5-r3-p2-fallback-isolated-v1",
+  "quality_metric": false,
+  "r3_mixture_authorized": false,
+  "r3_training_authorized": false,
+  "schema_version": "1.0",
+  "task_set_sha256": "ac2d020c5cf2653f67e061c3b536af2ceccc12602d668f42eead62e8812e836f",
+  "tested_failure_paths": [
+    "parent_generation_hash_drift",
+    "fallback_seed_drift",
+    "compressor_input_leakage"
+  ]
+}

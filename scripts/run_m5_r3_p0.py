@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded 40-task M5.2-R3-P0 Teacher experiment on one idle RTX 3090."""
+"""Run a bounded 40-task M5.2-R3-P0/P0-R1 Teacher experiment on one idle RTX 3090."""
 
 from __future__ import annotations
 
@@ -96,13 +96,15 @@ def _verify_model_directory(model_dir: Path, expected_revision: str) -> None:
 
 def _verify_frozen_inputs(args: argparse.Namespace) -> None:
     config = load_m5_r3_p0_config(args.config)
-    expected = (
+    expected = [
         (args.source_audit_config, config.parent_source_audit_config_sha256),
         (args.source_audit_result, config.parent_source_audit_result_sha256),
         (args.historical_pilot_artifact, config.historical_pilot_raw_sha256),
         (args.reasoning_config, config.reasoning_config_sha256),
         (args.tokenization_config, config.tokenization_config_sha256),
-    )
+    ]
+    if config.parent_p0_public_result_sha256 is not None:
+        expected.append((args.parent_p0_result, config.parent_p0_public_result_sha256))
     for path, sha256 in expected:
         if _sha256_file(path) != sha256:
             raise M5R3P0Error("M5 R3 P0 frozen input SHA256 differs")
@@ -446,6 +448,8 @@ def _subprocess_command(
         str(args.source_audit_config),
         "--source-audit-result",
         str(args.source_audit_result),
+        "--parent-p0-result",
+        str(args.parent_p0_result),
         "--historical-pilot-artifact",
         str(args.historical_pilot_artifact),
         "--model-dir",
@@ -526,7 +530,7 @@ def _supervise(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the explicit offline-only P0 interface."""
+    """Build the explicit offline-only P0/P0-R1 interface."""
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -554,6 +558,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("reports/m5/raw/m5_r3_source_audit.json"),
     )
+    parser.add_argument(
+        "--parent-p0-result",
+        type=Path,
+        default=Path("reports/m5/raw/m5_r3_p0.json"),
+    )
     parser.add_argument("--historical-pilot-artifact", type=Path, required=True)
     parser.add_argument("--model-dir", type=Path, required=True)
     parser.add_argument("--tokenizer-dir", type=Path, required=True)
@@ -573,7 +582,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Run P0 or its isolated CUDA worker with stable exit codes."""
+    """Run P0/P0-R1 or an isolated CUDA worker with stable exit codes."""
 
     args = build_parser().parse_args()
     try:

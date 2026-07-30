@@ -16,6 +16,7 @@ from tinyllm.data.reasoning_schema import (
 from tinyllm.schemas.base import StrictSchema
 from tinyllm.schemas.run import SHA256_PATTERN
 
+M5R3P0PilotVersion = Literal["m5-r3-p0-v1", "m5-r3-p0-r1-v1"]
 M5R3P0RejectionReason = Literal[
     "answer_mismatch",
     "duplicate_normalized_trace",
@@ -46,7 +47,7 @@ class M5R3P0Sampling(StrictSchema):
     repetition_penalty: float
     candidate_count: Literal[2]
     max_new_tokens: Literal[384]
-    base_seed: Literal[20260731]
+    base_seed: Literal[20260731, 20260802]
 
     @model_validator(mode="after")
     def validate_sampling(self) -> M5R3P0Sampling:
@@ -92,13 +93,16 @@ class M5R3P0Config(StrictSchema):
     """Complete immutable configuration for the 40-task P0 Teacher experiment."""
 
     schema_version: Literal["1.0"]
-    pilot_version: Literal["m5-r3-p0-v1"]
+    pilot_version: M5R3P0PilotVersion
     parent_source_audit_config_sha256: Literal[
         "a3bf415bfd2e950596ed338576bee3b675fffd1dc8c0b91c14da73af0c8a83a4"
     ]
     parent_source_audit_result_sha256: Literal[
         "538e008ecb9975f04f440d3de0807fc15929914dd59cb7a63a780aab492b66a6"
     ]
+    parent_p0_public_result_sha256: (
+        Literal["5eff250ef4cde98d044c992a0aaf7e2eb75342faa9c377d265a25945a3d4388b"] | None
+    ) = None
     historical_pilot_raw_sha256: Literal[
         "5e4e75df8a0843376d95a9e47e6d91c0d0456e5066d944e315e5b96173530411"
     ]
@@ -109,7 +113,7 @@ class M5R3P0Config(StrictSchema):
         "f2c3e3fc05534344c6705befebf5761face41178fa6f3c2216f4c0cfcc90aacc"
     ]
     tokenizer_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
-    task_seed: Literal[20260730]
+    task_seed: Literal[20260730, 20260801]
     target_families: tuple[Literal["config"], Literal["log_diagnosis"]]
     tasks_per_family: Literal[20]
     language_counts_per_family: dict[ReasoningLanguage, int]
@@ -133,6 +137,15 @@ class M5R3P0Config(StrictSchema):
     def validate_distribution(self) -> M5R3P0Config:
         """Keep P0 scope, languages, and teacher identities frozen."""
 
+        expected_seeds = {
+            "m5-r3-p0-v1": (20260730, 20260731),
+            "m5-r3-p0-r1-v1": (20260801, 20260802),
+        }
+        expected_parent = (
+            None
+            if self.pilot_version == "m5-r3-p0-v1"
+            else "5eff250ef4cde98d044c992a0aaf7e2eb75342faa9c377d265a25945a3d4388b"
+        )
         if (
             self.target_families != ("config", "log_diagnosis")
             or self.language_counts_per_family != {"en": 14, "zh": 6}
@@ -140,6 +153,8 @@ class M5R3P0Config(StrictSchema):
             or self.teacher.revision != "b968826d9c46dd6066d109eabc6255188de91218"
             or self.teacher.attention_architecture != "gqa"
             or self.verifier.verifier_id != "m5-json-exact-v1"
+            or (self.task_seed, self.sampling.base_seed) != expected_seeds[self.pilot_version]
+            or self.parent_p0_public_result_sha256 != expected_parent
         ):
             raise ValueError("M5 R3 P0 distribution or pinned identity differs")
         return self
@@ -181,9 +196,9 @@ class M5R3P0CandidateAudit(StrictSchema):
     """Private candidate-level selection evidence without duplicating raw output."""
 
     schema_version: Literal["1.0"] = "1.0"
-    task_id: str = Field(pattern=r"^m5-reasoning:pilot:r3p0-(config|log)-[a-z]{2}-\d{3}$")
+    task_id: str = Field(pattern=r"^m5-reasoning:pilot:r3p0(?:r1)?-(config|log)-[a-z]{2}-\d{3}$")
     generation_id: str = Field(
-        pattern=(r"^m5-reasoning:pilot:r3p0-(config|log)-[a-z]{2}-\d{3}:candidate-[01]$")
+        pattern=(r"^m5-reasoning:pilot:r3p0(?:r1)?-(config|log)-[a-z]{2}-\d{3}:candidate-[01]$")
     )
     status: M5R3P0CandidateStatus
     rejection_reason: M5R3P0RejectionReason | None
@@ -278,7 +293,7 @@ class M5R3P0Result(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["pass", "fail"]
-    pilot_version: Literal["m5-r3-p0-v1"]
+    pilot_version: M5R3P0PilotVersion
     generated_at: datetime
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")

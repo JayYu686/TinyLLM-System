@@ -75,7 +75,10 @@ class M5R3P0Build:
     samples_sha256: str
 
 
-_CASE_REFERENCE = re.compile(r"\b(?:CFG|LOG)(?:-R3P0)?-\d{6}\b", flags=re.IGNORECASE)
+_CASE_REFERENCE = re.compile(
+    r"\b(?:CFG|LOG)(?:-R3P0(?:R1)?)?-\d{6}\b",
+    flags=re.IGNORECASE,
+)
 _TARGET_FAMILY_ORDER: tuple[M5R3TargetFamily, M5R3TargetFamily] = (
     "config",
     "log_diagnosis",
@@ -171,11 +174,12 @@ def load_m5_r3_p0_config(path: Path) -> M5R3P0Config:
 def m5_r3_p0_config_sha256(config: M5R3P0Config) -> str:
     """Hash the canonical parsed P0 configuration."""
 
-    return content_sha256(config.to_dict())
+    return content_sha256(config.model_dump(mode="json", exclude_none=True))
 
 
 def _make_task(
     *,
+    pilot_version: str,
     family: M5R3TargetFamily,
     language: ReasoningLanguage,
     index: int,
@@ -189,7 +193,7 @@ def _make_task(
         if family == "config"
         else "non_finite_gradient, disk_full, collective_timeout, cuda_oom"
     )
-    if language == "en":
+    if pilot_version == "m5-r3-p0-v1" and language == "en":
         noun = "configuration fragment" if family == "config" else "training log"
         prompt = (
             f"Case {reference}. Analyze this synthetic {noun}:\n{evidence}\n"
@@ -197,22 +201,50 @@ def _make_task(
             f"observations; keep visible reasoning under 192 tokens. Return only "
             f'{{"{key}":"selected_value"}} after reasoning, replacing selected_value.'
         )
-    else:
+        identity = "r3p0"
+        template_version = "r3-targeted.v2"
+    elif pilot_version == "m5-r3-p0-v1":
         noun = "配置片段" if family == "config" else "训练日志"
         prompt = (
             f"案例 {reference}。分析这段合成{noun}：\n{evidence}\n"
             f"{key} 必须且只能从 {labels} 中选择一个。请简洁推理，不要重复观察，可见推理"
             f'不超过 192 Token；推理后只返回 {{"{key}":"所选值"}}，并替换占位文字。'
         )
+        identity = "r3p0"
+        template_version = "r3-targeted.v2"
+    elif pilot_version == "m5-r3-p0-r1-v1" and language == "en":
+        noun = "configuration fragment" if family == "config" else "training log"
+        prompt = (
+            f"Case {reference}. Analyze this synthetic {noun}:\n{evidence}\n"
+            f"Choose {key} from exactly one of {labels}. In one compact reasoning paragraph, "
+            f"state the selected label first, cite exactly one direct evidence fragment from "
+            f"the input, and then stop; do not discuss other labels. Keep visible reasoning "
+            f"under 192 tokens. After reasoning, return only "
+            f'{{"{key}":"selected_value"}}, replacing selected_value.'
+        )
+        identity = "r3p0r1"
+        template_version = "r3-targeted-p0r1.v1"
+    elif pilot_version == "m5-r3-p0-r1-v1":
+        noun = "配置片段" if family == "config" else "训练日志"
+        prompt = (
+            f"案例 {reference}。分析这段合成{noun}：\n{evidence}\n"
+            f"{key} 必须且只能从 {labels} 中选择一个。推理只写一个紧凑段落：先给出所选标签，"
+            f"再引用输入中的一处直接证据，然后立即结束；不要讨论其他标签。可见推理不超过 "
+            f'192 Token。推理后只返回 {{"{key}":"所选值"}}，并替换占位文字。'
+        )
+        identity = "r3p0r1"
+        template_version = "r3-targeted-p0r1.v1"
+    else:
+        raise M5R3P0Error("M5 R3 P0 prompt contract version is unsupported")
     answer = canonical_json({key: label})
     short_family = "config" if family == "config" else "log"
-    task_id = f"m5-reasoning:pilot:r3p0-{short_family}-{language}-{index:03d}"
+    task_id = f"m5-reasoning:pilot:{identity}-{short_family}-{language}-{index:03d}"
     return ReasoningTask(
         id=task_id,
         split="pilot_train",
         task_family=family,
         language=language,
-        template_family=f"pilot.{family}.r3-targeted.v2",
+        template_family=f"pilot.{family}.{template_version}",
         prompt=prompt,
         prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
         expected_answer_json=answer,
@@ -229,7 +261,11 @@ def generate_m5_r3_p0_tasks(config: M5R3P0Config) -> tuple[ReasoningTask, ...]:
         "config": _CONFIG_EVIDENCE,
         "log_diagnosis": _LOG_EVIDENCE,
     }
-    prefixes = {"config": "CFG-R3P0", "log_diagnosis": "LOG-R3P0"}
+    prefixes = (
+        {"config": "CFG-R3P0", "log_diagnosis": "LOG-R3P0"}
+        if config.pilot_version == "m5-r3-p0-v1"
+        else {"config": "CFG-R3P0R1", "log_diagnosis": "LOG-R3P0R1"}
+    )
     for family in config.target_families:
         evidence_map = evidence_by_family[family]
         labels = tuple(evidence_map)
@@ -246,6 +282,7 @@ def generate_m5_r3_p0_tasks(config: M5R3P0Config) -> tuple[ReasoningTask, ...]:
             reference = f"{prefixes[family]}-{rng.randrange(1_000_000):06d}"
             tasks.append(
                 _make_task(
+                    pilot_version=config.pilot_version,
                     family=family,
                     language=language,
                     index=index,

@@ -176,3 +176,23 @@ Policy 环境负责 Token 计数、Trace 选择和 Gate；禁止为了复用单�
 “先给结论，再用一个直接证据说明，不枚举备选项”的双语结构约束。Teacher、采样、候选数、
 192 Token Trace 上限、384 Token 生成上限和污染规则全部保持不变。该诊断通过前不实现
 240 条扩展，不启动 R3 训练。
+
+P0-R1 设计现已冻结并实现：
+
+- Pilot Version：`m5-r3-p0-r1-v1`；
+- Task/Generation Seed：`20260801` / `20260802`；
+- Template：`pilot.<family>.r3-targeted-p0r1.v1`；
+- 父 P0 公开结果以 SHA256 绑定并在加载模型前校验；
+- 确定性任务集 SHA256：
+  `4cc14273c8351b94c3221c3b7c0e934afb026169534f9a0cc2d8d862b46d0688`；
+- Dev 与历史 Pilot 的 Exact、Normalized 和 Template 污染计数全部为 0；
+- CPU 合成契约 Smoke 通过，但不构成 Teacher 质量证据。
+
+40 条真实 Qwen3-8B GPU Pilot 已完成，只接受 12 条：Config 4 条、Log 8 条；英文 10 条、
+中文 2 条。46 个候选因超过 192 Token 被拒，14 个候选触及 384 Token 上限。两个任务族
+均未满足 14/10/4 门禁，状态为 `COMPLETED_GATE_REJECTED`。
+
+因此正式 240 条扩展、R3 Mixture 和双 Seed 训练继续阻断，同类 Prompt-only 变体停止。
+下一步进入 Teacher 来源策略审查，优先评估两阶段“求解 → 受约束压缩”Pipeline，并以
+确定性规则 Trace 作为受控基线；任何新方案都必须使用新身份和新的预注册门禁。详见
+[P0-R1 中文实验报告](../reports/m5/m5_r3_p0_r1.md)。

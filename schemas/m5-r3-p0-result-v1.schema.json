@@ -225,7 +225,10 @@
       "description": "Frozen native-Thinking sampling identity for the bounded P0 experiment.",
       "properties": {
         "base_seed": {
-          "const": 20260731,
+          "enum": [
+            20260731,
+            20260802
+          ],
           "title": "Base Seed",
           "type": "integer"
         },
@@ -420,7 +423,10 @@
       "type": "integer"
     },
     "pilot_version": {
-      "const": "m5-r3-p0-v1",
+      "enum": [
+        "m5-r3-p0-v1",
+        "m5-r3-p0-r1-v1"
+      ],
       "title": "Pilot Version",
       "type": "string"
     },

@@ -53,7 +53,10 @@
       "description": "Frozen native-Thinking sampling identity for the bounded P0 experiment.",
       "properties": {
         "base_seed": {
-          "const": 20260731,
+          "enum": [
+            20260731,
+            20260802
+          ],
           "title": "Base Seed",
           "type": "integer"
         },
@@ -263,6 +266,19 @@
       "title": "Max Sequence Length",
       "type": "integer"
     },
+    "parent_p0_public_result_sha256": {
+      "anyOf": [
+        {
+          "const": "5eff250ef4cde98d044c992a0aaf7e2eb75342faa9c377d265a25945a3d4388b",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent P0 Public Result Sha256"
+    },
     "parent_source_audit_config_sha256": {
       "const": "a3bf415bfd2e950596ed338576bee3b675fffd1dc8c0b91c14da73af0c8a83a4",
       "title": "Parent Source Audit Config Sha256",
@@ -274,7 +290,10 @@
       "type": "string"
     },
     "pilot_version": {
-      "const": "m5-r3-p0-v1",
+      "enum": [
+        "m5-r3-p0-v1",
+        "m5-r3-p0-r1-v1"
+      ],
       "title": "Pilot Version",
       "type": "string"
     },
@@ -308,7 +327,10 @@
       "type": "array"
     },
     "task_seed": {
-      "const": 20260730,
+      "enum": [
+        20260730,
+        20260801
+      ],
       "title": "Task Seed",
       "type": "integer"
     },

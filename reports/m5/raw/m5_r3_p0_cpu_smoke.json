@@ -1,0 +1,67 @@
+{
+  "accepted_samples": 40,
+  "config_sha256": "ffd32c3d3ac9e7a235243f643be9018c1554909e2214f23c281039b83e5a9219",
+  "contamination": {
+    "algorithm": "m5-r3-exact-normalized-template-v1",
+    "dev_exact_prompt_matches": 0,
+    "dev_task_count": 200,
+    "dev_template_family_overlaps": 0,
+    "historical_exact_prompt_matches": 0,
+    "historical_normalized_prompt_matches": 0,
+    "historical_pilot_task_count": 100,
+    "historical_template_family_overlaps": 0,
+    "p0_task_count": 40,
+    "p0_tasks_sha256": "cf0fee91d2a3362cb3fd6567485b12596d278bac889fcfc8abc8453acc337f2f",
+    "schema_version": "1.0",
+    "status": "pass"
+  },
+  "evidence_kind": "synthetic_cpu_contract_smoke",
+  "family_results": [
+    {
+      "accepted_items": 20,
+      "accepted_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "gate_passed": true,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 5,
+      "reasoning_tokens_min": 5,
+      "reasoning_tokens_p50": 5.0,
+      "reasoning_tokens_p90": 5,
+      "repeated_8gram_mean_basis_points": 0,
+      "task_family": "config"
+    },
+    {
+      "accepted_items": 20,
+      "accepted_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "gate_passed": true,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 5,
+      "reasoning_tokens_min": 5,
+      "reasoning_tokens_p50": 5.0,
+      "reasoning_tokens_p90": 5,
+      "repeated_8gram_mean_basis_points": 0,
+      "task_family": "log_diagnosis"
+    }
+  ],
+  "gpu_used": false,
+  "input_tasks": 40,
+  "model_generated": false,
+  "quality_metric": false,
+  "rejection_counts": {},
+  "samples_sha256": "db36251a90c82cec1759cfb4e319fd349d297bc2339b7336a88cda9c0de330d5",
+  "schema_version": "1.0",
+  "task_set_sha256": "cf0fee91d2a3362cb3fd6567485b12596d278bac889fcfc8abc8453acc337f2f"
+}

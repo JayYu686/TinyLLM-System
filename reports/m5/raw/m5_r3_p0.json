@@ -1,0 +1,105 @@
+{
+  "accepted_samples": 10,
+  "config_sha256": "ffd32c3d3ac9e7a235243f643be9018c1554909e2214f23c281039b83e5a9219",
+  "consumes_m6_frozen_results": false,
+  "contamination": {
+    "algorithm": "m5-r3-exact-normalized-template-v1",
+    "dev_exact_prompt_matches": 0,
+    "dev_task_count": 200,
+    "dev_template_family_overlaps": 0,
+    "historical_exact_prompt_matches": 0,
+    "historical_normalized_prompt_matches": 0,
+    "historical_pilot_task_count": 100,
+    "historical_template_family_overlaps": 0,
+    "p0_task_count": 40,
+    "p0_tasks_sha256": "cf0fee91d2a3362cb3fd6567485b12596d278bac889fcfc8abc8453acc337f2f",
+    "schema_version": "1.0",
+    "status": "pass"
+  },
+  "duration_seconds": 1037.7422539717518,
+  "family_results": [
+    {
+      "accepted_items": 5,
+      "accepted_language_counts": {
+        "en": 4,
+        "zh": 1
+      },
+      "gate_passed": false,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 181,
+      "reasoning_tokens_min": 127,
+      "reasoning_tokens_p50": 145.0,
+      "reasoning_tokens_p90": 181,
+      "repeated_8gram_mean_basis_points": 33,
+      "task_family": "config"
+    },
+    {
+      "accepted_items": 5,
+      "accepted_language_counts": {
+        "en": 5,
+        "zh": 0
+      },
+      "gate_passed": false,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 188,
+      "reasoning_tokens_min": 164,
+      "reasoning_tokens_p50": 183.0,
+      "reasoning_tokens_p90": 188,
+      "repeated_8gram_mean_basis_points": 0,
+      "task_family": "log_diagnosis"
+    }
+  ],
+  "generated_at": "2026-07-29T10:14:11.511542Z",
+  "generation_attempts": 80,
+  "git_commit": "813f6208b65b2a856a4e4167f7ed5738800aa5a4",
+  "git_dirty": false,
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "input_tasks": 40,
+  "model": {
+    "attention_architecture": "gqa",
+    "dtype": "bfloat16",
+    "local_files_only": true,
+    "mode": "thinking",
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "trust_remote_code": false
+  },
+  "peak_allocated_bytes": 16471878144,
+  "peak_reserved_bytes": 16642998272,
+  "physical_gpu_index": 7,
+  "pilot_version": "m5-r3-p0-v1",
+  "policy_tokenizers_version": "0.21.4",
+  "raw_artifact_sha256": "582ced5a663e7b752705bec9f580c5106d6acc37b6a976addde46737c8677f89",
+  "rejected_tasks": 30,
+  "rejection_counts": {
+    "no_candidate_passed": 30,
+    "reasoning_over_192_tokens": 52,
+    "teacher_length_limit": 11
+  },
+  "samples_sha256": "7e4f7a9f498ce98180b1810656905e4ccbc25dec5fe82ed9ab93fd0bd08a0b07",
+  "sampling": {
+    "base_seed": 20260731,
+    "candidate_count": 2,
+    "do_sample": true,
+    "max_new_tokens": 384,
+    "repetition_penalty": 1.0,
+    "temperature": 0.6,
+    "top_k": 20,
+    "top_p": 0.95
+  },
+  "schema_version": "1.0",
+  "status": "fail",
+  "task_set_sha256": "cf0fee91d2a3362cb3fd6567485b12596d278bac889fcfc8abc8453acc337f2f",
+  "teacher_tokenizers_version": "0.22.2",
+  "tokenizer_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "torch_version": "2.7.1+cu118",
+  "transformers_version": "4.57.6"
+}

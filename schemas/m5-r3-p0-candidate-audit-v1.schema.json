@@ -1,0 +1,147 @@
+{
+  "additionalProperties": false,
+  "description": "Private candidate-level selection evidence without duplicating raw output.",
+  "properties": {
+    "generation_id": {
+      "pattern": "^m5-reasoning:pilot:r3p0-(config|log)-[a-z]{2}-\\d{3}:candidate-[01]$",
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "max_identical_line_hash_repetitions": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Identical Line Hash Repetitions"
+    },
+    "normalized_trace_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Normalized Trace Sha256"
+    },
+    "reasoning_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 384,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reasoning Tokens"
+    },
+    "rejection_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "answer_mismatch",
+            "duplicate_normalized_trace",
+            "empty_final_answer",
+            "empty_reasoning",
+            "generation_runtime_error",
+            "identical_line_repetition",
+            "invalid_final_json",
+            "missing_think_block",
+            "multiple_think_blocks",
+            "nested_think_tag",
+            "no_candidate_passed",
+            "reasoning_over_192_tokens",
+            "repeated_8gram_over_500bp",
+            "sequence_over_1024_tokens",
+            "teacher_length_limit"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rejection Reason"
+    },
+    "repeated_8gram_basis_points": {
+      "anyOf": [
+        {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Repeated 8Gram Basis Points"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m5-reasoning:pilot:r3p0-(config|log)-[a-z]{2}-\\d{3}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "training_sequence_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Training Sequence Tokens"
+    },
+    "verification_id": {
+      "anyOf": [
+        {
+          "maxLength": 180,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verification Id"
+    }
+  },
+  "required": [
+    "task_id",
+    "generation_id",
+    "status",
+    "rejection_reason"
+  ],
+  "title": "M5R3P0CandidateAudit",
+  "type": "object"
+}

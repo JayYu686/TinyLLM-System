@@ -1,0 +1,364 @@
+{
+  "$defs": {
+    "M5R3P0Gate": {
+      "additionalProperties": false,
+      "description": "Per-family and per-language acceptance gate for P0.",
+      "properties": {
+        "accepted_languages_per_family": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "en",
+                "zh"
+              ]
+            },
+            "type": "object"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Accepted Languages Per Family",
+          "type": "object"
+        },
+        "accepted_per_family": {
+          "additionalProperties": {
+            "const": 14,
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Accepted Per Family",
+          "type": "object"
+        }
+      },
+      "required": [
+        "accepted_per_family",
+        "accepted_languages_per_family"
+      ],
+      "title": "M5R3P0Gate",
+      "type": "object"
+    },
+    "M5R3P0Sampling": {
+      "additionalProperties": false,
+      "description": "Frozen native-Thinking sampling identity for the bounded P0 experiment.",
+      "properties": {
+        "base_seed": {
+          "const": 20260731,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 2,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 384,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "temperature": {
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed"
+      ],
+      "title": "M5R3P0Sampling",
+      "type": "object"
+    },
+    "M5R3TracePolicy": {
+      "additionalProperties": false,
+      "description": "Content and diversity constraints for one accepted targeted trace.",
+      "properties": {
+        "max_identical_line_hash_repetitions": {
+          "const": 1,
+          "title": "Max Identical Line Hash Repetitions",
+          "type": "integer"
+        },
+        "max_reasoning_tokens": {
+          "const": 192,
+          "title": "Max Reasoning Tokens",
+          "type": "integer"
+        },
+        "max_repeated_8gram_basis_points": {
+          "const": 500,
+          "title": "Max Repeated 8Gram Basis Points",
+          "type": "integer"
+        },
+        "require_unique_normalized_trace": {
+          "const": true,
+          "title": "Require Unique Normalized Trace",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "max_reasoning_tokens",
+        "max_repeated_8gram_basis_points",
+        "max_identical_line_hash_repetitions",
+        "require_unique_normalized_trace"
+      ],
+      "title": "M5R3TracePolicy",
+      "type": "object"
+    },
+    "ReasoningTeacherIdentity": {
+      "additionalProperties": false,
+      "description": "Pinned offline teacher identity used to produce visible reasoning traces.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "thinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode"
+      ],
+      "title": "ReasoningTeacherIdentity",
+      "type": "object"
+    },
+    "ReasoningVerifierIdentity": {
+      "additionalProperties": false,
+      "description": "Deterministic final-answer verifier that never executes generated code.",
+      "properties": {
+        "algorithm": {
+          "const": "canonical-json-object-equality",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "execute_generated_code": {
+          "const": false,
+          "title": "Execute Generated Code",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "verifier_id": {
+          "const": "m5-json-exact-v1",
+          "title": "Verifier Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "verifier_id",
+        "algorithm",
+        "execute_generated_code"
+      ],
+      "title": "ReasoningVerifierIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete immutable configuration for the 40-task P0 Teacher experiment.",
+  "properties": {
+    "consume_m6_frozen_results": {
+      "const": false,
+      "title": "Consume M6 Frozen Results",
+      "type": "boolean"
+    },
+    "evidence_variants_per_label": {
+      "const": 6,
+      "title": "Evidence Variants Per Label",
+      "type": "integer"
+    },
+    "gate": {
+      "$ref": "#/$defs/M5R3P0Gate"
+    },
+    "historical_pilot_raw_sha256": {
+      "const": "5e4e75df8a0843376d95a9e47e6d91c0d0456e5066d944e315e5b96173530411",
+      "title": "Historical Pilot Raw Sha256",
+      "type": "string"
+    },
+    "language_counts_per_family": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Counts Per Family",
+      "type": "object"
+    },
+    "max_sequence_length": {
+      "const": 1024,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "parent_source_audit_config_sha256": {
+      "const": "a3bf415bfd2e950596ed338576bee3b675fffd1dc8c0b91c14da73af0c8a83a4",
+      "title": "Parent Source Audit Config Sha256",
+      "type": "string"
+    },
+    "parent_source_audit_result_sha256": {
+      "const": "538e008ecb9975f04f440d3de0807fc15929914dd59cb7a63a780aab492b66a6",
+      "title": "Parent Source Audit Result Sha256",
+      "type": "string"
+    },
+    "pilot_version": {
+      "const": "m5-r3-p0-v1",
+      "title": "Pilot Version",
+      "type": "string"
+    },
+    "reasoning_config_sha256": {
+      "const": "d6aee88bf4a3922981465026f202dcffcc0da0294126fac27602eb2442df1a4b",
+      "title": "Reasoning Config Sha256",
+      "type": "string"
+    },
+    "sampling": {
+      "$ref": "#/$defs/M5R3P0Sampling"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "target_families": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "const": "config",
+          "type": "string"
+        },
+        {
+          "const": "log_diagnosis",
+          "type": "string"
+        }
+      ],
+      "title": "Target Families",
+      "type": "array"
+    },
+    "task_seed": {
+      "const": 20260730,
+      "title": "Task Seed",
+      "type": "integer"
+    },
+    "tasks_per_family": {
+      "const": 20,
+      "title": "Tasks Per Family",
+      "type": "integer"
+    },
+    "teacher": {
+      "$ref": "#/$defs/ReasoningTeacherIdentity"
+    },
+    "tokenization_config_sha256": {
+      "const": "f2c3e3fc05534344c6705befebf5761face41178fa6f3c2216f4c0cfcc90aacc",
+      "title": "Tokenization Config Sha256",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    },
+    "trace_policy": {
+      "$ref": "#/$defs/M5R3TracePolicy"
+    },
+    "verifier": {
+      "$ref": "#/$defs/ReasoningVerifierIdentity"
+    }
+  },
+  "required": [
+    "schema_version",
+    "pilot_version",
+    "parent_source_audit_config_sha256",
+    "parent_source_audit_result_sha256",
+    "historical_pilot_raw_sha256",
+    "reasoning_config_sha256",
+    "tokenization_config_sha256",
+    "tokenizer_revision",
+    "task_seed",
+    "target_families",
+    "tasks_per_family",
+    "language_counts_per_family",
+    "evidence_variants_per_label",
+    "max_sequence_length",
+    "teacher",
+    "sampling",
+    "verifier",
+    "trace_policy",
+    "gate",
+    "consume_m6_frozen_results"
+  ],
+  "title": "M5R3P0Config",
+  "type": "object"
+}

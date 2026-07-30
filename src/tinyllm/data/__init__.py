@@ -107,6 +107,16 @@ from tinyllm.data.m5_r3_p2_schema import (
     M5R3P2IsolatedCompressor,
     M5R3P2Result,
 )
+from tinyllm.data.m5_r3_review import (
+    M5R3ContentReviewError,
+    finalize_m5_r3_content_review,
+    load_m5_r3_content_judgments,
+)
+from tinyllm.data.m5_r3_review_schema import (
+    M5R3ContentCriterionJudgment,
+    M5R3ContentReviewJudgment,
+    M5R3ContentReviewResult,
+)
 from tinyllm.data.m5_r3_schema import (
     M5R3FamilySourceAudit,
     M5R3SourceAudit,
@@ -344,6 +354,10 @@ __all__ = [
     "M5R3P2GenerationDelta",
     "M5R3P2IsolatedCompressor",
     "M5R3P2Result",
+    "M5R3ContentCriterionJudgment",
+    "M5R3ContentReviewError",
+    "M5R3ContentReviewJudgment",
+    "M5R3ContentReviewResult",
     "M5R3P2Selection",
     "M5R3FamilySourceAudit",
     "M5R3SourceAudit",
@@ -433,6 +447,7 @@ __all__ = [
     "generate_reasoning_pilot_tasks",
     "generate_m5_r3_p0_tasks",
     "generate_m5_r3_p1_contexts",
+    "finalize_m5_r3_content_review",
     "import_commitpackft",
     "import_oasst1",
     "iter_jsonl_records",
@@ -444,6 +459,7 @@ __all__ = [
     "load_m5_r3_p2_config",
     "load_m2_tokenization_config",
     "load_m5_reasoning_data_config",
+    "load_m5_r3_content_judgments",
     "load_verified_reasoning_pilot",
     "m5_mixture_config_dataset_version",
     "m5_r3_p0_config_sha256",

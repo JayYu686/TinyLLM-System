@@ -5,6 +5,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- added a fail-closed private maintainer-review contract for all 33 accepted R3 P2 samples;
+  Codex draft judgments cannot authorize source expansion, incomplete coverage is rejected,
+  and the public summary remains free of prompts and distilled rationales;
 - implemented and ran the parent-bound M5 R3 P2 protocol, which retries only rejected P1
   solvers and prevents raw solver reasoning or alternative labels from entering the isolated
   compressor input; the real Qwen3-8B pilot accepted 33/40, passed both family/language gates

@@ -234,6 +234,11 @@ Compressor 只读取已验证答案、原始证据和 Evidence Anchor。它不�
 来源扩展；Mixture、训练和 99% 双 Seed 门禁仍未授权。
 详见 [P2 中文实验报告](../reports/m5/m5_r3_p2.md)。
 
+P2 的 33 条接受样本必须完成三项逐条维护者审查：标签与证据一致、短推理足以支撑所选
+标签、没有无依据或其他候选陈述。Codex 草案不能作为维护者判断；Review Finalizer 要求
+33/33 覆盖、固定来源 SHA256 和显式维护者确认。任一拒绝都会继续阻断正式扩展。准备状态
+见 [内容审查报告](../reports/m5/m5_r3_content_review.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

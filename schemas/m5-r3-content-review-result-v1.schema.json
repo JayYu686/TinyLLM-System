@@ -1,0 +1,144 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free public summary of the private maintainer review.",
+  "properties": {
+    "consumes_m6_frozen_results": {
+      "const": false,
+      "default": false,
+      "title": "Consumes M6 Frozen Results",
+      "type": "boolean"
+    },
+    "family_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "config",
+          "log_diagnosis"
+        ]
+      },
+      "title": "Family Counts",
+      "type": "object"
+    },
+    "formal_source_expansion_authorized": {
+      "title": "Formal Source Expansion Authorized",
+      "type": "boolean"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "passed_items": {
+      "maximum": 33,
+      "minimum": 0,
+      "title": "Passed Items",
+      "type": "integer"
+    },
+    "private_judgments_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Private Judgments Sha256",
+      "type": "string"
+    },
+    "r3_mixture_authorized": {
+      "const": false,
+      "title": "R3 Mixture Authorized",
+      "type": "boolean"
+    },
+    "r3_training_authorized": {
+      "const": false,
+      "title": "R3 Training Authorized",
+      "type": "boolean"
+    },
+    "rejected_items": {
+      "maximum": 33,
+      "minimum": 0,
+      "title": "Rejected Items",
+      "type": "integer"
+    },
+    "review_version": {
+      "const": "m5-r3-p2-content-review-v1",
+      "title": "Review Version",
+      "type": "string"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "reviewed_items": {
+      "const": 33,
+      "title": "Reviewed Items",
+      "type": "integer"
+    },
+    "reviewer_role": {
+      "const": "maintainer",
+      "title": "Reviewer Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_pilot_version": {
+      "const": "m5-r3-p2-fallback-isolated-v1",
+      "title": "Source Pilot Version",
+      "type": "string"
+    },
+    "source_private_raw_sha256": {
+      "const": "2b693da607c880fa456b6701ad8bc2449ed1927d5b07aab33dc662ef2127a7b5",
+      "title": "Source Private Raw Sha256",
+      "type": "string"
+    },
+    "source_public_result_sha256": {
+      "const": "94b89e3a72af6edb0f8c50772f8b8d807bbc6fa8ccf70b44f610426817fb03f2",
+      "title": "Source Public Result Sha256",
+      "type": "string"
+    },
+    "source_samples_sha256": {
+      "const": "2d73a4d62b657b98e9da2539d7cf10fdc8a2f3af369e4db4956348b5b79c3ea8",
+      "title": "Source Samples Sha256",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "approved",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "review_version",
+    "reviewed_at",
+    "status",
+    "reviewer_role",
+    "source_pilot_version",
+    "source_public_result_sha256",
+    "source_private_raw_sha256",
+    "source_samples_sha256",
+    "reviewed_items",
+    "passed_items",
+    "rejected_items",
+    "family_counts",
+    "language_counts",
+    "private_judgments_sha256",
+    "formal_source_expansion_authorized",
+    "r3_mixture_authorized",
+    "r3_training_authorized"
+  ],
+  "title": "M5R3ContentReviewResult",
+  "type": "object"
+}

@@ -1,0 +1,96 @@
+{
+  "alternatives": [
+    {
+      "disposition": "rejected",
+      "evidence_reason": "p0_and_p0_r1_failed_same_gate",
+      "strategy": "single_stage_prompt_control"
+    },
+    {
+      "disposition": "rejected",
+      "evidence_reason": "r2_1536_projection_failed_99_percent",
+      "strategy": "higher_generation_ceiling_only"
+    },
+    {
+      "disposition": "selected_for_p1",
+      "evidence_reason": "separates_correctness_from_length_control",
+      "strategy": "two_stage_solve_compress"
+    },
+    {
+      "disposition": "control_only",
+      "evidence_reason": "deterministic_control_not_formal_teacher_source",
+      "strategy": "deterministic_rule_trace"
+    }
+  ],
+  "consumes_m6_frozen_results": false,
+  "controlled_baseline": "deterministic_rule_trace",
+  "decision_reason": "single_stage_length_control_failed_select_two_stage_with_rule_control",
+  "evidence_kind": "deterministic_review_of_real_public_results",
+  "formal_source_expansion_authorized": false,
+  "next_pilot_version": "m5-r3-p1-two-stage-v1",
+  "observations": [
+    {
+      "accepted_languages": null,
+      "accepted_per_family": null,
+      "accepted_samples": null,
+      "experiment": "r2",
+      "projected_format_basis_points": [
+        9800,
+        9650
+      ],
+      "reasoning_over_192_tokens": null,
+      "status": "length_ceiling_insufficient",
+      "teacher_length_limit": null,
+      "unresolved_format_items": [
+        4,
+        7
+      ]
+    },
+    {
+      "accepted_languages": {
+        "en": 9,
+        "zh": 1
+      },
+      "accepted_per_family": [
+        5,
+        5
+      ],
+      "accepted_samples": 10,
+      "experiment": "p0",
+      "projected_format_basis_points": null,
+      "reasoning_over_192_tokens": 52,
+      "status": "fail",
+      "teacher_length_limit": 11,
+      "unresolved_format_items": null
+    },
+    {
+      "accepted_languages": {
+        "en": 10,
+        "zh": 2
+      },
+      "accepted_per_family": [
+        4,
+        8
+      ],
+      "accepted_samples": 12,
+      "experiment": "p0_r1",
+      "projected_format_basis_points": null,
+      "reasoning_over_192_tokens": 46,
+      "status": "fail",
+      "teacher_length_limit": 14,
+      "unresolved_format_items": null
+    }
+  ],
+  "p1_contract_implementation_authorized": true,
+  "p1_gpu_pilot_authorized": false,
+  "parent_p0_r1_result_sha256": "c59ab59fd048620e2b8de6a985a5a1deb877bb786d9b28b813531437b582c0b7",
+  "parent_p0_result_sha256": "5eff250ef4cde98d044c992a0aaf7e2eb75342faa9c377d265a25945a3d4388b",
+  "parent_r2_decision_sha256": "04165538efce811240b4d4501b13f74151758af7373704c12d6df882e3044ed6",
+  "quality_metric": false,
+  "r3_mixture_authorized": false,
+  "r3_training_authorized": false,
+  "review_config_sha256": "6a59d3a83d9420d7f44bd3432c98b1d296d946d1c99abedaa5048837244fa2d6",
+  "review_version": "m5-r3-teacher-source-strategy-v1",
+  "schema_version": "1.0",
+  "selected_strategy": "two_stage_solve_compress",
+  "status": "two_stage_contract_authorized"
+}

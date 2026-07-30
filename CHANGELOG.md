@@ -5,6 +5,8 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- selected a versioned two-stage solve/compress Teacher-source strategy for the next bounded
+  M5 R3 P1 contract, with deterministic rule traces retained as a control-only baseline;
 - merged the full M5.2/R1/R2/R3-P0 evidence stack, then completed an independently versioned
   P0-R1 bilingual prompt-control diagnostic; its real Qwen3-8B run accepted 12/40 and was
   gate-rejected, keeping the 240-task expansion blocked and ending same-family prompt-only repair;

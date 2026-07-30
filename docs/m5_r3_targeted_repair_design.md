@@ -196,3 +196,9 @@ P0-R1 设计现已冻结并实现：
 下一步进入 Teacher 来源策略审查，优先评估两阶段“求解 → 受约束压缩”Pipeline，并以
 确定性规则 Trace 作为受控基线；任何新方案都必须使用新身份和新的预注册门禁。详见
 [P0-R1 中文实验报告](../reports/m5/m5_r3_p0_r1.md)。
+
+来源策略审查现已完成：选择 `m5-r3-p1-two-stage-v1` 作为下一项有界实验，规则 Trace
+只作为 `control_only` 基线。当前仅授权实现 P1 契约，GPU Pilot、240 条扩展、Mixture 和
+训练均未解锁。完整协议见
+[Teacher 来源策略](m5_r3_teacher_source_strategy.md)和
+[中文审查报告](../reports/m5/m5_r3_teacher_source_strategy.md)。

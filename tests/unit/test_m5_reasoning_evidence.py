@@ -8,6 +8,7 @@ from tinyllm.data import (
     M5FormatRepairMixtureManifest,
     M5R3P0Result,
     M5R3P1CPUSmoke,
+    M5R3P1Result,
     M5R3SourceAudit,
     M5R3TeacherSourceStrategyReview,
     M5TeacherPilotResult,
@@ -389,10 +390,41 @@ def test_m5_r3_p1_cpu_smoke_authorizes_only_real_gpu_execution() -> None:
     assert smoke.r3_training_authorized is False
 
 
+def test_m5_r3_p1_real_result_retains_rejected_gate() -> None:
+    path = Path("reports/m5/raw/m5_r3_p1.json")
+    result = M5R3P1Result.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert result.status == "fail"
+    assert result.git_dirty is False
+    assert result.accepted_samples == 11
+    assert result.rejected_tasks == 29
+    assert result.formal_source_expansion_authorized is False
+    assert result.r3_mixture_authorized is False
+    assert result.r3_training_authorized is False
+    assert [item.accepted_items for item in result.family_results] == [5, 6]
+    assert [item.accepted_language_counts for item in result.family_results] == [
+        {"en": 2, "zh": 3},
+        {"en": 5, "zh": 1},
+    ]
+    assert result.rejection_counts == {
+        "compressor_invalid_json": 3,
+        "missing_evidence_anchor": 10,
+        "other_label_mentioned": 10,
+        "solver_length_limit": 6,
+    }
+    public = path.read_text(encoding="utf-8")
+    assert "raw_output" not in public
+    assert "reasoning_content" not in public
+    assert "/home/" not in public
+    assert "/data/" not in public
+
+
 def test_m5_r3_p1_report_keeps_cpu_contract_and_quality_separate() -> None:
     report = Path("reports/m5/m5_r3_p1.md").read_text(encoding="utf-8")
 
-    assert "`READY_FOR_GPU_PILOT`" in report
+    assert "`COMPLETED_GATE_REJECTED`" in report
     assert "`model_generated=false`" in report
     assert "`quality_metric=false`" in report
+    assert "接受 11 条" in report
+    assert "`formal_source_expansion_authorized=false`" in report
     assert "正式 240 条扩展、R3 Mixture 和训练继续阻断" in report

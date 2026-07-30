@@ -161,6 +161,8 @@ Compressor 私有 Artifact、严格 JSON Envelope、双重答案验证、Evidenc
 Trace 控制组、CPU 合成 Smoke 和失败路径已经实现。
 
 CPU 合成链路 40/40 通过，规则控制组 40/40 且 Trace 全部唯一；缺少 Evidence Anchor、
-Solver Seed 漂移和父任务污染均被拒绝。该结果只授权真实单卡 GPU Pilot，不构成模型质量
-证据，不解锁正式扩展、Mixture 或训练。详见
-[P1 中文准备报告](../reports/m5/m5_r3_p1.md)。
+Solver Seed 漂移和父任务污染均被拒绝。真实单卡 Qwen3-8B P1 随后接受 11/40 条：
+Config 5 条、Log Diagnosis 6 条。主要拒绝原因为缺少原文证据锚点 10 条、讨论其他标签
+10 条、Solver 达到上限 6 条和 Compressor 非严格 JSON 3 条。两个任务族均未通过
+14/10/4 门禁，正式扩展、Mixture 和训练继续阻断。详见
+[P1 中文实验报告](../reports/m5/m5_r3_p1.md)。

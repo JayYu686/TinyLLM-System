@@ -10,6 +10,7 @@ from tinyllm.data import (
     M5R3P1CPUSmoke,
     M5R3P1Result,
     M5R3P2CPUSmoke,
+    M5R3P2Result,
     M5R3SourceAudit,
     M5R3TeacherSourceStrategyReview,
     M5TeacherPilotResult,
@@ -449,7 +450,37 @@ def test_m5_r3_p2_cpu_smoke_authorizes_only_real_gpu_execution() -> None:
 def test_m5_r3_p2_report_keeps_cpu_and_gpu_evidence_separate() -> None:
     report = Path("reports/m5/m5_r3_p2.md").read_text(encoding="utf-8")
 
-    assert "`READY_FOR_GPU_PILOT`" in report
+    assert "`COMPLETED_GATE_PASSED`" in report
     assert "`model_generated=false`" in report
     assert "`quality_metric=false`" in report
-    assert "P2 真实通过只允许人工内容审查" in report
+    assert "接受 33/40 条" in report
+    assert "Mixture 和训练" in report
+
+
+def test_m5_r3_p2_real_result_authorizes_only_source_expansion() -> None:
+    path = Path("reports/m5/raw/m5_r3_p2.json")
+    result = M5R3P2Result.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert result.status == "pass"
+    assert result.git_dirty is False
+    assert result.git_commit == "f063947420d5c42eef883cba3d58cebe5baa79fb"
+    assert result.accepted_samples == 33
+    assert result.rejected_tasks == 7
+    assert [item.accepted_items for item in result.family_results] == [17, 16]
+    assert [item.accepted_language_counts for item in result.family_results] == [
+        {"en": 13, "zh": 4},
+        {"en": 11, "zh": 5},
+    ]
+    assert result.rejection_counts == {
+        "compressor_invalid_json": 5,
+        "solver_length_limit": 2,
+    }
+    assert result.contamination.status == "pass"
+    assert result.formal_source_expansion_authorized is True
+    assert result.r3_mixture_authorized is False
+    assert result.r3_training_authorized is False
+    public = path.read_text(encoding="utf-8")
+    assert "raw_output" not in public
+    assert "reasoning_content" not in public
+    assert "/home/" not in public
+    assert "/data/" not in public

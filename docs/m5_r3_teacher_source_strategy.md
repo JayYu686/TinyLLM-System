@@ -169,6 +169,7 @@ Config 5 条、Log Diagnosis 6 条。主要拒绝原因为缺少原文证据锚�
 
 P2 使用 `m5-r3-p2-fallback-isolated-v1` 新身份：P1 的 40 个 Solver 作为 SHA256
 绑定的父证据，只对 6 个拒绝项追加一次 Thinking 候选；全部有效答案随后进入不含原始
-Solver 推理和其他标签的 Non-thinking Compressor。CPU 合成 Smoke 已通过，但正式扩展、
-Mixture 和训练仍为 `false`，等待真实 P2 GPU Gate。详见
-[P2 中文准备报告](../reports/m5/m5_r3_p2.md)。
+Solver 推理和其他标签的 Non-thinking Compressor。真实单卡 Qwen3-8B Pilot 接受
+33/40 条，Config 17 条、Log Diagnosis 16 条，两个任务族均通过 14/10/4 门禁，四路
+污染为 0。该结果授权人工内容审查和正式来源扩展；Mixture 与训练继续保持 `false`。
+详见 [P2 中文实验报告](../reports/m5/m5_r3_p2.md)。

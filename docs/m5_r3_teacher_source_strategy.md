@@ -153,3 +153,14 @@ P1 沿用 P0 的门禁：
 
 机器可读策略审查见
 [m5_r3_teacher_source_strategy_review.json](../reports/m5/raw/m5_r3_teacher_source_strategy_review.json)。
+
+## 9. 实现状态
+
+P1 严格 Schema、40 个新 Task/Context、Dev/历史 Pilot/P0/P0-R1 污染检查、Solver 与
+Compressor 私有 Artifact、严格 JSON Envelope、双重答案验证、Evidence Anchor、规则
+Trace 控制组、CPU 合成 Smoke 和失败路径已经实现。
+
+CPU 合成链路 40/40 通过，规则控制组 40/40 且 Trace 全部唯一；缺少 Evidence Anchor、
+Solver Seed 漂移和父任务污染均被拒绝。该结果只授权真实单卡 GPU Pilot，不构成模型质量
+证据，不解锁正式扩展、Mixture 或训练。详见
+[P1 中文准备报告](../reports/m5/m5_r3_p1.md)。

@@ -5,6 +5,8 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- implemented the bounded M5 R3 P1 solve/compress pipeline, four-way contamination checks,
+  rule-trace control, strict lineage, CPU contract Smoke, and real single-GPU runner;
 - selected a versioned two-stage solve/compress Teacher-source strategy for the next bounded
   M5 R3 P1 contract, with deterministic rule traces retained as a control-only baseline;
 - merged the full M5.2/R1/R2/R3-P0 evidence stack, then completed an independently versioned

@@ -1,0 +1,451 @@
+{
+  "$defs": {
+    "M5R3P1ContaminationReport": {
+      "additionalProperties": false,
+      "description": "Path-free P1 collision counts against all frozen prior task sets.",
+      "properties": {
+        "algorithm": {
+          "const": "m5-r3-p1-exact-normalized-template-v1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "dev_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "Dev Exact Prompt Matches",
+          "type": "integer"
+        },
+        "dev_task_count": {
+          "const": 200,
+          "title": "Dev Task Count",
+          "type": "integer"
+        },
+        "dev_template_family_overlaps": {
+          "minimum": 0,
+          "title": "Dev Template Family Overlaps",
+          "type": "integer"
+        },
+        "historical_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "Historical Exact Prompt Matches",
+          "type": "integer"
+        },
+        "historical_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "Historical Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "historical_pilot_task_count": {
+          "const": 100,
+          "title": "Historical Pilot Task Count",
+          "type": "integer"
+        },
+        "historical_template_family_overlaps": {
+          "minimum": 0,
+          "title": "Historical Template Family Overlaps",
+          "type": "integer"
+        },
+        "p0_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p0_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 R1 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 R1 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P0 R1 Template Family Overlaps",
+          "type": "integer"
+        },
+        "p0_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P0 Template Family Overlaps",
+          "type": "integer"
+        },
+        "p1_task_count": {
+          "const": 40,
+          "title": "P1 Task Count",
+          "type": "integer"
+        },
+        "parent_p0_r1_task_count": {
+          "const": 40,
+          "title": "Parent P0 R1 Task Count",
+          "type": "integer"
+        },
+        "parent_p0_task_count": {
+          "const": 40,
+          "title": "Parent P0 Task Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_set_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Task Set Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "task_set_sha256",
+        "p1_task_count",
+        "dev_task_count",
+        "historical_pilot_task_count",
+        "parent_p0_task_count",
+        "parent_p0_r1_task_count",
+        "dev_exact_prompt_matches",
+        "dev_template_family_overlaps",
+        "historical_exact_prompt_matches",
+        "historical_normalized_prompt_matches",
+        "historical_template_family_overlaps",
+        "p0_exact_prompt_matches",
+        "p0_normalized_prompt_matches",
+        "p0_template_family_overlaps",
+        "p0_r1_exact_prompt_matches",
+        "p0_r1_normalized_prompt_matches",
+        "p0_r1_template_family_overlaps",
+        "status"
+      ],
+      "title": "M5R3P1ContaminationReport",
+      "type": "object"
+    },
+    "M5R3P1ControlResult": {
+      "additionalProperties": false,
+      "description": "Structural result for deterministic rule traces.",
+      "properties": {
+        "input_tasks": {
+          "const": 40,
+          "title": "Input Tasks",
+          "type": "integer"
+        },
+        "reasoning_tokens_max": {
+          "exclusiveMinimum": 0,
+          "maximum": 192,
+          "title": "Reasoning Tokens Max",
+          "type": "integer"
+        },
+        "source_kind": {
+          "const": "deterministic_rule_trace",
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "structural_passes": {
+          "maximum": 40,
+          "minimum": 0,
+          "title": "Structural Passes",
+          "type": "integer"
+        },
+        "training_source_authorized": {
+          "const": false,
+          "title": "Training Source Authorized",
+          "type": "boolean"
+        },
+        "unique_trace_count": {
+          "maximum": 40,
+          "minimum": 0,
+          "title": "Unique Trace Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_kind",
+        "input_tasks",
+        "structural_passes",
+        "reasoning_tokens_max",
+        "unique_trace_count",
+        "status",
+        "training_source_authorized"
+      ],
+      "title": "M5R3P1ControlResult",
+      "type": "object"
+    },
+    "M5R3P1FamilyResult": {
+      "additionalProperties": false,
+      "description": "Public accepted distribution for one P1 family.",
+      "properties": {
+        "accepted_items": {
+          "maximum": 20,
+          "minimum": 0,
+          "title": "Accepted Items",
+          "type": "integer"
+        },
+        "accepted_language_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "en",
+              "zh"
+            ]
+          },
+          "title": "Accepted Language Counts",
+          "type": "object"
+        },
+        "gate_passed": {
+          "title": "Gate Passed",
+          "type": "boolean"
+        },
+        "input_language_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "en",
+              "zh"
+            ]
+          },
+          "title": "Input Language Counts",
+          "type": "object"
+        },
+        "input_tasks": {
+          "const": 20,
+          "title": "Input Tasks",
+          "type": "integer"
+        },
+        "reasoning_tokens_max": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 192,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens Max"
+        },
+        "reasoning_tokens_min": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 192,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens Min"
+        },
+        "reasoning_tokens_p50": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 192,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens P50"
+        },
+        "reasoning_tokens_p90": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 192,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens P90"
+        },
+        "task_family": {
+          "enum": [
+            "config",
+            "log_diagnosis"
+          ],
+          "title": "Task Family",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_family",
+        "input_tasks",
+        "input_language_counts",
+        "accepted_items",
+        "accepted_language_counts",
+        "gate_passed"
+      ],
+      "title": "M5R3P1FamilyResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Synthetic content-free contract evidence authorizing only a real GPU Pilot.",
+  "properties": {
+    "accepted_samples": {
+      "const": 40,
+      "title": "Accepted Samples",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "consumes_m6_frozen_results": {
+      "const": false,
+      "default": false,
+      "title": "Consumes M6 Frozen Results",
+      "type": "boolean"
+    },
+    "contamination": {
+      "$ref": "#/$defs/M5R3P1ContaminationReport"
+    },
+    "control": {
+      "$ref": "#/$defs/M5R3P1ControlResult"
+    },
+    "evidence_kind": {
+      "const": "synthetic_cpu_contract_smoke",
+      "title": "Evidence Kind",
+      "type": "string"
+    },
+    "family_results": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5R3P1FamilyResult"
+        },
+        {
+          "$ref": "#/$defs/M5R3P1FamilyResult"
+        }
+      ],
+      "title": "Family Results",
+      "type": "array"
+    },
+    "formal_source_expansion_authorized": {
+      "const": false,
+      "title": "Formal Source Expansion Authorized",
+      "type": "boolean"
+    },
+    "model_generated": {
+      "const": false,
+      "title": "Model Generated",
+      "type": "boolean"
+    },
+    "p1_gpu_pilot_authorized": {
+      "title": "P1 Gpu Pilot Authorized",
+      "type": "boolean"
+    },
+    "pilot_version": {
+      "const": "m5-r3-p1-two-stage-v1",
+      "title": "Pilot Version",
+      "type": "string"
+    },
+    "quality_metric": {
+      "const": false,
+      "title": "Quality Metric",
+      "type": "boolean"
+    },
+    "r3_mixture_authorized": {
+      "const": false,
+      "title": "R3 Mixture Authorized",
+      "type": "boolean"
+    },
+    "r3_training_authorized": {
+      "const": false,
+      "title": "R3 Training Authorized",
+      "type": "boolean"
+    },
+    "samples_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Samples Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_set_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Task Set Sha256",
+      "type": "string"
+    },
+    "tested_failure_paths": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "const": "compressor_missing_evidence_anchor",
+          "type": "string"
+        },
+        {
+          "const": "parent_task_contamination",
+          "type": "string"
+        },
+        {
+          "const": "solver_lineage_drift",
+          "type": "string"
+        }
+      ],
+      "title": "Tested Failure Paths",
+      "type": "array"
+    }
+  },
+  "required": [
+    "evidence_kind",
+    "model_generated",
+    "quality_metric",
+    "pilot_version",
+    "config_sha256",
+    "task_set_sha256",
+    "samples_sha256",
+    "accepted_samples",
+    "family_results",
+    "control",
+    "contamination",
+    "tested_failure_paths",
+    "p1_gpu_pilot_authorized",
+    "formal_source_expansion_authorized",
+    "r3_mixture_authorized",
+    "r3_training_authorized"
+  ],
+  "title": "M5R3P1CPUSmoke",
+  "type": "object"
+}

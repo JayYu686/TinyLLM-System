@@ -1,0 +1,120 @@
+{
+  "additionalProperties": false,
+  "description": "One private solver or compressor generation with explicit lineage.",
+  "properties": {
+    "error_code": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9_]{2,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "finish_reason": {
+      "enum": [
+        "stop",
+        "length",
+        "error"
+      ],
+      "title": "Finish Reason",
+      "type": "string"
+    },
+    "generated_token_count": {
+      "minimum": 0,
+      "title": "Generated Token Count",
+      "type": "integer"
+    },
+    "generation_id": {
+      "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}:(solver|compressor)$",
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "input_token_count": {
+      "minimum": 0,
+      "title": "Input Token Count",
+      "type": "integer"
+    },
+    "prompt_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "raw_output": {
+      "anyOf": [
+        {
+          "maxLength": 65536,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Output"
+    },
+    "raw_output_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Output Sha256"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "stage": {
+      "enum": [
+        "solver",
+        "compressor"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}$",
+      "title": "Task Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "generation_id",
+    "task_id",
+    "stage",
+    "seed",
+    "prompt_sha256",
+    "status",
+    "finish_reason",
+    "input_token_count",
+    "generated_token_count"
+  ],
+  "title": "M5R3P1StageGeneration",
+  "type": "object"
+}

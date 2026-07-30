@@ -1,0 +1,192 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free final decision for one P1 task.",
+  "properties": {
+    "compressor_output_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Compressor Output Sha256"
+    },
+    "evidence_anchor_matched": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evidence Anchor Matched"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "max_identical_line_hash_repetitions": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Identical Line Hash Repetitions"
+    },
+    "normalized_trace_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Normalized Trace Sha256"
+    },
+    "other_label_mentions": {
+      "anyOf": [
+        {
+          "maximum": 3,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Other Label Mentions"
+    },
+    "reasoning_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 256,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reasoning Tokens"
+    },
+    "rejection_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "compressor_answer_mismatch",
+            "compressor_empty_reasoning",
+            "compressor_invalid_json",
+            "compressor_length_limit",
+            "compressor_runtime_error",
+            "duplicate_normalized_trace",
+            "identical_line_repetition",
+            "missing_evidence_anchor",
+            "other_label_mentioned",
+            "reasoning_over_192_tokens",
+            "repeated_8gram_over_500bp",
+            "sequence_over_1024_tokens",
+            "solver_answer_mismatch",
+            "solver_invalid_output",
+            "solver_length_limit",
+            "solver_runtime_error"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rejection Reason"
+    },
+    "repeated_8gram_basis_points": {
+      "anyOf": [
+        {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Repeated 8Gram Basis Points"
+    },
+    "solver_output_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Solver Output Sha256"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "task_family": {
+      "enum": [
+        "config",
+        "log_diagnosis"
+      ],
+      "title": "Task Family",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "training_sequence_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Training Sequence Tokens"
+    }
+  },
+  "required": [
+    "task_id",
+    "task_family",
+    "language",
+    "status",
+    "rejection_reason"
+  ],
+  "title": "M5R3P1CandidateAudit",
+  "type": "object"
+}

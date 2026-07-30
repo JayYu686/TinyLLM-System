@@ -221,6 +221,11 @@ GPU Pilot 通过，也必须先完成人工内容审查，才能另行决定 240
 仍需后续独立门禁。详见
 [Teacher 来源策略设计](m5_r3_teacher_source_strategy.md)。
 
+P1 两阶段运行接口和 CPU 合成契约现已完成。40 个新任务同时检查 Dev、历史 Pilot、P0 和
+P0-R1 污染；Solver 与 Compressor 具有独立 Seed、Prompt Hash 和私有输出身份。合成
+40/40 只授权真实 Qwen3-8B GPU Pilot，不能写作质量结果。P1 准备证据见
+[P1 中文报告](../reports/m5/m5_r3_p1.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

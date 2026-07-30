@@ -8,8 +8,8 @@ reviewable changes are preferred over broad framework additions.
 1. Open or select a GitHub Issue with a defined acceptance criterion.
 2. Create a focused branch from `main`.
 3. Open a Draft pull request early and keep its checklist current.
-4. Follow the required progression in [AGENTS.md](AGENTS.md): design, interface,
-   unit test, smoke test, failure path, integration test, real benchmark, and docs.
+4. Follow the required progression: design, interface, unit test, smoke test, failure
+   path, integration test, real benchmark, and documentation.
 5. Run `make check` before requesting review.
 6. Convert the pull request to ready only when all applicable evidence is attached.
 7. Squash-merge after required checks pass.

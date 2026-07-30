@@ -1,0 +1,158 @@
+{
+  "$defs": {
+    "M5ReasoningGenerationConfig": {
+      "additionalProperties": false,
+      "description": "Frozen, mode-specific Qwen3 generation policy for M5-only development selection.",
+      "properties": {
+        "base_seed": {
+          "const": 20260726,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "batch_size": {
+          "const": 4,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "nonthinking_do_sample": {
+          "const": false,
+          "title": "Nonthinking Do Sample",
+          "type": "boolean"
+        },
+        "nonthinking_max_new_tokens": {
+          "const": 128,
+          "title": "Nonthinking Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "thinking_do_sample": {
+          "const": true,
+          "title": "Thinking Do Sample",
+          "type": "boolean"
+        },
+        "thinking_max_new_tokens": {
+          "const": 896,
+          "title": "Thinking Max New Tokens",
+          "type": "integer"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "batch_size",
+        "thinking_max_new_tokens",
+        "nonthinking_max_new_tokens",
+        "thinking_do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "nonthinking_do_sample",
+        "base_seed"
+      ],
+      "title": "M5ReasoningGenerationConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Frozen 200-item dual-mode M5 Dev protocol that cannot consume M6 metrics.",
+  "properties": {
+    "attention_architecture": {
+      "const": "gqa",
+      "title": "Attention Architecture",
+      "type": "string"
+    },
+    "base_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Base Revision",
+      "type": "string"
+    },
+    "compare_modes_separately": {
+      "const": true,
+      "title": "Compare Modes Separately",
+      "type": "boolean"
+    },
+    "consume_m6_frozen_results": {
+      "const": false,
+      "title": "Consume M6 Frozen Results",
+      "type": "boolean"
+    },
+    "expected_items": {
+      "const": 200,
+      "title": "Expected Items",
+      "type": "integer"
+    },
+    "generation": {
+      "$ref": "#/$defs/M5ReasoningGenerationConfig"
+    },
+    "model_repository": {
+      "const": "Qwen/Qwen3-0.6B",
+      "title": "Model Repository",
+      "type": "string"
+    },
+    "nonthinking_template_id": {
+      "const": "qwen3-chatml-nonthinking-generation-v1",
+      "title": "Nonthinking Template Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_version": {
+      "enum": [
+        "m5-reasoning-dev-v1-3eb153c2",
+        "m5-reasoning-dev-v1-53ddf557"
+      ],
+      "title": "Suite Version",
+      "type": "string"
+    },
+    "task_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Task Config Sha256",
+      "type": "string"
+    },
+    "thinking_template_id": {
+      "const": "qwen3-chatml-thinking-v1",
+      "title": "Thinking Template Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "suite_version",
+    "expected_items",
+    "task_config_sha256",
+    "model_repository",
+    "base_revision",
+    "attention_architecture",
+    "thinking_template_id",
+    "nonthinking_template_id",
+    "compare_modes_separately",
+    "consume_m6_frozen_results",
+    "generation"
+  ],
+  "title": "M5ReasoningEvaluationConfig",
+  "type": "object"
+}

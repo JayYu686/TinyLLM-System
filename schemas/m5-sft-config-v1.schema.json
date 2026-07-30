@@ -42,7 +42,7 @@
           "type": "boolean"
         },
         "dataset_version": {
-          "pattern": "^m5-(reasoning-pilot|dual-sft)-v[0-9]+-[a-f0-9]{8}$",
+          "pattern": "^m5-(reasoning-pilot|dual-sft|format-repair-mixture)-v[0-9]+-[a-f0-9]{8}$",
           "title": "Dataset Version",
           "type": "string"
         },
@@ -106,7 +106,7 @@
           "type": "boolean"
         },
         "reasoning_dev_version": {
-          "const": "m5-reasoning-dev-v1",
+          "const": "m5-reasoning-dev-v1-53ddf557",
           "title": "Reasoning Dev Version",
           "type": "string"
         }

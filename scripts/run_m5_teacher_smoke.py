@@ -22,8 +22,8 @@ from tinyllm.data import (
     generate_reasoning_dev_tasks,
     generate_reasoning_pilot_tasks,
     load_m5_reasoning_data_config,
+    reasoning_config_sha256,
 )
-from tinyllm.data.reasoning_schema import content_sha256
 from tinyllm.lineage import read_git_identity
 from tinyllm.training.smoke_preflight import inspect_gpus, validate_gpu_preflight
 
@@ -93,8 +93,9 @@ def _worker(args: argparse.Namespace) -> int:
         for task in generate_reasoning_pilot_tasks(
             seed=config.pilot_task_seed,
             tasks_per_family=10,
+            task_contract_version=config.task_contract_version,
         )
-        if task.task_family == "python" and task.language == "en"
+        if task.task_family == args.task_family and task.language == "en"
     )
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_dir,
@@ -192,7 +193,7 @@ def _worker(args: argparse.Namespace) -> int:
         generated_at=datetime.now(UTC),
         model=config.teacher,
         sampling=config.sampling,
-        config_sha256=content_sha256(config.to_dict()),
+        config_sha256=reasoning_config_sha256(config),
         git_commit=git_commit,
         git_dirty=git_dirty,
         physical_gpu_index=args.gpu_index,
@@ -232,6 +233,8 @@ def _supervise(args: argparse.Namespace) -> int:
         str(args.model_dir),
         "--gpu-index",
         str(args.gpu_index),
+        "--task-family",
+        str(args.task_family),
         "--raw-output",
         str(args.raw_output),
         "--public-output",
@@ -256,6 +259,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--model-dir", type=Path, required=True)
     parser.add_argument("--gpu-index", type=int, required=True)
+    parser.add_argument(
+        "--task-family",
+        choices=("config", "json", "linux", "log_diagnosis", "python"),
+        default="python",
+    )
     parser.add_argument("--raw-output", type=Path, required=True)
     parser.add_argument("--public-output", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=900)

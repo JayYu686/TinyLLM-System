@@ -78,7 +78,7 @@ def _full_formal_mapping() -> dict[str, object]:
             "resume": "auto",
         },
         "evaluation": {
-            "reasoning_dev_version": "m5-reasoning-dev-v1",
+            "reasoning_dev_version": "m5-reasoning-dev-v1-53ddf557",
             "compare_modes_separately": True,
             "consume_m6_frozen_results": False,
         },
@@ -178,6 +178,113 @@ def test_ablation_contract_uses_pilot_data_one_gpu_and_exactly_one_million_token
 
     assert config.run.purpose == "ablation"
     assert config.data.thinking_token_fraction == 0.0
+
+
+def test_format_repair_contract_freezes_thirty_percent_and_one_gpu() -> None:
+    mapping = _full_formal_mapping()
+    _section(mapping, "run").update({"name": "m5-format-repair-r1-seed42", "purpose": "ablation"})
+    _section(mapping, "data").update(
+        {
+            "dataset_version": "m5-format-repair-mixture-v1-a1b2c3d4",
+            "thinking_token_fraction": 0.3,
+        }
+    )
+    _section(mapping, "training").update(
+        {"max_train_tokens": 1_000_000, "evaluation_interval_tokens": 1_000_000}
+    )
+    _section(mapping, "parallel").update({"strategy": "single", "backend": None, "world_size": 1})
+    _section(mapping, "checkpoint")["save_interval_tokens"] = 500_000
+
+    config = m5_sft_config_from_mapping(mapping)
+
+    assert config.run.purpose == "ablation"
+    assert config.data.thinking_token_fraction == 0.3
+    with pytest.raises(M5ConfigError, match="preregistered at 30%"):
+        m5_sft_config_from_mapping(
+            {
+                **mapping,
+                "data": {
+                    **_section(mapping, "data"),
+                    "thinking_token_fraction": 0.5,
+                },
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("name", "seed"),
+    [
+        ("m5_format_repair_r1_seed42.yaml", 42),
+        ("m5_format_repair_r1_seed20260727.yaml", 20260727),
+    ],
+)
+def test_committed_format_repair_configs_share_the_frozen_r1_mixture(name: str, seed: int) -> None:
+    config = load_m5_sft_config(Path("configs/sft") / name)
+
+    assert config.run.seed == seed
+    assert config.run.purpose == "ablation"
+    assert config.data.dataset_version == "m5-format-repair-mixture-v1-1396b60b"
+    assert (
+        config.data.mix_manifest_sha256
+        == "2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e"
+    )
+    assert config.data.thinking_token_fraction == 0.3
+
+
+@pytest.mark.parametrize(
+    ("name", "ratio", "seed", "manifest_sha256"),
+    [
+        (
+            "m5_ablation_t0_seed42.yaml",
+            0.0,
+            42,
+            "21cf73b774e7c6e30c1241f2a3b8df3ed5437f0c9ce77e909d78a3e3968d3382",
+        ),
+        (
+            "m5_ablation_t0_seed20260727.yaml",
+            0.0,
+            20260727,
+            "21cf73b774e7c6e30c1241f2a3b8df3ed5437f0c9ce77e909d78a3e3968d3382",
+        ),
+        (
+            "m5_ablation_t30_seed42.yaml",
+            0.3,
+            42,
+            "5a6bfd9bbd720c4a781efe586e190867319c3445941ca6bbc68269d3bd852364",
+        ),
+        (
+            "m5_ablation_t30_seed20260727.yaml",
+            0.3,
+            20260727,
+            "5a6bfd9bbd720c4a781efe586e190867319c3445941ca6bbc68269d3bd852364",
+        ),
+        (
+            "m5_ablation_t50_seed42.yaml",
+            0.5,
+            42,
+            "8615d2aac2ee0bd4bcb1a2942cc6b868b0e1c045e52c3aafd73e78f1778d4626",
+        ),
+        (
+            "m5_ablation_t50_seed20260727.yaml",
+            0.5,
+            20260727,
+            "8615d2aac2ee0bd4bcb1a2942cc6b868b0e1c045e52c3aafd73e78f1778d4626",
+        ),
+    ],
+)
+def test_committed_ablation_configs_freeze_real_mixture_identity(
+    name: str,
+    ratio: float,
+    seed: int,
+    manifest_sha256: str,
+) -> None:
+    config = load_m5_sft_config(Path("configs/sft") / name)
+
+    assert config.run.seed == seed
+    assert config.data.dataset_version == "m5-reasoning-pilot-v1-b4db5ac8"
+    assert config.data.thinking_token_fraction == ratio
+    assert config.data.mix_manifest_sha256 == manifest_sha256
+    assert config.evaluation.reasoning_dev_version == "m5-reasoning-dev-v1-53ddf557"
 
 
 @pytest.mark.parametrize(

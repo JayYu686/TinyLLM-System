@@ -1,0 +1,98 @@
+{
+  "analysis_version": "m5-r2-offline-analysis-v1",
+  "evaluation_config_sha256": "3735a34e70c06059fbc09f62d02fabc296fd97e79a45d60f3d00dede21108d51",
+  "schema_version": "1.0",
+  "slices": [
+    {
+      "failure_distribution": {
+        "generated_tokens_max": 896,
+        "generated_tokens_min": 896,
+        "generated_tokens_p50": 896.0,
+        "generated_tokens_p90": 896,
+        "items": 11,
+        "max_identical_line_hash_repetitions": 4,
+        "repeated_8gram_ratio_mean_basis_points": 2582,
+        "unique_token_ratio_mean_basis_points": 1947
+      },
+      "finish_reason_counts": {
+        "eos": 0,
+        "length": 11
+      },
+      "invalid_format_items": 11,
+      "language_counts": {
+        "en": 6,
+        "zh": 5
+      },
+      "matched_valid_distribution": {
+        "generated_tokens_max": 852,
+        "generated_tokens_min": 176,
+        "generated_tokens_p50": 267.0,
+        "generated_tokens_p90": 481,
+        "items": 109,
+        "max_identical_line_hash_repetitions": 1,
+        "repeated_8gram_ratio_mean_basis_points": 128,
+        "unique_token_ratio_mean_basis_points": 4394
+      },
+      "matched_valid_items": 109,
+      "source_evaluation_id": "20260727T090313Z-m5-reasoning-dev-ablation_candidate-3707f186",
+      "source_raw_results_sha256": "87e478b92c3992fa4f1196d05e32686291f2f2a4b559777e559fbc80988bd50d",
+      "task_family_counts": {
+        "config": 9,
+        "json": 0,
+        "linux": 0,
+        "log_diagnosis": 1,
+        "python": 1
+      },
+      "training_seed": 42
+    },
+    {
+      "failure_distribution": {
+        "generated_tokens_max": 896,
+        "generated_tokens_min": 896,
+        "generated_tokens_p50": 896.0,
+        "generated_tokens_p90": 896,
+        "items": 13,
+        "max_identical_line_hash_repetitions": 10,
+        "repeated_8gram_ratio_mean_basis_points": 2495,
+        "unique_token_ratio_mean_basis_points": 1968
+      },
+      "finish_reason_counts": {
+        "eos": 0,
+        "length": 13
+      },
+      "invalid_format_items": 13,
+      "language_counts": {
+        "en": 6,
+        "zh": 7
+      },
+      "matched_valid_distribution": {
+        "generated_tokens_max": 845,
+        "generated_tokens_min": 176,
+        "generated_tokens_p50": 257.0,
+        "generated_tokens_p90": 575,
+        "items": 67,
+        "max_identical_line_hash_repetitions": 1,
+        "repeated_8gram_ratio_mean_basis_points": 124,
+        "unique_token_ratio_mean_basis_points": 4925
+      },
+      "matched_valid_items": 67,
+      "source_evaluation_id": "20260727T090251Z-m5-reasoning-dev-ablation_candidate-e70ef06d",
+      "source_raw_results_sha256": "1e1fd1d43d170ddad4752114222c0655e1c814cebc23f8f3208575548c6b8cd7",
+      "task_family_counts": {
+        "config": 10,
+        "json": 0,
+        "linux": 0,
+        "log_diagnosis": 3,
+        "python": 0
+      },
+      "training_seed": 20260727
+    }
+  ],
+  "status": "succeeded",
+  "suite_version": "m5-reasoning-dev-v1-53ddf557",
+  "tokenizer_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "training_seeds": [
+    42,
+    20260727
+  ]
+}

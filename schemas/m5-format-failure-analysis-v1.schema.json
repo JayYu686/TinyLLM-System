@@ -1,0 +1,227 @@
+{
+  "$defs": {
+    "M5FormatFailureSlice": {
+      "additionalProperties": false,
+      "description": "Content-free failure counts for one M5.2 ratio and training Seed.",
+      "properties": {
+        "category_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "empty_final_answer",
+              "empty_reasoning",
+              "eos_open_without_close",
+              "length_open_without_close",
+              "missing_open_tag",
+              "multiple_think_blocks",
+              "nested_think_tag",
+              "other_parse_failure"
+            ]
+          },
+          "title": "Category Counts",
+          "type": "object"
+        },
+        "evaluated_thinking_items": {
+          "const": 200,
+          "title": "Evaluated Thinking Items",
+          "type": "integer"
+        },
+        "evaluation_id": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "generated_tokens_max": {
+          "minimum": 0,
+          "title": "Generated Tokens Max",
+          "type": "integer"
+        },
+        "generated_tokens_min": {
+          "minimum": 0,
+          "title": "Generated Tokens Min",
+          "type": "integer"
+        },
+        "generated_tokens_total": {
+          "exclusiveMinimum": 0,
+          "title": "Generated Tokens Total",
+          "type": "integer"
+        },
+        "invalid_format_items": {
+          "exclusiveMinimum": 0,
+          "maximum": 200,
+          "title": "Invalid Format Items",
+          "type": "integer"
+        },
+        "language_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "en",
+              "zh"
+            ]
+          },
+          "title": "Language Counts",
+          "type": "object"
+        },
+        "raw_results_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Raw Results Sha256",
+          "type": "string"
+        },
+        "task_family_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "json",
+              "linux",
+              "log_diagnosis",
+              "python"
+            ]
+          },
+          "title": "Task Family Counts",
+          "type": "object"
+        },
+        "thinking_fraction_basis_points": {
+          "enum": [
+            3000,
+            5000
+          ],
+          "title": "Thinking Fraction Basis Points",
+          "type": "integer"
+        },
+        "training_run_id": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Training Run Id",
+          "type": "string"
+        },
+        "training_seed": {
+          "enum": [
+            42,
+            20260727
+          ],
+          "title": "Training Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "thinking_fraction_basis_points",
+        "training_seed",
+        "training_run_id",
+        "evaluation_id",
+        "raw_results_sha256",
+        "evaluated_thinking_items",
+        "invalid_format_items",
+        "category_counts",
+        "task_family_counts",
+        "language_counts",
+        "generated_tokens_min",
+        "generated_tokens_max",
+        "generated_tokens_total"
+      ],
+      "title": "M5FormatFailureSlice",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Deterministic redacted analysis of four private M5.2 Candidate result files.",
+  "properties": {
+    "evaluation_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Evaluation Config Sha256",
+      "type": "string"
+    },
+    "input_set_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Input Set Sha256",
+      "type": "string"
+    },
+    "model_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "slices": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5FormatFailureSlice"
+        },
+        {
+          "$ref": "#/$defs/M5FormatFailureSlice"
+        },
+        {
+          "$ref": "#/$defs/M5FormatFailureSlice"
+        },
+        {
+          "$ref": "#/$defs/M5FormatFailureSlice"
+        }
+      ],
+      "title": "Slices",
+      "type": "array"
+    },
+    "status": {
+      "const": "analyzed",
+      "default": "analyzed",
+      "title": "Status",
+      "type": "string"
+    },
+    "suite_version": {
+      "const": "m5-reasoning-dev-v1-53ddf557",
+      "title": "Suite Version",
+      "type": "string"
+    },
+    "total_eos_open_without_close_items": {
+      "maximum": 800,
+      "minimum": 0,
+      "title": "Total Eos Open Without Close Items",
+      "type": "integer"
+    },
+    "total_invalid_format_items": {
+      "exclusiveMinimum": 0,
+      "maximum": 800,
+      "title": "Total Invalid Format Items",
+      "type": "integer"
+    },
+    "total_length_open_without_close_items": {
+      "maximum": 800,
+      "minimum": 0,
+      "title": "Total Length Open Without Close Items",
+      "type": "integer"
+    },
+    "total_open_without_close_items": {
+      "maximum": 800,
+      "minimum": 0,
+      "title": "Total Open Without Close Items",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "suite_version",
+    "evaluation_config_sha256",
+    "model_revision",
+    "input_set_sha256",
+    "slices",
+    "total_invalid_format_items",
+    "total_length_open_without_close_items",
+    "total_eos_open_without_close_items",
+    "total_open_without_close_items"
+  ],
+  "title": "M5FormatFailureAnalysis",
+  "type": "object"
+}

@@ -220,6 +220,15 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "task_contract_version": {
+      "default": "placeholder_v1",
+      "enum": [
+        "placeholder_v1",
+        "label_vocabulary_v2"
+      ],
+      "title": "Task Contract Version",
+      "type": "string"
+    },
     "teacher": {
       "$ref": "#/$defs/ReasoningTeacherIdentity"
     },

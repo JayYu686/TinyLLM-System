@@ -22,7 +22,8 @@ artifacts that cannot legally be redistributed.
 - 提交给项目所有者进行内容审核的 Markdown 报告、验收记录和 Review Packet 默认使用简体中文。
 - `README.md` 是中文主入口，`README.en.md` 提供完整英文版；稳定的 CLI/Schema 字段和
   机器可读 JSON 键名继续使用英文。
-- 如果求职展示或外部发布需要英文报告，应在中文审核版通过后另行提供，不得用英文版替代所有者需要审核的中文版本。
+- 对外发布需要英文报告时，在中文审核版通过后维护对应英文版本；项目所有者的内容审核
+  继续以中文版本为准。
 
 The default private root is `/data/yujielun/tinyllm/`. That path is a configured storage
 contract, not a statement that the directory currently exists or has passed capacity

@@ -27,8 +27,27 @@ def test_teacher_smoke_parser_requires_explicit_hardware_and_artifacts() -> None
     )
 
     assert args.gpu_index == 9
+    assert args.task_family == "python"
     assert args.timeout_seconds == 900
     assert args.worker is False
+
+    selected = build_parser().parse_args(
+        [
+            "--config",
+            "configs/data/m5_reasoning_label_vocabulary_v2.yaml",
+            "--model-dir",
+            f"/models/{REVISION}",
+            "--gpu-index",
+            "9",
+            "--task-family",
+            "config",
+            "--raw-output",
+            "/private/raw.json",
+            "--public-output",
+            "reports/m5/raw/teacher.json",
+        ]
+    )
+    assert selected.task_family == "config"
 
 
 def test_teacher_snapshot_check_rejects_wrong_revision_and_missing_files(tmp_path: Path) -> None:

@@ -36,7 +36,7 @@ Pilot Task、Dev Task 和 Teacher Sampling 使用三个互异 Seed。未知字�
 | 总数 | 200 |
 | 任务类别 | Python、Linux、JSON、配置、日志诊断各 40 |
 | 语言 | 英文 140、中文 60；每类英文 28、中文 12 |
-| 用途 | 仅用于 M5 配比选择，不产生 M6 最终求职指标 |
+| 用途 | 仅用于 M5 配比选择，不进入 M6 最终发布指标 |
 
 Dev Template Family 全部使用 `dev.*` 命名空间；Pilot 使用 `pilot.*`。构建时不仅检查命名空间，
 还执行 Exact Prompt Hash 和 Template Family 双重污染检查。

@@ -1,0 +1,195 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free summary of one real M5.2 Full-SFT ablation run.",
+  "properties": {
+    "attention_architecture": {
+      "const": "gqa",
+      "title": "Attention Architecture",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0.0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "export_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Export Sha256"
+    },
+    "final_loss": {
+      "exclusiveMinimum": 0.0,
+      "title": "Final Loss",
+      "type": "number"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "global_step": {
+      "exclusiveMinimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "gpu_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "initial_loss": {
+      "exclusiveMinimum": 0.0,
+      "title": "Initial Loss",
+      "type": "number"
+    },
+    "latest_checkpoint": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Latest Checkpoint",
+      "type": "string"
+    },
+    "mixture_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Mixture Manifest Sha256",
+      "type": "string"
+    },
+    "mixture_version": {
+      "pattern": "^m5-(ablation|format-repair)-mixture-v1-[0-9a-f]{8}$",
+      "title": "Mixture Version",
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "fresh",
+        "exact_resume"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "peak_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "resumed_from_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMaximum": 1000000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resumed From Tokens"
+    },
+    "run_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "sequence_cursor": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Cursor",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "interrupted"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "exclusiveMinimum": 0,
+      "maximum": 1000000,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_fraction_basis_points": {
+      "enum": [
+        0,
+        3000,
+        5000
+      ],
+      "title": "Thinking Fraction Basis Points",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "status",
+    "mode",
+    "run_id",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "model_revision",
+    "attention_architecture",
+    "mixture_version",
+    "mixture_manifest_sha256",
+    "thinking_fraction_basis_points",
+    "seed",
+    "physical_gpu_index",
+    "gpu_name",
+    "global_step",
+    "supervised_tokens",
+    "sequence_cursor",
+    "initial_loss",
+    "final_loss",
+    "duration_seconds",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes",
+    "latest_checkpoint"
+  ],
+  "title": "M5AblationRunResult",
+  "type": "object"
+}

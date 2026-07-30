@@ -3,198 +3,262 @@
 [简体中文](README.md) | **English**
 
 > A hardware-aware LLM training, evaluation, and deployment platform for consumer
-> multi-GPU systems.
+> multi-GPU workstations.
 
 [![CI](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml/badge.svg)](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
-TinyLLM-System is an evidence-first PyTorch project built around a 10 × RTX 3090
-workstation. It is designed to answer systems questions that a collection of fine-tuning
-scripts cannot:
+TinyLLM-System organizes data processing, training strategy, failure recovery, model
+evaluation, and version promotion into one reproducible engineering lifecycle. Native
+PyTorch provides the training core. The primary environment is a shared workstation with
+10 × RTX 3090 24GB GPUs, where execution adapts to memory capacity, topology, and available
+resources through single-device training, DDP, or FSDP2.
 
-- Can every run be traced to an immutable config, dataset, tokenizer, commit, software
-  environment, hardware inventory, checkpoint, and evaluation?
-- Can interrupted single-GPU and distributed jobs resume from a validated checkpoint
-  without silently changing state?
-- When should a model use DDP, FSDP2, or ZeRO-3, given real memory and topology limits?
-- Can a candidate model prove target-task improvement without hiding general regressions?
-- Can a deployed artifact be traced back through evaluation and training lineage?
+Every experiment receives complete lineage, from pinned dataset/model revisions and
+schema-validated YAML to the Git commit, software and hardware environment, checkpoints,
+evaluation results, and deployment exports. Published conclusions are backed by reviewable
+run evidence, while pending capabilities keep an explicit status.
 
-This is not a wrapper around Hugging Face Trainer, a claim to reimplement the full LLM
-ecosystem, or a benchmark leaderboard. Measurements are published only after real runs;
-missing results stay explicitly unevaluated.
+## Problems addressed
 
-## Current status
+| Engineering question | TinyLLM-System approach |
+| -- | -- |
+| What produced a training run? | A Run Manifest binds data, tokenizer, config, code, environment, and hardware identity |
+| How can a job start safely on shared GPUs? | `tinyllm doctor`, utilization/temperature checks, topology capture, and strategy preflight |
+| How does interrupted training continue? | Atomic checkpoints, complete training state, integrity checks, and explicit resume semantics |
+| Which multi-GPU strategy fits the workload? | DDP for throughput when one device holds full state; FSDP2 when state sharding is required |
+| How is a trained model accepted? | Frozen evaluation, Base/Candidate comparison, regression analysis, and a promotion gate |
+| How can an experiment or deployment be reproduced? | The Artifact Store preserves facts and links deployment exports back to training and evaluation |
 
-| Area | Status | Verified evidence |
-| -- | -- | -- |
-| M0 host readiness | Complete | 10 RTX 3090s inventoried; CUDA/BF16 single-GPU smoke passed |
-| M0 collectives | Complete for readiness | 1/2/4/6-GPU NCCL correctness runs completed with zero reported correctness errors |
-| M1 model foundation | Implemented | TinyGPT-Debug instantiates to 1,820,352 trainable parameters and passes CPU forward/backward tests |
-| M1 single-device training | Complete | CPU Exact Resume and RTX 3090 BF16 SIGTERM/SIGKILL recovery pass |
-| M2 data and evaluation | Complete | Immutable full build/rebuild, frozen 300-item suite, zero Exact contamination matches, and full Qwen3 Baseline pass |
-| M3 DDP | Complete | Correctness, Exact Resume/Rank Failure, and real controlled 1/2/4-GPU scaling evidence accepted in PR #55 |
-| M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD, Step 25→50 DCP resume, and independent Safetensors loading pass |
-| M5 dual-mode SFT | Contract in progress | Native Qwen3 GQA is retained; versioned Thinking/Non-thinking data, training, and evaluation contracts are being added, with no quality result yet |
-| M6 evaluation and promotion | Planned | No promotion or deployment result is claimed yet |
-
-The complete M0 evidence is in the
-[acceptance record](reports/m0/m0_acceptance.md),
-[host inventory](reports/hardware/rtx3090_inventory.md), and
-[topology/NCCL report](reports/hardware/nccl_topology.md). M0 NCCL measurements prove
-tooling and collective correctness under that test protocol; they are not DDP throughput
-benchmarks.
-
-M2 source availability and Dataset Card hashes are recorded in the
-[pinned-source verification report](reports/m2/source_verification.md). This is import-contract
-evidence only; it is not evidence of a completed data build or model training.
-The [M2.2 deterministic pipeline smoke](reports/m2/deterministic_pipeline_smoke.md) uses synthetic
-CC0 fixtures and likewise makes no full-dataset distribution or training claim.
-The [pinned Qwen3 tokenizer smoke](reports/m2/qwen3_tokenizer_smoke.md) verifies real Token IDs and
-Assistant-only labels without loading model weights.
-The [M2.3b Packing and Manifest smoke](reports/m2/packing_manifest_smoke.md) verifies deterministic
-Train balancing, split-local boundaries, and content identity on public synthetic Token arrays;
-its utilization numbers must not be interpreted as full-dataset results.
-The [M2.3c immutable Registry smoke](reports/m2/registry_smoke.md) verifies atomic publication,
-complete file hashing, safe NumPy reconstruction, idempotency, and corruption refusal on the same
-synthetic boundary. The [full pinned-source build report](reports/m2/full_dataset_build.md) records
-the real `m2-sft-v1-f82ff32e` data product, independent file verification, and an offline full
-rebuild with the same content identity. That data-build evidence is independent of model quality.
-The [M2.4a contamination contract smoke](reports/m2/contamination_smoke.md) verifies strict
-evaluation identity plus full-sequence and Prompt-prefix Exact matching on a synthetic registered
-dataset. The [300-item domain candidate](evals/domain/v1/README.md) and its
-[content-review report](reports/m2/domain_eval_content_review.md) freeze the intended 210/90
-language mix, seven categories, explicit scorers, and 90 bilingual task pairs. The subsequent
-[formal clean-`main` report](reports/m2/domain_eval_contamination.md) checked all 300 items against
-4597 verified Train samples with zero full-sequence and zero Prompt-prefix Exact matches. Near-Dedup
-remains `not_evaluated`.
-The [Qwen3-0.6B Baseline Smoke](reports/m2/baseline_smoke.md) then verifies the complete private
-Run path on an idle RTX 3090 with two Domain items and two samples per general task. Its bounded
-values are compatibility evidence only. The subsequent
-[formal clean-`main` Baseline](reports/m2/baseline_formal.md) records all 300 Domain items, all
-14,256 general-task samples, and 40/40 maintainer judgments. The consolidated
-[M2 acceptance report](reports/m2/m2_acceptance.md) defines the accepted identities and explicit
-limitations.
-
-The M1.1 native Trainer result is documented in the
-[CPU correctness report](reports/m1/native_cpu_trainer_report.md). It is deliberately
-separate from the [M1.2 checkpoint report](reports/m1/atomic_checkpoint_report.md) and
-the [M1.3 Exact Resume report](reports/m1/exact_resume_report.md). The merged result is
-summarized by the [M1 acceptance report](reports/m1/m1_acceptance.md).
-
-The [M3.1 DDP correctness report](reports/m3/ddp_correctness.md) records real one- and two-GPU
-torchrun evidence for initialization, Sampler partitioning, Global Batch, reduced Loss, final
-parameter synchronization, and rank-zero-only durable logging. The subsequent
-[M3.2 recovery report](reports/m3/ddp_recovery.md) records real two-GPU complete Checkpoints,
-Step 6 Exact Resume, and recovery after a forced Rank 1 exit at Step 8. The subsequent
-[M3 scaling report](reports/m3/ddp_scaling.md) records the real 1/2/4-GPU Strong/Weak matrix,
-Profiler-observed NCCL communication, retained preflight failures, and the explicit absence of
-eight-GPU and controlled cross-NUMA claims.
-
-The first [M4 FSDP2 CPU/Gloo correctness report](reports/m4/fsdp2_cpu_correctness.md) verifies an
-explicit CPU DeviceMesh, DTensor shard coverage, forward/backward, optimizer steps, reduced Loss,
-full-state reconstruction, and World Size mismatch refusal across two processes. The subsequent
-[isolated dependency and CUDA readiness report](reports/m4/fsdp2_cuda_readiness.md) verifies the
-separate `.venv-m4`, network-free Tiny Qwen autograd, and a single-GPU BF16 CUDA/NCCL path while
-retaining a busy-GPU preflight refusal. It does not claim multi-GPU communication, DCP, Qwen3-8B,
-or four-GPU support.
-
-The subsequent [M4.1 two-GPU report](reports/m4/fsdp2_multigpu_activation_failure.md) verifies real
-two-Rank CUDA/NCCL on physical GPUs 6 and 7, activation checkpointing, complete shard coverage, and
-diagnostics for a forced Rank 1 exit with code 17. That failed Run is explicitly non-resumable;
-the [M4.2 DCP report](reports/m4/fsdp2_dcp_recovery.md) subsequently verifies atomic sharded
-checkpoints, bitwise CPU/Gloo Exact Resume, and corruption/drift refusal. The final
-[M4.3 four-GPU report](reports/m4/fsdp2_qwen3_8b_formal.md) records a fixed Qwen3-8B revision on
-physical GPUs 5–8 completing a memory probe, 50 steps, a fresh-process Step 25→50 resume, and an
-independent Safetensors load. It makes no throughput, quality-improvement, eight-GPU, or changed
-World Size claim.
-
-M5 retains native Qwen3 GQA under
-[ADR-0005](docs/adr/0005-qwen3-gqa-dual-mode-reasoning.md) instead of converting the frozen
-checkpoints to MLA. Qwen3-0.6B Full SFT and Qwen3-8B LoRA will use explicit Thinking and
-Non-thinking modes. The frozen M2 Non-thinking data and Baseline remain unchanged; the new path
-uses separately versioned reasoning data and templates. Only the
-[M5 contract](docs/m5_sft_contract.md) exists at this point—no training-quality improvement or
-Candidate promotion is claimed. The first implementation batch and its explicit limits are
-recorded in the [Chinese M5.0 review report](reports/m5/m5_dual_mode_contract.md).
-
-The [Chinese M5.1 report](reports/m5/m5_reasoning_data.md) freezes the reasoning-data schemas,
-the independent 200-item Dev set, Pilot/Dev contamination gate, and Teacher/Verifier lineage. It
-also records one real offline Qwen3-8B Thinking smoke. That smoke proves pipeline readiness only;
-it is neither a full Pilot corpus nor a model-quality result.
-
-## System boundary
+## Architecture
 
 ```mermaid
 flowchart LR
-    A[Versioned data] --> B[Validated YAML config]
-    H[Hardware and topology] --> P[Preflight and strategy]
-    B --> P
-    P --> T[Single / DDP / FSDP2]
-    T --> C[Atomic checkpoint and resume]
-    C --> R[Run and artifact store]
-    R --> E[Versioned evaluation]
-    E --> G[Candidate promotion gate]
-    G --> I[Inference and benchmark]
-    I --> X[Reproducible public report]
-    A --> R
-    H --> R
+    subgraph Inputs["Immutable inputs"]
+        D[Dataset version]
+        M[Model and tokenizer revision]
+        Y[Schema-validated YAML]
+    end
+
+    subgraph Planning["Hardware-aware execution"]
+        H[Doctor and hardware snapshot]
+        P[Preflight and strategy selection]
+        T[Single / DDP / FSDP2]
+    end
+
+    subgraph Reliability["Training reliability"]
+        C[Atomic checkpoint]
+        R[Exact / Warm / Transfer resume]
+        A[Run artifact store]
+    end
+
+    subgraph Delivery["Quality and delivery"]
+        E[Frozen evaluation]
+        G[Candidate gate]
+        I[Inference performance gate]
+        V[Registry and promotion]
+    end
+
+    D --> P
+    M --> P
+    Y --> P
+    H --> P
+    P --> T
+    T --> C
+    C --> R
+    R --> T
+    T --> A
+    D --> A
+    H --> A
+    A --> E
+    E --> G
+    G --> I
+    I --> V
 ```
 
-The core release follows one lifecycle:
+The complete lifecycle is:
 
 ```text
 data versioning
-  → hardware-aware preflight
-  → single/distributed training
+  → hardware inspection and training planning
+  → single-device or distributed training
   → checkpoint and failure recovery
-  → evaluation and regression analysis
-  → candidate promotion
+  → automated evaluation and model comparison
+  → candidate quality gate
   → inference performance gate
-  → experiment reproduction
+  → model registry, deployment, and experiment reproduction
 ```
 
-## Hardware strategy
+## Core capabilities
 
-The main server has 10 × RTX 3090 24 GB GPUs arranged across two NUMA nodes, but it is a
-long-lived shared host. The reproducible release gate therefore uses controlled 1/2/4-GPU
-scaling on nested idle sets. Eight-GPU and controlled cross-NUMA runs remain optional
-enhancements because the project cannot preempt other users or rely on an unbounded resource
-wait. Public results state the actual world size and never extrapolate four-GPU measurements
-to eight or ten GPUs. See [ADR-0004](docs/adr/0004-shared-server-4gpu-acceptance.md).
+### Traceable training
 
-The auxiliary 8 × V100 32 GB host is a conditional compatibility target. RTX 3090 uses
-BF16 by default and may use TF32; V100 requires FP16 + GradScaler and must reject BF16.
-No V100 result is claimed until access and a real smoke test exist.
+- Formal experiments start from Pydantic-schema-validated YAML.
+- Run IDs combine UTC time, a slug, the resolved-config hash, and a random suffix.
+- `run.json`, `config.resolved.json`, `environment.json`, `hardware.json`, and
+  `metrics.jsonl` form the durable run record.
+- Datasets, models, and tokenizers use pinned revisions; configuration drift changes
+  experiment identity.
 
-Strategy meanings are deliberately narrow:
+### Reliable checkpoint and resume
 
-- **DDP** replicates model state and scales throughput when one GPU can hold the complete
-  training state. Adding DDP ranks does not combine memory.
-- **FSDP2** is the primary sharded implementation for parameters, gradients, optimizer
-  state, distributed checkpoints, and native PyTorch recovery.
-- **ZeRO-3** is a later comparison for DeepSpeed compatibility and optional offload. It
-  starts only after the equivalent FSDP2 path passes.
+- Single-device/DDP runs save complete PyTorch state; FSDP2 uses
+  `torch.distributed.checkpoint` for sharded state.
+- Checkpoints cover model, optimizer, scheduler, scaler, step/epoch, RNG state, sampler
+  cursor, dataset version, config hash, Git identity, environment, world size, and
+  per-file SHA256.
+- Publication uses a temporary directory, integrity validation, atomic rename, and an
+  atomic `LATEST` update.
+- Exact, Warm, and Transfer resume have separate validation rules. Safetensors serves as
+  the deployment export format.
+
+```mermaid
+sequenceDiagram
+    participant T as Trainer
+    participant TMP as Temporary checkpoint
+    participant V as Integrity validator
+    participant CKPT as Committed checkpoint
+    participant L as LATEST
+
+    T->>TMP: Write state and manifest
+    TMP->>V: Validate files, SHA256, and identity
+    V-->>TMP: Validation passes
+    TMP->>CKPT: Atomic rename
+    CKPT->>L: Atomic pointer update
+    L-->>T: Publish resumable location
+```
+
+### Hardware-aware distributed training
+
+| Strategy | State placement | Primary use | Project status |
+| -- | -- | -- | -- |
+| Single device | Full state on one GPU | Correctness baseline, small models, rapid debugging | Complete |
+| DDP | Full state on every rank | Throughput scaling when full state fits one GPU | Verified on 1/2/4 GPUs |
+| FSDP2 | Sharded parameters, gradients, and optimizer state | Training models constrained by per-device memory | Qwen3-8B verified on four GPUs |
+| ZeRO-3 | DeepSpeed sharding with optional offload | Engineering and performance comparison after FSDP2 | Enhancement stage |
+
+### Data, evaluation, and promotion
+
+- Raw data passes normalization, license filtering, deduplication, grouped splitting,
+  tokenization, packing, and registration.
+- Dataset manifests record input hashes, processing config, output hashes, rejection
+  statistics, and license distribution.
+- Evaluation suites are independently versioned, frozen before training, and checked for
+  train/evaluation contamination.
+- Base and Candidate use identical prompt templates, tokenizer revisions, and decoding
+  configuration.
+- Promotion evaluates target-task gains, general regressions, structured-output quality,
+  and lineage completeness together.
+
+## Current status
+
+| Milestone | Status | Verified result |
+| -- | -- | -- |
+| M0 host readiness | Complete | 10 RTX 3090s inventoried; CUDA/BF16 smoke; 1/2/4/6-GPU NCCL correctness |
+| M1 single-device training | Complete | TinyGPT-Debug CPU forward/backward; CPU Exact Resume; RTX 3090 BF16 SIGTERM/SIGKILL recovery |
+| M2 data and evaluation | Complete | Pinned-source full build and offline rebuild; frozen 300-item suite; Exact contamination scan; Qwen3-0.6B Baseline |
+| M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
+| M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
+| M5 dual-mode SFT | In progress | M5.2/R1 failed the 99% format gate; two-Seed R2 replay found that a longer limit alone is insufficient |
+| M6 evaluation and promotion | Planned | Base/Candidate comparison, regression analysis, and Candidate Gate |
+| M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
+| M8 planner | Enhancement | Static memory estimation and short probe |
+
+Milestone status represents a combined gate across implementation, tests, smoke runs,
+failure paths, real reports, and documentation. Evidence entry points:
+
+- [M0 acceptance](reports/m0/m0_acceptance.md),
+  [RTX 3090 inventory](reports/hardware/rtx3090_inventory.md), and
+  [topology/NCCL](reports/hardware/nccl_topology.md)
+- [M1 acceptance](reports/m1/m1_acceptance.md),
+  [atomic checkpoint](reports/m1/atomic_checkpoint_report.md), and
+  [Exact Resume](reports/m1/exact_resume_report.md)
+- [M2 acceptance](reports/m2/m2_acceptance.md),
+  [full dataset build](reports/m2/full_dataset_build.md), and
+  [formal Baseline](reports/m2/baseline_formal.md)
+- [M3 DDP correctness](reports/m3/ddp_correctness.md),
+  [failure recovery](reports/m3/ddp_recovery.md), and
+  [scaling](reports/m3/ddp_scaling.md)
+- [M4 FSDP2 correctness](reports/m4/fsdp2_cpu_correctness.md),
+  [DCP recovery](reports/m4/fsdp2_dcp_recovery.md), and
+  [Qwen3-8B four-GPU run](reports/m4/fsdp2_qwen3_8b_formal.md)
+- [M5 dual-mode contract](docs/m5_sft_contract.md),
+  [M5.0 review](reports/m5/m5_dual_mode_contract.md), and
+  [M5.1 data report](reports/m5/m5_reasoning_data.md), and
+  [M5.2 ablation/selection report](reports/m5/m5_ablation_selection.md), and
+  [M5.2-R1 format-reliability report](reports/m5/m5_format_repair_r1.md), and
+  [M5.2-R2 diagnostic report (Chinese)](reports/m5/m5_r2_diagnostic.md), and
+  [M5.2-R2 length diagnostic design](docs/m5_r2_diagnostic_design.md)
+
+Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
+owns training throughput evidence, and multi-GPU results are published at their measured
+world size.
+
+## Run lifecycle
+
+```mermaid
+flowchart TD
+    A[Select pinned data and model revisions] --> B[Resolve and validate YAML]
+    B --> C[Doctor / GPU preflight]
+    C --> D[Create Run ID and environment snapshot]
+    D --> E[Train and record metrics]
+    E --> F{Save point or interruption signal}
+    F --> G[Publish atomic checkpoint]
+    G --> H{Training complete}
+    H -- Continue --> E
+    H -- Complete --> I[Export Safetensors / adapter]
+    I --> J[Independent evaluation]
+    J --> K[Base / Candidate comparison]
+    K --> L{Promotion gate}
+    L -- Pass --> M[Register Candidate]
+    L -- Reject --> N[Retain Development state and evidence]
+```
+
+Failed runs remain useful engineering evidence: exit cause, last valid checkpoint, resume
+mode, and configuration differences stay in structured artifacts.
+
+## Hardware and resource strategy
+
+The primary workstation contains 10 × RTX 3090 24GB GPUs across two NUMA nodes and is
+shared by multiple users. Formal scaling uses coordinated idle 1/2/4-GPU sets. Dynamically
+available GPUs 4–9 can serve smoke runs, short training, and evaluation. Eight-GPU,
+ten-GPU, and controlled cross-NUMA comparisons remain enhancement experiments. Reports
+record actual GPU indices, world size, topology, temperature, and background load.
+
+The auxiliary compatibility target is an 8 × V100 32GB host:
+
+| Platform | Default precision | Numeric policy | Role |
+| -- | -- | -- | -- |
+| RTX 3090 | BF16, configurable TF32 | GradScaler usually unnecessary | Primary development, training, evaluation, and serving |
+| V100 | FP16 | GradScaler | Compatibility validation after host access is available |
+
+GPU jobs on the shared host pass resource preflight first. Busy-device refusals are
+retained as failure-path evidence and protect other users' memory allocations.
 
 ## Quickstart
 
-Python 3.11 is the supported development runtime. CPU setup is enough for the default
-quality gate:
+Python 3.11 is the supported development runtime. Default CI and core logic run in the
+CPU profile:
 
 ```bash
 git clone https://github.com/JayYu686/TinyLLM-System.git
 cd TinyLLM-System
 make bootstrap-cpu
 source .venv/bin/activate
+
 tinyllm --help
 tinyllm doctor --json
-tinyllm train --config configs/pretrain/tinygpt_debug_cpu_smoke.yaml \
-  --device cpu --output /tmp/tinyllm-runs --json
+tinyllm train \
+  --config configs/pretrain/tinygpt_debug_cpu_smoke.yaml \
+  --device cpu \
+  --output /tmp/tinyllm-runs \
+  --json
+
 make check
 ```
 
-On the RTX 3090 development host, install the isolated CUDA 11.8 profile instead:
+The RTX 3090 host uses the isolated CUDA 11.8 dependency profile:
 
 ```bash
 make bootstrap-gpu
@@ -202,14 +266,14 @@ source .venv/bin/activate
 tinyllm doctor --distributed --json
 ```
 
-`doctor` is read-only and never launches a high-load NCCL benchmark. Review GPU
-utilization, temperature, topology, storage, and software compatibility before running a
-separate smoke test. Dependency profile semantics are documented in
+`tinyllm doctor` collects read-only environment information. High-load NCCL smoke and
+training use separate commands after reviewing utilization, temperature, topology,
+storage, and dependency compatibility. See
 [requirements/README.md](requirements/README.md).
 
-## Stable CLI and contracts
+## CLI and configuration contracts
 
-The public command surface is staged by milestone:
+The public command surface is delivered incrementally:
 
 ```text
 tinyllm doctor
@@ -220,10 +284,12 @@ tinyllm benchmark train
 tinyllm eval
 tinyllm compare
 tinyllm promote
+tinyllm plan
+tinyllm serve
+tinyllm benchmark inference
 ```
 
-Buffer work adds `tinyllm plan`, `tinyllm serve`, and `tinyllm benchmark inference`.
-Commands expose stable `--json` output and use these exit-code classes:
+Commands expose stable `--json` output for shell, CI, and service integration:
 
 | Code | Meaning |
 | --: | -- |
@@ -234,97 +300,124 @@ Commands expose stable `--json` output and use these exit-code classes:
 | 5 | Checkpoint or resume integrity failure |
 | 6 | Evaluation failure or promotion rejection |
 
-Formal experiments start from schema-validated YAML. CLI overrides are limited to GPU
-selection, output location, resume mode, and documented runtime fields. Public Pydantic
-JSON Schema snapshots are committed under [schemas/](schemas/README.md); all models use
-a version field and reject unknown fields.
+CLI overrides focus on GPU selection, output location, resume mode, and a small set of
+runtime fields. YAML stores the experiment definition. Public schemas carry version fields,
+use `extra="forbid"`, and publish snapshots under [schemas/](schemas/README.md).
 
-## Run and checkpoint design
+## Artifact Store
 
-The private Artifact Store defaults to `/data/yujielun/tinyllm/`:
-
-```text
-cache/       shared downloads
-datasets/    immutable dataset versions
-models/      model inputs and deployment exports
-runs/        JSON-first run directories
-registry/    rebuildable query index and promotion records
-```
-
-A Run ID is `<UTC>-<slug>-<resolved-config-hash8>-<random4>`. Every run directory is
-designed to contain:
+The private server-side Artifact Store is configured through `$TINYLLM_ARTIFACT_ROOT`:
 
 ```text
-run.json                  environment.json
-events.jsonl              hardware.json
-config.original.yaml      metrics.jsonl
-config.resolved.json      checkpoints/ evaluations/ exports/
+$TINYLLM_ARTIFACT_ROOT/
+├── cache/       # dataset, model, and evaluation caches
+├── datasets/    # registered immutable dataset versions
+├── models/      # model inputs and deployment exports
+├── runs/        # training runs and checkpoints
+└── registry/    # rebuildable index and promotion records
 ```
 
-JSON/JSONL artifacts are the fact source. SQLite, introduced in M6, is a rebuildable
-query index; MLflow is an optional projection and never a training dependency.
+A typical run directory:
 
-Exact checkpoints include model, optimizer, scheduler, scaler, step/epoch, Python/NumPy/
-PyTorch/CUDA RNG, sampler cursor, data/config/code/environment identity, world size,
-per-file SHA256, and a completion marker. They are written to a temporary directory,
-validated, atomically renamed, and only then published through `LATEST`. Exact, Warm, and
-Transfer resume are separate operations. Safetensors exports are not training checkpoints.
+```text
+<run-id>/
+├── run.json
+├── events.jsonl
+├── config.original.yaml
+├── config.resolved.json
+├── environment.json
+├── hardware.json
+├── metrics.jsonl
+├── checkpoints/
+├── evaluations/
+└── exports/
+```
 
-## Career-oriented release train
+JSON/JSONL artifacts are the fact source. SQLite provides a rebuildable query index, and
+MLflow can serve as an observability projection. The public repository contains redacted
+reports and configurations; raw logs, weights, datasets, and server identity stay in the
+private Artifact Store.
 
-The target is a ten-week core plus a two-week buffer:
+## Repository layout
 
-| Milestone | Demonstrated capability | Core release role |
+```text
+TinyLLM-System/
+├── configs/       # data, training, evaluation, and benchmark YAML
+├── docs/          # architecture, contracts, ADRs, and design notes
+├── evals/         # versioned domain evaluation suites
+├── reports/       # redacted real-run and acceptance reports
+├── schemas/       # public Pydantic JSON Schema snapshots
+├── scripts/       # reviewable build, evaluation, and evidence tools
+├── src/tinyllm/   # Python package, CLI, and core implementation
+└── tests/         # unit, integration, failure-path, and GPU-marker tests
+```
+
+## Release roadmap
+
+M0–M8 advance in dependency order, and each stage delivers one independently reviewable
+system capability:
+
+| Stage | Delivered capability | Release role |
 | -- | -- | -- |
-| M1 | Native single-GPU trainer, atomic checkpoint, Exact Resume | Correctness base |
-| M2 | Licensed deterministic data pipeline and frozen evaluation | Data lineage |
-| M3 | Native DDP and controlled 1/2/4 scaling | First application-ready evidence |
-| M4 | Qwen3-8B FSDP2 sharded checkpoint/resume smoke | Advanced distributed evidence |
-| M5 | Qwen3-0.6B Full SFT and Qwen3-8B LoRA | Practical post-training |
-| M6 | Baseline/candidate comparison and Candidate gate | `v0.6.0-rc.1` portfolio release |
-| M7 | vLLM serving and measured inference gate | Buffer; required for Production |
-| M8 | Static estimate plus short probe planner | Buffer differentiation |
+| M0 | Hardware inventory, topology, Doctor, and NCCL readiness | Execution baseline |
+| M1 | Native trainer, atomic checkpoint, and Exact Resume | Training correctness |
+| M2 | Deterministic data pipeline, contamination checks, and frozen evaluation | Data and evaluation lineage |
+| M3 | Native DDP, rank-failure recovery, and 1/2/4-GPU scaling | `v0.3.0-beta.1` distributed baseline |
+| M4 | Qwen3-8B FSDP2 sharded training and DCP resume | Large-model sharding |
+| M5 | Qwen3 dual-mode Full SFT and LoRA | Practical post-training |
+| M6 | Base/Candidate comparison and Candidate Gate | `v0.6.0-rc.1` candidate release |
+| M7 | vLLM serving and measured inference gate | Production prerequisite |
+| M8 | Static estimate and short-probe planner | Resource-planning enhancement |
 
-M3 is the earliest job-application checkpoint. M7/M8, ZeRO-3, MLflow, V100 validation,
-and TinyGPT-350M cannot block `v0.6.0-rc.1`. See the
-[career release roadmap](docs/career_release_roadmap.md) and [full plan](PLANS.md).
+M7/M8, ZeRO-3, MLflow, V100 compatibility, and TinyGPT-350M enter later iterations
+according to core lifecycle dependencies and resource availability. See the
+[release roadmap](docs/release_roadmap.md).
 
-## Evaluation and promotion
+## Evaluation and model promotion
 
-M6 compares the base and trained model on ARC-Easy, HellaSwag, PIQA, and a frozen
-300-example domain set spanning Python, Linux, JSON/config, log diagnosis, and unsupported
-claim refusal. The target Candidate gate requires:
+M6 compares Base and trained models on ARC-Easy, HellaSwag, PIQA, and a frozen 300-item
+domain suite spanning Python, Linux, JSON/configuration, log diagnosis, and unsupported
+claim refusal. The evaluation records prompt templates, tokenizer revision, decoding
+configuration, raw outputs, scoring evidence, and bootstrap 95% confidence intervals.
 
-- at least +3 percentage points on the domain aggregate with a bootstrap 95% confidence
+The preregistered Candidate Gate targets:
+
+- at least +3 percentage points on the domain aggregate, with a bootstrap 95% confidence
   interval lower bound above zero;
-- no more than 2 percentage points aggregate regression on general tasks;
-- at least 98% JSON validity;
+- general-task aggregate regression within 2 percentage points;
+- JSON Valid Rate of at least 98%;
 - complete data, model, checkpoint, environment, and evaluation lineage.
 
-Thresholds are config, not README exceptions. A failed candidate stays Development, and
-regressions and failure examples remain visible. Production promotion waits for M7's real
-inference performance gate.
+Rejected models retain Development status with regression metrics and failure examples.
+A Candidate becomes eligible for Production after the measured M7 inference performance
+gate passes.
 
-## Scope control
+## Core boundary and future research
 
-The core project does not implement custom CUDA kernels, custom FlashAttention, MoE,
-custom KV cache, custom tensor parallel, multi-node or pipeline parallel training, full
-RLHF, Kubernetes, billing, or a complex frontend. These are Future Work, research
-challenges, or responsibilities of other projects. A generic FastAPI layer is not an
-early milestone; M7 uses the native vLLM OpenAI-compatible API with a thin lineage-aware
-launcher.
+The current core covers single-host single/multi-GPU training, data versioning,
+checkpointing, automated evaluation, model promotion, and inference deployment. The
+following directions live in the future research queue:
+
+- MoE, pipeline parallelism, and multi-node training;
+- custom KV cache, tensor parallelism, FlashAttention, and CUDA kernels;
+- full RLHF;
+- Kubernetes, multi-tenant billing, and complex management frontends.
+
+M7 integrates vLLM's native OpenAI-compatible API with lineage-aware launch and benchmark
+wrappers. Scope references live under [Future Work](docs/future/) and
+[ADRs](docs/adr/).
 
 ## Documentation
 
-The primary public entrypoint is the Chinese [README](README.md), with this complete English
-version maintained alongside it. Detailed design and reviewer-facing reports remain Chinese;
-stable CLI/Schema fields and machine-readable JSON keys remain English.
+The Chinese [README](README.md) is the primary public entry point, with this English
+version maintained alongside it. Design documents and human-review reports use Chinese
+by default; CLI, schema, and machine-readable JSON fields remain English.
 
-- [Contribution workflow](CONTRIBUTING.md)
-- [Agent and review rules](AGENTS.md)
-- [Milestone plan](PLANS.md) and [task summary](TASKS.md)
+- [Contribution, PR, and review workflow](CONTRIBUTING.md)
+- [Release roadmap](docs/release_roadmap.md) and
+  [capability/evidence map](docs/capability_map.md)
 - [Architecture](docs/architecture.md), [training design](docs/training_design.md), and
-  [M1 contract](docs/m1_training_contract.md)
+  [M5 SFT contract](docs/m5_sft_contract.md)
 - [Data contract](docs/dataset_contract.md), [evaluation spec](docs/evaluation_spec.md),
   and [experiment lineage](docs/experiment_lineage.md)
 - [Hardware strategy](docs/hardware_strategy.md) and
@@ -335,5 +428,5 @@ stable CLI/Schema fields and machine-readable JSON keys remain English.
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). Dataset and model licenses remain
-independent; each registered dataset and published adapter must preserve its own source,
+independent; each registered dataset and published adapter preserves its source, pinned
 revision, and license metadata.

@@ -63,7 +63,7 @@
       "type": "string"
     },
     "template_family": {
-      "pattern": "^(pilot|dev)\\.[a-z0-9][a-z0-9._-]+\\.v1$",
+      "pattern": "^(pilot|dev)\\.[a-z0-9][a-z0-9._-]+\\.v[12]$",
       "title": "Template Family",
       "type": "string"
     }

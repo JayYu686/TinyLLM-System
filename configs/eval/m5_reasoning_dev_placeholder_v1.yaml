@@ -1,0 +1,22 @@
+schema_version: "1.0"
+suite_version: m5-reasoning-dev-v1-3eb153c2
+expected_items: 200
+task_config_sha256: ac2a33f8be42941cb0e4e2b6ac97a37797c8670cf26af29f95d228ea182a7717
+model_repository: Qwen/Qwen3-0.6B
+base_revision: c1899de289a04d12100db370d81485cdf75e47ca
+attention_architecture: gqa
+thinking_template_id: qwen3-chatml-thinking-v1
+nonthinking_template_id: qwen3-chatml-nonthinking-generation-v1
+compare_modes_separately: true
+consume_m6_frozen_results: false
+generation:
+  batch_size: 4
+  thinking_max_new_tokens: 896
+  nonthinking_max_new_tokens: 128
+  thinking_do_sample: true
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 20
+  repetition_penalty: 1.0
+  nonthinking_do_sample: false
+  base_seed: 20260726

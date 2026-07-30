@@ -65,6 +65,19 @@ from tinyllm.training.m4_qwen_config import (
     load_m4_qwen_config,
 )
 from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
+from tinyllm.training.m5_ablation import (
+    M5AblationError,
+    M5CheckpointStore,
+    M5Progress,
+    group_loss_scale,
+    run_m5_ablation,
+    token_learning_rate,
+)
+from tinyllm.training.m5_ablation_schema import (
+    M5AblationRunResult,
+    M5CheckpointFile,
+    M5CheckpointManifest,
+)
 from tinyllm.training.m5_config import (
     M5CheckpointConfig,
     M5ConfigError,
@@ -130,13 +143,19 @@ __all__ = [
     "M4QwenRankMemory",
     "M4QwenRunResult",
     "M5CheckpointConfig",
+    "M5CheckpointFile",
+    "M5CheckpointManifest",
+    "M5CheckpointStore",
     "M5ConfigError",
+    "M5AblationError",
+    "M5AblationRunResult",
     "M5DataConfig",
     "M5EvaluationConfig",
     "M5LoRAConfig",
     "M5ModelConfig",
     "M5ParallelConfig",
     "M5PrecisionConfig",
+    "M5Progress",
     "M5ReasoningConfig",
     "M5RunConfig",
     "M5SFTConfig",
@@ -161,6 +180,7 @@ __all__ = [
     "load_fsdp2_recovery_config",
     "load_m4_qwen_config",
     "load_m5_sft_config",
+    "group_loss_scale",
     "restore_from_config",
     "restore_ddp_trainer",
     "restore_local_rng_state",
@@ -169,7 +189,9 @@ __all__ = [
     "run_ddp_correctness",
     "run_fsdp2_correctness",
     "run_m4_dependency_smoke",
+    "run_m5_ablation",
     "seed_everything",
+    "token_learning_rate",
     "validate_sampler_partitions",
     "validate_local_rng_state",
 ]

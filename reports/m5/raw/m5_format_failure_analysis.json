@@ -1,0 +1,146 @@
+{
+  "evaluation_config_sha256": "3735a34e70c06059fbc09f62d02fabc296fd97e79a45d60f3d00dede21108d51",
+  "input_set_sha256": "40fd05654d0989925fb3b4e507381bd9d4abf319cea82147999cfe21dab7e8ea",
+  "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "schema_version": "1.0",
+  "slices": [
+    {
+      "category_counts": {
+        "empty_final_answer": 0,
+        "empty_reasoning": 0,
+        "eos_open_without_close": 1,
+        "length_open_without_close": 8,
+        "missing_open_tag": 0,
+        "multiple_think_blocks": 0,
+        "nested_think_tag": 0,
+        "other_parse_failure": 0
+      },
+      "evaluated_thinking_items": 200,
+      "evaluation_id": "20260727T022619Z-m5-reasoning-dev-ablation_candidate-50a0c997",
+      "generated_tokens_max": 896,
+      "generated_tokens_min": 277,
+      "generated_tokens_total": 7445,
+      "invalid_format_items": 9,
+      "language_counts": {
+        "en": 4,
+        "zh": 5
+      },
+      "raw_results_sha256": "b8d2d48ef52d87aedd9c4bbc777ec067ba3d55868a1d8361af477f5d2144577f",
+      "task_family_counts": {
+        "config": 6,
+        "json": 0,
+        "linux": 1,
+        "log_diagnosis": 0,
+        "python": 2
+      },
+      "thinking_fraction_basis_points": 3000,
+      "training_run_id": "20260722T110751Z-m5-ablation-t30-seed42-0971057f-7141",
+      "training_seed": 42
+    },
+    {
+      "category_counts": {
+        "empty_final_answer": 0,
+        "empty_reasoning": 0,
+        "eos_open_without_close": 0,
+        "length_open_without_close": 6,
+        "missing_open_tag": 0,
+        "multiple_think_blocks": 0,
+        "nested_think_tag": 0,
+        "other_parse_failure": 0
+      },
+      "evaluated_thinking_items": 200,
+      "evaluation_id": "20260727T023947Z-m5-reasoning-dev-ablation_candidate-24fbbe41",
+      "generated_tokens_max": 896,
+      "generated_tokens_min": 896,
+      "generated_tokens_total": 5376,
+      "invalid_format_items": 6,
+      "language_counts": {
+        "en": 4,
+        "zh": 2
+      },
+      "raw_results_sha256": "f534c4ff868f0f42b2cf3116e2bc55a7f55a5a4cfb42ff910d9c22fbf5494846",
+      "task_family_counts": {
+        "config": 4,
+        "json": 0,
+        "linux": 0,
+        "log_diagnosis": 0,
+        "python": 2
+      },
+      "thinking_fraction_basis_points": 3000,
+      "training_run_id": "20260722T112257Z-m5-ablation-t30-seed20260727-04c95b94-022b",
+      "training_seed": 20260727
+    },
+    {
+      "category_counts": {
+        "empty_final_answer": 0,
+        "empty_reasoning": 0,
+        "eos_open_without_close": 0,
+        "length_open_without_close": 8,
+        "missing_open_tag": 0,
+        "multiple_think_blocks": 0,
+        "nested_think_tag": 0,
+        "other_parse_failure": 0
+      },
+      "evaluated_thinking_items": 200,
+      "evaluation_id": "20260727T025454Z-m5-reasoning-dev-ablation_candidate-0e0d8fe7",
+      "generated_tokens_max": 896,
+      "generated_tokens_min": 896,
+      "generated_tokens_total": 7168,
+      "invalid_format_items": 8,
+      "language_counts": {
+        "en": 4,
+        "zh": 4
+      },
+      "raw_results_sha256": "a26ba2c6e1a43d0a3d511b47a3b9b5f6c9e03b3c0a9c875352d2058ddc03512c",
+      "task_family_counts": {
+        "config": 5,
+        "json": 0,
+        "linux": 0,
+        "log_diagnosis": 0,
+        "python": 3
+      },
+      "thinking_fraction_basis_points": 5000,
+      "training_run_id": "20260722T112256Z-m5-ablation-t50-seed42-1b9d49c4-a7e9",
+      "training_seed": 42
+    },
+    {
+      "category_counts": {
+        "empty_final_answer": 0,
+        "empty_reasoning": 0,
+        "eos_open_without_close": 2,
+        "length_open_without_close": 13,
+        "missing_open_tag": 0,
+        "multiple_think_blocks": 0,
+        "nested_think_tag": 0,
+        "other_parse_failure": 0
+      },
+      "evaluated_thinking_items": 200,
+      "evaluation_id": "20260727T030855Z-m5-reasoning-dev-ablation_candidate-b7a08515",
+      "generated_tokens_max": 896,
+      "generated_tokens_min": 242,
+      "generated_tokens_total": 12141,
+      "invalid_format_items": 15,
+      "language_counts": {
+        "en": 10,
+        "zh": 5
+      },
+      "raw_results_sha256": "941cd9cb954cdba6ae1874c406861d24e50515b7645e6ab5930c532868064fe3",
+      "task_family_counts": {
+        "config": 11,
+        "json": 0,
+        "linux": 2,
+        "log_diagnosis": 0,
+        "python": 2
+      },
+      "thinking_fraction_basis_points": 5000,
+      "training_run_id": "20260722T112327Z-m5-ablation-t50-seed20260727-19cf3892-d6ee",
+      "training_seed": 20260727
+    }
+  ],
+  "status": "analyzed",
+  "suite_version": "m5-reasoning-dev-v1-53ddf557",
+  "total_eos_open_without_close_items": 3,
+  "total_invalid_format_items": 38,
+  "total_length_open_without_close_items": 35,
+  "total_open_without_close_items": 38
+}

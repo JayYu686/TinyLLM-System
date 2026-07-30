@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "M5AblationArmSummary": {
+      "additionalProperties": false,
+      "description": "Two-seed aggregate and preregistered gates for one Thinking ratio.",
+      "properties": {
+        "mean_thinking_score_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Mean Thinking Score Basis Points",
+          "type": "integer"
+        },
+        "nonthinking_regression_gate_passed": {
+          "title": "Nonthinking Regression Gate Passed",
+          "type": "boolean"
+        },
+        "nonthinking_scores_basis_points": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Nonthinking Scores Basis Points",
+          "type": "array"
+        },
+        "thinking_format_basis_points": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Thinking Format Basis Points",
+          "type": "array"
+        },
+        "thinking_format_gate_passed": {
+          "title": "Thinking Format Gate Passed",
+          "type": "boolean"
+        },
+        "thinking_fraction_basis_points": {
+          "enum": [
+            0,
+            3000,
+            5000
+          ],
+          "title": "Thinking Fraction Basis Points",
+          "type": "integer"
+        },
+        "thinking_scores_basis_points": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Thinking Scores Basis Points",
+          "type": "array"
+        },
+        "training_run_ids": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Training Run Ids",
+          "type": "array"
+        },
+        "training_seeds": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Training Seeds",
+          "type": "array"
+        }
+      },
+      "required": [
+        "thinking_fraction_basis_points",
+        "training_run_ids",
+        "training_seeds",
+        "nonthinking_scores_basis_points",
+        "thinking_format_basis_points",
+        "thinking_scores_basis_points",
+        "nonthinking_regression_gate_passed",
+        "thinking_format_gate_passed",
+        "mean_thinking_score_basis_points"
+      ],
+      "title": "M5AblationArmSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Deterministic result of the frozen M5.2 ratio-selection policy.",
+  "properties": {
+    "arms": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5AblationArmSummary"
+        },
+        {
+          "$ref": "#/$defs/M5AblationArmSummary"
+        },
+        {
+          "$ref": "#/$defs/M5AblationArmSummary"
+        }
+      ],
+      "title": "Arms",
+      "type": "array"
+    },
+    "base_evaluation_id": {
+      "minLength": 1,
+      "title": "Base Evaluation Id",
+      "type": "string"
+    },
+    "base_nonthinking_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Base Nonthinking Score Basis Points",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_thinking_fraction_basis_points": {
+      "anyOf": [
+        {
+          "enum": [
+            0,
+            3000,
+            5000
+          ],
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Selected Thinking Fraction Basis Points"
+    },
+    "selection_reason": {
+      "enum": [
+        "highest_thinking_score",
+        "lower_ratio_within_one_percentage_point",
+        "no_arm_passed_preregistered_gates"
+      ],
+      "title": "Selection Reason",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "selected",
+        "no_eligible_arm"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "base_evaluation_id",
+    "base_nonthinking_score_basis_points",
+    "arms",
+    "selection_reason"
+  ],
+  "title": "M5AblationSelection",
+  "type": "object"
+}

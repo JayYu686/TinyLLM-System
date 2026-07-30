@@ -1,0 +1,69 @@
+{
+  "accepted_language_counts": {
+    "en": 68,
+    "zh": 28
+  },
+  "accepted_samples": 96,
+  "accepted_task_family_counts": {
+    "config": 19,
+    "json": 19,
+    "linux": 20,
+    "log_diagnosis": 20,
+    "python": 18
+  },
+  "config_sha256": "aa4cdfa68fd639e273150f4abb1228a4e6c625676aafda21bc219585a0aaf6a1",
+  "dataset_version": "m5-reasoning-pilot-v1-b4db5ac8",
+  "duration_seconds": 1281.1882499731146,
+  "generated_at": "2026-07-22T10:43:42.149640Z",
+  "generation_attempts": 110,
+  "git_commit": "c2725aa8d8eabed7da76824c410e8bc3fb486d90",
+  "git_dirty": false,
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "input_tasks": 100,
+  "language_counts": {
+    "en": 70,
+    "zh": 30
+  },
+  "model": {
+    "attention_architecture": "gqa",
+    "dtype": "bfloat16",
+    "local_files_only": true,
+    "mode": "thinking",
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "trust_remote_code": false
+  },
+  "peak_allocated_bytes": 16552621056,
+  "peak_reserved_bytes": 16647192576,
+  "physical_gpu_index": 9,
+  "raw_artifact_sha256": "5e4e75df8a0843376d95a9e47e6d91c0d0456e5066d944e315e5b96173530411",
+  "rejected_tasks": 4,
+  "rejection_counts": {
+    "invalid_final_json": 3,
+    "no_candidate_passed": 4,
+    "teacher_length_limit": 8,
+    "verifier_failed": 3
+  },
+  "sampling": {
+    "base_seed": 20260724,
+    "candidate_count": 2,
+    "do_sample": true,
+    "max_new_tokens": 896,
+    "repetition_penalty": 1.0,
+    "temperature": 0.6,
+    "top_k": 20,
+    "top_p": 0.95
+  },
+  "schema_version": "1.0",
+  "status": "pass",
+  "task_family_counts": {
+    "config": 20,
+    "json": 20,
+    "linux": 20,
+    "log_diagnosis": 20,
+    "python": 20
+  },
+  "tasks_per_family": 20,
+  "torch_version": "2.7.1+cu118",
+  "transformers_version": "4.57.6"
+}

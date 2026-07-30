@@ -1,11 +1,10 @@
-# Career-oriented release roadmap
+# TinyLLM-System release roadmap
 
 ## Objective
 
-The core release demonstrates entry-level training-systems engineering rather than the
-number of integrated frameworks. It must provide reviewable evidence for native PyTorch
-single-GPU, DDP, FSDP2, Exact Resume, hardware-aware analysis, complete lineage, Qwen
-post-training, regression evaluation, and Candidate promotion.
+The core release establishes a reviewable training-systems baseline across native PyTorch
+single-GPU training, DDP, FSDP2, Exact Resume, hardware-aware analysis, complete lineage,
+Qwen post-training, regression evaluation, and Candidate promotion.
 
 The schedule is ten core weeks plus two buffer weeks. Calendar labels express dependency
 order, not permission to skip milestone gates when shared GPUs are unavailable.
@@ -20,10 +19,10 @@ order, not permission to skip milestone gates when shared GPUs are unavailable.
 | Weeks 5–6 | M3 | Correct DDP and controlled 1/2/4-GPU scaling evidence | `v0.3.0-beta.1` |
 | Week 7 | M4 | Qwen3-8B FSDP2 four-GPU sharded checkpoint/resume smoke after memory probe | — |
 | Weeks 8–10 | M5 | Qwen3 GQA dual-mode data, Qwen3-0.6B Full SFT, and Qwen3-8B LoRA with real evaluations | — |
-| After M5 | M6 | Compare, Candidate gate, reports, resume bullets, and demo | `v0.6.0-rc.1` |
+| After M5 | M6 | Compare, Candidate gate, reports, release notes, and end-to-end demo | `v0.6.0-rc.1` |
 
-Job applications can begin after M3 evidence exists. Only merged results and reproducible
-metrics may appear in a resume.
+M3 establishes the distributed-training baseline. Public release materials use merged
+results and reproducible metrics.
 
 ## Frozen experiment targets
 
@@ -57,7 +56,7 @@ evidence. Buffer work is prioritized as:
 
 MoE, custom KV cache, custom tensor parallel, custom FlashAttention/CUDA kernels,
 multi-node training, pipeline parallelism, full RLHF, Kubernetes, billing, and complex
-frontends remain Future Work and cannot block the career release.
+frontends remain Future Work and stay outside the core release gate.
 
 ## Release evidence gate
 

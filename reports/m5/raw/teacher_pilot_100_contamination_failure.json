@@ -1,0 +1,24 @@
+{
+  "completed_tasks_before_failure": 80,
+  "config_sha256": "ac2a33f8be42941cb0e4e2b6ac97a37797c8670cf26af29f95d228ea182a7717",
+  "dev_task_set_version": "m5-reasoning-dev-v1-3eb153c2",
+  "evidence_kind": "observed_runtime_failure_with_deterministic_postmortem",
+  "failure_message": "reasoning Pilot/Dev contamination gate failed",
+  "generation_attempts_before_failure": 141,
+  "git_commit": "6b6bbd0afdb7c817c027994610e523c248342a97",
+  "matches": [
+    {
+      "dev_identity": "m5-reasoning:dev:python-en-009",
+      "evidence_sha256": "8fb3fe1f750b04debf3f84624d8b62140a48bf1922bf2853c77f83a9f3dee00f",
+      "kind": "exact_prompt",
+      "pilot_identity": "m5-reasoning:pilot:python-en-000"
+    }
+  ],
+  "pilot_task_seed": 20260723,
+  "pilot_task_set_version": "m5-reasoning-pilot-tasks-v1-5ac8b133",
+  "raw_generation_artifact_written": false,
+  "raw_output_in_public_evidence": false,
+  "schema_version": "1.0",
+  "stage": "partial_dataset_contamination",
+  "status": "fail"
+}

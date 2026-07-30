@@ -188,6 +188,11 @@ P0-R1 设计现已冻结并实现：
 - Dev 与历史 Pilot 的 Exact、Normalized 和 Template 污染计数全部为 0；
 - CPU 合成契约 Smoke 通过，但不构成 Teacher 质量证据。
 
-下一步是一次 40 条真实 Qwen3-8B GPU Pilot。只有 Config 和 Log 都满足 14 条总接受、
-10 条英文和 4 条中文门禁，才进入人工内容审查与 240 条来源扩展。详见
-[P0-R1 中文准备报告](../reports/m5/m5_r3_p0_r1.md)。
+40 条真实 Qwen3-8B GPU Pilot 已完成，只接受 12 条：Config 4 条、Log 8 条；英文 10 条、
+中文 2 条。46 个候选因超过 192 Token 被拒，14 个候选触及 384 Token 上限。两个任务族
+均未满足 14/10/4 门禁，状态为 `COMPLETED_GATE_REJECTED`。
+
+因此正式 240 条扩展、R3 Mixture 和双 Seed 训练继续阻断，同类 Prompt-only 变体停止。
+下一步进入 Teacher 来源策略审查，优先评估两阶段“求解 → 受约束压缩”Pipeline，并以
+确定性规则 Trace 作为受控基线；任何新方案都必须使用新身份和新的预注册门禁。详见
+[P0-R1 中文实验报告](../reports/m5/m5_r3_p0_r1.md)。

@@ -294,3 +294,46 @@ def test_m5_r3_p0_report_records_real_rejection_and_next_boundary() -> None:
     assert "`model_generated=false`" in report
     assert "`quality_metric=false`" in report
     assert "不进入每类 120 条、合计 240 条的正式扩展" in report
+
+
+def test_m5_r3_p0_r1_real_result_retains_rejected_gate() -> None:
+    path = Path("reports/m5/raw/m5_r3_p0_r1.json")
+    result = M5R3P0Result.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert result.pilot_version == "m5-r3-p0-r1-v1"
+    assert result.status == "fail"
+    assert result.git_dirty is False
+    assert result.accepted_samples == 12
+    assert result.rejected_tasks == 28
+    assert result.generation_attempts == 80
+    assert [item.accepted_items for item in result.family_results] == [4, 8]
+    assert [item.accepted_language_counts for item in result.family_results] == [
+        {"en": 3, "zh": 1},
+        {"en": 7, "zh": 1},
+    ]
+    assert [item.gate_passed for item in result.family_results] == [False, False]
+    assert result.rejection_counts == {
+        "no_candidate_passed": 28,
+        "reasoning_over_192_tokens": 46,
+        "teacher_length_limit": 14,
+    }
+    assert result.contamination.status == "pass"
+    assert result.contamination.dev_exact_prompt_matches == 0
+    assert result.contamination.historical_exact_prompt_matches == 0
+    public = path.read_text(encoding="utf-8")
+    assert "raw_output" not in public
+    assert "reasoning_content" not in public
+    assert "/home/" not in public
+    assert "/data/" not in public
+
+
+def test_m5_r3_p0_r1_report_records_real_rejection_and_source_boundary() -> None:
+    report = Path("reports/m5/m5_r3_p0_r1.md").read_text(encoding="utf-8")
+
+    assert "`COMPLETED_GATE_REJECTED`" in report
+    assert "接受 12/40 条" in report
+    assert "推理超过 192 Token | 46" in report
+    assert "Teacher 达到 384 Token 生成上限 | 14" in report
+    assert "不实现 240 条扩展" in report
+    assert "停止继续尝试同类 Prompt-only 变体" in report
+    assert "Teacher 来源策略审查" in report

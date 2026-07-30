@@ -8,6 +8,7 @@ from tinyllm.data import (
     M5FormatRepairMixtureManifest,
     M5R3P0Result,
     M5R3SourceAudit,
+    M5R3TeacherSourceStrategyReview,
     M5TeacherPilotResult,
     M5TeacherSmokeResult,
 )
@@ -337,3 +338,34 @@ def test_m5_r3_p0_r1_report_records_real_rejection_and_source_boundary() -> None
     assert "不实现 240 条扩展" in report
     assert "停止继续尝试同类 Prompt-only 变体" in report
     assert "Teacher 来源策略审查" in report
+
+
+def test_m5_r3_teacher_source_review_authorizes_only_p1_contract() -> None:
+    path = Path("reports/m5/raw/m5_r3_teacher_source_strategy_review.json")
+    review = M5R3TeacherSourceStrategyReview.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert review.status == "two_stage_contract_authorized"
+    assert review.evidence_kind == "deterministic_review_of_real_public_results"
+    assert review.quality_metric is False
+    assert review.selected_strategy == "two_stage_solve_compress"
+    assert review.controlled_baseline == "deterministic_rule_trace"
+    assert review.p1_contract_implementation_authorized is True
+    assert review.p1_gpu_pilot_authorized is False
+    assert review.formal_source_expansion_authorized is False
+    assert review.r3_mixture_authorized is False
+    assert review.r3_training_authorized is False
+    public = path.read_text(encoding="utf-8")
+    assert "raw_output" not in public
+    assert "reasoning_content" not in public
+    assert "/home/" not in public
+    assert "/data/" not in public
+
+
+def test_m5_r3_teacher_source_report_keeps_control_and_teacher_separate() -> None:
+    report = Path("reports/m5/m5_r3_teacher_source_strategy.md").read_text(encoding="utf-8")
+
+    assert "`two_stage_contract_authorized`" in report
+    assert "`two_stage_solve_compress`" in report
+    assert "`deterministic_rule_trace`" in report
+    assert "`training_source_authorized=false`" in report
+    assert "`p1_gpu_pilot_authorized` 保持 `false`" in report

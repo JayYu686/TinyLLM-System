@@ -1,0 +1,74 @@
+schema_version: "1.0"
+review_version: m5-r3-teacher-source-strategy-v1
+parent_r2_decision_sha256: 04165538efce811240b4d4501b13f74151758af7373704c12d6df882e3044ed6
+parent_p0_result_sha256: 5eff250ef4cde98d044c992a0aaf7e2eb75342faa9c377d265a25945a3d4388b
+parent_p0_r1_result_sha256: c59ab59fd048620e2b8de6a985a5a1deb877bb786d9b28b813531437b582c0b7
+selected_strategy: two_stage_solve_compress
+controlled_baseline: deterministic_rule_trace
+pilot:
+  pilot_version: m5-r3-p1-two-stage-v1
+  task_seed: 20260803
+  target_families:
+    - config
+    - log_diagnosis
+  tasks_per_family: 20
+  language_counts_per_family:
+    en: 14
+    zh: 6
+  evidence_variants_per_label: 6
+  solver:
+    repository: Qwen/Qwen3-8B
+    revision: b968826d9c46dd6066d109eabc6255188de91218
+    attention_architecture: gqa
+    trust_remote_code: false
+    local_files_only: true
+    dtype: bfloat16
+    mode: thinking
+    do_sample: true
+    temperature: 0.6
+    top_p: 0.95
+    top_k: 20
+    repetition_penalty: 1.0
+    candidate_count: 1
+    max_new_tokens: 896
+    base_seed: 20260804
+  compressor:
+    repository: Qwen/Qwen3-8B
+    revision: b968826d9c46dd6066d109eabc6255188de91218
+    attention_architecture: gqa
+    trust_remote_code: false
+    local_files_only: true
+    dtype: bfloat16
+    mode: nonthinking
+    do_sample: false
+    candidate_count: 1
+    max_new_tokens: 256
+    base_seed: 20260805
+    output_protocol: m5-r3-compressed-rationale-json-v1
+  trace_policy:
+    max_reasoning_tokens: 192
+    max_repeated_8gram_basis_points: 500
+    max_identical_line_hash_repetitions: 1
+    require_unique_normalized_trace: true
+    require_exact_evidence_anchor: true
+    reject_other_labels: true
+    max_training_sequence_tokens: 1024
+  gate:
+    accepted_per_family:
+      config: 14
+      log_diagnosis: 14
+    accepted_languages_per_family:
+      config:
+        en: 10
+        zh: 4
+      log_diagnosis:
+        en: 10
+        zh: 4
+  controlled_baseline_policy:
+    source_kind: deterministic_rule_trace
+    required_structural_passes: 40
+    training_source_authorized: false
+formal_source_expansion_authorized: false
+r3_mixture_authorized: false
+r3_training_authorized: false
+consume_m6_frozen_results: false

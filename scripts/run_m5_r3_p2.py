@@ -13,6 +13,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
+# Direct execution places ``scripts/`` rather than the repository root on
+# ``sys.path``. Support both the documented script command and module imports.
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from scripts.run_m5_r3_p1 import (
     _atomic_json,
     _generation_record,

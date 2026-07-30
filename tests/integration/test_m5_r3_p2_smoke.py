@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -68,3 +69,15 @@ def test_m5_r3_p2_gpu_cli_requires_private_parent_and_outputs() -> None:
     assert args.config == Path("configs/data/m5_r3_p2.yaml")
     assert args.parent_p1_result == Path("reports/m5/raw/m5_r3_p1.json")
     assert args.gpu_index == 7
+
+
+def test_m5_r3_p2_gpu_runner_supports_direct_script_help() -> None:
+    completed = subprocess.run(
+        [sys.executable, "scripts/run_m5_r3_p2.py", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "parent-bound M5.2-R3 P2" in completed.stdout

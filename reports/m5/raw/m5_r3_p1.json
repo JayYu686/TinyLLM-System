@@ -1,0 +1,137 @@
+{
+  "accepted_samples": 11,
+  "compressor": {
+    "attention_architecture": "gqa",
+    "base_seed": 20260805,
+    "candidate_count": 1,
+    "do_sample": false,
+    "dtype": "bfloat16",
+    "local_files_only": true,
+    "max_new_tokens": 256,
+    "mode": "nonthinking",
+    "output_protocol": "m5-r3-compressed-rationale-json-v1",
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "trust_remote_code": false
+  },
+  "compressor_attempts": 34,
+  "config_sha256": "6a59d3a83d9420d7f44bd3432c98b1d296d946d1c99abedaa5048837244fa2d6",
+  "consumes_m6_frozen_results": false,
+  "contamination": {
+    "algorithm": "m5-r3-p1-exact-normalized-template-v1",
+    "dev_exact_prompt_matches": 0,
+    "dev_task_count": 200,
+    "dev_template_family_overlaps": 0,
+    "historical_exact_prompt_matches": 0,
+    "historical_normalized_prompt_matches": 0,
+    "historical_pilot_task_count": 100,
+    "historical_template_family_overlaps": 0,
+    "p0_exact_prompt_matches": 0,
+    "p0_normalized_prompt_matches": 0,
+    "p0_r1_exact_prompt_matches": 0,
+    "p0_r1_normalized_prompt_matches": 0,
+    "p0_r1_template_family_overlaps": 0,
+    "p0_template_family_overlaps": 0,
+    "p1_task_count": 40,
+    "parent_p0_r1_task_count": 40,
+    "parent_p0_task_count": 40,
+    "schema_version": "1.0",
+    "status": "pass",
+    "task_set_sha256": "7aed1d35698b39b60027454e0e29976a6415d867da51f93e423ca50959d7df3d"
+  },
+  "control": {
+    "input_tasks": 40,
+    "reasoning_tokens_max": 32,
+    "source_kind": "deterministic_rule_trace",
+    "status": "pass",
+    "structural_passes": 40,
+    "training_source_authorized": false,
+    "unique_trace_count": 40
+  },
+  "duration_seconds": 736.248954536859,
+  "family_results": [
+    {
+      "accepted_items": 5,
+      "accepted_language_counts": {
+        "en": 2,
+        "zh": 3
+      },
+      "gate_passed": false,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 79,
+      "reasoning_tokens_min": 36,
+      "reasoning_tokens_p50": 41.0,
+      "reasoning_tokens_p90": 79,
+      "task_family": "config"
+    },
+    {
+      "accepted_items": 6,
+      "accepted_language_counts": {
+        "en": 5,
+        "zh": 1
+      },
+      "gate_passed": false,
+      "input_language_counts": {
+        "en": 14,
+        "zh": 6
+      },
+      "input_tasks": 20,
+      "reasoning_tokens_max": 93,
+      "reasoning_tokens_min": 41,
+      "reasoning_tokens_p50": 65.5,
+      "reasoning_tokens_p90": 93,
+      "task_family": "log_diagnosis"
+    }
+  ],
+  "formal_source_expansion_authorized": false,
+  "generated_at": "2026-07-30T09:28:22.667113Z",
+  "git_commit": "7cfc10423b4b66ceef7468fd52f9ee6c6d26af36",
+  "git_dirty": false,
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "input_tasks": 40,
+  "peak_allocated_bytes": 16643962880,
+  "peak_reserved_bytes": 16871587840,
+  "physical_gpu_index": 7,
+  "pilot_version": "m5-r3-p1-two-stage-v1",
+  "policy_tokenizers_version": "0.21.4",
+  "r3_mixture_authorized": false,
+  "r3_training_authorized": false,
+  "raw_artifact_sha256": "13fd376f8aa8f217224f804d75b68d7c35108b0efcc9348a0fc0f6cc41c943e0",
+  "rejected_tasks": 29,
+  "rejection_counts": {
+    "compressor_invalid_json": 3,
+    "missing_evidence_anchor": 10,
+    "other_label_mentioned": 10,
+    "solver_length_limit": 6
+  },
+  "samples_sha256": "b5d3cb4982c51bed6cfd39b55a3f4fc3fb852b6f273bf2a9f4e9539724f0fa27",
+  "schema_version": "1.0",
+  "solver": {
+    "attention_architecture": "gqa",
+    "base_seed": 20260804,
+    "candidate_count": 1,
+    "do_sample": true,
+    "dtype": "bfloat16",
+    "local_files_only": true,
+    "max_new_tokens": 896,
+    "mode": "thinking",
+    "repetition_penalty": 1.0,
+    "repository": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "temperature": 0.6,
+    "top_k": 20,
+    "top_p": 0.95,
+    "trust_remote_code": false
+  },
+  "solver_attempts": 40,
+  "status": "fail",
+  "task_set_sha256": "ac2d020c5cf2653f67e061c3b536af2ceccc12602d668f42eead62e8812e836f",
+  "teacher_tokenizers_version": "0.22.2",
+  "tokenizer_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+  "torch_version": "2.7.1+cu118",
+  "transformers_version": "4.57.6"
+}

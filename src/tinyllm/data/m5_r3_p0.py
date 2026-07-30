@@ -155,6 +155,15 @@ _LOG_EVIDENCE: dict[str, tuple[str, ...]] = {
 }
 
 
+def m5_r3_target_evidence_library() -> dict[M5R3TargetFamily, dict[str, tuple[str, ...]]]:
+    """Return the immutable-value Config/Log evidence library shared by R3 pilots."""
+
+    return {
+        "config": dict(_CONFIG_EVIDENCE),
+        "log_diagnosis": dict(_LOG_EVIDENCE),
+    }
+
+
 def load_m5_r3_p0_config(path: Path) -> M5R3P0Config:
     """Load the strict P0 YAML config with no silent coercion beyond YAML sequences."""
 
@@ -257,10 +266,7 @@ def generate_m5_r3_p0_tasks(config: M5R3P0Config) -> tuple[ReasoningTask, ...]:
 
     rng = random.Random(config.task_seed)
     tasks: list[ReasoningTask] = []
-    evidence_by_family = {
-        "config": _CONFIG_EVIDENCE,
-        "log_diagnosis": _LOG_EVIDENCE,
-    }
+    evidence_by_family = m5_r3_target_evidence_library()
     prefixes = (
         {"config": "CFG-R3P0", "log_diagnosis": "LOG-R3P0"}
         if config.pilot_version == "m5-r3-p0-v1"

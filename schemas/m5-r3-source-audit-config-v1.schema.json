@@ -1,0 +1,185 @@
+{
+  "$defs": {
+    "M5R3SourceRequirement": {
+      "additionalProperties": false,
+      "description": "Minimum distinct source examples required before building the R3 mixture.",
+      "properties": {
+        "max_training_passes_per_source": {
+          "const": 4,
+          "title": "Max Training Passes Per Source",
+          "type": "integer"
+        },
+        "selected_languages_per_family": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "en",
+                "zh"
+              ]
+            },
+            "type": "object"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Selected Languages Per Family",
+          "type": "object"
+        },
+        "selected_per_family": {
+          "additionalProperties": {
+            "const": 80,
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Selected Per Family",
+          "type": "object"
+        }
+      },
+      "required": [
+        "selected_per_family",
+        "selected_languages_per_family",
+        "max_training_passes_per_source"
+      ],
+      "title": "M5R3SourceRequirement",
+      "type": "object"
+    },
+    "M5R3TracePolicy": {
+      "additionalProperties": false,
+      "description": "Content and diversity constraints for one accepted targeted trace.",
+      "properties": {
+        "max_identical_line_hash_repetitions": {
+          "const": 1,
+          "title": "Max Identical Line Hash Repetitions",
+          "type": "integer"
+        },
+        "max_reasoning_tokens": {
+          "const": 192,
+          "title": "Max Reasoning Tokens",
+          "type": "integer"
+        },
+        "max_repeated_8gram_basis_points": {
+          "const": 500,
+          "title": "Max Repeated 8Gram Basis Points",
+          "type": "integer"
+        },
+        "require_unique_normalized_trace": {
+          "const": true,
+          "title": "Require Unique Normalized Trace",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "max_reasoning_tokens",
+        "max_repeated_8gram_basis_points",
+        "max_identical_line_hash_repetitions",
+        "require_unique_normalized_trace"
+      ],
+      "title": "M5R3TracePolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Frozen source identity and selection policy for the R3 pre-training audit.",
+  "properties": {
+    "audit_version": {
+      "const": "m5-r3-source-audit-v1",
+      "title": "Audit Version",
+      "type": "string"
+    },
+    "consume_m6_frozen_results": {
+      "const": false,
+      "title": "Consume M6 Frozen Results",
+      "type": "boolean"
+    },
+    "r2_decision_sha256": {
+      "const": "04165538efce811240b4d4501b13f74151758af7373704c12d6df882e3044ed6",
+      "title": "R2 Decision Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_pilot_content_sha256": {
+      "const": "b4db5ac8c9252b701c573de56a1f91629e3b1716e23223e5b2b979c5cc285684",
+      "title": "Source Pilot Content Sha256",
+      "type": "string"
+    },
+    "source_pilot_dataset_version": {
+      "const": "m5-reasoning-pilot-v1-b4db5ac8",
+      "title": "Source Pilot Dataset Version",
+      "type": "string"
+    },
+    "source_raw_artifact_sha256": {
+      "const": "5e4e75df8a0843376d95a9e47e6d91c0d0456e5066d944e315e5b96173530411",
+      "title": "Source Raw Artifact Sha256",
+      "type": "string"
+    },
+    "source_reasoning_config_sha256": {
+      "const": "d6aee88bf4a3922981465026f202dcffcc0da0294126fac27602eb2442df1a4b",
+      "title": "Source Reasoning Config Sha256",
+      "type": "string"
+    },
+    "source_requirement": {
+      "$ref": "#/$defs/M5R3SourceRequirement"
+    },
+    "target_families": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "const": "config",
+          "type": "string"
+        },
+        {
+          "const": "log_diagnosis",
+          "type": "string"
+        }
+      ],
+      "title": "Target Families",
+      "type": "array"
+    },
+    "tokenization_config_sha256": {
+      "const": "f2c3e3fc05534344c6705befebf5761face41178fa6f3c2216f4c0cfcc90aacc",
+      "title": "Tokenization Config Sha256",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    },
+    "trace_policy": {
+      "$ref": "#/$defs/M5R3TracePolicy"
+    }
+  },
+  "required": [
+    "schema_version",
+    "audit_version",
+    "source_pilot_dataset_version",
+    "source_pilot_content_sha256",
+    "source_raw_artifact_sha256",
+    "source_reasoning_config_sha256",
+    "tokenization_config_sha256",
+    "tokenizer_revision",
+    "r2_decision_sha256",
+    "target_families",
+    "trace_policy",
+    "source_requirement",
+    "consume_m6_frozen_results"
+  ],
+  "title": "M5R3SourceAuditConfig",
+  "type": "object"
+}

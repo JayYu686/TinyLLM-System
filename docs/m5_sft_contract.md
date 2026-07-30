@@ -183,6 +183,18 @@ D2 已在两个 Seed 上完成真实 RTX 3090 重放。896 输出和 1536 前缀
 1280 或 1536，后续修正必须面向 Config/Log 的高重复和过长推理，不能继续把增加解码预算
 作为主要方案。
 
+### 4.5 M5.2-R3 Config/Log 定向修复
+
+R3 保持 R1 的 1M Token、30% Thinking、训练参数、双 Seed、冻结 Dev 和 99%格式门禁，只将
+150K Repair Thinking 从五类通用短样本替换为新的 Config/Log 简洁 Trace。现有 Pilot 的真实
+CPU 审计显示，19 条 Config 和 20 条 Log Trace 中分别只有 2 条和 4 条满足 192 Token、
+低重复和唯一性规则，远低于每类 80 条的来源门禁，因此禁止直接复用。
+
+下一批先实现 40 任务 R3-P0 Teacher Pilot；通过后才扩展到 240 个任务并选择 160 条
+Config/Log Trace。正式评测上限继续保持 896，M5.3 在 R3 双 Seed Gate 通过前继续阻塞。
+完整协议见[R3 定向修复设计](m5_r3_targeted_repair_design.md)，真实审计见
+[R3 中文报告](../reports/m5/m5_r3_targeted_repair.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

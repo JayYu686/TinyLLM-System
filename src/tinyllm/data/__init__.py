@@ -42,6 +42,18 @@ from tinyllm.data.m5_mixture_schema import (
     M5MixtureArtifactFile,
     M5MixtureManifest,
 )
+from tinyllm.data.m5_r3_audit import (
+    M5R3AuditError,
+    audit_m5_r3_sources,
+    load_m5_r3_source_audit_config,
+)
+from tinyllm.data.m5_r3_schema import (
+    M5R3FamilySourceAudit,
+    M5R3SourceAudit,
+    M5R3SourceAuditConfig,
+    M5R3SourceRequirement,
+    M5R3TracePolicy,
+)
 from tinyllm.data.packing import (
     DatasetBuild,
     PackingError,
@@ -225,6 +237,12 @@ __all__ = [
     "M5MixtureError",
     "M5MixtureManifest",
     "M5MixtureSequence",
+    "M5R3AuditError",
+    "M5R3FamilySourceAudit",
+    "M5R3SourceAudit",
+    "M5R3SourceAuditConfig",
+    "M5R3SourceRequirement",
+    "M5R3TracePolicy",
     "M5ReasoningDataConfig",
     "M5ReasoningContaminationReport",
     "M5ReasoningDatasetManifest",
@@ -279,6 +297,7 @@ __all__ = [
     "build_m2_dataset",
     "build_m5_ablation_mixture",
     "build_m5_format_repair_mixture",
+    "audit_m5_r3_sources",
     "build_reasoning_dataset",
     "build_reasoning_task_manifest",
     "build_synthetic_teacher_generations",
@@ -290,6 +309,7 @@ __all__ = [
     "iter_jsonl_records",
     "load_m2_packing_config",
     "load_m2_processing_config",
+    "load_m5_r3_source_audit_config",
     "load_m2_tokenization_config",
     "load_m5_reasoning_data_config",
     "load_verified_reasoning_pilot",

@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import importlib.metadata
 import json
 import math
 import os
+import platform
 import random
 import shutil
+import subprocess
+import sys
 import time
 import uuid
 from dataclasses import asdict, dataclass
@@ -31,6 +35,10 @@ from tinyllm.training.m5_config import M5SFTConfig, load_m5_sft_config
 from tinyllm.training.m5_formal_schema import (
     M5FormalCheckpointFile,
     M5FormalCheckpointManifest,
+    M5FormalEnvironment,
+    M5FormalGPU,
+    M5FormalHardware,
+    M5FormalPackage,
     M5FormalRankMemory,
     M5FormalRunResult,
 )
@@ -66,14 +74,35 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _json_bytes(value: object) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+
+
+def _json_sha256(value: object) -> str:
+    return hashlib.sha256(_json_bytes(value)).hexdigest()
+
+
+def _write_fsynced(path: Path, payload: bytes) -> None:
+    with path.open("wb") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _fsync_directory(path: Path) -> None:
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _atomic_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{uuid.uuid4().hex}")
-    temporary.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    _write_fsynced(temporary, _json_bytes(value))
     os.replace(temporary, path)
+    _fsync_directory(path.parent)
 
 
 def _append_jsonl(path: Path, value: object) -> None:
@@ -82,6 +111,98 @@ def _append_jsonl(path: Path, value: object) -> None:
         handle.write(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n")
         handle.flush()
         os.fsync(handle.fileno())
+
+
+def _collect_environment() -> M5FormalEnvironment:
+    packages: dict[str, str] = {}
+    for distribution in importlib.metadata.distributions():
+        name = str(distribution.metadata["Name"] or "").strip().lower().replace("_", "-")
+        if name:
+            packages[name] = distribution.version
+    try:
+        transformers_version = importlib.metadata.version("transformers")
+    except importlib.metadata.PackageNotFoundError as exc:
+        raise M5FormalTrainingError("formal M5 Transformers dependency is missing") from exc
+    return M5FormalEnvironment(
+        python_version=platform.python_version(),
+        python_implementation=platform.python_implementation(),
+        python_executable=sys.executable,
+        torch_version=cast(Literal["2.7.1+cu118"], torch.__version__),
+        cuda_runtime=cast(Literal["11.8"], torch.version.cuda),
+        transformers_version=cast(Literal["4.57.6"], transformers_version),
+        packages=tuple(
+            M5FormalPackage(name=name, version=version)
+            for name, version in sorted(packages.items())
+        ),
+    )
+
+
+def _collect_hardware(
+    physical_gpu_indices: tuple[int, int, int, int],
+) -> M5FormalHardware:
+    query = "index,uuid,name,memory.total,pci.bus_id,driver_version"
+    try:
+        completed = subprocess.run(
+            [
+                "nvidia-smi",
+                f"--query-gpu={query}",
+                "--format=csv,noheader,nounits",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        topology = subprocess.run(
+            ["nvidia-smi", "topo", "-m"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise M5FormalTrainingError("formal M5 stable hardware inventory failed") from exc
+    inventory: dict[int, tuple[str, str, int, str, str]] = {}
+    try:
+        for line in completed.stdout.splitlines():
+            index, uuid_value, name, memory, pci_bus_id, driver = (
+                item.strip() for item in line.split(",", maxsplit=5)
+            )
+            inventory[int(index)] = (
+                uuid_value,
+                name,
+                int(memory),
+                pci_bus_id,
+                driver,
+            )
+        selected = tuple(
+            M5FormalGPU(
+                local_rank=local_rank,
+                physical_gpu_index=physical_index,
+                uuid=inventory[physical_index][0],
+                name=cast(
+                    Literal["NVIDIA GeForce RTX 3090"],
+                    inventory[physical_index][1],
+                ),
+                memory_total_mib=inventory[physical_index][2],
+                pci_bus_id=inventory[physical_index][3],
+            )
+            for local_rank, physical_index in enumerate(physical_gpu_indices)
+        )
+        driver_versions = {inventory[index][4] for index in physical_gpu_indices}
+    except (KeyError, TypeError, ValueError) as exc:
+        raise M5FormalTrainingError("formal M5 GPU inventory cannot be parsed") from exc
+    if len(driver_versions) != 1 or len(selected) != 4:
+        raise M5FormalTrainingError("formal M5 selected GPUs have inconsistent driver identity")
+    return M5FormalHardware(
+        hostname=platform.node(),
+        platform=platform.platform(),
+        machine=platform.machine(),
+        cpu_count=os.cpu_count() or 1,
+        cuda_driver=next(iter(driver_versions)),
+        selected_gpus=selected,
+        gpu_topology=topology,
+    )
 
 
 def _capture_rng(device: torch.device) -> dict[str, object]:
@@ -124,6 +245,9 @@ class M5FormalCheckpointStore:
         config: M5SFTConfig,
         config_sha256: str,
         dataset_manifest_sha256: str,
+        source_sequence_count: int,
+        environment_sha256: str,
+        hardware_sha256: str,
         run_id: str,
         git_commit: str,
         pin_reason: Literal["interruption", "evaluation", "final"] | None,
@@ -131,6 +255,7 @@ class M5FormalCheckpointStore:
         """Publish one complete optimizer-boundary state from Rank zero."""
 
         checkpoint_id = f"checkpoint-tokens-{progress.supervised_tokens:010d}"
+        dataset_epoch = progress.local_sequence_cursor * 4 / source_sequence_count
         self.root.mkdir(parents=True, exist_ok=True)
         destination = self.root / checkpoint_id
         if destination.exists():
@@ -150,12 +275,18 @@ class M5FormalCheckpointStore:
                         "warmup_tokens": config.training.warmup_tokens,
                         "total_tokens": config.training.max_train_tokens,
                     },
+                    "grad_scaler": None,
                     "progress": asdict(progress),
                     "rank_rng": rank_rng,
                     "config": config.to_dict(),
                     "config_sha256": config_sha256,
                     "dataset_version": config.data.dataset_version,
                     "dataset_manifest_sha256": dataset_manifest_sha256,
+                    "source_sequence_count": source_sequence_count,
+                    "dataset_epoch": dataset_epoch,
+                    "tokenizer_revision": config.model.revision,
+                    "environment_sha256": environment_sha256,
+                    "hardware_sha256": hardware_sha256,
                     "run_id": run_id,
                     "git_commit": git_commit,
                     "world_size": 4,
@@ -175,6 +306,7 @@ class M5FormalCheckpointStore:
                 global_step=progress.global_step,
                 local_sequence_cursor=progress.local_sequence_cursor,
                 supervised_tokens=progress.supervised_tokens,
+                dataset_epoch=dataset_epoch,
                 config_sha256=config_sha256,
                 dataset_version=cast(
                     Literal["m5-dual-sft-v1-b5b9e839"],
@@ -189,28 +321,33 @@ class M5FormalCheckpointStore:
                     config.model.revision,
                 ),
                 git_commit=git_commit,
+                environment_sha256=environment_sha256,
+                hardware_sha256=hardware_sha256,
                 file=file,
                 pinned=pin_reason is not None,
                 pin_reason=pin_reason,
             )
-            manifest_bytes = (
-                json.dumps(manifest.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-            ).encode()
-            (temporary / _MANIFEST_FILE).write_bytes(manifest_bytes)
-            (temporary / _COMMIT_FILE).write_text(
-                json.dumps(
-                    {"manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest()},
-                    sort_keys=True,
-                )
-                + "\n",
-                encoding="utf-8",
+            manifest_bytes = _json_bytes(manifest.to_dict())
+            _write_fsynced(temporary / _MANIFEST_FILE, manifest_bytes)
+            _write_fsynced(
+                temporary / _COMMIT_FILE,
+                (
+                    json.dumps(
+                        {"manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest()},
+                        sort_keys=True,
+                    )
+                    + "\n"
+                ).encode(),
             )
+            _fsync_directory(temporary)
             os.rename(temporary, destination)
+            _fsync_directory(self.root)
             self.validate(checkpoint_id)
-            latest = self.root / f".{_LATEST_FILE}.tmp-{uuid.uuid4().hex}"
-            latest.write_text(checkpoint_id + "\n", encoding="utf-8")
-            os.replace(latest, self.root / _LATEST_FILE)
             self._retain()
+            latest = self.root / f".{_LATEST_FILE}.tmp-{uuid.uuid4().hex}"
+            _write_fsynced(latest, (checkpoint_id + "\n").encode())
+            os.replace(latest, self.root / _LATEST_FILE)
+            _fsync_directory(self.root)
             return manifest
         except Exception:
             shutil.rmtree(temporary, ignore_errors=True)
@@ -317,12 +454,20 @@ def _validate_model_identity(config: M5SFTConfig, model_dir: Path) -> None:
         raise M5FormalTrainingError("formal model path does not match the pinned Revision")
 
 
-def _export_model(model: nn.Module, root: Path) -> str:
+def _export_model(model: nn.Module, *, model_dir: Path, root: Path) -> str:
+    from transformers import AutoTokenizer  # type: ignore[import-not-found]
+
     root.mkdir(parents=True, exist_ok=False)
     save_pretrained = getattr(model, "save_pretrained", None)
     if not callable(save_pretrained):
         raise M5FormalTrainingError("formal Qwen model cannot export Safetensors")
     save_pretrained(root, safe_serialization=True)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_dir,
+        local_files_only=True,
+        trust_remote_code=False,
+    )
+    tokenizer.save_pretrained(root)
     digest = hashlib.sha256()
     for path in sorted(root.iterdir(), key=lambda item: item.name):
         if not path.is_file() or path.is_symlink():
@@ -381,7 +526,7 @@ def run_m5_formal_ddp(
 ) -> M5FormalRunResult | None:
     """Train or Exact-Resume the formal 50M-token four-GPU Full-SFT Run."""
 
-    from transformers import AutoModelForCausalLM  # type: ignore[import-not-found]
+    from transformers import AutoModelForCausalLM
 
     rank = int(os.environ.get("RANK", "-1"))
     local_rank = int(os.environ.get("LOCAL_RANK", "-1"))
@@ -423,6 +568,42 @@ def run_m5_formal_ddp(
         ):
             raise M5FormalTrainingError("formal M5 config and Dataset identity differ")
         config_sha256 = canonical_config_hash(config)
+        lineage_box: list[object] = [None]
+        if rank == 0:
+            environment = _collect_environment()
+            hardware = _collect_hardware(physical_gpu_indices)
+            environment_payload = environment.to_dict()
+            hardware_payload = hardware.to_dict()
+            if resume_run is not None:
+                try:
+                    stored_environment = M5FormalEnvironment.model_validate_json(
+                        (resume_run / "environment.json").read_bytes()
+                    )
+                    stored_hardware = M5FormalHardware.model_validate_json(
+                        (resume_run / "hardware.json").read_bytes()
+                    )
+                except Exception as exc:
+                    raise M5FormalTrainingError(
+                        "formal M5 Exact Resume environment lineage is incomplete"
+                    ) from exc
+                if (
+                    stored_environment.to_dict() != environment_payload
+                    or stored_hardware.to_dict() != hardware_payload
+                ):
+                    raise M5FormalTrainingError(
+                        "formal M5 Exact Resume software or hardware identity changed"
+                    )
+            lineage_box[0] = (
+                environment_payload,
+                hardware_payload,
+                _json_sha256(environment_payload),
+                _json_sha256(hardware_payload),
+            )
+        dist.broadcast_object_list(lineage_box, src=0)
+        environment_payload, hardware_payload, environment_sha256, hardware_sha256 = cast(
+            tuple[dict[str, object], dict[str, object], str, str],
+            lineage_box[0],
+        )
         run_id_box: list[object] = [
             (
                 generate_run_id(config.run.name, config_sha256, now=datetime.now(UTC))
@@ -445,16 +626,8 @@ def run_m5_formal_ddp(
                 shutil.copyfile(config_path, artifact_dir / "config.original.yaml")
                 _atomic_json(artifact_dir / "config.resolved.json", config.to_dict())
                 _atomic_json(artifact_dir / "dataset.json", opened.manifest.to_dict())
-                _atomic_json(
-                    artifact_dir / "environment.json",
-                    {
-                        "schema_version": "1.0",
-                        "torch": torch.__version__,
-                        "cuda_runtime": torch.version.cuda,
-                        "world_size": 4,
-                        "physical_gpu_indices": physical_gpu_indices,
-                    },
-                )
+                _atomic_json(artifact_dir / "environment.json", environment_payload)
+                _atomic_json(artifact_dir / "hardware.json", hardware_payload)
                 _atomic_json(
                     artifact_dir / "run.json",
                     {
@@ -468,6 +641,8 @@ def run_m5_formal_ddp(
                         "dataset_manifest_sha256": dataset_manifest_sha256,
                         "git_commit": git_commit,
                         "git_dirty": False,
+                        "environment_sha256": environment_sha256,
+                        "hardware_sha256": hardware_sha256,
                     },
                 )
                 (artifact_dir / "metrics.jsonl").touch()
@@ -524,8 +699,14 @@ def run_m5_formal_ddp(
                 or payload.get("config_sha256") != config_sha256
                 or payload.get("dataset_version") != config.data.dataset_version
                 or payload.get("dataset_manifest_sha256") != dataset_manifest_sha256
+                or payload.get("source_sequence_count") != opened.manifest.source_sequence_count
+                or payload.get("tokenizer_revision") != config.model.revision
                 or payload.get("git_commit") != git_commit
+                or payload.get("environment_sha256") != environment_sha256
+                or payload.get("hardware_sha256") != hardware_sha256
                 or payload.get("world_size") != 4
+                or "grad_scaler" not in payload
+                or payload["grad_scaler"] is not None
             ):
                 raise M5FormalTrainingError(
                     "formal M5 Exact Resume lineage or configuration changed"
@@ -538,10 +719,15 @@ def run_m5_formal_ddp(
                 raise M5FormalTrainingError("formal M5 Checkpoint Rank RNG set is incomplete")
             _restore_rng(rng_states[rank], device=device)
             resumed_from_tokens = progress.supervised_tokens
+            dataset_epoch = (
+                progress.local_sequence_cursor * 4 / opened.manifest.source_sequence_count
+            )
             if (
                 progress.supervised_tokens != manifest.supervised_tokens
                 or progress.global_step != manifest.global_step
                 or progress.local_sequence_cursor != manifest.local_sequence_cursor
+                or payload.get("dataset_epoch") != dataset_epoch
+                or manifest.dataset_epoch != dataset_epoch
             ):
                 raise M5FormalTrainingError("formal M5 Checkpoint payload differs from Manifest")
             if rank == 0:
@@ -575,6 +761,7 @@ def run_m5_formal_ddp(
         ) * config.training.evaluation_interval_tokens
 
         while progress.local_sequence_cursor < len(local_positions):
+            step_started = time.monotonic()
             remaining = len(local_positions) - progress.local_sequence_cursor
             group_sequence_count = min(
                 (config.training.micro_batch_size * config.training.gradient_accumulation_steps),
@@ -674,6 +861,7 @@ def run_m5_formal_ddp(
                 final_loss=final_loss,
                 evaluation_checkpoints=progress.evaluation_checkpoints,
             )
+            step_duration = time.monotonic() - step_started
             if rank == 0:
                 _append_jsonl(
                     artifact_dir / "metrics.jsonl",
@@ -683,6 +871,8 @@ def run_m5_formal_ddp(
                         "loss": weighted_loss,
                         "learning_rate": learning_rate,
                         "gradient_norm": gradient_norm,
+                        "optimizer_step_duration_seconds": step_duration,
+                        "supervised_tokens_per_second": (global_group_tokens / step_duration),
                     },
                 )
             coordinated_stop = (
@@ -728,6 +918,9 @@ def run_m5_formal_ddp(
                         config=config,
                         config_sha256=config_sha256,
                         dataset_manifest_sha256=dataset_manifest_sha256,
+                        source_sequence_count=opened.manifest.source_sequence_count,
+                        environment_sha256=environment_sha256,
+                        hardware_sha256=hardware_sha256,
                         run_id=run_id,
                         git_commit=git_commit,
                         pin_reason=pin_reason,
@@ -773,7 +966,11 @@ def run_m5_formal_ddp(
             raise M5FormalTrainingError("formal M5 stopped without a coordinated boundary")
         export_sha256: str | None = None
         if rank == 0 and status == "succeeded":
-            export_sha256 = _export_model(model, artifact_dir / "exports" / "model")
+            export_sha256 = _export_model(
+                model,
+                model_dir=model_dir,
+                root=artifact_dir / "exports" / "model",
+            )
         export_box: list[object] = [export_sha256]
         dist.broadcast_object_list(export_box, src=0)
         export_sha256 = cast(str | None, export_box[0])
@@ -796,6 +993,8 @@ def run_m5_formal_ddp(
                 config_sha256=config_sha256,
                 git_commit=git_commit,
                 git_dirty=False,
+                environment_sha256=environment_sha256,
+                hardware_sha256=hardware_sha256,
                 model_revision=cast(
                     Literal["c1899de289a04d12100db370d81485cdf75e47ca"],
                     config.model.revision,
@@ -815,6 +1014,9 @@ def run_m5_formal_ddp(
                 global_step=progress.global_step,
                 local_sequence_cursor=progress.local_sequence_cursor,
                 supervised_tokens=progress.supervised_tokens,
+                completed_dataset_epochs=(
+                    progress.local_sequence_cursor * 4 / opened.manifest.source_sequence_count
+                ),
                 initial_loss=initial_loss,
                 final_loss=final_loss,
                 duration_seconds=time.monotonic() - started,
@@ -846,6 +1048,8 @@ def run_m5_formal_ddp(
                     "dataset_manifest_sha256": dataset_manifest_sha256,
                     "git_commit": git_commit,
                     "git_dirty": False,
+                    "environment_sha256": environment_sha256,
+                    "hardware_sha256": hardware_sha256,
                     "supervised_tokens": progress.supervised_tokens,
                     "global_step": progress.global_step,
                     "latest_checkpoint": latest_checkpoint,

@@ -10,6 +10,71 @@ from tinyllm.schemas.base import StrictSchema
 from tinyllm.schemas.run import SHA256_PATTERN
 
 
+class M5FormalPackage(StrictSchema):
+    """One installed Python distribution in the immutable Run environment."""
+
+    name: str = Field(min_length=1, max_length=200)
+    version: str = Field(min_length=1, max_length=200)
+
+
+class M5FormalEnvironment(StrictSchema):
+    """Stable software identity used by a formal Full-SFT Run."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    python_version: str = Field(min_length=1, max_length=200)
+    python_implementation: str = Field(min_length=1, max_length=100)
+    python_executable: str = Field(min_length=1)
+    torch_version: Literal["2.7.1+cu118"]
+    cuda_runtime: Literal["11.8"]
+    transformers_version: Literal["4.57.6"]
+    packages: tuple[M5FormalPackage, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_packages(self) -> M5FormalEnvironment:
+        """Require a normalized, unique, ordered package snapshot."""
+
+        names = tuple(item.name for item in self.packages)
+        if names != tuple(sorted(names)) or len(names) != len(set(names)):
+            raise ValueError("formal M5 packages must be unique and ordered")
+        return self
+
+
+class M5FormalGPU(StrictSchema):
+    """Stable identity for one selected physical RTX 3090."""
+
+    local_rank: int = Field(ge=0, le=3)
+    physical_gpu_index: int = Field(ge=0)
+    uuid: str = Field(pattern=r"^GPU-[0-9a-f-]+$")
+    name: Literal["NVIDIA GeForce RTX 3090"]
+    memory_total_mib: int = Field(ge=24_000, le=25_000)
+    pci_bus_id: str = Field(pattern=r"^[0-9A-Fa-f]{8}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-7]$")
+
+
+class M5FormalHardware(StrictSchema):
+    """Stable host, driver, selected-GPU, and topology identity."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    hostname: str = Field(min_length=1, max_length=255)
+    platform: str = Field(min_length=1)
+    machine: str = Field(min_length=1, max_length=100)
+    cpu_count: int = Field(gt=0)
+    cuda_driver: str = Field(pattern=r"^[0-9]+\.[0-9]+(\.[0-9]+)?$")
+    selected_gpus: tuple[M5FormalGPU, M5FormalGPU, M5FormalGPU, M5FormalGPU]
+    gpu_topology: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_selected_gpus(self) -> M5FormalHardware:
+        """Require ordered Ranks and four distinct physical devices."""
+
+        if tuple(item.local_rank for item in self.selected_gpus) != (0, 1, 2, 3):
+            raise ValueError("formal M5 selected GPUs must be ordered by local Rank")
+        if len({item.physical_gpu_index for item in self.selected_gpus}) != 4:
+            raise ValueError("formal M5 selected GPUs must be physically distinct")
+        if len({item.uuid for item in self.selected_gpus}) != 4:
+            raise ValueError("formal M5 selected GPU UUIDs must be distinct")
+        return self
+
+
 class M5FormalCheckpointFile(StrictSchema):
     """One integrity-checked complete DDP training state."""
 
@@ -30,6 +95,7 @@ class M5FormalCheckpointManifest(StrictSchema):
     global_step: int = Field(ge=0)
     local_sequence_cursor: int = Field(ge=0)
     supervised_tokens: int = Field(ge=0, le=50_000_000)
+    dataset_epoch: float = Field(ge=0.0, le=50.0)
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     dataset_version: Literal["m5-dual-sft-v1-b5b9e839"]
     dataset_manifest_sha256: Literal[
@@ -37,6 +103,8 @@ class M5FormalCheckpointManifest(StrictSchema):
     ]
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    hardware_sha256: str = Field(pattern=SHA256_PATTERN)
     file: M5FormalCheckpointFile
     pinned: bool
     pin_reason: Literal["interruption", "evaluation", "final"] | None = None
@@ -51,6 +119,8 @@ class M5FormalCheckpointManifest(StrictSchema):
             raise ValueError("formal M5 Checkpoint pin flag and reason differ")
         if self.pin_reason == "final" and self.supervised_tokens != 50_000_000:
             raise ValueError("formal M5 final Checkpoint requires exactly 50M Tokens")
+        if self.pin_reason == "final" and self.dataset_epoch != 50.0:
+            raise ValueError("formal M5 final Checkpoint requires 50 Dataset epochs")
         return self
 
 
@@ -82,6 +152,8 @@ class M5FormalRunResult(StrictSchema):
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
+    environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    hardware_sha256: str = Field(pattern=SHA256_PATTERN)
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     attention_architecture: Literal["gqa"]
     dataset_version: Literal["m5-dual-sft-v1-b5b9e839"]
@@ -94,6 +166,7 @@ class M5FormalRunResult(StrictSchema):
     global_step: int = Field(gt=0)
     local_sequence_cursor: int = Field(gt=0)
     supervised_tokens: int = Field(gt=0, le=50_000_000)
+    completed_dataset_epochs: float = Field(gt=0.0, le=50.0)
     initial_loss: float = Field(gt=0)
     final_loss: float = Field(gt=0)
     duration_seconds: float = Field(gt=0)
@@ -121,8 +194,32 @@ class M5FormalRunResult(StrictSchema):
         if self.mode == "exact_resume" and self.resumed_from_tokens is None:
             raise ValueError("formal M5 Exact Resume requires source progress")
         if self.status == "succeeded":
-            if self.supervised_tokens != 50_000_000 or self.export_sha256 is None:
+            if (
+                self.supervised_tokens != 50_000_000
+                or self.completed_dataset_epochs != 50.0
+                or self.export_sha256 is None
+            ):
                 raise ValueError("successful formal M5 run requires 50M Tokens and export")
+            evaluation_tokens = tuple(
+                int(checkpoint.removeprefix("checkpoint-tokens-"))
+                for checkpoint in self.evaluation_checkpoints
+            )
+            if (
+                len(evaluation_tokens) != 5
+                or evaluation_tokens[-1] != 50_000_000
+                or self.latest_checkpoint != self.evaluation_checkpoints[-1]
+                or any(
+                    not boundary <= tokens < boundary + 100_000
+                    for boundary, tokens in zip(
+                        range(10_000_000, 50_000_001, 10_000_000),
+                        evaluation_tokens,
+                        strict=True,
+                    )
+                )
+            ):
+                raise ValueError(
+                    "successful formal M5 run requires five staged evaluation Checkpoints"
+                )
         elif self.supervised_tokens >= 50_000_000 or self.export_sha256 is not None:
             raise ValueError("interrupted formal M5 run cannot claim completion or export")
         return self

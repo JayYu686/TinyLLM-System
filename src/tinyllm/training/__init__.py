@@ -102,6 +102,10 @@ from tinyllm.training.m5_formal import (
 from tinyllm.training.m5_formal_schema import (
     M5FormalCheckpointFile,
     M5FormalCheckpointManifest,
+    M5FormalEnvironment,
+    M5FormalGPU,
+    M5FormalHardware,
+    M5FormalPackage,
     M5FormalRankMemory,
     M5FormalRunResult,
 )
@@ -166,6 +170,10 @@ __all__ = [
     "M5FormalCheckpointFile",
     "M5FormalCheckpointManifest",
     "M5FormalCheckpointStore",
+    "M5FormalEnvironment",
+    "M5FormalGPU",
+    "M5FormalHardware",
+    "M5FormalPackage",
     "M5FormalProgress",
     "M5FormalRankMemory",
     "M5FormalRunResult",

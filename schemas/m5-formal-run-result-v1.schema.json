@@ -51,6 +51,12 @@
       "title": "Attention Architecture",
       "type": "string"
     },
+    "completed_dataset_epochs": {
+      "exclusiveMinimum": 0.0,
+      "maximum": 50.0,
+      "title": "Completed Dataset Epochs",
+      "type": "number"
+    },
     "config_sha256": {
       "pattern": "^[a-f0-9]{64}$",
       "title": "Config Sha256",
@@ -70,6 +76,11 @@
       "exclusiveMinimum": 0,
       "title": "Duration Seconds",
       "type": "number"
+    },
+    "environment_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
     },
     "evaluation_checkpoints": {
       "items": {
@@ -110,6 +121,11 @@
       "exclusiveMinimum": 0,
       "title": "Global Step",
       "type": "integer"
+    },
+    "hardware_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
     },
     "initial_loss": {
       "exclusiveMinimum": 0,
@@ -223,6 +239,8 @@
     "config_sha256",
     "git_commit",
     "git_dirty",
+    "environment_sha256",
+    "hardware_sha256",
     "model_revision",
     "attention_architecture",
     "dataset_version",
@@ -233,6 +251,7 @@
     "global_step",
     "local_sequence_cursor",
     "supervised_tokens",
+    "completed_dataset_epochs",
     "initial_loss",
     "final_loss",
     "duration_seconds",

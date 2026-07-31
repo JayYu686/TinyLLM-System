@@ -42,6 +42,12 @@
       "title": "Config Sha256",
       "type": "string"
     },
+    "dataset_epoch": {
+      "maximum": 50.0,
+      "minimum": 0.0,
+      "title": "Dataset Epoch",
+      "type": "number"
+    },
     "dataset_manifest_sha256": {
       "const": "607b3b1a73ae03d5f183f11d8c4824b04243ed30f6352567ce7bd7a972c962f6",
       "title": "Dataset Manifest Sha256",
@@ -50,6 +56,11 @@
     "dataset_version": {
       "const": "m5-dual-sft-v1-b5b9e839",
       "title": "Dataset Version",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Environment Sha256",
       "type": "string"
     },
     "file": {
@@ -64,6 +75,11 @@
       "minimum": 0,
       "title": "Global Step",
       "type": "integer"
+    },
+    "hardware_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
     },
     "local_sequence_cursor": {
       "minimum": 0,
@@ -139,11 +155,14 @@
     "global_step",
     "local_sequence_cursor",
     "supervised_tokens",
+    "dataset_epoch",
     "config_sha256",
     "dataset_version",
     "dataset_manifest_sha256",
     "model_revision",
     "git_commit",
+    "environment_sha256",
+    "hardware_sha256",
     "file",
     "pinned"
   ],

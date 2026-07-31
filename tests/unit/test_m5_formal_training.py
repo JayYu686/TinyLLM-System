@@ -13,6 +13,8 @@ from tinyllm.training.m5_formal import (
     M5FormalTrainingError,
 )
 from tinyllm.training.m5_formal_schema import (
+    M5FormalEnvironment,
+    M5FormalHardware,
     M5FormalRankMemory,
     M5FormalRunResult,
 )
@@ -44,6 +46,8 @@ def _result_mapping() -> dict[str, object]:
         "config_sha256": "a" * 64,
         "git_commit": "b" * 40,
         "git_dirty": False,
+        "environment_sha256": "e" * 64,
+        "hardware_sha256": "f" * 64,
         "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
         "attention_architecture": "gqa",
         "dataset_version": "m5-dual-sft-v1-b5b9e839",
@@ -56,15 +60,73 @@ def _result_mapping() -> dict[str, object]:
         "global_step": 100,
         "local_sequence_cursor": 51_875,
         "supervised_tokens": 50_000_000,
+        "completed_dataset_epochs": 50.0,
         "initial_loss": 2.0,
         "final_loss": 1.0,
         "duration_seconds": 60.0,
         "rank_memory": _rank_memory(),
         "latest_checkpoint": "checkpoint-tokens-0050000000",
-        "evaluation_checkpoints": ("checkpoint-tokens-0010000000",),
+        "evaluation_checkpoints": (
+            "checkpoint-tokens-0010000000",
+            "checkpoint-tokens-0020000000",
+            "checkpoint-tokens-0030000000",
+            "checkpoint-tokens-0040000000",
+            "checkpoint-tokens-0050000000",
+        ),
         "resumed_from_tokens": 2_000_000,
         "export_sha256": "c" * 64,
     }
+
+
+def test_formal_environment_and_hardware_require_stable_ordered_identity() -> None:
+    environment = M5FormalEnvironment.model_validate(
+        {
+            "python_version": "3.11.14",
+            "python_implementation": "CPython",
+            "python_executable": "/private/venv/bin/python",
+            "torch_version": "2.7.1+cu118",
+            "cuda_runtime": "11.8",
+            "transformers_version": "4.57.6",
+            "packages": (
+                {"name": "torch", "version": "2.7.1+cu118"},
+                {"name": "transformers", "version": "4.57.6"},
+            ),
+        }
+    )
+    assert environment.packages[0].name == "torch"
+    with pytest.raises(ValidationError, match="unique and ordered"):
+        M5FormalEnvironment.model_validate(
+            environment.to_dict()
+            | {
+                "packages": (
+                    {"name": "transformers", "version": "4.57.6"},
+                    {"name": "torch", "version": "2.7.1+cu118"},
+                )
+            }
+        )
+
+    hardware = M5FormalHardware.model_validate(
+        {
+            "hostname": "private-host",
+            "platform": "Linux",
+            "machine": "x86_64",
+            "cpu_count": 64,
+            "cuda_driver": "535.183.06",
+            "selected_gpus": tuple(
+                {
+                    "local_rank": rank,
+                    "physical_gpu_index": rank,
+                    "uuid": f"GPU-00000000-0000-0000-0000-00000000000{rank}",
+                    "name": "NVIDIA GeForce RTX 3090",
+                    "memory_total_mib": 24576,
+                    "pci_bus_id": f"00000000:{rank + 1:02X}:00.0",
+                }
+                for rank in range(4)
+            ),
+            "gpu_topology": "GPU0 GPU1 CPU Affinity",
+        }
+    )
+    assert tuple(item.local_rank for item in hardware.selected_gpus) == (0, 1, 2, 3)
 
 
 def test_formal_config_freezes_four_gpu_fifty_million_route() -> None:
@@ -114,6 +176,9 @@ def test_formal_checkpoint_store_detects_payload_corruption(tmp_path: Path) -> N
         dataset_manifest_sha256=(
             "607b3b1a73ae03d5f183f11d8c4824b04243ed30f6352567ce7bd7a972c962f6"
         ),
+        source_sequence_count=4,
+        environment_sha256="a" * 64,
+        hardware_sha256="b" * 64,
         run_id="unit-formal-run",
         git_commit="e" * 40,
         pin_reason="interruption",

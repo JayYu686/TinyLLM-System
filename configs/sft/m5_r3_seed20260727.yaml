@@ -31,8 +31,8 @@ reasoning:
 training:
   max_train_tokens: 1000000
   evaluation_interval_tokens: 1000000
-  micro_batch_size: 4
-  gradient_accumulation_steps: 2
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
   learning_rate: 0.00002
   weight_decay: 0.01
   max_grad_norm: 1.0

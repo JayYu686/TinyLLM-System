@@ -160,7 +160,7 @@ sequenceDiagram
 | M2 data and evaluation | Complete | Pinned-source full build and offline rebuild; frozen 300-item suite; Exact contamination scan; Qwen3-0.6B Baseline |
 | M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
-| M5 dual-mode SFT | In progress | The real P2 source pilot accepted 33/40 and passed the 14/10/4 gate; 33 private content judgments await maintainer sign-off |
+| M5 dual-mode SFT | In progress | P2 accepted 33/40; maintainer content review passed 33/33; formal 240→160 source expansion is unlocked |
 | M6 evaluation and promotion | Planned | Base/Candidate comparison, regression analysis, and Candidate Gate |
 | M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
 | M8 planner | Enhancement | Static memory estimation and short probe |

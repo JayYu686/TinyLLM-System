@@ -1,0 +1,27 @@
+{
+  "consumes_m6_frozen_results": false,
+  "family_counts": {
+    "config": 17,
+    "log_diagnosis": 16
+  },
+  "formal_source_expansion_authorized": true,
+  "language_counts": {
+    "en": 24,
+    "zh": 9
+  },
+  "passed_items": 33,
+  "private_judgments_sha256": "30b669b2d4ec4aa86208e7dee44962283272a3aec05d17d4b1ef33f927adce7a",
+  "r3_mixture_authorized": false,
+  "r3_training_authorized": false,
+  "rejected_items": 0,
+  "review_version": "m5-r3-p2-content-review-v1",
+  "reviewed_at": "2026-07-31T00:58:13.029838Z",
+  "reviewed_items": 33,
+  "reviewer_role": "maintainer",
+  "schema_version": "1.0",
+  "source_pilot_version": "m5-r3-p2-fallback-isolated-v1",
+  "source_private_raw_sha256": "2b693da607c880fa456b6701ad8bc2449ed1927d5b07aab33dc662ef2127a7b5",
+  "source_public_result_sha256": "94b89e3a72af6edb0f8c50772f8b8d807bbc6fa8ccf70b44f610426817fb03f2",
+  "source_samples_sha256": "2d73a4d62b657b98e9da2539d7cf10fdc8a2f3af369e4db4956348b5b79c3ea8",
+  "status": "approved"
+}

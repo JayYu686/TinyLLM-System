@@ -239,6 +239,9 @@ P2 的 33 条接受样本必须完成三项逐条维护者审查：标签与证�
 33/33 覆盖、固定来源 SHA256 和显式维护者确认。任一拒绝都会继续阻断正式扩展。准备状态
 见 [内容审查报告](../reports/m5/m5_r3_content_review.md)。
 
+维护者已确认全部 33 条草案判定，公开 Review Result 为 `approved`，因此正式 240 条来源
+扩展已解锁。该结果不授权 Mixture 或训练；必须先完成 160 条分层选择及独立污染检查。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

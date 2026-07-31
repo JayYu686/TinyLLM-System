@@ -1,9 +1,10 @@
-# M5.2-R3-P2 内容审查准备报告
+# M5.2-R3-P2 内容审查报告
 
 ## 1. 当前状态
 
-P2 真实来源 Pilot 已通过自动门禁，33 条接受样本已进入私有维护者内容审查。当前状态为
-`AWAITING_MAINTAINER_REVIEW`，尚未形成维护者签核，也未授权 R3 Mixture 或训练。
+P2 真实来源 Pilot 已通过自动门禁，33 条接受样本随后完成私有维护者内容审查。维护者确认
+Codex 的 33 条逐项草案判定，最终状态为 `APPROVED`：33/33 通过，正式 240 条来源扩展已
+授权；R3 Mixture 和训练仍未授权。
 
 这一步是数据质量门禁，不是运行命令审批。Codex 草案只用于减少逐条核对成本，不能写成
 人工审查结果。
@@ -21,6 +22,8 @@ P2 真实来源 Pilot 已通过自动门禁，33 条接受样本已进入私有�
 | 英文 / 中文 | 24 / 9 |
 | 私有 Packet SHA256 | `db93d3a01c51b8ab7263e8dd3fbd58185e28b4d62335c50eacafdf5a4ebf7f47` |
 | Codex Draft SHA256 | `7860e04788934f04881b4de319cde08133db234e7aa75de9f4bbcdff462071bf` |
+| Maintainer Judgments SHA256 | `30b669b2d4ec4aa86208e7dee44962283272a3aec05d17d4b1ef33f927adce7a` |
+| 审查结果 | 33/33 通过 |
 
 原始 Prompt、Model-distilled Rationale 和逐条判断只保存在私有 Artifact Store。
 
@@ -32,7 +35,8 @@ P2 真实来源 Pilot 已通过自动门禁，33 条接受样本已进入私有�
 2. 短推理引用可定位的决定性证据，足以支撑所选标签；
 3. 没有无依据事实、其他候选标签或误导性因果陈述。
 
-Codex 初审对 33 条均建议 `[true, true, true]`。这只是草案；维护者可以逐条确认或修正。
+Codex 初审对 33 条均建议 `[true, true, true]`。维护者已明确确认这 33 条草案判定，
+Finalizer 将其转换为独立的维护者 Judgments 并记录私有文件 SHA256。
 
 ## 4. 失败闭锁
 
@@ -46,16 +50,17 @@ Review Finalizer 会拒绝：
 - 未显式提供维护者确认；
 - 覆盖完整但存在任一内容拒绝时错误授权扩展。
 
-只有 33/33 维护者判断通过时，公开 Review Result 才会标记
+本次 33/33 维护者判断通过，公开 Review Result 已标记
 `formal_source_expansion_authorized=true`。Mixture 和训练仍保持 `false`。
 
 ## 5. 下一步
 
-维护者完成私有包逐条确认后，运行 Review Finalizer，提交不含原始内容的公开汇总。随后
-才能执行 240 条正式来源生成和 160 条分层选择。
+执行 240 条正式来源生成和 160 条分层选择。该阶段必须重新记录任务、模型、Seed、生成、
+选择与污染身份；不能因为 Pilot 和人工审查通过而绕过正式来源门禁。
 
 相关入口：
 
 - [P2 实验报告](m5_r3_p2.md)
+- [公开审查结果](raw/m5_r3_p2_content_review.json)
 - [Review Finalizer](../../scripts/finalize_m5_r3_p2_content_review.py)
 - [SFT 契约](../../docs/m5_sft_contract.md)

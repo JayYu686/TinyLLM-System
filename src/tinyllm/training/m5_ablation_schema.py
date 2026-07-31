@@ -31,7 +31,9 @@ class M5CheckpointManifest(StrictSchema):
     sequence_cursor: int = Field(ge=0)
     supervised_tokens: int = Field(ge=0, le=1_000_000)
     config_sha256: str = Field(pattern=SHA256_PATTERN)
-    mixture_version: str = Field(pattern=r"^m5-(ablation|format-repair)-mixture-v1-[0-9a-f]{8}$")
+    mixture_version: str = Field(
+        pattern=r"^m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2)-[0-9a-f]{8}$"
+    )
     mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
@@ -63,7 +65,9 @@ class M5AblationRunResult(StrictSchema):
     git_dirty: Literal[False]
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     attention_architecture: Literal["gqa"]
-    mixture_version: str = Field(pattern=r"^m5-(ablation|format-repair)-mixture-v1-[0-9a-f]{8}$")
+    mixture_version: str = Field(
+        pattern=r"^m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2)-[0-9a-f]{8}$"
+    )
     mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     thinking_fraction_basis_points: Literal[0, 3000, 5000]
     seed: int = Field(ge=0, le=2**32 - 1)

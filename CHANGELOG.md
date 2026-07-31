@@ -5,6 +5,10 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- built the corrected `m5-r3-mixture-v2-b47723e1` before any R3 training or Dev
+  evaluation: exact 700K/150K/150K supervised-token strata, label-aware 160-source
+  selection, a measured 29–30 total uses per targeted source, immutable lineage, and
+  explicit training authorization for only the two fixed 1M-token Seeds;
 - completed the real two-RTX-3090 M5 R3 formal-source expansion with 218/240 accepted,
   all four family/language strata passing, a deterministic 160/160 selection, and zero
   frozen-source contamination; a post-gate exact-token audit keeps training blocked because

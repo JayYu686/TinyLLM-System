@@ -1,0 +1,48 @@
+schema_version: "1.0"
+mixture_protocol: m5-r3-mixture-v2
+formal_source:
+  result_sha256: 19c0db0923ab4b78e9a0006de84d5528fedd63dde4a94e0057b955d3d76def3f
+  raw_artifact_sha256: a71c68f51761f8f041d0961bbe419d2f045efaac15706ad598ad3a2446ac05f9
+  accepted_samples_sha256: 2cdf1d5a466dd8db7438cfcb6cba7b0d9ca8de72c096cca1f8c703dac07346d9
+pilot:
+  raw_artifact_sha256: 5e4e75df8a0843376d95a9e47e6d91c0d0456e5066d944e315e5b96173530411
+  dataset_version: m5-reasoning-pilot-v1-b4db5ac8
+  content_sha256: b4db5ac8c9252b701c573de56a1f91629e3b1716e23223e5b2b979c5cc285684
+token_budget:
+  total_supervised_tokens: 1000000
+  nonthinking_supervised_tokens: 700000
+  general_thinking_supervised_tokens: 150000
+  targeted_thinking_supervised_tokens: 150000
+selection:
+  policy_id: family-language-label-balanced-v2
+  quotas:
+    config:
+      en:
+        forbidden_truncation: 15
+        missing_checkpoint: 17
+        unsupported_precision: 6
+        world_size_mismatch: 18
+      zh:
+        forbidden_truncation: 6
+        missing_checkpoint: 5
+        unsupported_precision: 9
+        world_size_mismatch: 4
+    log_diagnosis:
+      en:
+        collective_timeout: 14
+        cuda_oom: 14
+        disk_full: 14
+        non_finite_gradient: 14
+      zh:
+        collective_timeout: 6
+        cuda_oom: 6
+        disk_full: 6
+        non_finite_gradient: 6
+  stable_sort:
+    - reasoning_tokens
+    - repeated_8gram_basis_points
+    - sample_id
+  max_source_uses: 30
+build_seed: 20260731
+consume_m6_frozen_results: false
+r3_training_authorized: false

@@ -254,6 +254,13 @@ Git Commit、任务集合完整且无重复，并重新执行 Trace 与污染门
 Thinking Token。当前只授权制定版本化 Mixture 修订，不授权 R3 训练，且不会修改原始
 分片或静默放宽复用约束。
 
+Mixture v2 随后在任何 R3 训练或 Dev 评测前完成：标签分层后的 160 条来源每轮提供
+5,037 个监督 Token，单来源总使用上限冻结为 30，实际构建范围为 29–30。最终数据版本
+`m5-r3-mixture-v2-b47723e1` 精确包含 700K Non-thinking、150K General Thinking 和
+150K Targeted Thinking Token，并通过重新打开校验。`r3_training_authorized=true` 只授权
+两个固定 Seed 的 1M Token R3 训练，不代表质量门禁通过。详见
+[Mixture v2 报告](../reports/m5/m5_r3_mixture.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

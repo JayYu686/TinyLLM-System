@@ -147,7 +147,7 @@ sequenceDiagram
 | M2 数据与评测 | 已完成 | 固定源全量构建与离线重建；300 条冻结领域集；Exact 污染扫描；Qwen3-0.6B Baseline |
 | M3 DDP | 已完成 | 初始化、Sampler、Loss Reduce、Rank 故障恢复和真实 1/2/4 卡扩展 |
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
-| M5 双模式 SFT | 进行中 | 240→160 正式来源门禁通过；R3 Mixture 正在修订 Token/复用约束，训练尚未授权 |
+| M5 双模式 SFT | 进行中 | 正式来源与 R3 Mixture v2 门禁通过；等待两个固定 Seed 的真实训练和冻结评测 |
 | M6 评测与晋级 | 计划中 | Base/Candidate 比较、回归分析和 Candidate Gate |
 | M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
 | M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |

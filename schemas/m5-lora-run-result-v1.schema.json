@@ -1,0 +1,263 @@
+{
+  "$defs": {
+    "M5LoRAMemory": {
+      "additionalProperties": false,
+      "description": "Peak CUDA memory from the LoRA process.",
+      "properties": {
+        "gpu_name": {
+          "const": "NVIDIA GeForce RTX 3090",
+          "title": "Gpu Name",
+          "type": "string"
+        },
+        "peak_allocated_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Peak Allocated Bytes",
+          "type": "integer"
+        },
+        "peak_reserved_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Peak Reserved Bytes",
+          "type": "integer"
+        },
+        "physical_gpu_index": {
+          "minimum": 0,
+          "title": "Physical Gpu Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "physical_gpu_index",
+        "gpu_name",
+        "peak_allocated_bytes",
+        "peak_reserved_bytes"
+      ],
+      "title": "M5LoRAMemory",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Path-free result for one fresh or resumed LoRA attempt.",
+  "properties": {
+    "adaptation": {
+      "const": "lora",
+      "title": "Adaptation",
+      "type": "string"
+    },
+    "adapter_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Sha256"
+    },
+    "attention_architecture": {
+      "const": "gqa",
+      "title": "Attention Architecture",
+      "type": "string"
+    },
+    "completed_dataset_epochs": {
+      "exclusiveMinimum": 0.0,
+      "maximum": 10.0,
+      "title": "Completed Dataset Epochs",
+      "type": "number"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "dataset_manifest_sha256": {
+      "const": "607b3b1a73ae03d5f183f11d8c4824b04243ed30f6352567ce7bd7a972c962f6",
+      "title": "Dataset Manifest Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "const": "m5-dual-sft-v1-b5b9e839",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "environment_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "evaluation_checkpoints": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evaluation Checkpoints",
+      "type": "array"
+    },
+    "final_loss": {
+      "exclusiveMinimum": 0,
+      "title": "Final Loss",
+      "type": "number"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "global_step": {
+      "exclusiveMinimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "hardware_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
+    },
+    "initial_loss": {
+      "exclusiveMinimum": 0,
+      "title": "Initial Loss",
+      "type": "number"
+    },
+    "latest_checkpoint": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Latest Checkpoint",
+      "type": "string"
+    },
+    "memory": {
+      "$ref": "#/$defs/M5LoRAMemory"
+    },
+    "mode": {
+      "enum": [
+        "fresh",
+        "exact_resume"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model_revision": {
+      "const": "b968826d9c46dd6066d109eabc6255188de91218",
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "peft_version": {
+      "const": "0.19.1",
+      "title": "Peft Version",
+      "type": "string"
+    },
+    "resumed_from_tokens": {
+      "anyOf": [
+        {
+          "exclusiveMaximum": 10000000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resumed From Tokens"
+    },
+    "run_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "sequence_cursor": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Cursor",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "interrupted"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "exclusiveMinimum": 0,
+      "maximum": 10000000,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_fraction_basis_points": {
+      "const": 3000,
+      "title": "Thinking Fraction Basis Points",
+      "type": "integer"
+    },
+    "total_parameters": {
+      "exclusiveMinimum": 0,
+      "title": "Total Parameters",
+      "type": "integer"
+    },
+    "trainable_parameters": {
+      "exclusiveMinimum": 0,
+      "title": "Trainable Parameters",
+      "type": "integer"
+    },
+    "world_size": {
+      "const": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "status",
+    "mode",
+    "run_id",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "environment_sha256",
+    "hardware_sha256",
+    "model_revision",
+    "attention_architecture",
+    "adaptation",
+    "peft_version",
+    "dataset_version",
+    "dataset_manifest_sha256",
+    "thinking_fraction_basis_points",
+    "seed",
+    "world_size",
+    "trainable_parameters",
+    "total_parameters",
+    "global_step",
+    "sequence_cursor",
+    "supervised_tokens",
+    "completed_dataset_epochs",
+    "initial_loss",
+    "final_loss",
+    "duration_seconds",
+    "memory",
+    "latest_checkpoint",
+    "evaluation_checkpoints"
+  ],
+  "title": "M5LoRARunResult",
+  "type": "object"
+}

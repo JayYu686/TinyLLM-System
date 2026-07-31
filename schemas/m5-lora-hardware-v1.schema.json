@@ -1,0 +1,101 @@
+{
+  "$defs": {
+    "M5LoRAGPU": {
+      "additionalProperties": false,
+      "description": "Stable identity for the selected physical RTX 3090.",
+      "properties": {
+        "memory_total_mib": {
+          "maximum": 25000,
+          "minimum": 24000,
+          "title": "Memory Total Mib",
+          "type": "integer"
+        },
+        "name": {
+          "const": "NVIDIA GeForce RTX 3090",
+          "title": "Name",
+          "type": "string"
+        },
+        "pci_bus_id": {
+          "pattern": "^[0-9A-Fa-f]{8}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\\.[0-7]$",
+          "title": "Pci Bus Id",
+          "type": "string"
+        },
+        "physical_gpu_index": {
+          "minimum": 0,
+          "title": "Physical Gpu Index",
+          "type": "integer"
+        },
+        "uuid": {
+          "pattern": "^GPU-[0-9a-f-]+$",
+          "title": "Uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "physical_gpu_index",
+        "uuid",
+        "name",
+        "memory_total_mib",
+        "pci_bus_id"
+      ],
+      "title": "M5LoRAGPU",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Stable single-GPU host and topology identity.",
+  "properties": {
+    "cpu_count": {
+      "exclusiveMinimum": 0,
+      "title": "Cpu Count",
+      "type": "integer"
+    },
+    "cuda_driver": {
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "title": "Cuda Driver",
+      "type": "string"
+    },
+    "gpu_topology": {
+      "minLength": 1,
+      "title": "Gpu Topology",
+      "type": "string"
+    },
+    "hostname": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Hostname",
+      "type": "string"
+    },
+    "machine": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Machine",
+      "type": "string"
+    },
+    "platform": {
+      "minLength": 1,
+      "title": "Platform",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_gpu": {
+      "$ref": "#/$defs/M5LoRAGPU"
+    }
+  },
+  "required": [
+    "hostname",
+    "platform",
+    "machine",
+    "cpu_count",
+    "cuda_driver",
+    "selected_gpu",
+    "gpu_topology"
+  ],
+  "title": "M5LoRAHardware",
+  "type": "object"
+}

@@ -38,6 +38,13 @@ m4 = [
   "tokenizers>=0.22.2,<0.23",
   "transformers>=4.57.6,<4.58",
 ]
+m5 = [
+  "accelerate>=1.12,<2",
+  "peft>=0.19.1,<0.20",
+  "safetensors>=0.6,<0.7",
+  "tokenizers>=0.22.2,<0.23",
+  "transformers>=4.57.6,<4.58",
+]
 dev = [
   "mypy>=1.11,<2",
   "pip-audit>=2.9,<3",
@@ -94,6 +101,7 @@ omit = [
   "*/src/tinyllm/evaluation/m5_thinking_budget.py",
   "*/src/tinyllm/data/m5_formal.py",
   "*/src/tinyllm/training/m5_formal.py",
+  "*/src/tinyllm/training/m5_lora.py",
 ]
 
 [tool.coverage.report]
@@ -111,4 +119,5 @@ omit = [
   "*/src/tinyllm/evaluation/m5_thinking_budget.py",
   "*/src/tinyllm/data/m5_formal.py",
   "*/src/tinyllm/training/m5_formal.py",
+  "*/src/tinyllm/training/m5_lora.py",
 ]

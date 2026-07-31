@@ -163,6 +163,12 @@ from tinyllm.training.m5_formal_schema import (
     M5FormalHardware,
     M5FormalRunResult,
 )
+from tinyllm.training.m5_lora_schema import (
+    M5LoRACheckpointManifest,
+    M5LoRAEnvironment,
+    M5LoRAHardware,
+    M5LoRARunResult,
+)
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -266,6 +272,10 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-formal-environment-v1.schema.json": M5FormalEnvironment,
     "m5-formal-hardware-v1.schema.json": M5FormalHardware,
     "m5-formal-run-result-v1.schema.json": M5FormalRunResult,
+    "m5-lora-checkpoint-manifest-v1.schema.json": M5LoRACheckpointManifest,
+    "m5-lora-environment-v1.schema.json": M5LoRAEnvironment,
+    "m5-lora-hardware-v1.schema.json": M5LoRAHardware,
+    "m5-lora-run-result-v1.schema.json": M5LoRARunResult,
     "m5-reasoning-evaluation-config-v1.schema.json": M5ReasoningEvaluationConfig,
     "m5-reasoning-evaluation-summary-v1.schema.json": M5ReasoningEvaluationSummary,
     "m5-reasoning-item-result-v1.schema.json": M5ReasoningItemResult,

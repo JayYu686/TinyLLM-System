@@ -200,3 +200,32 @@ class M5LoRARunResult(StrictSchema):
         elif self.supervised_tokens >= 10_000_000 or self.adapter_sha256 is not None:
             raise ValueError("interrupted M5 LoRA run cannot claim completion or Adapter")
         return self
+
+
+class M5LoRACampaignResult(StrictSchema):
+    """Path-free result for the reviewed two-segment formal LoRA campaign."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["succeeded"]
+    campaign_id: str = Field(pattern=r"^[0-9]{8}T[0-9]{6}Z-m5-lora-campaign-gpu[0-9]+$")
+    run_id: str = Field(min_length=1, max_length=180)
+    physical_gpu_index: int = Field(ge=0)
+    segment_count: Literal[2]
+    interruption_tokens: int = Field(ge=5_000_000, lt=5_100_000)
+    resumed_from_tokens: int = Field(ge=5_000_000, lt=5_100_000)
+    final_tokens: Literal[10_000_000]
+    adapter_sha256: str = Field(pattern=SHA256_PATTERN)
+    interrupted_result_sha256: str = Field(pattern=SHA256_PATTERN)
+    final_result_sha256: str = Field(pattern=SHA256_PATTERN)
+    thermal_events_sha256: str = Field(pattern=SHA256_PATTERN)
+    thermal_pause_count: int = Field(ge=0)
+    max_observed_temperature_c: int = Field(ge=0, le=100)
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+    @model_validator(mode="after")
+    def validate_campaign(self) -> M5LoRACampaignResult:
+        """Bind the resumed segment to the coordinated interruption."""
+
+        if self.resumed_from_tokens != self.interruption_tokens:
+            raise ValueError("M5 LoRA campaign Resume point differs from interruption")
+        return self

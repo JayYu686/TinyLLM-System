@@ -116,6 +116,7 @@ from tinyllm.training.m5_lora import (
     run_m5_lora,
 )
 from tinyllm.training.m5_lora_schema import (
+    M5LoRACampaignResult,
     M5LoRACheckpointFile,
     M5LoRACheckpointManifest,
     M5LoRAEnvironment,
@@ -194,6 +195,7 @@ __all__ = [
     "M5FormalRunResult",
     "M5FormalTrainingError",
     "M5LoRACheckpointFile",
+    "M5LoRACampaignResult",
     "M5LoRACheckpointManifest",
     "M5LoRACheckpointStore",
     "M5LoRAEnvironment",

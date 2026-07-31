@@ -13,6 +13,7 @@ from tinyllm.training.m5_lora import (
     M5LoRAProgress,
 )
 from tinyllm.training.m5_lora_schema import (
+    M5LoRACampaignResult,
     M5LoRAMemory,
     M5LoRARunResult,
 )
@@ -89,6 +90,30 @@ def test_lora_result_requires_parameter_efficiency_and_staged_completion() -> No
         M5LoRARunResult.model_validate(
             _result_mapping() | {"evaluation_checkpoints": ("checkpoint-tokens-0010000000",)}
         )
+
+
+def test_lora_campaign_binds_interruption_and_resume() -> None:
+    payload = {
+        "status": "succeeded",
+        "campaign_id": "20260731T000000Z-m5-lora-campaign-gpu4",
+        "run_id": "formal-run",
+        "physical_gpu_index": 4,
+        "segment_count": 2,
+        "interruption_tokens": 5_000_123,
+        "resumed_from_tokens": 5_000_123,
+        "final_tokens": 10_000_000,
+        "adapter_sha256": "a" * 64,
+        "interrupted_result_sha256": "b" * 64,
+        "final_result_sha256": "c" * 64,
+        "thermal_events_sha256": "d" * 64,
+        "thermal_pause_count": 2,
+        "max_observed_temperature_c": 84,
+        "git_commit": "e" * 40,
+    }
+
+    assert M5LoRACampaignResult.model_validate(payload).segment_count == 2
+    with pytest.raises(ValidationError, match="Resume point"):
+        M5LoRACampaignResult.model_validate(payload | {"resumed_from_tokens": 5_000_124})
 
 
 def test_lora_checkpoint_store_detects_payload_corruption(tmp_path: Path) -> None:

@@ -164,6 +164,7 @@ from tinyllm.training.m5_formal_schema import (
     M5FormalRunResult,
 )
 from tinyllm.training.m5_lora_schema import (
+    M5LoRACampaignResult,
     M5LoRACheckpointManifest,
     M5LoRAEnvironment,
     M5LoRAHardware,
@@ -273,6 +274,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-formal-hardware-v1.schema.json": M5FormalHardware,
     "m5-formal-run-result-v1.schema.json": M5FormalRunResult,
     "m5-lora-checkpoint-manifest-v1.schema.json": M5LoRACheckpointManifest,
+    "m5-lora-campaign-result-v1.schema.json": M5LoRACampaignResult,
     "m5-lora-environment-v1.schema.json": M5LoRAEnvironment,
     "m5-lora-hardware-v1.schema.json": M5LoRAHardware,
     "m5-lora-run-result-v1.schema.json": M5LoRARunResult,

@@ -74,7 +74,8 @@ def test_formal_config_freezes_four_gpu_fifty_million_route() -> None:
     assert config.parallel.world_size == 4
     assert config.training.max_train_tokens == 50_000_000
     assert config.checkpoint.save_interval_tokens == 2_000_000
-    assert config.global_batch_size == 8
+    assert config.training.micro_batch_size == 4
+    assert config.global_batch_size == 32
 
 
 def test_formal_result_requires_completion_export_and_distinct_ranks() -> None:

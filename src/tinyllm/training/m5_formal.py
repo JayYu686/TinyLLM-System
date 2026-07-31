@@ -576,18 +576,24 @@ def run_m5_formal_ddp(
 
         while progress.local_sequence_cursor < len(local_positions):
             remaining = len(local_positions) - progress.local_sequence_cursor
-            group_micro_steps = min(
-                config.training.gradient_accumulation_steps,
+            group_sequence_count = min(
+                (config.training.micro_batch_size * config.training.gradient_accumulation_steps),
                 remaining,
             )
-            positions = local_positions[
+            group_positions = local_positions[
                 progress.local_sequence_cursor : (
-                    progress.local_sequence_cursor + group_micro_steps
+                    progress.local_sequence_cursor + group_sequence_count
                 )
             ]
-            valid_counts = tuple(
-                int((dataset[position]["labels"][1:] != -100).sum()) for position in positions
+            micro_batches = tuple(
+                group_positions[offset : offset + config.training.micro_batch_size]
+                for offset in range(0, len(group_positions), config.training.micro_batch_size)
             )
+            valid_counts = tuple(
+                sum(int((dataset[position]["labels"][1:] != -100).sum()) for position in positions)
+                for positions in micro_batches
+            )
+            group_micro_steps = len(micro_batches)
             local_group_tokens = sum(valid_counts)
             group_tensor = torch.tensor(local_group_tokens, dtype=torch.int64, device=device)
             dist.all_reduce(group_tensor, op=dist.ReduceOp.SUM)
@@ -604,13 +610,16 @@ def run_m5_formal_ddp(
                 group["lr"] = learning_rate
             optimizer.zero_grad(set_to_none=True)
             local_loss_numerator = 0.0
-            for micro_index, (position, valid_tokens) in enumerate(
-                zip(positions, valid_counts, strict=True)
+            for micro_index, (positions, valid_tokens) in enumerate(
+                zip(micro_batches, valid_counts, strict=True)
             ):
-                sample = dataset[position]
+                samples = tuple(dataset[position] for position in positions)
                 batch = {
-                    key: value.unsqueeze(0).to(device, non_blocking=True)
-                    for key, value in sample.items()
+                    key: torch.stack(tuple(sample[key] for sample in samples)).to(
+                        device,
+                        non_blocking=True,
+                    )
+                    for key in samples[0]
                 }
                 sync_context = (
                     contextlib.nullcontext()
@@ -659,7 +668,7 @@ def run_m5_formal_ddp(
             final_loss = weighted_loss
             progress = M5FormalProgress(
                 global_step=progress.global_step + 1,
-                local_sequence_cursor=(progress.local_sequence_cursor + group_micro_steps),
+                local_sequence_cursor=(progress.local_sequence_cursor + group_sequence_count),
                 supervised_tokens=(progress.supervised_tokens + global_group_tokens),
                 initial_loss=initial_loss,
                 final_loss=final_loss,

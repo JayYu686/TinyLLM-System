@@ -9,7 +9,7 @@ from tinyllm.data.m5_r3_formal import (
     load_m5_r3_formal_source_config,
     m5_r3_formal_source_config_sha256,
 )
-from tinyllm.data.m5_r3_formal_schema import M5R3FormalCPUSmoke
+from tinyllm.data.m5_r3_formal_schema import M5R3FormalCPUSmoke, M5R3FormalSourceResult
 from tinyllm.data.m5_r3_p1_schema import M5R3P1TaskContext
 
 CONFIG = Path("configs/data/m5_r3_formal_source.yaml")
@@ -84,4 +84,21 @@ def test_m5_r3_formal_cpu_smoke_matches_committed_evidence() -> None:
     assert result.contamination.status == "pass"
     assert result.gpu_expansion_authorized is True
     assert result.r3_mixture_authorized is False
+    assert result.r3_training_authorized is False
+
+
+def test_m5_r3_formal_real_result_passes_frozen_gate() -> None:
+    result = M5R3FormalSourceResult.model_validate_json(
+        Path("reports/m5/raw/m5_r3_formal_source.json").read_text(encoding="utf-8")
+    )
+
+    assert result.status == "pass"
+    assert result.input_tasks == 240
+    assert result.accepted_samples == 218
+    assert result.selected_samples == 160
+    assert result.rejection_counts == {"solver_length_limit": 22}
+    assert all(item.gate_passed for item in result.stratum_results)
+    assert result.contamination.status == "pass"
+    assert result.formal_source_expansion_complete is True
+    assert result.r3_mixture_authorized is True
     assert result.r3_training_authorized is False

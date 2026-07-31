@@ -248,6 +248,12 @@ P2 的 33 条接受样本必须完成三项逐条维护者审查：标签与证�
 Git Commit、任务集合完整且无重复，并重新执行 Trace 与污染门禁。CPU 合成 Smoke 只授权
 真实生成；详见 [正式来源扩展报告](../reports/m5/m5_r3_formal_source.md)。
 
+真实双卡分片已完成：240 条中接受 218 条，四个任务族/语言分层均满足门槛，最终选择
+160 条且所有污染计数为 0，正式来源门禁通过。门禁后精确 Token 审计发现，这 160 条来源
+每轮只有 4,933 个监督 Token；在单来源最多使用四次的限制下无法构成 150K Targeted
+Thinking Token。当前只授权制定版本化 Mixture 修订，不授权 R3 训练，且不会修改原始
+分片或静默放宽复用约束。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

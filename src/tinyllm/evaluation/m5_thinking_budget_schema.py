@@ -227,3 +227,78 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
         if self.peak_reserved_bytes < self.peak_allocated_bytes:
             raise ValueError("reserved memory cannot be below allocated memory")
         return self
+
+
+class M5ThinkingBudgetGateResult(StrictSchema):
+    """Two-seed quality gate that authorizes the formal M5.3 training stage."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["passed", "rejected"]
+    protocol_version: Literal["m5-thinking-budget-v2"]
+    base_evaluation_id: str = Field(min_length=1, max_length=180)
+    candidate_evaluation_ids: tuple[str, str]
+    evaluation_config_sha256: str = Field(pattern=SHA256_PATTERN)
+    evaluation_git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    base_summary_sha256: str = Field(pattern=SHA256_PATTERN)
+    candidate_summary_sha256: tuple[str, str]
+    source_format_repair_gate_sha256: str = Field(pattern=SHA256_PATTERN)
+    mixture_version: Literal["m5-format-repair-mixture-v1-1396b60b"]
+    mixture_manifest_sha256: Literal[
+        "2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e"
+    ]
+    training_run_ids: tuple[str, str]
+    training_seeds: tuple[Literal[42], Literal[20260727]]
+    selected_thinking_fraction_basis_points: Literal[3000]
+    base_nonthinking_score_basis_points: int = Field(ge=0, le=10_000)
+    controlled_format_basis_points: tuple[int, int]
+    forced_close_basis_points: tuple[int, int]
+    thinking_scores_basis_points: tuple[int, int]
+    nonthinking_scores_basis_points: tuple[int, int]
+    controlled_format_gate_passed: bool
+    forced_close_gate_passed: bool
+    thinking_score_gate_passed: bool
+    nonthinking_regression_gate_passed: bool
+    m5_3_authorized: bool
+    gate_reason: Literal[
+        "all_protocol_v2_gates_passed",
+        "controlled_format_gate_failed",
+        "forced_close_gate_failed",
+        "thinking_score_gate_failed",
+        "nonthinking_regression_gate_failed",
+        "multiple_gates_failed",
+    ]
+
+    @model_validator(mode="after")
+    def validate_gate(self) -> M5ThinkingBudgetGateResult:
+        """Recompute every threshold and bind authorization to the AND gate."""
+
+        expected = (
+            all(value >= 9900 for value in self.controlled_format_basis_points),
+            all(value <= 1000 for value in self.forced_close_basis_points),
+            all(value >= 9000 for value in self.thinking_scores_basis_points),
+            all(
+                value >= self.base_nonthinking_score_basis_points - 200
+                for value in self.nonthinking_scores_basis_points
+            ),
+        )
+        declared = (
+            self.controlled_format_gate_passed,
+            self.forced_close_gate_passed,
+            self.thinking_score_gate_passed,
+            self.nonthinking_regression_gate_passed,
+        )
+        if declared != expected:
+            raise ValueError("Thinking Budget gate booleans differ from frozen thresholds")
+        all_passed = all(expected)
+        if self.status == "passed":
+            if (
+                not all_passed
+                or not self.m5_3_authorized
+                or self.gate_reason != "all_protocol_v2_gates_passed"
+            ):
+                raise ValueError("passed Thinking Budget gate must authorize M5.3")
+        elif (
+            all_passed or self.m5_3_authorized or self.gate_reason == "all_protocol_v2_gates_passed"
+        ):
+            raise ValueError("rejected Thinking Budget gate cannot authorize M5.3")
+        return self

@@ -26,10 +26,12 @@ from tinyllm.data import (
 )
 from tinyllm.data.reasoning_schema import content_sha256
 from tinyllm.evaluation.m5_reasoning import score_m5_response
+from tinyllm.evaluation.m5_reasoning_schema import M5FormatRepairGateResult
 from tinyllm.evaluation.m5_thinking_budget_schema import (
     EARLY_STOPPING_TEXT,
     M5ThinkingBudgetEvaluationConfig,
     M5ThinkingBudgetEvaluationSummary,
+    M5ThinkingBudgetGateResult,
     M5ThinkingBudgetItemResult,
     M5ThinkingBudgetModeSummary,
 )
@@ -201,6 +203,130 @@ def summarize_m5_thinking_budget_mode(
         generated_tokens=sum(item.generated_tokens for item in results),
         injected_tokens=sum(item.injected_tokens for item in results),
         length_limited_items=sum(item.finish_reason == "length" for item in results),
+    )
+
+
+def evaluate_m5_thinking_budget_gate(
+    base: M5ThinkingBudgetEvaluationSummary,
+    candidates: Sequence[M5ThinkingBudgetEvaluationSummary],
+    source_gate: M5FormatRepairGateResult,
+    *,
+    base_summary_sha256: str,
+    candidate_summary_sha256: tuple[str, str],
+    source_gate_sha256: str,
+) -> M5ThinkingBudgetGateResult:
+    """Apply the frozen protocol-v2 AND gate to the verified R1 pair."""
+
+    if (
+        base.model_kind != "base"
+        or base.protocol_version != "m5-thinking-budget-v2"
+        or len(candidates) != 2
+        or source_gate.mixture_version != "m5-format-repair-mixture-v1-1396b60b"
+        or source_gate.training_seeds != (42, 20260727)
+    ):
+        raise M5ThinkingBudgetError(
+            "Thinking Budget gate requires one Base and the verified R1 pair"
+        )
+    ordered = sorted(candidates, key=lambda item: int(item.training_seed or -1))
+    if tuple(item.training_seed for item in ordered) != (42, 20260727):
+        raise M5ThinkingBudgetError("Thinking Budget gate requires ordered fixed Seeds")
+    if tuple(item.training_run_id for item in ordered) != source_gate.training_run_ids:
+        raise M5ThinkingBudgetError("Thinking Budget Candidate Runs differ from the R1 gate")
+    for candidate in ordered:
+        if (
+            candidate.model_kind != "ablation_candidate"
+            or candidate.protocol_version != base.protocol_version
+            or candidate.config_sha256 != base.config_sha256
+            or candidate.git_commit != base.git_commit
+            or candidate.model_revision != base.model_revision
+            or candidate.attention_architecture != base.attention_architecture
+            or candidate.suite_version != base.suite_version
+            or candidate.thinking_fraction_basis_points != 3000
+        ):
+            raise M5ThinkingBudgetError(
+                "Thinking Budget Candidate lineage or evaluation protocol differs"
+            )
+    formats = cast(
+        tuple[int, int],
+        tuple(item.thinking.format_valid_basis_points for item in ordered),
+    )
+    forced = cast(
+        tuple[int, int],
+        tuple(item.thinking.forced_close_basis_points for item in ordered),
+    )
+    thinking = cast(
+        tuple[int, int],
+        tuple(item.thinking.final_answer_score_basis_points for item in ordered),
+    )
+    nonthinking = cast(
+        tuple[int, int],
+        tuple(item.nonthinking.final_answer_score_basis_points for item in ordered),
+    )
+    gates = (
+        all(value >= 9900 for value in formats),
+        all(value <= 1000 for value in forced),
+        all(value >= 9000 for value in thinking),
+        all(
+            value >= base.nonthinking.final_answer_score_basis_points - 200 for value in nonthinking
+        ),
+    )
+    if all(gates):
+        status: Literal["passed", "rejected"] = "passed"
+        reason: Literal[
+            "all_protocol_v2_gates_passed",
+            "controlled_format_gate_failed",
+            "forced_close_gate_failed",
+            "thinking_score_gate_failed",
+            "nonthinking_regression_gate_failed",
+            "multiple_gates_failed",
+        ] = "all_protocol_v2_gates_passed"
+    else:
+        status = "rejected"
+        failed = sum(not value for value in gates)
+        if failed > 1:
+            reason = "multiple_gates_failed"
+        elif not gates[0]:
+            reason = "controlled_format_gate_failed"
+        elif not gates[1]:
+            reason = "forced_close_gate_failed"
+        elif not gates[2]:
+            reason = "thinking_score_gate_failed"
+        else:
+            reason = "nonthinking_regression_gate_failed"
+    return M5ThinkingBudgetGateResult(
+        status=status,
+        protocol_version=base.protocol_version,
+        base_evaluation_id=base.evaluation_id,
+        candidate_evaluation_ids=cast(
+            tuple[str, str], tuple(item.evaluation_id for item in ordered)
+        ),
+        evaluation_config_sha256=base.config_sha256,
+        evaluation_git_commit=base.git_commit,
+        base_summary_sha256=base_summary_sha256,
+        candidate_summary_sha256=candidate_summary_sha256,
+        source_format_repair_gate_sha256=source_gate_sha256,
+        mixture_version=cast(
+            Literal["m5-format-repair-mixture-v1-1396b60b"],
+            source_gate.mixture_version,
+        ),
+        mixture_manifest_sha256=cast(
+            Literal["2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e"],
+            source_gate.mixture_manifest_sha256,
+        ),
+        training_run_ids=source_gate.training_run_ids,
+        training_seeds=(42, 20260727),
+        selected_thinking_fraction_basis_points=3000,
+        base_nonthinking_score_basis_points=(base.nonthinking.final_answer_score_basis_points),
+        controlled_format_basis_points=formats,
+        forced_close_basis_points=forced,
+        thinking_scores_basis_points=thinking,
+        nonthinking_scores_basis_points=nonthinking,
+        controlled_format_gate_passed=gates[0],
+        forced_close_gate_passed=gates[1],
+        thinking_score_gate_passed=gates[2],
+        nonthinking_regression_gate_passed=gates[3],
+        m5_3_authorized=all(gates),
+        gate_reason=reason,
     )
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -10,14 +11,17 @@ from tinyllm.data import (
     generate_reasoning_dev_tasks,
     load_m5_reasoning_data_config,
 )
+from tinyllm.evaluation.m5_reasoning_schema import M5FormatRepairGateResult
 from tinyllm.evaluation.m5_thinking_budget import (
     build_m5_thinking_budget_item,
+    evaluate_m5_thinking_budget_gate,
     load_m5_thinking_budget_config,
     summarize_m5_thinking_budget_mode,
 )
 from tinyllm.evaluation.m5_thinking_budget_schema import (
     EARLY_STOPPING_TEXT,
     M5ThinkingBudgetEvaluationSummary,
+    M5ThinkingBudgetGateResult,
     M5ThinkingBudgetGenerationConfig,
     M5ThinkingBudgetItemResult,
     M5ThinkingBudgetModeSummary,
@@ -301,3 +305,36 @@ def test_evaluation_summary_rejects_lineage_and_memory_errors() -> None:
         )
     with pytest.raises(ValidationError, match="reserved memory"):
         M5ThinkingBudgetEvaluationSummary.model_validate(payload | {"peak_allocated_bytes": 3})
+
+
+def test_real_protocol_v2_evidence_authorizes_m5_3() -> None:
+    raw = Path("reports/m5/raw")
+    base_path = raw / "m5_thinking_budget_v2_base.json"
+    seed42_path = raw / "m5_thinking_budget_v2_seed42.json"
+    seed20260727_path = raw / "m5_thinking_budget_v2_seed20260727.json"
+    source_gate_path = raw / "m5_format_repair_gate.json"
+    base = M5ThinkingBudgetEvaluationSummary.model_validate_json(base_path.read_bytes())
+    candidates = (
+        M5ThinkingBudgetEvaluationSummary.model_validate_json(seed42_path.read_bytes()),
+        M5ThinkingBudgetEvaluationSummary.model_validate_json(seed20260727_path.read_bytes()),
+    )
+    source_gate = M5FormatRepairGateResult.model_validate_json(source_gate_path.read_bytes())
+
+    actual = evaluate_m5_thinking_budget_gate(
+        base,
+        candidates,
+        source_gate,
+        base_summary_sha256=hashlib.sha256(base_path.read_bytes()).hexdigest(),
+        candidate_summary_sha256=(
+            hashlib.sha256(seed42_path.read_bytes()).hexdigest(),
+            hashlib.sha256(seed20260727_path.read_bytes()).hexdigest(),
+        ),
+        source_gate_sha256=hashlib.sha256(source_gate_path.read_bytes()).hexdigest(),
+    )
+    expected = M5ThinkingBudgetGateResult.model_validate_json(
+        (raw / "m5_thinking_budget_v2_gate.json").read_bytes()
+    )
+
+    assert actual == expected
+    assert actual.status == "passed"
+    assert actual.m5_3_authorized

@@ -272,6 +272,12 @@ M5.2-R4 不再继续小样本格式修补。依据 Qwen 官方 Thinking Budget �
 90% 和 Non-thinking 回退不超过 2pp。决策见
 [ADR-0006](adr/0006-qwen3-thinking-budget-controller.md)。
 
+协议 v2 的 Base 与 R1 双 Seed 真实评测已完成。两个 Candidate 的控制后 Thinking 格式率
+均为 100%，强制收束率为 2.0%/3.5%，Thinking 分数均为 96.0%，Non-thinking 分数为
+64.0%/66.0%；四项门禁全部通过，正式选择 30% Thinking 配比并解锁 M5.3。控制器注入与
+模型自然闭合分别记录，不把 100% 控制后格式率表述为 100% 自然闭合率。完整证据见
+[Thinking Budget v2 门禁报告](../reports/m5/m5_thinking_budget_v2.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

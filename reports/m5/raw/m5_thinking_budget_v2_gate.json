@@ -1,0 +1,52 @@
+{
+  "base_evaluation_id": "20260731T091921Z-m5-thinking-budget-base-4e949c80",
+  "base_nonthinking_score_basis_points": 3700,
+  "base_summary_sha256": "e7c561ccf37d74977371b0edb1b37a46ae8cf6ba627cbc15eaff4d5dd2c16cfc",
+  "candidate_evaluation_ids": [
+    "20260731T091937Z-m5-thinking-budget-ablation_candidate-3707f186",
+    "20260731T092001Z-m5-thinking-budget-ablation_candidate-e70ef06d"
+  ],
+  "candidate_summary_sha256": [
+    "af23c717bef08062407e7f5264e72b5d6564eeb2253c1c2c8787568646b13961",
+    "82df49740a2a08f0b0a50703b1c6bbd95455fc6c7b18530d54578fdc24f5a605"
+  ],
+  "controlled_format_basis_points": [
+    10000,
+    10000
+  ],
+  "controlled_format_gate_passed": true,
+  "evaluation_config_sha256": "63b6ced2639ad0a68779ffcd438e1a16911c445ec8332b883607f6d29a2e4d45",
+  "evaluation_git_commit": "6cfd71ed9d4d6483608e17dda5f2110dae7085ea",
+  "forced_close_basis_points": [
+    200,
+    350
+  ],
+  "forced_close_gate_passed": true,
+  "gate_reason": "all_protocol_v2_gates_passed",
+  "m5_3_authorized": true,
+  "mixture_manifest_sha256": "2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e",
+  "mixture_version": "m5-format-repair-mixture-v1-1396b60b",
+  "nonthinking_regression_gate_passed": true,
+  "nonthinking_scores_basis_points": [
+    6400,
+    6600
+  ],
+  "protocol_version": "m5-thinking-budget-v2",
+  "schema_version": "1.0",
+  "selected_thinking_fraction_basis_points": 3000,
+  "source_format_repair_gate_sha256": "c226e27fa6a83424e1988542e612f0105348afc6cef63410db26af9883b37ae0",
+  "status": "passed",
+  "thinking_score_gate_passed": true,
+  "thinking_scores_basis_points": [
+    9600,
+    9600
+  ],
+  "training_run_ids": [
+    "20260727T075422Z-m5-format-repair-r1-seed42-7c825907-1c02",
+    "20260727T075432Z-m5-format-repair-r1-seed20260727-59c6d0e9-3af2"
+  ],
+  "training_seeds": [
+    42,
+    20260727
+  ]
+}

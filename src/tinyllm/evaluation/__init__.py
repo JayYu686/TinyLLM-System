@@ -105,6 +105,7 @@ from tinyllm.evaluation.m5_reasoning_schema import (
 from tinyllm.evaluation.m5_thinking_budget import (
     M5ThinkingBudgetError,
     build_m5_thinking_budget_item,
+    evaluate_m5_thinking_budget_gate,
     load_m5_thinking_budget_config,
     run_m5_thinking_budget_evaluation,
     summarize_m5_thinking_budget_mode,
@@ -112,6 +113,7 @@ from tinyllm.evaluation.m5_thinking_budget import (
 from tinyllm.evaluation.m5_thinking_budget_schema import (
     M5ThinkingBudgetEvaluationConfig,
     M5ThinkingBudgetEvaluationSummary,
+    M5ThinkingBudgetGateResult,
     M5ThinkingBudgetGenerationConfig,
     M5ThinkingBudgetItemResult,
     M5ThinkingBudgetModeSummary,
@@ -177,6 +179,7 @@ __all__ = [
     "M5ThinkingBudgetError",
     "M5ThinkingBudgetEvaluationConfig",
     "M5ThinkingBudgetEvaluationSummary",
+    "M5ThinkingBudgetGateResult",
     "M5ThinkingBudgetGenerationConfig",
     "M5ThinkingBudgetItemResult",
     "M5ThinkingBudgetModeSummary",
@@ -209,6 +212,7 @@ __all__ = [
     "build_domain_summary",
     "fingerprint_token_sequence",
     "evaluate_m5_format_repair_gate",
+    "evaluate_m5_thinking_budget_gate",
     "expected_m5_r2_source_identity",
     "load_evaluation_build_config",
     "load_evaluation_items",

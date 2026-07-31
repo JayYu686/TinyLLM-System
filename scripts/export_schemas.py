@@ -127,6 +127,7 @@ from tinyllm.evaluation.m5_reasoning_schema import (
 from tinyllm.evaluation.m5_thinking_budget_schema import (
     M5ThinkingBudgetEvaluationConfig,
     M5ThinkingBudgetEvaluationSummary,
+    M5ThinkingBudgetGateResult,
     M5ThinkingBudgetItemResult,
 )
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
@@ -258,6 +259,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-reasoning-item-result-v1.schema.json": M5ReasoningItemResult,
     "m5-thinking-budget-evaluation-config-v1.schema.json": M5ThinkingBudgetEvaluationConfig,
     "m5-thinking-budget-evaluation-summary-v1.schema.json": M5ThinkingBudgetEvaluationSummary,
+    "m5-thinking-budget-gate-result-v1.schema.json": M5ThinkingBudgetGateResult,
     "m5-thinking-budget-item-result-v1.schema.json": M5ThinkingBudgetItemResult,
     "m5-r2-diagnostic-decision-v1.schema.json": M5R2DiagnosticDecision,
     "m5-r2-offline-analysis-v1.schema.json": M5R2OfflineAnalysis,

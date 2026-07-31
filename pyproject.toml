@@ -93,6 +93,7 @@ omit = [
   "*/src/tinyllm/evaluation/m5_r2_diagnostic.py",
   "*/src/tinyllm/evaluation/m5_thinking_budget.py",
   "*/src/tinyllm/data/m5_formal.py",
+  "*/src/tinyllm/training/m5_formal.py",
 ]
 
 [tool.coverage.report]
@@ -109,4 +110,5 @@ omit = [
   "*/src/tinyllm/evaluation/m5_r2_diagnostic.py",
   "*/src/tinyllm/evaluation/m5_thinking_budget.py",
   "*/src/tinyllm/data/m5_formal.py",
+  "*/src/tinyllm/training/m5_formal.py",
 ]

@@ -93,6 +93,18 @@ from tinyllm.training.m5_config import (
     M5TrainingLoopConfig,
     load_m5_sft_config,
 )
+from tinyllm.training.m5_formal import (
+    M5FormalCheckpointStore,
+    M5FormalProgress,
+    M5FormalTrainingError,
+    run_m5_formal_ddp,
+)
+from tinyllm.training.m5_formal_schema import (
+    M5FormalCheckpointFile,
+    M5FormalCheckpointManifest,
+    M5FormalRankMemory,
+    M5FormalRunResult,
+)
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
 from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.run import run_single_device_training
@@ -151,6 +163,13 @@ __all__ = [
     "M5AblationRunResult",
     "M5DataConfig",
     "M5EvaluationConfig",
+    "M5FormalCheckpointFile",
+    "M5FormalCheckpointManifest",
+    "M5FormalCheckpointStore",
+    "M5FormalProgress",
+    "M5FormalRankMemory",
+    "M5FormalRunResult",
+    "M5FormalTrainingError",
     "M5LoRAConfig",
     "M5ModelConfig",
     "M5ParallelConfig",
@@ -190,6 +209,7 @@ __all__ = [
     "run_fsdp2_correctness",
     "run_m4_dependency_smoke",
     "run_m5_ablation",
+    "run_m5_formal_ddp",
     "seed_everything",
     "token_learning_rate",
     "validate_sampler_partitions",

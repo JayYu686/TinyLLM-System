@@ -157,6 +157,10 @@ from tinyllm.training.m4_qwen_config import M4QwenFSDP2Config
 from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult, M5CheckpointManifest
 from tinyllm.training.m5_config import M5SFTConfig
+from tinyllm.training.m5_formal_schema import (
+    M5FormalCheckpointManifest,
+    M5FormalRunResult,
+)
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -256,6 +260,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-format-failure-analysis-v1.schema.json": M5FormatFailureAnalysis,
     "m5-format-repair-gate-result-v1.schema.json": M5FormatRepairGateResult,
     "m5-checkpoint-manifest-v1.schema.json": M5CheckpointManifest,
+    "m5-formal-checkpoint-manifest-v1.schema.json": M5FormalCheckpointManifest,
+    "m5-formal-run-result-v1.schema.json": M5FormalRunResult,
     "m5-reasoning-evaluation-config-v1.schema.json": M5ReasoningEvaluationConfig,
     "m5-reasoning-evaluation-summary-v1.schema.json": M5ReasoningEvaluationSummary,
     "m5-reasoning-item-result-v1.schema.json": M5ReasoningItemResult,

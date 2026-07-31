@@ -261,6 +261,17 @@ Mixture v2 随后在任何 R3 训练或 Dev 评测前完成：标签分层后的
 两个固定 Seed 的 1M Token R3 训练，不代表质量门禁通过。详见
 [Mixture v2 报告](../reports/m5/m5_r3_mixture.md)。
 
+R3 Seed42 随后完成真实 1M Token 训练，但冻结 Thinking 格式率只有 92.5%，低于 99%
+门槛；R3 因此已经逻辑拒绝。第二 Seed 在 672,024 Token 时停止，保留 500,721 Token 的
+有效 Checkpoint，不再执行没有决策价值的剩余训练。详见
+[R3 训练与门禁报告](../reports/m5/m5_r3_training_gate.md)。
+
+M5.2-R4 不再继续小样本格式修补。依据 Qwen 官方 Thinking Budget 方案，版本化协议
+`m5-thinking-budget-v2` 使用 1536 Token 第一阶段预算；未自然闭合时显式记录控制器注入，
+再生成最终答案。99% 格式门槛不降低，同时新增强制收束率不高于 10%、Thinking 分数至少
+90% 和 Non-thinking 回退不超过 2pp。决策见
+[ADR-0006](adr/0006-qwen3-thinking-budget-controller.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

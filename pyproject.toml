@@ -91,6 +91,7 @@ omit = [
   "*/src/tinyllm/training/m5_ablation.py",
   "*/src/tinyllm/evaluation/m5_reasoning.py",
   "*/src/tinyllm/evaluation/m5_r2_diagnostic.py",
+  "*/src/tinyllm/evaluation/m5_thinking_budget.py",
 ]
 
 [tool.coverage.report]
@@ -105,4 +106,5 @@ omit = [
   "*/src/tinyllm/training/m5_ablation.py",
   "*/src/tinyllm/evaluation/m5_reasoning.py",
   "*/src/tinyllm/evaluation/m5_r2_diagnostic.py",
+  "*/src/tinyllm/evaluation/m5_thinking_budget.py",
 ]

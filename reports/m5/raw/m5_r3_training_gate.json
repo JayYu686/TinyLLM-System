@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "status": "rejected",
+  "gate_reason": "seed42_thinking_format_gate_failed",
+  "required_thinking_format_basis_points": 9900,
+  "git_commit": "e78b8b14274fe7d9dedc5ffc21b3269f4e86a355",
+  "mixture_version": "m5-r3-mixture-v2-b47723e1",
+  "mixture_manifest_sha256": "2a7dac85b2b98909c993234a3c9bd4054eb09a59a5c1a23f862f6a9a1ea0f83f",
+  "seed42": {
+    "run_id": "20260731T071209Z-m5-r3-seed42-249746c3-3ca7",
+    "training_status": "succeeded",
+    "supervised_tokens": 1000000,
+    "training_result_sha256": "bff43de11fb98873b5509173ef80b969fa88f4404617525b613f2a71ead86035",
+    "evaluation_id": "20260731T080741Z-m5-reasoning-dev-ablation_candidate-556b7a1f",
+    "evaluation_summary_sha256": "3316c9ebeb577426e22d9d2fb89dbe28fb376069dc16fbca3dd5a047ab9cc825",
+    "raw_results_sha256": "b82a623fdabdae1c1f429272cf40fec1ec04e8f128252174c985b611fed797ac",
+    "thinking_format_basis_points": 9250,
+    "thinking_score_basis_points": 8950,
+    "thinking_length_limited_items": 13,
+    "nonthinking_score_basis_points": 7400
+  },
+  "seed20260727": {
+    "run_id": "20260731T080906Z-m5-r3-seed20260727-c0d88178-fad6",
+    "training_status": "stopped_after_gate_became_unreachable",
+    "last_observed_supervised_tokens": 672024,
+    "latest_valid_checkpoint": "checkpoint-tokens-0000500721",
+    "checkpoint_supervised_tokens": 500721,
+    "checkpoint_manifest_sha256": "13db42d3005bc358c41b05ec74cd7b8772292f926629f2b04d685bb154011958",
+    "evaluation_status": "not_run"
+  },
+  "m5_3_authorized": false,
+  "next_protocol": "m5-thinking-budget-v2"
+}

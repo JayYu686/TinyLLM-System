@@ -23,6 +23,18 @@ from tinyllm.data.importers import (
     import_commitpackft,
     import_oasst1,
 )
+from tinyllm.data.m5_formal import (
+    M5FormalDataset,
+    M5FormalDatasetError,
+    OpenM5FormalDataset,
+    build_m5_formal_dataset,
+    build_repeated_epoch_plan,
+    open_m5_formal_dataset,
+)
+from tinyllm.data.m5_formal_schema import (
+    M5FormalArtifactFile,
+    M5FormalDatasetManifest,
+)
 from tinyllm.data.m5_mixture import (
     M5AblationDataset,
     M5MixtureError,
@@ -362,6 +374,10 @@ __all__ = [
     "M2TokenizationConfig",
     "M5AblationDataset",
     "M5FormatRepairMixtureManifest",
+    "M5FormalArtifactFile",
+    "M5FormalDataset",
+    "M5FormalDatasetError",
+    "M5FormalDatasetManifest",
     "M5MixtureArtifactFile",
     "M5MixtureError",
     "M5MixtureManifest",
@@ -446,6 +462,7 @@ __all__ = [
     "OASST1ImportConfig",
     "OffsetTokenizer",
     "OpenM5Mixture",
+    "OpenM5FormalDataset",
     "PackedSequence",
     "PackingError",
     "PinnedDataArtifact",
@@ -490,6 +507,7 @@ __all__ = [
     "build_m2_dataset",
     "build_m5_ablation_mixture",
     "build_m5_format_repair_mixture",
+    "build_m5_formal_dataset",
     "build_m5_r3_mixture",
     "build_m5_r3_formal_source",
     "build_m5_r3_p0_dataset",
@@ -501,6 +519,7 @@ __all__ = [
     "audit_m5_r3_sources",
     "build_reasoning_dataset",
     "build_reasoning_task_manifest",
+    "build_repeated_epoch_plan",
     "build_synthetic_teacher_generations",
     "check_reasoning_split_contamination",
     "check_m5_r3_p0_contamination",
@@ -538,6 +557,7 @@ __all__ = [
     "m5_r3_p2_config_sha256",
     "m5_r3_teacher_source_strategy_config_sha256",
     "open_m5_ablation_mixture",
+    "open_m5_formal_dataset",
     "open_registered_dataset",
     "pack_tokenized_samples",
     "prepare_m2_dataset",

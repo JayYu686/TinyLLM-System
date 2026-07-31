@@ -5,6 +5,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- added the sharded M5 R3 formal-source expansion contract: 240 deterministic bilingual
+  Config/Log tasks, isolated Qwen3-8B solve/compress generation, fail-closed shard lineage,
+  and stable 56/24-per-family selection into 160 sources;
 - added and completed a fail-closed private maintainer review for all 33 accepted R3 P2
   samples; all 33 judgments passed and authorized formal source expansion while the public
   summary remains free of prompts and distilled rationales and training stays blocked;

@@ -58,8 +58,10 @@ class M5R3P1TaskContext(StrictSchema):
     def validate_context(self) -> M5R3P1TaskContext:
         """Bind task family, answer, evidence anchor, and closed labels."""
 
-        if not self.task.id.startswith("m5-reasoning:pilot:r3p1-"):
-            raise ValueError("M5 R3 P1 task ID differs")
+        if not self.task.id.startswith(
+            ("m5-reasoning:pilot:r3p1-", "m5-reasoning:pilot:r3formal-")
+        ):
+            raise ValueError("M5 R3 two-stage task ID differs")
         expected_key = "issue" if self.task.task_family == "config" else "root_cause"
         try:
             decoded = json.loads(self.task.expected_answer_json)
@@ -86,9 +88,12 @@ class M5R3P1StageGeneration(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     generation_id: str = Field(
-        pattern=r"^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\d{3}:(solver|compressor)$"
+        pattern=(
+            r"^m5-reasoning:pilot:r3(?:p1|formal)-"
+            r"(config|log)-(en|zh)-\d{3}:(solver|compressor)$"
+        )
     )
-    task_id: str = Field(pattern=r"^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\d{3}$")
+    task_id: str = Field(pattern=r"^m5-reasoning:pilot:r3(?:p1|formal)-(config|log)-(en|zh)-\d{3}$")
     stage: M5R3P1Stage
     seed: int = Field(ge=0, le=2**32 - 1)
     prompt_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -159,7 +164,7 @@ class M5R3P1CompressedEnvelope(StrictSchema):
 class M5R3P1CandidateAudit(StrictSchema):
     """Content-free final decision for one P1 task."""
 
-    task_id: str = Field(pattern=r"^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\d{3}$")
+    task_id: str = Field(pattern=r"^m5-reasoning:pilot:r3(?:p1|formal)-(config|log)-(en|zh)-\d{3}$")
     task_family: M5R3TargetFamily
     language: ReasoningLanguage
     status: Literal["accepted", "rejected"]

@@ -242,6 +242,12 @@ P2 的 33 条接受样本必须完成三项逐条维护者审查：标签与证�
 维护者已确认全部 33 条草案判定，公开 Review Result 为 `approved`，因此正式 240 条来源
 扩展已解锁。该结果不授权 Mixture 或训练；必须先完成 160 条分层选择及独立污染检查。
 
+正式来源使用 `m5-r3-formal-source-v1`：Config 与 Log Diagnosis 各 120 条，每类英文
+84、中文 36；最终每类确定性选择英文 56、中文 24。Runner 支持 1–8 个独立 GPU 分片，
+因此可以按实际空闲卡并发完成，不要求八卡同时可用。Finalizer 要求分片同 Config、同
+Git Commit、任务集合完整且无重复，并重新执行 Trace 与污染门禁。CPU 合成 Smoke 只授权
+真实生成；详见 [正式来源扩展报告](../reports/m5/m5_r3_formal_source.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M

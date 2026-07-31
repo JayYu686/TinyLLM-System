@@ -1,0 +1,342 @@
+{
+  "$defs": {
+    "M5R3FormalContaminationReport": {
+      "additionalProperties": false,
+      "description": "Collision counts against every frozen M5 task source.",
+      "properties": {
+        "algorithm": {
+          "const": "m5-r3-formal-exact-normalized-template-v1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "dev_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "Dev Exact Prompt Matches",
+          "type": "integer"
+        },
+        "dev_task_count": {
+          "const": 200,
+          "title": "Dev Task Count",
+          "type": "integer"
+        },
+        "dev_template_family_overlaps": {
+          "minimum": 0,
+          "title": "Dev Template Family Overlaps",
+          "type": "integer"
+        },
+        "formal_task_count": {
+          "const": 240,
+          "title": "Formal Task Count",
+          "type": "integer"
+        },
+        "historical_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "Historical Exact Prompt Matches",
+          "type": "integer"
+        },
+        "historical_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "Historical Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "historical_pilot_task_count": {
+          "const": 100,
+          "title": "Historical Pilot Task Count",
+          "type": "integer"
+        },
+        "historical_template_family_overlaps": {
+          "minimum": 0,
+          "title": "Historical Template Family Overlaps",
+          "type": "integer"
+        },
+        "p0_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p0_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 R1 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 R1 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P0 R1 Template Family Overlaps",
+          "type": "integer"
+        },
+        "p0_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P0 Template Family Overlaps",
+          "type": "integer"
+        },
+        "p1_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P1 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p1_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P1 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p1_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P1 Template Family Overlaps",
+          "type": "integer"
+        },
+        "parent_p0_r1_task_count": {
+          "const": 40,
+          "title": "Parent P0 R1 Task Count",
+          "type": "integer"
+        },
+        "parent_p0_task_count": {
+          "const": 40,
+          "title": "Parent P0 Task Count",
+          "type": "integer"
+        },
+        "parent_p1_task_count": {
+          "const": 40,
+          "title": "Parent P1 Task Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_set_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Task Set Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "task_set_sha256",
+        "formal_task_count",
+        "dev_task_count",
+        "historical_pilot_task_count",
+        "parent_p0_task_count",
+        "parent_p0_r1_task_count",
+        "parent_p1_task_count",
+        "dev_exact_prompt_matches",
+        "dev_template_family_overlaps",
+        "historical_exact_prompt_matches",
+        "historical_normalized_prompt_matches",
+        "historical_template_family_overlaps",
+        "p0_exact_prompt_matches",
+        "p0_normalized_prompt_matches",
+        "p0_template_family_overlaps",
+        "p0_r1_exact_prompt_matches",
+        "p0_r1_normalized_prompt_matches",
+        "p0_r1_template_family_overlaps",
+        "p1_exact_prompt_matches",
+        "p1_normalized_prompt_matches",
+        "p1_template_family_overlaps",
+        "status"
+      ],
+      "title": "M5R3FormalContaminationReport",
+      "type": "object"
+    },
+    "M5R3FormalStratumResult": {
+      "additionalProperties": false,
+      "description": "Acceptance and selection accounting for one family/language stratum.",
+      "properties": {
+        "accepted_items": {
+          "maximum": 84,
+          "minimum": 0,
+          "title": "Accepted Items",
+          "type": "integer"
+        },
+        "gate_passed": {
+          "title": "Gate Passed",
+          "type": "boolean"
+        },
+        "input_tasks": {
+          "maximum": 84,
+          "minimum": 36,
+          "title": "Input Tasks",
+          "type": "integer"
+        },
+        "language": {
+          "enum": [
+            "en",
+            "zh"
+          ],
+          "title": "Language",
+          "type": "string"
+        },
+        "required_items": {
+          "maximum": 56,
+          "minimum": 24,
+          "title": "Required Items",
+          "type": "integer"
+        },
+        "selected_items": {
+          "maximum": 56,
+          "minimum": 0,
+          "title": "Selected Items",
+          "type": "integer"
+        },
+        "task_family": {
+          "enum": [
+            "config",
+            "log_diagnosis"
+          ],
+          "title": "Task Family",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_family",
+        "language",
+        "input_tasks",
+        "accepted_items",
+        "required_items",
+        "selected_items",
+        "gate_passed"
+      ],
+      "title": "M5R3FormalStratumResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Synthetic formal-source contract evidence.",
+  "properties": {
+    "accepted_samples": {
+      "const": 240,
+      "title": "Accepted Samples",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "contamination": {
+      "$ref": "#/$defs/M5R3FormalContaminationReport"
+    },
+    "evidence_kind": {
+      "const": "synthetic_cpu_contract_smoke",
+      "title": "Evidence Kind",
+      "type": "string"
+    },
+    "expansion_version": {
+      "const": "m5-r3-formal-source-v1",
+      "title": "Expansion Version",
+      "type": "string"
+    },
+    "gpu_expansion_authorized": {
+      "const": true,
+      "title": "Gpu Expansion Authorized",
+      "type": "boolean"
+    },
+    "input_tasks": {
+      "const": 240,
+      "title": "Input Tasks",
+      "type": "integer"
+    },
+    "model_generated": {
+      "const": false,
+      "title": "Model Generated",
+      "type": "boolean"
+    },
+    "quality_metric": {
+      "const": false,
+      "title": "Quality Metric",
+      "type": "boolean"
+    },
+    "r3_mixture_authorized": {
+      "const": false,
+      "title": "R3 Mixture Authorized",
+      "type": "boolean"
+    },
+    "r3_training_authorized": {
+      "const": false,
+      "title": "R3 Training Authorized",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_samples": {
+      "const": 160,
+      "title": "Selected Samples",
+      "type": "integer"
+    },
+    "stratum_results": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        },
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        },
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        },
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        }
+      ],
+      "title": "Stratum Results",
+      "type": "array"
+    },
+    "task_set_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Task Set Sha256",
+      "type": "string"
+    },
+    "tested_failure_paths": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 3,
+      "title": "Tested Failure Paths",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence_kind",
+    "model_generated",
+    "quality_metric",
+    "expansion_version",
+    "config_sha256",
+    "task_set_sha256",
+    "input_tasks",
+    "accepted_samples",
+    "selected_samples",
+    "stratum_results",
+    "contamination",
+    "tested_failure_paths",
+    "gpu_expansion_authorized",
+    "r3_mixture_authorized",
+    "r3_training_authorized"
+  ],
+  "title": "M5R3FormalCPUSmoke",
+  "type": "object"
+}

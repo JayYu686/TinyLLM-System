@@ -28,7 +28,10 @@ from tinyllm.data.m5_r3_p1_schema import (
     M5R3P1TaskContext,
 )
 from tinyllm.data.m5_r3_schema import M5R3TargetFamily
-from tinyllm.data.m5_r3_source_strategy_schema import M5R3TeacherSourceStrategyConfig
+from tinyllm.data.m5_r3_source_strategy_schema import (
+    M5R3P1TracePolicy,
+    M5R3TeacherSourceStrategyConfig,
+)
 from tinyllm.data.reasoning import parse_teacher_output
 from tinyllm.data.reasoning_schema import (
     ReasoningLanguage,
@@ -335,11 +338,11 @@ def _early_audit(
     )
 
 
-def _select_p1_task(
+def select_m5_r3_two_stage_task(
     context: M5R3P1TaskContext,
     records: dict[M5R3P1Stage, M5R3P1StageGeneration],
     *,
-    config: M5R3TeacherSourceStrategyConfig,
+    trace_policy: M5R3P1TracePolicy,
     tokenizer: OffsetTokenizer,
     existing_trace_hashes: frozenset[str],
     expected_stage_seeds: Mapping[M5R3P1StageSeedKey, int],
@@ -472,19 +475,19 @@ def _select_p1_task(
     )
     sequence_tokens = len(tokenizer.encode(rendered.text).ids)
     rejection: M5R3P1RejectionReason | None = None
-    if len(reasoning_ids) > config.pilot.trace_policy.max_reasoning_tokens:
+    if len(reasoning_ids) > trace_policy.max_reasoning_tokens:
         rejection = "reasoning_over_192_tokens"
     elif not anchor_match:
         rejection = "missing_evidence_anchor"
     elif other_mentions:
         rejection = "other_label_mentioned"
-    elif repeated > config.pilot.trace_policy.max_repeated_8gram_basis_points:
+    elif repeated > trace_policy.max_repeated_8gram_basis_points:
         rejection = "repeated_8gram_over_500bp"
-    elif line_repeat > config.pilot.trace_policy.max_identical_line_hash_repetitions:
+    elif line_repeat > trace_policy.max_identical_line_hash_repetitions:
         rejection = "identical_line_repetition"
     elif trace_hash in existing_trace_hashes:
         rejection = "duplicate_normalized_trace"
-    elif sequence_tokens > config.pilot.trace_policy.max_training_sequence_tokens:
+    elif sequence_tokens > trace_policy.max_training_sequence_tokens:
         rejection = "sequence_over_1024_tokens"
 
     def complete_audit(
@@ -688,10 +691,10 @@ def build_m5_r3_p1_dataset(
     audits: list[M5R3P1CandidateAudit] = []
     hashes: set[str] = set()
     for context in ordered_contexts:
-        sample, audit, trace_hash = _select_p1_task(
+        sample, audit, trace_hash = select_m5_r3_two_stage_task(
             context,
             grouped.get(context.task.id, {}),
-            config=config,
+            trace_policy=config.pilot.trace_policy,
             tokenizer=tokenizer,
             existing_trace_hashes=frozenset(hashes),
             expected_stage_seeds=resolved_stage_seeds,

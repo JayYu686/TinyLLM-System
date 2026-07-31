@@ -283,7 +283,10 @@ class M5R3FormalSourceResult(StrictSchema):
     parent_content_review_sha256: Literal[
         "ec42e7a3f62d5db7953677a75960e3c7e3bd6a328782e2353ea0130ddf4211ae"
     ]
+    # The source shards and deterministic finalizer may use different commits
+    # when a serialization-only finalizer fix is required. Preserve both.
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    finalizer_git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
     solver: M5R3FormalSolver
     compressor: M5R3FormalCompressor

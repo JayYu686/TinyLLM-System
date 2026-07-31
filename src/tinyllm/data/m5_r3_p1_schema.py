@@ -54,6 +54,13 @@ class M5R3P1TaskContext(StrictSchema):
     allowed_labels: tuple[str, str, str, str]
     expected_label: str = Field(min_length=1, max_length=64)
 
+    @field_validator("allowed_labels", mode="before")
+    @classmethod
+    def normalize_allowed_labels(cls, value: object) -> object:
+        """Restore the immutable tuple after a JSON array round trip."""
+
+        return tuple(value) if isinstance(value, list) else value
+
     @model_validator(mode="after")
     def validate_context(self) -> M5R3P1TaskContext:
         """Bind task family, answer, evidence anchor, and closed labels."""

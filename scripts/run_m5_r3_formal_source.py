@@ -369,7 +369,8 @@ def _load_shards(
     paths: tuple[Path, ...],
     *,
     config_sha256: str,
-    git_commit: str,
+    finalizer_git_commit: str,
+    project_root: Path,
     expected_contexts: tuple[M5R3P1TaskContext, ...],
 ) -> tuple[M5R3FormalShardArtifact, ...]:
     try:
@@ -382,6 +383,7 @@ def _load_shards(
     if not shards:
         raise M5R3FormalSourceError("M5 R3 formal finalizer requires shard artifacts")
     shard_count = shards[0].shard_count
+    generation_git_commit = shards[0].git_commit
     ordered = shards
     expected_ids = tuple(context.task.id for context in expected_contexts)
     merged_ids = tuple(task_id for shard in ordered for task_id in shard.task_ids)
@@ -391,11 +393,28 @@ def _load_shards(
         or tuple(item.shard_index for item in ordered) != tuple(range(shard_count))
         or any(item.shard_count != shard_count for item in ordered)
         or any(item.config_sha256 != config_sha256 for item in ordered)
-        or any(item.git_commit != git_commit for item in ordered)
+        or any(item.git_commit != generation_git_commit for item in ordered)
         or len(set(merged_ids)) != 240
         or set(merged_ids) != set(expected_ids)
     ):
         raise M5R3FormalSourceError("M5 R3 formal shard lineage or coverage differs")
+    ancestry = subprocess.run(
+        [
+            "git",
+            "merge-base",
+            "--is-ancestor",
+            generation_git_commit,
+            finalizer_git_commit,
+        ],
+        cwd=project_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if ancestry.returncode != 0:
+        raise M5R3FormalSourceError(
+            "M5 R3 formal shard commit is not an ancestor of the finalizer commit"
+        )
     return ordered
 
 
@@ -420,7 +439,8 @@ def _finalize(args: argparse.Namespace) -> int:
     shards = _load_shards(
         paths,
         config_sha256=config_sha256,
-        git_commit=git_commit,
+        finalizer_git_commit=git_commit,
+        project_root=project_root,
         expected_contexts=contexts,
     )
     context_by_id = {context.task.id: context for shard in shards for context in shard.contexts}
@@ -493,7 +513,8 @@ def _finalize(args: argparse.Namespace) -> int:
         generated_at=datetime.now(UTC),
         config_sha256=config_sha256,
         parent_content_review_sha256=config.parent_content_review_sha256,
-        git_commit=git_commit,
+        git_commit=shards[0].git_commit,
+        finalizer_git_commit=git_commit,
         git_dirty=False,
         solver=config.solver,
         compressor=config.compressor,

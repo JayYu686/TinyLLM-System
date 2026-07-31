@@ -10,6 +10,7 @@ from tinyllm.data.m5_r3_formal import (
     m5_r3_formal_source_config_sha256,
 )
 from tinyllm.data.m5_r3_formal_schema import M5R3FormalCPUSmoke
+from tinyllm.data.m5_r3_p1_schema import M5R3P1TaskContext
 
 CONFIG = Path("configs/data/m5_r3_formal_source.yaml")
 
@@ -57,6 +58,15 @@ def test_m5_r3_formal_labels_are_balanced_per_family() -> None:
                 )
             )
         }
+
+
+def test_m5_r3_formal_context_survives_json_round_trip() -> None:
+    context = generate_m5_r3_formal_contexts(load_m5_r3_formal_source_config(CONFIG))[0]
+
+    restored = M5R3P1TaskContext.model_validate_json(context.model_dump_json())
+
+    assert restored == context
+    assert isinstance(restored.allowed_labels, tuple)
 
 
 def test_m5_r3_formal_cpu_smoke_matches_committed_evidence() -> None:

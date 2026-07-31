@@ -457,6 +457,11 @@
       "title": "Expansion Version",
       "type": "string"
     },
+    "finalizer_git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Finalizer Git Commit",
+      "type": "string"
+    },
     "formal_source_expansion_complete": {
       "title": "Formal Source Expansion Complete",
       "type": "boolean"
@@ -669,6 +674,7 @@
     "config_sha256",
     "parent_content_review_sha256",
     "git_commit",
+    "finalizer_git_commit",
     "git_dirty",
     "solver",
     "compressor",

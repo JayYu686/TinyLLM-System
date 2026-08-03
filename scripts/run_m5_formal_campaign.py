@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
+from tinyllm.evaluation.m5_thinking_budget_schema import M5ThinkingBudgetEvaluationSummary
 from tinyllm.lineage import read_git_identity
 from tinyllm.training.m5_failure import require_child_success
 from tinyllm.training.m5_formal import (
@@ -25,7 +26,11 @@ from tinyllm.training.m5_formal import (
     _sha256_file,
 )
 from tinyllm.training.m5_formal_schema import M5FormalCampaignResult, M5FormalRunResult
-from tinyllm.training.smoke_preflight import inspect_gpus, parse_gpu_indices
+from tinyllm.training.smoke_preflight import (
+    inspect_gpus,
+    parse_gpu_indices,
+    validate_gpu_preflight,
+)
 
 _PAUSE_TEMPERATURE_C = 84
 _RESUME_TEMPERATURE_C = 74
@@ -141,6 +146,90 @@ def _segment_command(args: argparse.Namespace, *, resume_run: Path | None) -> li
     return command
 
 
+def _wait_for_evaluation_gpu(
+    gpu_indices: tuple[int, int, int, int], *, timeout_seconds: int
+) -> int:
+    started = time.monotonic()
+    while time.monotonic() - started < timeout_seconds:
+        for gpu_index in gpu_indices:
+            try:
+                validate_gpu_preflight(inspect_gpus((gpu_index,)))
+            except RuntimeError:
+                continue
+            return gpu_index
+        time.sleep(_POLL_SECONDS)
+    raise M5FormalTrainingError("formal M5 final evaluation GPU preflight timed out")
+
+
+def _run_final_evaluation(
+    args: argparse.Namespace,
+    *,
+    run: Path,
+    gpu_indices: tuple[int, int, int, int],
+    event_log: Path,
+) -> tuple[M5ThinkingBudgetEvaluationSummary, str]:
+    project_root = Path(__file__).resolve().parents[1]
+    gpu_index = _wait_for_evaluation_gpu(
+        gpu_indices,
+        timeout_seconds=args.evaluation_wait_timeout_seconds,
+    )
+    output_dir = run / "evaluations" / "final"
+    command = [
+        sys.executable,
+        str(project_root / "scripts" / "run_m5_thinking_budget_eval.py"),
+        "--config",
+        str(args.evaluation_config),
+        "--reasoning-config",
+        str(args.reasoning_config),
+        "--baseline-config",
+        str(args.baseline_config),
+        "--artifact-root",
+        str(args.artifact_root),
+        "--model-dir",
+        str(run / "exports" / "model"),
+        "--tokenizer-dir",
+        str(args.model_dir),
+        "--output-dir",
+        str(output_dir),
+        "--model-kind",
+        "formal_candidate",
+        "--training-run",
+        str(run),
+        "--gpu-index",
+        str(gpu_index),
+        "--timeout-seconds",
+        str(args.evaluation_timeout_seconds),
+    ]
+    _append_jsonl(
+        event_log,
+        {"event": "final_evaluation_started", "physical_gpu_index": gpu_index},
+    )
+    completed = subprocess.run(
+        command,
+        cwd=project_root,
+        check=False,
+        timeout=args.evaluation_timeout_seconds + 60,
+    )
+    require_child_success(completed.returncode)
+    summary_path = output_dir / "summary.json"
+    try:
+        raw = summary_path.read_bytes()
+        summary = M5ThinkingBudgetEvaluationSummary.model_validate_json(raw)
+    except (OSError, ValueError) as exc:
+        raise M5FormalTrainingError("formal M5 final evaluation result is invalid") from exc
+    if summary.model_kind != "formal_candidate" or summary.training_run_id != run.name:
+        raise M5FormalTrainingError("formal M5 final evaluation lineage differs")
+    _append_jsonl(
+        event_log,
+        {
+            "event": "final_evaluation_finished",
+            "evaluation_id": summary.evaluation_id,
+            "physical_gpu_index": gpu_index,
+        },
+    )
+    return summary, hashlib.sha256(raw).hexdigest()
+
+
 def run_campaign(args: argparse.Namespace) -> M5FormalCampaignResult:
     """Execute, validate, and summarize both Full-SFT segments."""
 
@@ -193,6 +282,12 @@ def run_campaign(args: argparse.Namespace) -> M5FormalCampaignResult:
         or final.export_sha256 is None
     ):
         raise M5FormalTrainingError("formal M5 campaign final result is incomplete")
+    evaluation, evaluation_sha256 = _run_final_evaluation(
+        args,
+        run=run,
+        gpu_indices=gpu_indices,
+        event_log=event_log,
+    )
     result = M5FormalCampaignResult(
         status="succeeded",
         campaign_id=campaign_id,
@@ -205,6 +300,13 @@ def run_campaign(args: argparse.Namespace) -> M5FormalCampaignResult:
         export_sha256=final.export_sha256,
         interrupted_result_sha256=interrupted_sha256,
         final_result_sha256=final_sha256,
+        evaluation_id=evaluation.evaluation_id,
+        evaluation_summary_sha256=evaluation_sha256,
+        thinking_controlled_format_basis_points=evaluation.thinking.format_valid_basis_points,
+        thinking_natural_close_basis_points=evaluation.thinking.natural_close_basis_points,
+        thinking_forced_close_basis_points=evaluation.thinking.forced_close_basis_points,
+        thinking_score_basis_points=evaluation.thinking.final_answer_score_basis_points,
+        nonthinking_score_basis_points=evaluation.nonthinking.final_answer_score_basis_points,
         thermal_events_sha256=_sha256_file(event_log),
         thermal_pause_count=first_pauses + final_pauses,
         max_observed_temperature_c=max(first_maximum, final_maximum),
@@ -229,6 +331,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gpu-indices", type=parse_gpu_indices, required=True)
     parser.add_argument("--interruption-tokens", type=int, default=2_000_000)
     parser.add_argument("--segment-timeout-seconds", type=int, default=43_200)
+    parser.add_argument(
+        "--evaluation-config",
+        type=Path,
+        default=Path("configs/eval/m5_thinking_budget_v2.yaml"),
+    )
+    parser.add_argument(
+        "--reasoning-config",
+        type=Path,
+        default=Path("configs/data/m5_reasoning_label_vocabulary_v2.yaml"),
+    )
+    parser.add_argument(
+        "--baseline-config",
+        type=Path,
+        default=Path("configs/eval/m2_baseline.yaml"),
+    )
+    parser.add_argument("--evaluation-timeout-seconds", type=int, default=14_400)
+    parser.add_argument("--evaluation-wait-timeout-seconds", type=int, default=3_600)
     return parser
 
 

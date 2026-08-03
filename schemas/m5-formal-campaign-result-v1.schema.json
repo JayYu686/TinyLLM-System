@@ -7,6 +7,17 @@
       "title": "Campaign Id",
       "type": "string"
     },
+    "evaluation_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Evaluation Id",
+      "type": "string"
+    },
+    "evaluation_summary_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Evaluation Summary Sha256",
+      "type": "string"
+    },
     "export_sha256": {
       "pattern": "^[a-f0-9]{64}$",
       "title": "Export Sha256",
@@ -42,6 +53,12 @@
       "maximum": 100,
       "minimum": 0,
       "title": "Max Observed Temperature C",
+      "type": "integer"
+    },
+    "nonthinking_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Nonthinking Score Basis Points",
       "type": "integer"
     },
     "physical_gpu_indices": {
@@ -101,6 +118,30 @@
       "minimum": 0,
       "title": "Thermal Pause Count",
       "type": "integer"
+    },
+    "thinking_controlled_format_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Thinking Controlled Format Basis Points",
+      "type": "integer"
+    },
+    "thinking_forced_close_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Thinking Forced Close Basis Points",
+      "type": "integer"
+    },
+    "thinking_natural_close_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Thinking Natural Close Basis Points",
+      "type": "integer"
+    },
+    "thinking_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Thinking Score Basis Points",
+      "type": "integer"
     }
   },
   "required": [
@@ -115,6 +156,13 @@
     "export_sha256",
     "interrupted_result_sha256",
     "final_result_sha256",
+    "evaluation_id",
+    "evaluation_summary_sha256",
+    "thinking_controlled_format_basis_points",
+    "thinking_natural_close_basis_points",
+    "thinking_forced_close_basis_points",
+    "thinking_score_basis_points",
+    "nonthinking_score_basis_points",
     "thermal_events_sha256",
     "thermal_pause_count",
     "max_observed_temperature_c",

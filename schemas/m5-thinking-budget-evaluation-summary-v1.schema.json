@@ -181,6 +181,7 @@
       "enum": [
         "base",
         "ablation_candidate",
+        "formal_candidate",
         "lora_candidate"
       ],
       "title": "Model Kind",

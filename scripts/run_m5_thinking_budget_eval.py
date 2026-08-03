@@ -21,6 +21,7 @@ from tinyllm.evaluation.m5_thinking_budget import (
 )
 from tinyllm.lineage import read_git_identity
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult
+from tinyllm.training.m5_formal_schema import M5FormalRunResult
 from tinyllm.training.m5_lora_schema import M5LoRARunResult
 from tinyllm.training.smoke_preflight import inspect_gpus, validate_gpu_preflight
 
@@ -80,6 +81,22 @@ def _candidate_lineage(args: argparse.Namespace) -> _CandidateLineage | None:
                 thinking_fraction_basis_points=lora_result.thinking_fraction_basis_points,
                 adapter_sha256=lora_result.adapter_sha256,
             )
+        if args.model_kind == "formal_candidate":
+            formal_result = M5FormalRunResult.model_validate_json(
+                (args.training_run / "result.json").read_bytes()
+            )
+            if (
+                formal_result.status != "succeeded"
+                or formal_result.export_sha256 is None
+                or args.model_dir.resolve() != (args.training_run / "exports" / "model").resolve()
+                or _export_sha256(args.model_dir) != formal_result.export_sha256
+            ):
+                raise M5ThinkingBudgetError("formal Candidate export differs from training lineage")
+            return _CandidateLineage(
+                run_id=formal_result.run_id,
+                seed=formal_result.seed,
+                thinking_fraction_basis_points=formal_result.thinking_fraction_basis_points,
+            )
         ablation_result = M5AblationRunResult.model_validate_json(
             (args.training_run / "result.json").read_bytes()
         )
@@ -107,7 +124,15 @@ def _worker(args: argparse.Namespace) -> int:
         tokenizer_dir=args.tokenizer_dir,
         output_dir=args.output_dir,
         physical_gpu_index=args.gpu_index,
-        model_kind=cast(Literal["base", "ablation_candidate"], args.model_kind),
+        model_kind=cast(
+            Literal[
+                "base",
+                "ablation_candidate",
+                "formal_candidate",
+                "lora_candidate",
+            ],
+            args.model_kind,
+        ),
         training_run_id=lineage.run_id if lineage is not None else None,
         training_seed=lineage.seed if lineage is not None else None,
         thinking_fraction_basis_points=(
@@ -211,7 +236,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--model-kind",
-        choices=("base", "ablation_candidate", "lora_candidate"),
+        choices=("base", "ablation_candidate", "formal_candidate", "lora_candidate"),
         required=True,
     )
     parser.add_argument("--training-run", type=Path)

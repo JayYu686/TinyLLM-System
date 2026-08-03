@@ -417,7 +417,12 @@ def run_m5_thinking_budget_evaluation(
     tokenizer_dir: Path,
     output_dir: Path,
     physical_gpu_index: int,
-    model_kind: Literal["base", "ablation_candidate", "lora_candidate"],
+    model_kind: Literal[
+        "base",
+        "ablation_candidate",
+        "formal_candidate",
+        "lora_candidate",
+    ],
     training_run_id: str | None = None,
     training_seed: int | None = None,
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None,

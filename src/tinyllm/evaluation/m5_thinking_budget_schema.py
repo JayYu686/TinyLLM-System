@@ -205,7 +205,12 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
     status: Literal["succeeded"]
     evaluation_id: str = Field(min_length=1, max_length=180)
     protocol_version: Literal["m5-thinking-budget-v2"]
-    model_kind: Literal["base", "ablation_candidate", "lora_candidate"]
+    model_kind: Literal[
+        "base",
+        "ablation_candidate",
+        "formal_candidate",
+        "lora_candidate",
+    ]
     training_run_id: str | None = Field(default=None, min_length=1, max_length=180)
     training_seed: int | None = Field(default=None, ge=0, le=2**32 - 1)
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None
@@ -240,10 +245,15 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
         )
         if self.model_kind == "base" and any(value is not None for value in candidate_fields):
             raise ValueError("thinking-budget Base cannot claim training lineage")
-        if self.model_kind == "ablation_candidate" and any(
+        if self.model_kind in {"ablation_candidate", "formal_candidate"} and any(
             value is None for value in candidate_fields
         ):
             raise ValueError("thinking-budget Candidate requires complete training lineage")
+        if self.model_kind == "formal_candidate" and (
+            self.model_revision != "c1899de289a04d12100db370d81485cdf75e47ca"
+            or self.thinking_fraction_basis_points != 3000
+        ):
+            raise ValueError("formal Thinking Budget Candidate requires the frozen 0.6B route")
         if self.model_kind == "lora_candidate":
             if (
                 any(value is None for value in candidate_fields)

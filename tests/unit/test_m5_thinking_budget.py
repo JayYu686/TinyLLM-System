@@ -318,6 +318,22 @@ def test_evaluation_summary_rejects_lineage_and_memory_errors() -> None:
     with pytest.raises(ValidationError, match="reserved memory"):
         M5ThinkingBudgetEvaluationSummary.model_validate(payload | {"peak_allocated_bytes": 3})
 
+    formal = M5ThinkingBudgetEvaluationSummary.model_validate(
+        payload
+        | {
+            "model_kind": "formal_candidate",
+            "training_run_id": "formal-run",
+            "training_seed": 42,
+            "thinking_fraction_basis_points": 3000,
+        }
+    )
+    assert formal.model_kind == "formal_candidate"
+    with pytest.raises(ValidationError, match="frozen 0.6B route"):
+        M5ThinkingBudgetEvaluationSummary.model_validate(
+            formal.model_dump(mode="json")
+            | {"model_revision": "b968826d9c46dd6066d109eabc6255188de91218"}
+        )
+
     lora = M5ThinkingBudgetEvaluationSummary.model_validate(
         payload
         | {

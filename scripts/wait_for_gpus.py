@@ -42,6 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--count", type=int, choices=range(1, 11), required=True)
     parser.add_argument("--poll-seconds", type=int, default=60)
     parser.add_argument("--timeout-seconds", type=int, default=604_800)
+    parser.add_argument("--prerequisite-path", type=Path)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     return parser
 
@@ -56,8 +57,9 @@ def main() -> int:
         raise SystemExit("invalid wait interval or timeout")
     started = time.monotonic()
     while True:
-        rows = inspect_gpus(args.candidate_gpus)
-        selected = select_gpus(rows, count=args.count)
+        prerequisite_ready = args.prerequisite_path is None or args.prerequisite_path.is_file()
+        rows = inspect_gpus(args.candidate_gpus) if prerequisite_ready else ()
+        selected = select_gpus(rows, count=args.count) if rows else None
         if selected is not None:
             replacements = {
                 "{gpu_index}": str(selected[0]),

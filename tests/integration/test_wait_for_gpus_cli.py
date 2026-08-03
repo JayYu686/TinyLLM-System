@@ -15,3 +15,4 @@ def test_wait_for_gpus_cli_supports_direct_help() -> None:
     assert completed.returncode == 0
     assert "--candidate-gpus" in completed.stdout
     assert "--count" in completed.stdout
+    assert "--prerequisite-path" in completed.stdout

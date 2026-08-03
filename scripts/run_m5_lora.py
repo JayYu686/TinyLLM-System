@@ -14,6 +14,7 @@ from pathlib import Path
 from tinyllm.data import open_m5_formal_dataset
 from tinyllm.lineage import read_git_identity
 from tinyllm.training.m5_config import load_m5_sft_config
+from tinyllm.training.m5_failure import M5_LORA_MINIMUM_FREE_BYTES, require_storage_capacity
 from tinyllm.training.m5_lora import M5LoRAError, run_m5_lora
 from tinyllm.training.smoke_preflight import inspect_gpus, validate_gpu_preflight
 
@@ -39,6 +40,10 @@ def _supervise(args: argparse.Namespace) -> int:
     _, dirty = read_git_identity(project_root)
     if dirty:
         raise M5LoRAError("M5 LoRA training requires a clean Git worktree")
+    require_storage_capacity(
+        args.output_root,
+        minimum_free_bytes=M5_LORA_MINIMUM_FREE_BYTES,
+    )
     validate_gpu_preflight(inspect_gpus((args.gpu_index,)))
     config = load_m5_sft_config(args.config)
     opened = open_m5_formal_dataset(args.dataset_root)

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 from tinyllm.lineage import read_git_identity
+from tinyllm.training.m5_failure import require_child_success
 from tinyllm.training.m5_formal import _append_jsonl, _atomic_json, _sha256_file
 from tinyllm.training.m5_lora import M5LoRAError
 from tinyllm.training.m5_lora_schema import M5LoRACampaignResult, M5LoRARunResult
@@ -169,7 +170,8 @@ def run_campaign(args: argparse.Namespace) -> M5LoRACampaignResult:
         timeout_seconds=args.segment_timeout_seconds + 600,
     )
     created = _run_directories(args.output_root) - before
-    if first_code != 0 or len(created) != 1:
+    require_child_success(first_code)
+    if len(created) != 1:
         raise M5LoRAError("M5 LoRA campaign fresh segment failed")
     run = created.pop()
     interrupted, interrupted_sha256 = _read_result(run)
@@ -187,8 +189,7 @@ def run_campaign(args: argparse.Namespace) -> M5LoRACampaignResult:
         event_log=event_log,
         timeout_seconds=args.segment_timeout_seconds + 600,
     )
-    if final_code != 0:
-        raise M5LoRAError("M5 LoRA campaign Exact Resume segment failed")
+    require_child_success(final_code)
     final, final_sha256 = _read_result(run)
     if (
         final.status != "succeeded"

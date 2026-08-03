@@ -110,6 +110,19 @@ from tinyllm.training.m5_formal_schema import (
     M5FormalRankMemory,
     M5FormalRunResult,
 )
+from tinyllm.training.m5_failure import (
+    M5_FULL_SFT_MINIMUM_FREE_BYTES,
+    M5_LORA_MINIMUM_FREE_BYTES,
+    M5FailurePathError,
+    normalize_cuda_oom,
+    require_child_success,
+    require_dataset_identity,
+    require_file_sha256,
+    require_finite_metric,
+    require_storage_capacity,
+    require_world_size,
+)
+from tinyllm.training.m5_failure_schema import M5FailurePathCase, M5FailurePathEvidence
 from tinyllm.training.m5_lora import (
     M5LoRACheckpointStore,
     M5LoRAError,

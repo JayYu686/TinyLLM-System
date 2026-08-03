@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "M5FailurePathCase": {
+      "additionalProperties": false,
+      "description": "One deliberately injected, safely rejected failure.",
+      "properties": {
+        "injection_kind": {
+          "const": "safe_cpu_fault_injection",
+          "title": "Injection Kind",
+          "type": "string"
+        },
+        "name": {
+          "enum": [
+            "cuda_oom",
+            "non_finite",
+            "corrupt_checkpoint",
+            "disk_insufficient",
+            "dataset_drift",
+            "world_size_mismatch",
+            "child_process_exit"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "observed_error": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Observed Error",
+          "type": "string"
+        },
+        "status": {
+          "const": "rejected_as_expected",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "status",
+        "injection_kind",
+        "observed_error"
+      ],
+      "title": "M5FailurePathCase",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete ordered M5 failure-path acceptance result.",
+  "properties": {
+    "cases": {
+      "maxItems": 7,
+      "minItems": 7,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5FailurePathCase"
+        },
+        {
+          "$ref": "#/$defs/M5FailurePathCase"
+        },
+        {
+          "$ref": "#/$defs/M5FailurePathCase"
+        },
+        {
+          "$ref": "#/$defs/M5FailurePathCase"
+        },
+        {
+          "$ref": "#/$defs/M5FailurePathCase"
+        },
+        {
+          "$ref": "#/$defs/M5FailurePathCase"
+        },
+        {
+          "$ref": "#/$defs/M5FailurePathCase"
+        }
+      ],
+      "title": "Cases",
+      "type": "array"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "model_generated": {
+      "const": false,
+      "title": "Model Generated",
+      "type": "boolean"
+    },
+    "quality_metric": {
+      "const": false,
+      "title": "Quality Metric",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "passed",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "generated_at",
+    "git_commit",
+    "git_dirty",
+    "model_generated",
+    "quality_metric",
+    "cases"
+  ],
+  "title": "M5FailurePathEvidence",
+  "type": "object"
+}

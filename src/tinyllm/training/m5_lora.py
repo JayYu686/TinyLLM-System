@@ -30,6 +30,7 @@ from tinyllm.lineage import read_git_identity
 from tinyllm.schemas import canonical_config_hash, generate_run_id
 from tinyllm.training.m5_ablation import token_learning_rate
 from tinyllm.training.m5_config import M5SFTConfig, load_m5_sft_config
+from tinyllm.training.m5_failure import require_dataset_identity, require_finite_metric
 from tinyllm.training.m5_formal import (
     _append_jsonl,
     _atomic_json,
@@ -548,11 +549,13 @@ def run_m5_lora(
         dataset_manifest_sha256 = hashlib.sha256(
             (dataset_root / _MANIFEST_FILE).read_bytes()
         ).hexdigest()
-        if (
-            opened.manifest.dataset_version != config.data.dataset_version
-            or dataset_manifest_sha256 != config.data.mix_manifest_sha256
-            or opened.manifest.source_supervised_tokens != 1_000_000
-        ):
+        require_dataset_identity(
+            actual_version=opened.manifest.dataset_version,
+            expected_version=config.data.dataset_version,
+            actual_manifest_sha256=dataset_manifest_sha256,
+            expected_manifest_sha256=config.data.mix_manifest_sha256,
+        )
+        if opened.manifest.source_supervised_tokens != 1_000_000:
             raise M5LoRAError("M5 LoRA config and Dataset identity differ")
         environment = _collect_environment()
         hardware = _collect_hardware(physical_gpu_index)
@@ -763,7 +766,7 @@ def run_m5_lora(
                     output = model(**batch)
                     loss = output.loss
                 if not bool(torch.isfinite(loss).item()):
-                    raise M5LoRAError("M5 LoRA training produced non-finite loss")
+                    require_finite_metric("loss", float("nan"))
                 (loss * (valid_tokens / group_tokens)).backward()
                 loss_numerator += float(loss.detach()) * valid_tokens
             gradient_norm = float(
@@ -773,7 +776,7 @@ def run_m5_lora(
                 )
             )
             if not math.isfinite(gradient_norm):
-                raise M5LoRAError("M5 LoRA training produced non-finite gradient norm")
+                require_finite_metric("gradient norm", gradient_norm)
             optimizer.step()
             weighted_loss = loss_numerator / group_tokens
             if initial_loss is None:

@@ -32,6 +32,11 @@ from tinyllm.lineage import read_git_identity
 from tinyllm.schemas import canonical_config_hash, generate_run_id
 from tinyllm.training.m5_ablation import token_learning_rate
 from tinyllm.training.m5_config import M5SFTConfig, load_m5_sft_config
+from tinyllm.training.m5_failure import (
+    require_dataset_identity,
+    require_finite_metric,
+    require_world_size,
+)
 from tinyllm.training.m5_formal_schema import (
     M5FormalCheckpointFile,
     M5FormalCheckpointManifest,
@@ -531,7 +536,8 @@ def run_m5_formal_ddp(
     rank = int(os.environ.get("RANK", "-1"))
     local_rank = int(os.environ.get("LOCAL_RANK", "-1"))
     world_size = int(os.environ.get("WORLD_SIZE", "-1"))
-    if world_size != 4 or rank not in range(4) or local_rank not in range(4):
+    require_world_size(actual=world_size, expected=4)
+    if rank not in range(4) or local_rank not in range(4):
         raise M5FormalTrainingError("formal M5 worker requires torchrun World Size 4")
     config = load_m5_sft_config(config_path)
     if (
@@ -561,11 +567,13 @@ def run_m5_formal_ddp(
         dataset_manifest_sha256 = hashlib.sha256(
             (dataset_root / _MANIFEST_FILE).read_bytes()
         ).hexdigest()
-        if (
-            opened.manifest.dataset_version != config.data.dataset_version
-            or dataset_manifest_sha256 != config.data.mix_manifest_sha256
-            or opened.manifest.target_supervised_tokens != config.training.max_train_tokens
-        ):
+        require_dataset_identity(
+            actual_version=opened.manifest.dataset_version,
+            expected_version=config.data.dataset_version,
+            actual_manifest_sha256=dataset_manifest_sha256,
+            expected_manifest_sha256=config.data.mix_manifest_sha256,
+        )
+        if opened.manifest.target_supervised_tokens != config.training.max_train_tokens:
             raise M5FormalTrainingError("formal M5 config and Dataset identity differ")
         config_sha256 = canonical_config_hash(config)
         lineage_box: list[object] = [None]
@@ -824,7 +832,7 @@ def run_m5_formal_ddp(
                     )
                     dist.all_reduce(finite, op=dist.ReduceOp.MIN)
                     if not bool(finite.item()):
-                        raise M5FormalTrainingError("formal M5 training produced non-finite loss")
+                        require_finite_metric("loss", float("nan"))
                     scaled = loss * (4.0 * valid_tokens / global_group_tokens)
                     scaled.backward()
                 local_loss_numerator += float(loss.detach()) * valid_tokens
@@ -841,7 +849,7 @@ def run_m5_formal_ddp(
             )
             dist.all_reduce(finite_gradient, op=dist.ReduceOp.MIN)
             if not bool(finite_gradient.item()):
-                raise M5FormalTrainingError("formal M5 training produced non-finite gradient norm")
+                require_finite_metric("gradient norm", gradient_norm)
             optimizer.step()
             loss_tensor = torch.tensor(
                 local_loss_numerator,

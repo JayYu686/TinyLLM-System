@@ -223,3 +223,34 @@ class M5FormalRunResult(StrictSchema):
         elif self.supervised_tokens >= 50_000_000 or self.export_sha256 is not None:
             raise ValueError("interrupted formal M5 run cannot claim completion or export")
         return self
+
+
+class M5FormalCampaignResult(StrictSchema):
+    """Path-free result for the two-segment four-GPU Full-SFT campaign."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["succeeded"]
+    campaign_id: str = Field(pattern=r"^[0-9]{8}T[0-9]{6}Z-m5-formal-campaign$")
+    run_id: str = Field(min_length=1, max_length=180)
+    physical_gpu_indices: tuple[int, int, int, int]
+    segment_count: Literal[2]
+    interruption_tokens: int = Field(ge=2_000_000, lt=2_100_000)
+    resumed_from_tokens: int = Field(ge=2_000_000, lt=2_100_000)
+    final_tokens: Literal[50_000_000]
+    export_sha256: str = Field(pattern=SHA256_PATTERN)
+    interrupted_result_sha256: str = Field(pattern=SHA256_PATTERN)
+    final_result_sha256: str = Field(pattern=SHA256_PATTERN)
+    thermal_events_sha256: str = Field(pattern=SHA256_PATTERN)
+    thermal_pause_count: int = Field(ge=0)
+    max_observed_temperature_c: int = Field(ge=0, le=100)
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+    @model_validator(mode="after")
+    def validate_campaign(self) -> M5FormalCampaignResult:
+        """Bind distinct GPUs and the Exact-Resume boundary."""
+
+        if len(set(self.physical_gpu_indices)) != 4:
+            raise ValueError("formal M5 campaign requires four distinct GPUs")
+        if self.resumed_from_tokens != self.interruption_tokens:
+            raise ValueError("formal M5 campaign Resume point differs from interruption")
+        return self

@@ -100,6 +100,7 @@ from tinyllm.training.m5_formal import (
     run_m5_formal_ddp,
 )
 from tinyllm.training.m5_formal_schema import (
+    M5FormalCampaignResult,
     M5FormalCheckpointFile,
     M5FormalCheckpointManifest,
     M5FormalEnvironment,
@@ -185,6 +186,7 @@ __all__ = [
     "M5EvaluationConfig",
     "M5FormalCheckpointFile",
     "M5FormalCheckpointManifest",
+    "M5FormalCampaignResult",
     "M5FormalCheckpointStore",
     "M5FormalEnvironment",
     "M5FormalGPU",

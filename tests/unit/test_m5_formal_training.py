@@ -13,11 +13,36 @@ from tinyllm.training.m5_formal import (
     M5FormalTrainingError,
 )
 from tinyllm.training.m5_formal_schema import (
+    M5FormalCampaignResult,
     M5FormalEnvironment,
     M5FormalHardware,
     M5FormalRankMemory,
     M5FormalRunResult,
 )
+
+
+def test_formal_campaign_binds_four_gpus_and_resume_boundary() -> None:
+    payload = {
+        "status": "succeeded",
+        "campaign_id": "20260803T000000Z-m5-formal-campaign",
+        "run_id": "formal-run",
+        "physical_gpu_indices": (4, 5, 6, 7),
+        "segment_count": 2,
+        "interruption_tokens": 2_000_123,
+        "resumed_from_tokens": 2_000_123,
+        "final_tokens": 50_000_000,
+        "export_sha256": "a" * 64,
+        "interrupted_result_sha256": "b" * 64,
+        "final_result_sha256": "c" * 64,
+        "thermal_events_sha256": "d" * 64,
+        "thermal_pause_count": 1,
+        "max_observed_temperature_c": 84,
+        "git_commit": "e" * 40,
+    }
+
+    assert M5FormalCampaignResult.model_validate(payload).segment_count == 2
+    with pytest.raises(ValidationError, match="Resume point"):
+        M5FormalCampaignResult.model_validate(payload | {"resumed_from_tokens": 2_000_124})
 
 
 def _rank_memory() -> tuple[

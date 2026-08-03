@@ -158,6 +158,7 @@ from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult, M5CheckpointManifest
 from tinyllm.training.m5_config import M5SFTConfig
 from tinyllm.training.m5_formal_schema import (
+    M5FormalCampaignResult,
     M5FormalCheckpointManifest,
     M5FormalEnvironment,
     M5FormalHardware,
@@ -270,6 +271,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-format-repair-gate-result-v1.schema.json": M5FormatRepairGateResult,
     "m5-checkpoint-manifest-v1.schema.json": M5CheckpointManifest,
     "m5-formal-checkpoint-manifest-v1.schema.json": M5FormalCheckpointManifest,
+    "m5-formal-campaign-result-v1.schema.json": M5FormalCampaignResult,
     "m5-formal-environment-v1.schema.json": M5FormalEnvironment,
     "m5-formal-hardware-v1.schema.json": M5FormalHardware,
     "m5-formal-run-result-v1.schema.json": M5FormalRunResult,

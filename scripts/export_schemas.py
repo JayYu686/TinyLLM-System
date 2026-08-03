@@ -157,6 +157,7 @@ from tinyllm.training.m4_qwen_config import M4QwenFSDP2Config
 from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult, M5CheckpointManifest
 from tinyllm.training.m5_config import M5SFTConfig
+from tinyllm.training.m5_failure_schema import M5FailurePathEvidence
 from tinyllm.training.m5_formal_schema import (
     M5FormalCampaignResult,
     M5FormalCheckpointManifest,
@@ -164,7 +165,6 @@ from tinyllm.training.m5_formal_schema import (
     M5FormalHardware,
     M5FormalRunResult,
 )
-from tinyllm.training.m5_failure_schema import M5FailurePathEvidence
 from tinyllm.training.m5_lora_schema import (
     M5LoRACampaignResult,
     M5LoRACheckpointManifest,

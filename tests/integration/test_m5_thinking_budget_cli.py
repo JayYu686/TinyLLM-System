@@ -15,6 +15,7 @@ def test_thinking_budget_cli_supports_direct_help() -> None:
     assert completed.returncode == 0
     assert "--training-run" in completed.stdout
     assert "--gpu-index" in completed.stdout
+    assert "--max-preflight-memory-mib" in completed.stdout
 
 
 def test_thinking_budget_gate_cli_supports_direct_help() -> None:

@@ -318,6 +318,21 @@ def test_evaluation_summary_rejects_lineage_and_memory_errors() -> None:
     with pytest.raises(ValidationError, match="reserved memory"):
         M5ThinkingBudgetEvaluationSummary.model_validate(payload | {"peak_allocated_bytes": 3})
 
+    shared = M5ThinkingBudgetEvaluationSummary.model_validate(
+        payload
+        | {
+            "preflight_memory_used_mib": 1744,
+            "preflight_utilization_percent": 0,
+            "preflight_temperature_c": 31,
+            "shared_gpu_evaluation": True,
+        }
+    )
+    assert shared.shared_gpu_evaluation is True
+    with pytest.raises(ValidationError, match="shared-GPU flag"):
+        M5ThinkingBudgetEvaluationSummary.model_validate(
+            shared.model_dump(mode="json") | {"shared_gpu_evaluation": False}
+        )
+
     formal = M5ThinkingBudgetEvaluationSummary.model_validate(
         payload
         | {

@@ -227,6 +227,10 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
     git_dirty: Literal[False]
     physical_gpu_index: int = Field(ge=0)
     gpu_name: str = Field(min_length=1, max_length=128)
+    preflight_memory_used_mib: int | None = Field(default=None, ge=0)
+    preflight_utilization_percent: int | None = Field(default=None, ge=0, le=100)
+    preflight_temperature_c: int | None = Field(default=None, ge=0, le=100)
+    shared_gpu_evaluation: bool = False
     duration_seconds: float = Field(gt=0)
     peak_allocated_bytes: int = Field(gt=0)
     peak_reserved_bytes: int = Field(gt=0)
@@ -264,6 +268,18 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
                 raise ValueError("thinking-budget LoRA Candidate requires Adapter lineage")
         elif self.adaptation != "full" or self.adapter_sha256 is not None:
             raise ValueError("non-LoRA Thinking Budget result cannot claim an Adapter")
+        preflight = (
+            self.preflight_memory_used_mib,
+            self.preflight_utilization_percent,
+            self.preflight_temperature_c,
+        )
+        if any(value is None for value in preflight) != all(value is None for value in preflight):
+            raise ValueError("Thinking Budget preflight metrics must be complete")
+        expected_shared = (
+            self.preflight_memory_used_mib is not None and self.preflight_memory_used_mib > 1024
+        )
+        if self.shared_gpu_evaluation != expected_shared:
+            raise ValueError("Thinking Budget shared-GPU flag differs from preflight memory")
         if self.peak_reserved_bytes < self.peak_allocated_bytes:
             raise ValueError("reserved memory cannot be below allocated memory")
         return self

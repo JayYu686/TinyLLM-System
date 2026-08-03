@@ -213,6 +213,47 @@
       "title": "Physical Gpu Index",
       "type": "integer"
     },
+    "preflight_memory_used_mib": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preflight Memory Used Mib"
+    },
+    "preflight_temperature_c": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preflight Temperature C"
+    },
+    "preflight_utilization_percent": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preflight Utilization Percent"
+    },
     "protocol_version": {
       "const": "m5-thinking-budget-v2",
       "title": "Protocol Version",
@@ -228,6 +269,11 @@
       "default": "1.0",
       "title": "Schema Version",
       "type": "string"
+    },
+    "shared_gpu_evaluation": {
+      "default": false,
+      "title": "Shared Gpu Evaluation",
+      "type": "boolean"
     },
     "status": {
       "const": "succeeded",

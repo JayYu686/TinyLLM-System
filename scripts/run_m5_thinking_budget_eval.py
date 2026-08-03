@@ -23,7 +23,11 @@ from tinyllm.lineage import read_git_identity
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult
 from tinyllm.training.m5_formal_schema import M5FormalRunResult
 from tinyllm.training.m5_lora_schema import M5LoRARunResult
-from tinyllm.training.smoke_preflight import inspect_gpus, validate_gpu_preflight
+from tinyllm.training.smoke_preflight import (
+    MAX_TEMPERATURE_C,
+    MAX_UTILIZATION_PERCENT,
+    inspect_gpus,
+)
 
 
 def _sha256_file(path: Path) -> str:
@@ -140,6 +144,9 @@ def _worker(args: argparse.Namespace) -> int:
         ),
         adapter_dir=args.adapter_dir,
         adapter_sha256=lineage.adapter_sha256 if lineage is not None else None,
+        preflight_memory_used_mib=args.preflight_memory_used_mib,
+        preflight_utilization_percent=args.preflight_utilization_percent,
+        preflight_temperature_c=args.preflight_temperature_c,
     )
     print(result.model_dump_json())
     return 0
@@ -150,7 +157,15 @@ def _supervise(args: argparse.Namespace) -> int:
     _, dirty = read_git_identity(project_root)
     if dirty:
         raise M5ThinkingBudgetError("formal evaluation requires a clean Git worktree")
-    validate_gpu_preflight(inspect_gpus((args.gpu_index,)))
+    preflight = inspect_gpus((args.gpu_index,))[0]
+    if (
+        preflight["memory_used_mib"] > args.max_preflight_memory_mib
+        or preflight["utilization_percent"] > MAX_UTILIZATION_PERCENT
+        or preflight["temperature_c"] > MAX_TEMPERATURE_C
+    ):
+        raise M5ThinkingBudgetError(
+            f"evaluation GPU preflight rejected physical index: {args.gpu_index}"
+        )
     config = load_m5_thinking_budget_config(args.config)
     if args.model_kind == "lora_candidate":
         if (
@@ -195,6 +210,12 @@ def _supervise(args: argparse.Namespace) -> int:
         "--gpu-index",
         str(args.gpu_index),
         "--worker",
+        "--preflight-memory-used-mib",
+        str(preflight["memory_used_mib"]),
+        "--preflight-utilization-percent",
+        str(preflight["utilization_percent"]),
+        "--preflight-temperature-c",
+        str(preflight["temperature_c"]),
     ]
     if args.training_run is not None:
         command.extend(("--training-run", str(args.training_run)))
@@ -242,6 +263,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--training-run", type=Path)
     parser.add_argument("--adapter-dir", type=Path)
     parser.add_argument("--gpu-index", type=int, required=True)
+    parser.add_argument(
+        "--max-preflight-memory-mib",
+        type=int,
+        choices=(1024, 3072),
+        default=1024,
+    )
+    parser.add_argument("--preflight-memory-used-mib", type=int, help=argparse.SUPPRESS)
+    parser.add_argument("--preflight-utilization-percent", type=int, help=argparse.SUPPRESS)
+    parser.add_argument("--preflight-temperature-c", type=int, help=argparse.SUPPRESS)
     parser.add_argument("--timeout-seconds", type=int, default=14_400)
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     return parser

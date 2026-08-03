@@ -428,6 +428,9 @@ def run_m5_thinking_budget_evaluation(
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None,
     adapter_dir: Path | None = None,
     adapter_sha256: str | None = None,
+    preflight_memory_used_mib: int | None = None,
+    preflight_utilization_percent: int | None = None,
+    preflight_temperature_c: int | None = None,
 ) -> M5ThinkingBudgetEvaluationSummary:
     """Evaluate Base or Candidate under the versioned official budget controller."""
 
@@ -640,6 +643,12 @@ def run_m5_thinking_budget_evaluation(
         git_dirty=False,
         physical_gpu_index=physical_gpu_index,
         gpu_name=torch.cuda.get_device_name(device),
+        preflight_memory_used_mib=preflight_memory_used_mib,
+        preflight_utilization_percent=preflight_utilization_percent,
+        preflight_temperature_c=preflight_temperature_c,
+        shared_gpu_evaluation=(
+            preflight_memory_used_mib is not None and preflight_memory_used_mib > 1024
+        ),
         duration_seconds=duration,
         peak_allocated_bytes=int(torch.cuda.max_memory_allocated(device)),
         peak_reserved_bytes=int(torch.cuda.max_memory_reserved(device)),

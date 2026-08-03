@@ -52,8 +52,11 @@ class M5ThinkingBudgetEvaluationConfig(StrictSchema):
     suite_version: Literal["m5-reasoning-dev-v1-53ddf557"]
     expected_items: Literal[200]
     task_config_sha256: str = Field(pattern=SHA256_PATTERN)
-    model_repository: Literal["Qwen/Qwen3-0.6B"]
-    base_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
+    model_repository: Literal["Qwen/Qwen3-0.6B", "Qwen/Qwen3-8B"]
+    base_revision: Literal[
+        "c1899de289a04d12100db370d81485cdf75e47ca",
+        "b968826d9c46dd6066d109eabc6255188de91218",
+    ]
     attention_architecture: Literal["gqa"]
     thinking_template_id: Literal["qwen3-chatml-thinking-v1"]
     nonthinking_template_id: Literal["qwen3-chatml-nonthinking-generation-v1"]
@@ -64,6 +67,18 @@ class M5ThinkingBudgetEvaluationConfig(StrictSchema):
     min_thinking_score_basis_points: Literal[9000]
     nonthinking_regression_tolerance_basis_points: Literal[200]
     generation: M5ThinkingBudgetGenerationConfig
+
+    @model_validator(mode="after")
+    def validate_model_identity(self) -> M5ThinkingBudgetEvaluationConfig:
+        """Bind each reviewed repository to its immutable Revision."""
+
+        pairs = {
+            "Qwen/Qwen3-0.6B": "c1899de289a04d12100db370d81485cdf75e47ca",
+            "Qwen/Qwen3-8B": "b968826d9c46dd6066d109eabc6255188de91218",
+        }
+        if pairs[self.model_repository] != self.base_revision:
+            raise ValueError("Thinking Budget repository and Revision differ")
+        return self
 
 
 class M5ThinkingBudgetItemResult(StrictSchema):
@@ -190,11 +205,16 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
     status: Literal["succeeded"]
     evaluation_id: str = Field(min_length=1, max_length=180)
     protocol_version: Literal["m5-thinking-budget-v2"]
-    model_kind: Literal["base", "ablation_candidate"]
+    model_kind: Literal["base", "ablation_candidate", "lora_candidate"]
     training_run_id: str | None = Field(default=None, min_length=1, max_length=180)
     training_seed: int | None = Field(default=None, ge=0, le=2**32 - 1)
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None
-    model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
+    model_revision: Literal[
+        "c1899de289a04d12100db370d81485cdf75e47ca",
+        "b968826d9c46dd6066d109eabc6255188de91218",
+    ]
+    adaptation: Literal["full", "lora"] = "full"
+    adapter_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     attention_architecture: Literal["gqa"]
     suite_version: Literal["m5-reasoning-dev-v1-53ddf557"]
     config_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -224,6 +244,16 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
             value is None for value in candidate_fields
         ):
             raise ValueError("thinking-budget Candidate requires complete training lineage")
+        if self.model_kind == "lora_candidate":
+            if (
+                any(value is None for value in candidate_fields)
+                or self.adaptation != "lora"
+                or self.adapter_sha256 is None
+                or self.model_revision != "b968826d9c46dd6066d109eabc6255188de91218"
+            ):
+                raise ValueError("thinking-budget LoRA Candidate requires Adapter lineage")
+        elif self.adaptation != "full" or self.adapter_sha256 is not None:
+            raise ValueError("non-LoRA Thinking Budget result cannot claim an Adapter")
         if self.peak_reserved_bytes < self.peak_allocated_bytes:
             raise ValueError("reserved memory cannot be below allocated memory")
         return self

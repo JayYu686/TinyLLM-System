@@ -9,16 +9,19 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
 
 from tinyllm.evaluation import acquire_baseline_model, load_baseline_config
 from tinyllm.evaluation.m5_thinking_budget import (
     M5ThinkingBudgetError,
+    load_m5_thinking_budget_config,
     run_m5_thinking_budget_evaluation,
 )
 from tinyllm.lineage import read_git_identity
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult
+from tinyllm.training.m5_lora_schema import M5LoRARunResult
 from tinyllm.training.smoke_preflight import inspect_gpus, validate_gpu_preflight
 
 
@@ -41,7 +44,15 @@ def _export_sha256(root: Path) -> str:
     return digest.hexdigest()
 
 
-def _candidate_lineage(args: argparse.Namespace) -> M5AblationRunResult | None:
+@dataclass(frozen=True, slots=True)
+class _CandidateLineage:
+    run_id: str
+    seed: int
+    thinking_fraction_basis_points: Literal[0, 3000, 5000]
+    adapter_sha256: str | None = None
+
+
+def _candidate_lineage(args: argparse.Namespace) -> _CandidateLineage | None:
     if args.model_kind == "base":
         if args.training_run is not None:
             raise M5ThinkingBudgetError("Base evaluation cannot receive a training Run")
@@ -49,18 +60,42 @@ def _candidate_lineage(args: argparse.Namespace) -> M5AblationRunResult | None:
     if args.training_run is None:
         raise M5ThinkingBudgetError("Candidate evaluation requires a training Run")
     try:
-        result = M5AblationRunResult.model_validate_json(
-            (args.training_run / "result.json").read_text(encoding="utf-8")
+        if args.model_kind == "lora_candidate":
+            lora_result = M5LoRARunResult.model_validate_json(
+                (args.training_run / "result.json").read_bytes()
+            )
+            if args.adapter_dir is None:
+                raise M5ThinkingBudgetError("LoRA Candidate requires --adapter-dir")
+            if (
+                lora_result.status != "succeeded"
+                or lora_result.adapter_sha256 is None
+                or args.adapter_dir.resolve()
+                != (args.training_run / "exports" / "adapter").resolve()
+                or _export_sha256(args.adapter_dir) != lora_result.adapter_sha256
+            ):
+                raise M5ThinkingBudgetError("LoRA Adapter differs from training lineage")
+            return _CandidateLineage(
+                run_id=lora_result.run_id,
+                seed=lora_result.seed,
+                thinking_fraction_basis_points=lora_result.thinking_fraction_basis_points,
+                adapter_sha256=lora_result.adapter_sha256,
+            )
+        ablation_result = M5AblationRunResult.model_validate_json(
+            (args.training_run / "result.json").read_bytes()
         )
     except (OSError, ValueError) as exc:
         raise M5ThinkingBudgetError("Candidate training result is invalid") from exc
     if (
-        result.status != "succeeded"
+        ablation_result.status != "succeeded"
         or args.model_dir.resolve() != (args.training_run / "exports" / "model").resolve()
-        or _export_sha256(args.model_dir) != result.export_sha256
+        or _export_sha256(args.model_dir) != ablation_result.export_sha256
     ):
         raise M5ThinkingBudgetError("Candidate export differs from training lineage")
-    return result
+    return _CandidateLineage(
+        run_id=ablation_result.run_id,
+        seed=ablation_result.seed,
+        thinking_fraction_basis_points=ablation_result.thinking_fraction_basis_points,
+    )
 
 
 def _worker(args: argparse.Namespace) -> int:
@@ -78,6 +113,8 @@ def _worker(args: argparse.Namespace) -> int:
         thinking_fraction_basis_points=(
             lineage.thinking_fraction_basis_points if lineage is not None else None
         ),
+        adapter_dir=args.adapter_dir,
+        adapter_sha256=lineage.adapter_sha256 if lineage is not None else None,
     )
     print(result.model_dump_json())
     return 0
@@ -89,16 +126,25 @@ def _supervise(args: argparse.Namespace) -> int:
     if dirty:
         raise M5ThinkingBudgetError("formal evaluation requires a clean Git worktree")
     validate_gpu_preflight(inspect_gpus((args.gpu_index,)))
-    baseline = load_baseline_config(args.baseline_config)
-    tokenizer_dir = acquire_baseline_model(
-        baseline,
-        cache_root=args.artifact_root / "cache",
-        offline=True,
-    )
-    if tokenizer_dir.resolve() != args.tokenizer_dir.resolve():
-        raise M5ThinkingBudgetError("tokenizer differs from the pinned Base snapshot")
-    if args.model_kind == "base" and args.model_dir.resolve() != tokenizer_dir.resolve():
-        raise M5ThinkingBudgetError("Base evaluation requires the pinned Base snapshot")
+    config = load_m5_thinking_budget_config(args.config)
+    if args.model_kind == "lora_candidate":
+        if (
+            config.model_repository != "Qwen/Qwen3-8B"
+            or args.model_dir.name != config.base_revision
+            or args.tokenizer_dir.resolve() != args.model_dir.resolve()
+        ):
+            raise M5ThinkingBudgetError("LoRA evaluation requires the pinned 8B Base snapshot")
+    else:
+        baseline = load_baseline_config(args.baseline_config)
+        tokenizer_dir = acquire_baseline_model(
+            baseline,
+            cache_root=args.artifact_root / "cache",
+            offline=True,
+        )
+        if tokenizer_dir.resolve() != args.tokenizer_dir.resolve():
+            raise M5ThinkingBudgetError("tokenizer differs from the pinned Base snapshot")
+        if args.model_kind == "base" and args.model_dir.resolve() != tokenizer_dir.resolve():
+            raise M5ThinkingBudgetError("Base evaluation requires the pinned Base snapshot")
     _candidate_lineage(args)
     environment = os.environ.copy()
     environment["CUDA_VISIBLE_DEVICES"] = str(args.gpu_index)
@@ -127,6 +173,8 @@ def _supervise(args: argparse.Namespace) -> int:
     ]
     if args.training_run is not None:
         command.extend(("--training-run", str(args.training_run)))
+    if args.adapter_dir is not None:
+        command.extend(("--adapter-dir", str(args.adapter_dir)))
     completed = subprocess.run(
         command,
         cwd=project_root,
@@ -163,10 +211,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--model-kind",
-        choices=("base", "ablation_candidate"),
+        choices=("base", "ablation_candidate", "lora_candidate"),
         required=True,
     )
     parser.add_argument("--training-run", type=Path)
+    parser.add_argument("--adapter-dir", type=Path)
     parser.add_argument("--gpu-index", type=int, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=14_400)
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)

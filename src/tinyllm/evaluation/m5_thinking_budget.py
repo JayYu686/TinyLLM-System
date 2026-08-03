@@ -235,6 +235,8 @@ def evaluate_m5_thinking_budget_gate(
     for candidate in ordered:
         if (
             candidate.model_kind != "ablation_candidate"
+            or candidate.adaptation != "full"
+            or candidate.adapter_sha256 is not None
             or candidate.protocol_version != base.protocol_version
             or candidate.config_sha256 != base.config_sha256
             or candidate.git_commit != base.git_commit
@@ -330,7 +332,12 @@ def evaluate_m5_thinking_budget_gate(
     )
 
 
-def _validate_qwen_runtime(model_dir: Path, tokenizer: Any) -> None:
+def _validate_qwen_runtime(
+    model_dir: Path,
+    tokenizer: Any,
+    *,
+    config: M5ThinkingBudgetEvaluationConfig,
+) -> None:
     probe = [{"role": "user", "content": "TinyLLM template probe."}]
     thinking = tokenizer.apply_chat_template(
         probe,
@@ -358,11 +365,16 @@ def _validate_qwen_runtime(model_dir: Path, tokenizer: Any) -> None:
         )
     except (OSError, json.JSONDecodeError) as exc:
         raise M5ThinkingBudgetError("evaluated model config cannot be parsed") from exc
+    expected_heads = 16 if config.model_repository == "Qwen/Qwen3-0.6B" else 32
     if {
         "model_type": model_config.get("model_type"),
         "num_attention_heads": model_config.get("num_attention_heads"),
         "num_key_value_heads": model_config.get("num_key_value_heads"),
-    } != {"model_type": "qwen3", "num_attention_heads": 16, "num_key_value_heads": 8}:
+    } != {
+        "model_type": "qwen3",
+        "num_attention_heads": expected_heads,
+        "num_key_value_heads": 8,
+    }:
         raise M5ThinkingBudgetError("evaluated model is not the frozen Qwen3 GQA route")
 
 
@@ -405,10 +417,12 @@ def run_m5_thinking_budget_evaluation(
     tokenizer_dir: Path,
     output_dir: Path,
     physical_gpu_index: int,
-    model_kind: Literal["base", "ablation_candidate"],
+    model_kind: Literal["base", "ablation_candidate", "lora_candidate"],
     training_run_id: str | None = None,
     training_seed: int | None = None,
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None,
+    adapter_dir: Path | None = None,
+    adapter_sha256: str | None = None,
 ) -> M5ThinkingBudgetEvaluationSummary:
     """Evaluate Base or Candidate under the versioned official budget controller."""
 
@@ -439,7 +453,7 @@ def run_m5_thinking_budget_evaluation(
         trust_remote_code=False,
     )
     tokenizer.padding_side = "left"
-    _validate_qwen_runtime(model_dir, tokenizer)
+    _validate_qwen_runtime(model_dir, tokenizer, config=config)
     model = AutoModelForCausalLM.from_pretrained(
         model_dir,
         local_files_only=True,
@@ -447,7 +461,16 @@ def run_m5_thinking_budget_evaluation(
         dtype=torch.bfloat16,
         attn_implementation="sdpa",
         low_cpu_mem_usage=True,
-    ).to(device)
+    )
+    if model_kind == "lora_candidate":
+        if adapter_dir is None or adapter_sha256 is None:
+            raise M5ThinkingBudgetError("LoRA evaluation requires verified Adapter lineage")
+        from peft import PeftModel  # type: ignore[import-not-found]
+
+        model = PeftModel.from_pretrained(model, adapter_dir, is_trainable=False)
+    elif adapter_dir is not None or adapter_sha256 is not None:
+        raise M5ThinkingBudgetError("non-LoRA evaluation cannot receive an Adapter")
+    model = model.to(device)
     model.eval()
     eos_ids = _eos_ids(tokenizer)
     injection_ids = list(tokenizer.encode(EARLY_STOPPING_TEXT, add_special_tokens=False))
@@ -603,6 +626,8 @@ def run_m5_thinking_budget_evaluation(
         training_seed=training_seed,
         thinking_fraction_basis_points=thinking_fraction_basis_points,
         model_revision=config.base_revision,
+        adaptation="lora" if model_kind == "lora_candidate" else "full",
+        adapter_sha256=adapter_sha256,
         attention_architecture=config.attention_architecture,
         suite_version=config.suite_version,
         config_sha256=content_sha256(config.to_dict()),

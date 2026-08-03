@@ -1,0 +1,29 @@
+schema_version: "1.0"
+protocol_version: m5-thinking-budget-v2
+suite_version: m5-reasoning-dev-v1-53ddf557
+expected_items: 200
+task_config_sha256: aa4cdfa68fd639e273150f4abb1228a4e6c625676aafda21bc219585a0aaf6a1
+model_repository: Qwen/Qwen3-8B
+base_revision: b968826d9c46dd6066d109eabc6255188de91218
+attention_architecture: gqa
+thinking_template_id: qwen3-chatml-thinking-v1
+nonthinking_template_id: qwen3-chatml-nonthinking-generation-v1
+compare_modes_separately: true
+consume_m6_frozen_results: false
+controlled_format_min_basis_points: 9900
+max_forced_close_basis_points: 1000
+min_thinking_score_basis_points: 9000
+nonthinking_regression_tolerance_basis_points: 200
+generation:
+  batch_size: 4
+  thinking_budget_tokens: 1536
+  final_answer_max_new_tokens: 128
+  nonthinking_max_new_tokens: 128
+  thinking_do_sample: true
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 20
+  repetition_penalty: 1.0
+  nonthinking_do_sample: false
+  base_seed: 20260726
+  early_stopping_text: "\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n</think>\n\n"

@@ -118,6 +118,28 @@
   "additionalProperties": false,
   "description": "Path-free public result for one protocol-v2 Base or Candidate evaluation.",
   "properties": {
+    "adaptation": {
+      "default": "full",
+      "enum": [
+        "full",
+        "lora"
+      ],
+      "title": "Adaptation",
+      "type": "string"
+    },
+    "adapter_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Sha256"
+    },
     "attention_architecture": {
       "const": "gqa",
       "title": "Attention Architecture",
@@ -158,13 +180,17 @@
     "model_kind": {
       "enum": [
         "base",
-        "ablation_candidate"
+        "ablation_candidate",
+        "lora_candidate"
       ],
       "title": "Model Kind",
       "type": "string"
     },
     "model_revision": {
-      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "enum": [
+        "c1899de289a04d12100db370d81485cdf75e47ca",
+        "b968826d9c46dd6066d109eabc6255188de91218"
+      ],
       "title": "Model Revision",
       "type": "string"
     },

@@ -48,6 +48,18 @@ def test_protocol_v2_freezes_qwen_official_budget_and_unchanged_quality_gate() -
     assert config.consume_m6_frozen_results is False
 
 
+def test_protocol_v2_freezes_lora_base_identity() -> None:
+    config = load_m5_thinking_budget_config(Path("configs/eval/m5_lora_thinking_budget_v2.yaml"))
+
+    assert config.model_repository == "Qwen/Qwen3-8B"
+    assert config.base_revision == "b968826d9c46dd6066d109eabc6255188de91218"
+    with pytest.raises(ValidationError, match="repository and Revision"):
+        config.__class__.model_validate(
+            config.model_dump(mode="json")
+            | {"base_revision": "c1899de289a04d12100db370d81485cdf75e47ca"}
+        )
+
+
 def test_forced_close_is_scored_but_never_mislabeled_as_natural() -> None:
     task = _task()
     first = "<think>\nThe budget was exhausted."
@@ -305,6 +317,24 @@ def test_evaluation_summary_rejects_lineage_and_memory_errors() -> None:
         )
     with pytest.raises(ValidationError, match="reserved memory"):
         M5ThinkingBudgetEvaluationSummary.model_validate(payload | {"peak_allocated_bytes": 3})
+
+    lora = M5ThinkingBudgetEvaluationSummary.model_validate(
+        payload
+        | {
+            "model_kind": "lora_candidate",
+            "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+            "adaptation": "lora",
+            "adapter_sha256": "d" * 64,
+            "training_run_id": "formal-lora-run",
+            "training_seed": 42,
+            "thinking_fraction_basis_points": 3000,
+        }
+    )
+    assert lora.adaptation == "lora"
+    with pytest.raises(ValidationError, match="Adapter lineage"):
+        M5ThinkingBudgetEvaluationSummary.model_validate(
+            lora.model_dump(mode="json") | {"adapter_sha256": None}
+        )
 
 
 def test_real_protocol_v2_evidence_authorizes_m5_3() -> None:

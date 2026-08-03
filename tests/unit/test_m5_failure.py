@@ -108,3 +108,15 @@ def test_failure_evidence_rejects_reordered_matrix(
         M5FailurePathEvidence.model_validate(
             result.model_dump() | {"cases": tuple(reversed(result.cases))}
         )
+
+
+def test_committed_failure_path_evidence_covers_frozen_matrix() -> None:
+    evidence = M5FailurePathEvidence.model_validate_json(
+        Path("reports/m5/raw/m5_failure_paths.json").read_text(encoding="utf-8")
+    )
+
+    assert evidence.status == "passed"
+    assert tuple(item.name for item in evidence.cases) == M5_FAILURE_PATHS
+    assert all(item.status == "rejected_as_expected" for item in evidence.cases)
+    assert evidence.model_generated is False
+    assert evidence.quality_metric is False

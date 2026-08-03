@@ -305,6 +305,19 @@
       "default": null,
       "title": "Thinking Fraction Basis Points"
     },
+    "training_checkpoint_id": {
+      "anyOf": [
+        {
+          "pattern": "^checkpoint-tokens-[0-9]{10}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Training Checkpoint Id"
+    },
     "training_run_id": {
       "anyOf": [
         {
@@ -332,6 +345,20 @@
       ],
       "default": null,
       "title": "Training Seed"
+    },
+    "training_tokens": {
+      "anyOf": [
+        {
+          "maximum": 50000000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Training Tokens"
     }
   },
   "required": [

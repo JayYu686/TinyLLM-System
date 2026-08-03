@@ -426,6 +426,8 @@ def run_m5_thinking_budget_evaluation(
     training_run_id: str | None = None,
     training_seed: int | None = None,
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None,
+    training_checkpoint_id: str | None = None,
+    training_tokens: int | None = None,
     adapter_dir: Path | None = None,
     adapter_sha256: str | None = None,
     preflight_memory_used_mib: int | None = None,
@@ -620,7 +622,11 @@ def run_m5_thinking_budget_evaluation(
     duration = time.monotonic() - started
     raw_path = output_dir / "results.jsonl"
     _write_jsonl(raw_path, all_results)
-    model_identity = training_run_id or config.base_revision
+    model_identity = (
+        f"{training_run_id}:{training_checkpoint_id}"
+        if training_run_id is not None and training_checkpoint_id is not None
+        else training_run_id or config.base_revision
+    )
     evaluation_id = (
         f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-m5-thinking-budget-"
         f"{model_kind}-{hashlib.sha256(model_identity.encode()).hexdigest()[:8]}"
@@ -633,6 +639,8 @@ def run_m5_thinking_budget_evaluation(
         training_run_id=training_run_id,
         training_seed=training_seed,
         thinking_fraction_basis_points=thinking_fraction_basis_points,
+        training_checkpoint_id=training_checkpoint_id,
+        training_tokens=training_tokens,
         model_revision=config.base_revision,
         adaptation="lora" if model_kind == "lora_candidate" else "full",
         adapter_sha256=adapter_sha256,

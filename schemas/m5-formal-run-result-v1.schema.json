@@ -89,6 +89,13 @@
       "title": "Evaluation Checkpoints",
       "type": "array"
     },
+    "evaluation_export_sha256s": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evaluation Export Sha256S",
+      "type": "array"
+    },
     "export_sha256": {
       "anyOf": [
         {
@@ -257,7 +264,8 @@
     "duration_seconds",
     "rank_memory",
     "latest_checkpoint",
-    "evaluation_checkpoints"
+    "evaluation_checkpoints",
+    "evaluation_export_sha256s"
   ],
   "title": "M5FormalRunResult",
   "type": "object"

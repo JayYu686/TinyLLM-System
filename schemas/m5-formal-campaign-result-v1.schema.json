@@ -1,4 +1,88 @@
 {
+  "$defs": {
+    "M5FormalStagedEvaluation": {
+      "additionalProperties": false,
+      "description": "One real dual-mode Dev result from a staged Full-SFT export.",
+      "properties": {
+        "checkpoint_id": {
+          "pattern": "^checkpoint-tokens-[0-9]{10}$",
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "evaluation_id": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "nonthinking_score_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Nonthinking Score Basis Points",
+          "type": "integer"
+        },
+        "snapshot_export_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Snapshot Export Sha256",
+          "type": "string"
+        },
+        "summary_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Summary Sha256",
+          "type": "string"
+        },
+        "supervised_tokens": {
+          "enum": [
+            10000000,
+            20000000,
+            30000000,
+            40000000,
+            50000000
+          ],
+          "title": "Supervised Tokens",
+          "type": "integer"
+        },
+        "thinking_controlled_format_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Thinking Controlled Format Basis Points",
+          "type": "integer"
+        },
+        "thinking_forced_close_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Thinking Forced Close Basis Points",
+          "type": "integer"
+        },
+        "thinking_natural_close_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Thinking Natural Close Basis Points",
+          "type": "integer"
+        },
+        "thinking_score_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Thinking Score Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "checkpoint_id",
+        "supervised_tokens",
+        "snapshot_export_sha256",
+        "evaluation_id",
+        "summary_sha256",
+        "thinking_controlled_format_basis_points",
+        "thinking_natural_close_basis_points",
+        "thinking_forced_close_basis_points",
+        "thinking_score_basis_points",
+        "nonthinking_score_basis_points"
+      ],
+      "title": "M5FormalStagedEvaluation",
+      "type": "object"
+    }
+  },
   "additionalProperties": false,
   "description": "Path-free result for the two-segment four-GPU Full-SFT campaign.",
   "properties": {
@@ -104,6 +188,29 @@
       "title": "Segment Count",
       "type": "integer"
     },
+    "staged_evaluations": {
+      "maxItems": 5,
+      "minItems": 5,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5FormalStagedEvaluation"
+        },
+        {
+          "$ref": "#/$defs/M5FormalStagedEvaluation"
+        },
+        {
+          "$ref": "#/$defs/M5FormalStagedEvaluation"
+        },
+        {
+          "$ref": "#/$defs/M5FormalStagedEvaluation"
+        },
+        {
+          "$ref": "#/$defs/M5FormalStagedEvaluation"
+        }
+      ],
+      "title": "Staged Evaluations",
+      "type": "array"
+    },
     "status": {
       "const": "succeeded",
       "title": "Status",
@@ -163,6 +270,7 @@
     "thinking_forced_close_basis_points",
     "thinking_score_basis_points",
     "nonthinking_score_basis_points",
+    "staged_evaluations",
     "thermal_events_sha256",
     "thermal_pause_count",
     "max_observed_temperature_c",

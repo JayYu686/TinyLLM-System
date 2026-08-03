@@ -25,7 +25,11 @@ from tinyllm.training.m5_formal import (
     _atomic_json,
     _sha256_file,
 )
-from tinyllm.training.m5_formal_schema import M5FormalCampaignResult, M5FormalRunResult
+from tinyllm.training.m5_formal_schema import (
+    M5FormalCampaignResult,
+    M5FormalRunResult,
+    M5FormalStagedEvaluation,
+)
 from tinyllm.training.smoke_preflight import (
     inspect_gpus,
     parse_gpu_indices,
@@ -161,73 +165,123 @@ def _wait_for_evaluation_gpu(
     raise M5FormalTrainingError("formal M5 final evaluation GPU preflight timed out")
 
 
-def _run_final_evaluation(
+def _run_staged_evaluations(
     args: argparse.Namespace,
     *,
     run: Path,
+    final: M5FormalRunResult,
     gpu_indices: tuple[int, int, int, int],
     event_log: Path,
-) -> tuple[M5ThinkingBudgetEvaluationSummary, str]:
+) -> tuple[
+    M5FormalStagedEvaluation,
+    M5FormalStagedEvaluation,
+    M5FormalStagedEvaluation,
+    M5FormalStagedEvaluation,
+    M5FormalStagedEvaluation,
+]:
     project_root = Path(__file__).resolve().parents[1]
     gpu_index = _wait_for_evaluation_gpu(
         gpu_indices,
         timeout_seconds=args.evaluation_wait_timeout_seconds,
     )
-    output_dir = run / "evaluations" / "final"
-    command = [
-        sys.executable,
-        str(project_root / "scripts" / "run_m5_thinking_budget_eval.py"),
-        "--config",
-        str(args.evaluation_config),
-        "--reasoning-config",
-        str(args.reasoning_config),
-        "--baseline-config",
-        str(args.baseline_config),
-        "--artifact-root",
-        str(args.artifact_root),
-        "--model-dir",
-        str(run / "exports" / "model"),
-        "--tokenizer-dir",
-        str(args.model_dir),
-        "--output-dir",
-        str(output_dir),
-        "--model-kind",
-        "formal_candidate",
-        "--training-run",
-        str(run),
-        "--gpu-index",
-        str(gpu_index),
-        "--timeout-seconds",
-        str(args.evaluation_timeout_seconds),
-    ]
-    _append_jsonl(
-        event_log,
-        {"event": "final_evaluation_started", "physical_gpu_index": gpu_index},
+    points: list[M5FormalStagedEvaluation] = []
+    for checkpoint_id, export_sha256 in zip(
+        final.evaluation_checkpoints,
+        final.evaluation_export_sha256s,
+        strict=True,
+    ):
+        snapshot_root = run / "evaluations" / checkpoint_id
+        output_dir = snapshot_root / "evaluation"
+        command = [
+            sys.executable,
+            str(project_root / "scripts" / "run_m5_thinking_budget_eval.py"),
+            "--config",
+            str(args.evaluation_config),
+            "--reasoning-config",
+            str(args.reasoning_config),
+            "--baseline-config",
+            str(args.baseline_config),
+            "--artifact-root",
+            str(args.artifact_root),
+            "--model-dir",
+            str(snapshot_root / "model"),
+            "--tokenizer-dir",
+            str(args.model_dir),
+            "--output-dir",
+            str(output_dir),
+            "--model-kind",
+            "formal_candidate",
+            "--training-run",
+            str(run),
+            "--training-checkpoint",
+            checkpoint_id,
+            "--gpu-index",
+            str(gpu_index),
+            "--timeout-seconds",
+            str(args.evaluation_timeout_seconds),
+        ]
+        _append_jsonl(
+            event_log,
+            {
+                "event": "staged_evaluation_started",
+                "checkpoint_id": checkpoint_id,
+                "physical_gpu_index": gpu_index,
+            },
+        )
+        completed = subprocess.run(
+            command,
+            cwd=project_root,
+            check=False,
+            timeout=args.evaluation_timeout_seconds + 60,
+        )
+        require_child_success(completed.returncode)
+        summary_path = output_dir / "summary.json"
+        try:
+            raw = summary_path.read_bytes()
+            summary = M5ThinkingBudgetEvaluationSummary.model_validate_json(raw)
+        except (OSError, ValueError) as exc:
+            raise M5FormalTrainingError("formal M5 staged evaluation result is invalid") from exc
+        if (
+            summary.model_kind != "formal_candidate"
+            or summary.training_run_id != run.name
+            or summary.training_checkpoint_id != checkpoint_id
+        ):
+            raise M5FormalTrainingError("formal M5 staged evaluation lineage differs")
+        point = M5FormalStagedEvaluation(
+            checkpoint_id=checkpoint_id,
+            supervised_tokens=cast(
+                Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000],
+                summary.training_tokens,
+            ),
+            snapshot_export_sha256=export_sha256,
+            evaluation_id=summary.evaluation_id,
+            summary_sha256=hashlib.sha256(raw).hexdigest(),
+            thinking_controlled_format_basis_points=summary.thinking.format_valid_basis_points,
+            thinking_natural_close_basis_points=summary.thinking.natural_close_basis_points,
+            thinking_forced_close_basis_points=summary.thinking.forced_close_basis_points,
+            thinking_score_basis_points=summary.thinking.final_answer_score_basis_points,
+            nonthinking_score_basis_points=summary.nonthinking.final_answer_score_basis_points,
+        )
+        points.append(point)
+        _append_jsonl(
+            event_log,
+            {
+                "event": "staged_evaluation_finished",
+                "checkpoint_id": checkpoint_id,
+                "evaluation_id": summary.evaluation_id,
+                "physical_gpu_index": gpu_index,
+            },
+        )
+    return cast(
+        tuple[
+            M5FormalStagedEvaluation,
+            M5FormalStagedEvaluation,
+            M5FormalStagedEvaluation,
+            M5FormalStagedEvaluation,
+            M5FormalStagedEvaluation,
+        ],
+        tuple(points),
     )
-    completed = subprocess.run(
-        command,
-        cwd=project_root,
-        check=False,
-        timeout=args.evaluation_timeout_seconds + 60,
-    )
-    require_child_success(completed.returncode)
-    summary_path = output_dir / "summary.json"
-    try:
-        raw = summary_path.read_bytes()
-        summary = M5ThinkingBudgetEvaluationSummary.model_validate_json(raw)
-    except (OSError, ValueError) as exc:
-        raise M5FormalTrainingError("formal M5 final evaluation result is invalid") from exc
-    if summary.model_kind != "formal_candidate" or summary.training_run_id != run.name:
-        raise M5FormalTrainingError("formal M5 final evaluation lineage differs")
-    _append_jsonl(
-        event_log,
-        {
-            "event": "final_evaluation_finished",
-            "evaluation_id": summary.evaluation_id,
-            "physical_gpu_index": gpu_index,
-        },
-    )
-    return summary, hashlib.sha256(raw).hexdigest()
 
 
 def run_campaign(args: argparse.Namespace) -> M5FormalCampaignResult:
@@ -282,12 +336,14 @@ def run_campaign(args: argparse.Namespace) -> M5FormalCampaignResult:
         or final.export_sha256 is None
     ):
         raise M5FormalTrainingError("formal M5 campaign final result is incomplete")
-    evaluation, evaluation_sha256 = _run_final_evaluation(
+    staged_evaluations = _run_staged_evaluations(
         args,
         run=run,
+        final=final,
         gpu_indices=gpu_indices,
         event_log=event_log,
     )
+    evaluation = staged_evaluations[-1]
     result = M5FormalCampaignResult(
         status="succeeded",
         campaign_id=campaign_id,
@@ -301,12 +357,15 @@ def run_campaign(args: argparse.Namespace) -> M5FormalCampaignResult:
         interrupted_result_sha256=interrupted_sha256,
         final_result_sha256=final_sha256,
         evaluation_id=evaluation.evaluation_id,
-        evaluation_summary_sha256=evaluation_sha256,
-        thinking_controlled_format_basis_points=evaluation.thinking.format_valid_basis_points,
-        thinking_natural_close_basis_points=evaluation.thinking.natural_close_basis_points,
-        thinking_forced_close_basis_points=evaluation.thinking.forced_close_basis_points,
-        thinking_score_basis_points=evaluation.thinking.final_answer_score_basis_points,
-        nonthinking_score_basis_points=evaluation.nonthinking.final_answer_score_basis_points,
+        evaluation_summary_sha256=evaluation.summary_sha256,
+        thinking_controlled_format_basis_points=(
+            evaluation.thinking_controlled_format_basis_points
+        ),
+        thinking_natural_close_basis_points=evaluation.thinking_natural_close_basis_points,
+        thinking_forced_close_basis_points=evaluation.thinking_forced_close_basis_points,
+        thinking_score_basis_points=evaluation.thinking_score_basis_points,
+        nonthinking_score_basis_points=evaluation.nonthinking_score_basis_points,
+        staged_evaluations=staged_evaluations,
         thermal_events_sha256=_sha256_file(event_log),
         thermal_pause_count=first_pauses + final_pauses,
         max_observed_temperature_c=max(first_maximum, final_maximum),

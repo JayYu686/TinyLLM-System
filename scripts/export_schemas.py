@@ -162,8 +162,10 @@ from tinyllm.training.m5_formal_schema import (
     M5FormalCampaignResult,
     M5FormalCheckpointManifest,
     M5FormalEnvironment,
+    M5FormalEvaluationSnapshot,
     M5FormalHardware,
     M5FormalRunResult,
+    M5FormalStagedEvaluation,
 )
 from tinyllm.training.m5_lora_schema import (
     M5LoRACampaignResult,
@@ -274,8 +276,10 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-formal-checkpoint-manifest-v1.schema.json": M5FormalCheckpointManifest,
     "m5-formal-campaign-result-v1.schema.json": M5FormalCampaignResult,
     "m5-formal-environment-v1.schema.json": M5FormalEnvironment,
+    "m5-formal-evaluation-snapshot-v1.schema.json": M5FormalEvaluationSnapshot,
     "m5-formal-hardware-v1.schema.json": M5FormalHardware,
     "m5-formal-run-result-v1.schema.json": M5FormalRunResult,
+    "m5-formal-staged-evaluation-v1.schema.json": M5FormalStagedEvaluation,
     "m5-failure-path-evidence-v1.schema.json": M5FailurePathEvidence,
     "m5-lora-checkpoint-manifest-v1.schema.json": M5LoRACheckpointManifest,
     "m5-lora-campaign-result-v1.schema.json": M5LoRACampaignResult,

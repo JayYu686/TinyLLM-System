@@ -55,13 +55,17 @@ class _CandidateLineage:
     seed: int
     thinking_fraction_basis_points: Literal[0, 3000, 5000]
     adapter_sha256: str | None = None
+    training_checkpoint_id: str | None = None
+    training_tokens: int | None = None
 
 
 def _candidate_lineage(args: argparse.Namespace) -> _CandidateLineage | None:
     if args.model_kind == "base":
-        if args.training_run is not None:
+        if args.training_run is not None or args.training_checkpoint is not None:
             raise M5ThinkingBudgetError("Base evaluation cannot receive a training Run")
         return None
+    if args.model_kind != "formal_candidate" and args.training_checkpoint is not None:
+        raise M5ThinkingBudgetError("only formal Candidate can receive a staged Checkpoint")
     if args.training_run is None:
         raise M5ThinkingBudgetError("Candidate evaluation requires a training Run")
     try:
@@ -89,17 +93,32 @@ def _candidate_lineage(args: argparse.Namespace) -> _CandidateLineage | None:
             formal_result = M5FormalRunResult.model_validate_json(
                 (args.training_run / "result.json").read_bytes()
             )
+            if args.training_checkpoint is None:
+                raise M5ThinkingBudgetError("formal Candidate requires --training-checkpoint")
+            try:
+                checkpoint_index = formal_result.evaluation_checkpoints.index(
+                    args.training_checkpoint
+                )
+            except ValueError as exc:
+                raise M5ThinkingBudgetError(
+                    "formal Candidate Checkpoint differs from training lineage"
+                ) from exc
+            expected_model_dir = (
+                args.training_run / "evaluations" / args.training_checkpoint / "model"
+            )
             if (
                 formal_result.status != "succeeded"
-                or formal_result.export_sha256 is None
-                or args.model_dir.resolve() != (args.training_run / "exports" / "model").resolve()
-                or _export_sha256(args.model_dir) != formal_result.export_sha256
+                or args.model_dir.resolve() != expected_model_dir.resolve()
+                or _export_sha256(args.model_dir)
+                != formal_result.evaluation_export_sha256s[checkpoint_index]
             ):
                 raise M5ThinkingBudgetError("formal Candidate export differs from training lineage")
             return _CandidateLineage(
                 run_id=formal_result.run_id,
                 seed=formal_result.seed,
                 thinking_fraction_basis_points=formal_result.thinking_fraction_basis_points,
+                training_checkpoint_id=args.training_checkpoint,
+                training_tokens=int(args.training_checkpoint.removeprefix("checkpoint-tokens-")),
             )
         ablation_result = M5AblationRunResult.model_validate_json(
             (args.training_run / "result.json").read_bytes()
@@ -142,6 +161,8 @@ def _worker(args: argparse.Namespace) -> int:
         thinking_fraction_basis_points=(
             lineage.thinking_fraction_basis_points if lineage is not None else None
         ),
+        training_checkpoint_id=(lineage.training_checkpoint_id if lineage is not None else None),
+        training_tokens=lineage.training_tokens if lineage is not None else None,
         adapter_dir=args.adapter_dir,
         adapter_sha256=lineage.adapter_sha256 if lineage is not None else None,
         preflight_memory_used_mib=args.preflight_memory_used_mib,
@@ -219,6 +240,8 @@ def _supervise(args: argparse.Namespace) -> int:
     ]
     if args.training_run is not None:
         command.extend(("--training-run", str(args.training_run)))
+    if args.training_checkpoint is not None:
+        command.extend(("--training-checkpoint", str(args.training_checkpoint)))
     if args.adapter_dir is not None:
         command.extend(("--adapter-dir", str(args.adapter_dir)))
     completed = subprocess.run(
@@ -261,6 +284,7 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
     )
     parser.add_argument("--training-run", type=Path)
+    parser.add_argument("--training-checkpoint")
     parser.add_argument("--adapter-dir", type=Path)
     parser.add_argument("--gpu-index", type=int, required=True)
     parser.add_argument(

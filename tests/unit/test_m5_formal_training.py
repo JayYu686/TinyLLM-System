@@ -22,6 +22,24 @@ from tinyllm.training.m5_formal_schema import (
 
 
 def test_formal_campaign_binds_four_gpus_and_resume_boundary() -> None:
+    staged_evaluations = tuple(
+        {
+            "checkpoint_id": f"checkpoint-tokens-{tokens:010d}",
+            "supervised_tokens": tokens,
+            "snapshot_export_sha256": str(index) * 64,
+            "evaluation_id": f"evaluation-{tokens}",
+            "summary_sha256": str(index + 1) * 64,
+            "thinking_controlled_format_basis_points": 10_000,
+            "thinking_natural_close_basis_points": 9_500,
+            "thinking_forced_close_basis_points": 500,
+            "thinking_score_basis_points": 9_500,
+            "nonthinking_score_basis_points": 6_500,
+        }
+        for index, tokens in enumerate(
+            (10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000),
+            start=1,
+        )
+    )
     payload = {
         "status": "succeeded",
         "campaign_id": "20260803T000000Z-m5-formal-campaign",
@@ -34,13 +52,14 @@ def test_formal_campaign_binds_four_gpus_and_resume_boundary() -> None:
         "export_sha256": "a" * 64,
         "interrupted_result_sha256": "b" * 64,
         "final_result_sha256": "c" * 64,
-        "evaluation_id": "formal-evaluation",
-        "evaluation_summary_sha256": "1" * 64,
+        "evaluation_id": "evaluation-50000000",
+        "evaluation_summary_sha256": "6" * 64,
         "thinking_controlled_format_basis_points": 10_000,
         "thinking_natural_close_basis_points": 9_500,
         "thinking_forced_close_basis_points": 500,
         "thinking_score_basis_points": 9_500,
         "nonthinking_score_basis_points": 6_500,
+        "staged_evaluations": staged_evaluations,
         "thermal_events_sha256": "d" * 64,
         "thermal_pause_count": 1,
         "max_observed_temperature_c": 84,
@@ -105,6 +124,7 @@ def _result_mapping() -> dict[str, object]:
             "checkpoint-tokens-0040000000",
             "checkpoint-tokens-0050000000",
         ),
+        "evaluation_export_sha256s": tuple(str(index) * 64 for index in range(1, 6)),
         "resumed_from_tokens": 2_000_000,
         "export_sha256": "c" * 64,
     }

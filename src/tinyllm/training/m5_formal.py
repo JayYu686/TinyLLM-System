@@ -41,6 +41,7 @@ from tinyllm.training.m5_formal_schema import (
     M5FormalCheckpointFile,
     M5FormalCheckpointManifest,
     M5FormalEnvironment,
+    M5FormalEvaluationSnapshot,
     M5FormalGPU,
     M5FormalHardware,
     M5FormalPackage,
@@ -942,6 +943,48 @@ def run_m5_formal_ddp(
                             "pin_reason": pin_reason,
                         },
                     )
+                    if evaluation_boundary:
+                        snapshot_root = artifact_dir / "evaluations" / checkpoint.checkpoint_id
+                        snapshot_export_sha256 = _export_model(
+                            model,
+                            model_dir=model_dir,
+                            root=snapshot_root / "model",
+                        )
+                        snapshot = M5FormalEvaluationSnapshot(
+                            run_id=run_id,
+                            checkpoint_id=checkpoint.checkpoint_id,
+                            supervised_tokens=cast(
+                                Literal[
+                                    10_000_000,
+                                    20_000_000,
+                                    30_000_000,
+                                    40_000_000,
+                                    50_000_000,
+                                ],
+                                checkpoint.supervised_tokens,
+                            ),
+                            checkpoint_manifest_sha256=_sha256_file(
+                                artifact_dir
+                                / "checkpoints"
+                                / checkpoint.checkpoint_id
+                                / _MANIFEST_FILE
+                            ),
+                            export_sha256=snapshot_export_sha256,
+                            model_revision=cast(
+                                Literal["c1899de289a04d12100db370d81485cdf75e47ca"],
+                                config.model.revision,
+                            ),
+                            git_commit=git_commit,
+                        )
+                        _atomic_json(snapshot_root / "snapshot.json", snapshot.to_dict())
+                        _append_jsonl(
+                            artifact_dir / "events.jsonl",
+                            {
+                                "event": "m5_formal_evaluation_snapshot",
+                                "checkpoint_id": checkpoint.checkpoint_id,
+                                "export_sha256": snapshot.export_sha256,
+                            },
+                        )
                 checkpoint_box: list[object] = [latest_checkpoint if rank == 0 else None]
                 dist.broadcast_object_list(checkpoint_box, src=0)
                 latest_checkpoint = str(checkpoint_box[0])
@@ -994,6 +1037,12 @@ def run_m5_formal_ddp(
         dist.all_gather_object(gathered_memory, memory)
         result: M5FormalRunResult | None = None
         if rank == 0:
+            evaluation_export_sha256s = tuple(
+                M5FormalEvaluationSnapshot.model_validate_json(
+                    (artifact_dir / "evaluations" / checkpoint_id / "snapshot.json").read_bytes()
+                ).export_sha256
+                for checkpoint_id in progress.evaluation_checkpoints
+            )
             result = M5FormalRunResult(
                 status=status,
                 mode=mode,
@@ -1039,6 +1088,7 @@ def run_m5_formal_ddp(
                 ),
                 latest_checkpoint=latest_checkpoint,
                 evaluation_checkpoints=progress.evaluation_checkpoints,
+                evaluation_export_sha256s=evaluation_export_sha256s,
                 resumed_from_tokens=resumed_from_tokens,
                 export_sha256=export_sha256,
             )

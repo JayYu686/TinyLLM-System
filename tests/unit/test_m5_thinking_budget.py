@@ -340,6 +340,8 @@ def test_evaluation_summary_rejects_lineage_and_memory_errors() -> None:
             "training_run_id": "formal-run",
             "training_seed": 42,
             "thinking_fraction_basis_points": 3000,
+            "training_checkpoint_id": "checkpoint-tokens-0050000000",
+            "training_tokens": 50_000_000,
         }
     )
     assert formal.model_kind == "formal_candidate"

@@ -142,6 +142,27 @@ class M5FormalRankMemory(StrictSchema):
         return self
 
 
+class M5FormalEvaluationSnapshot(StrictSchema):
+    """One immutable inference export bound to a staged Full-SFT Checkpoint."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    run_id: str = Field(min_length=1, max_length=180)
+    checkpoint_id: str = Field(pattern=r"^checkpoint-tokens-[0-9]{10}$")
+    supervised_tokens: Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000]
+    checkpoint_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    export_sha256: str = Field(pattern=SHA256_PATTERN)
+    model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+    @model_validator(mode="after")
+    def validate_checkpoint_identity(self) -> M5FormalEvaluationSnapshot:
+        """Bind the snapshot to its exact Token checkpoint."""
+
+        if self.checkpoint_id != f"checkpoint-tokens-{self.supervised_tokens:010d}":
+            raise ValueError("formal M5 evaluation snapshot differs from Token progress")
+        return self
+
+
 class M5FormalRunResult(StrictSchema):
     """Path-free result for one fresh or Exact-Resume Full-SFT attempt."""
 
@@ -178,6 +199,7 @@ class M5FormalRunResult(StrictSchema):
     ]
     latest_checkpoint: str = Field(pattern=r"^checkpoint-tokens-[0-9]{10}$")
     evaluation_checkpoints: tuple[str, ...]
+    evaluation_export_sha256s: tuple[str, ...]
     resumed_from_tokens: int | None = Field(default=None, ge=0, lt=50_000_000)
     export_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
 
@@ -206,6 +228,7 @@ class M5FormalRunResult(StrictSchema):
             )
             if (
                 len(evaluation_tokens) != 5
+                or len(self.evaluation_export_sha256s) != 5
                 or evaluation_tokens[-1] != 50_000_000
                 or self.latest_checkpoint != self.evaluation_checkpoints[-1]
                 or any(
@@ -217,11 +240,34 @@ class M5FormalRunResult(StrictSchema):
                     )
                 )
             ):
-                raise ValueError(
-                    "successful formal M5 run requires five staged evaluation Checkpoints"
-                )
-        elif self.supervised_tokens >= 50_000_000 or self.export_sha256 is not None:
-            raise ValueError("interrupted formal M5 run cannot claim completion or export")
+                raise ValueError("successful formal M5 run requires five staged evaluation exports")
+        elif (
+            self.supervised_tokens >= 50_000_000
+            or self.export_sha256 is not None
+            or len(self.evaluation_export_sha256s) != len(self.evaluation_checkpoints)
+        ):
+            raise ValueError("interrupted formal M5 run has inconsistent staged exports")
+        return self
+
+
+class M5FormalStagedEvaluation(StrictSchema):
+    """One real dual-mode Dev result from a staged Full-SFT export."""
+
+    checkpoint_id: str = Field(pattern=r"^checkpoint-tokens-[0-9]{10}$")
+    supervised_tokens: Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000]
+    snapshot_export_sha256: str = Field(pattern=SHA256_PATTERN)
+    evaluation_id: str = Field(min_length=1, max_length=180)
+    summary_sha256: str = Field(pattern=SHA256_PATTERN)
+    thinking_controlled_format_basis_points: int = Field(ge=0, le=10_000)
+    thinking_natural_close_basis_points: int = Field(ge=0, le=10_000)
+    thinking_forced_close_basis_points: int = Field(ge=0, le=10_000)
+    thinking_score_basis_points: int = Field(ge=0, le=10_000)
+    nonthinking_score_basis_points: int = Field(ge=0, le=10_000)
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> M5FormalStagedEvaluation:
+        if self.checkpoint_id != f"checkpoint-tokens-{self.supervised_tokens:010d}":
+            raise ValueError("formal M5 staged evaluation differs from Token progress")
         return self
 
 
@@ -247,6 +293,13 @@ class M5FormalCampaignResult(StrictSchema):
     thinking_forced_close_basis_points: int = Field(ge=0, le=10_000)
     thinking_score_basis_points: int = Field(ge=0, le=10_000)
     nonthinking_score_basis_points: int = Field(ge=0, le=10_000)
+    staged_evaluations: tuple[
+        M5FormalStagedEvaluation,
+        M5FormalStagedEvaluation,
+        M5FormalStagedEvaluation,
+        M5FormalStagedEvaluation,
+        M5FormalStagedEvaluation,
+    ]
     thermal_events_sha256: str = Field(pattern=SHA256_PATTERN)
     thermal_pause_count: int = Field(ge=0)
     max_observed_temperature_c: int = Field(ge=0, le=100)
@@ -260,4 +313,22 @@ class M5FormalCampaignResult(StrictSchema):
             raise ValueError("formal M5 campaign requires four distinct GPUs")
         if self.resumed_from_tokens != self.interruption_tokens:
             raise ValueError("formal M5 campaign Resume point differs from interruption")
+        expected_tokens = (10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000)
+        if tuple(item.supervised_tokens for item in self.staged_evaluations) != expected_tokens:
+            raise ValueError("formal M5 campaign requires five ordered staged evaluations")
+        final_evaluation = self.staged_evaluations[-1]
+        if (
+            self.evaluation_id != final_evaluation.evaluation_id
+            or self.evaluation_summary_sha256 != final_evaluation.summary_sha256
+            or self.thinking_controlled_format_basis_points
+            != final_evaluation.thinking_controlled_format_basis_points
+            or self.thinking_natural_close_basis_points
+            != final_evaluation.thinking_natural_close_basis_points
+            or self.thinking_forced_close_basis_points
+            != final_evaluation.thinking_forced_close_basis_points
+            or self.thinking_score_basis_points != final_evaluation.thinking_score_basis_points
+            or self.nonthinking_score_basis_points
+            != final_evaluation.nonthinking_score_basis_points
+        ):
+            raise ValueError("formal M5 final evaluation differs from staged curve")
         return self

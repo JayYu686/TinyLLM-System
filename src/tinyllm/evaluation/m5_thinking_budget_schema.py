@@ -214,6 +214,11 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
     training_run_id: str | None = Field(default=None, min_length=1, max_length=180)
     training_seed: int | None = Field(default=None, ge=0, le=2**32 - 1)
     thinking_fraction_basis_points: Literal[0, 3000, 5000] | None = None
+    training_checkpoint_id: str | None = Field(
+        default=None,
+        pattern=r"^checkpoint-tokens-[0-9]{10}$",
+    )
+    training_tokens: int | None = Field(default=None, ge=0, le=50_000_000)
     model_revision: Literal[
         "c1899de289a04d12100db370d81485cdf75e47ca",
         "b968826d9c46dd6066d109eabc6255188de91218",
@@ -256,8 +261,15 @@ class M5ThinkingBudgetEvaluationSummary(StrictSchema):
         if self.model_kind == "formal_candidate" and (
             self.model_revision != "c1899de289a04d12100db370d81485cdf75e47ca"
             or self.thinking_fraction_basis_points != 3000
+            or self.training_checkpoint_id is None
+            or self.training_tokens is None
+            or self.training_checkpoint_id != f"checkpoint-tokens-{self.training_tokens:010d}"
         ):
             raise ValueError("formal Thinking Budget Candidate requires the frozen 0.6B route")
+        if self.model_kind != "formal_candidate" and (
+            self.training_checkpoint_id is not None or self.training_tokens is not None
+        ):
+            raise ValueError("non-formal Thinking Budget result cannot claim a staged Checkpoint")
         if self.model_kind == "lora_candidate":
             if (
                 any(value is None for value in candidate_fields)

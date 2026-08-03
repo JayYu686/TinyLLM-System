@@ -27,3 +27,4 @@ def test_wait_selector_preserves_priority_and_rejects_busy_rows() -> None:
 
     assert select_gpus(rows, count=4) == (5, 7, 8, 9)
     assert select_gpus(rows, count=5) is None
+    assert select_gpus(rows, count=1, max_memory_used_mib=3072) == (4,)

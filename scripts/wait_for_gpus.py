@@ -23,13 +23,14 @@ def select_gpus(
     rows: tuple[GpuPreflight, ...],
     *,
     count: int,
+    max_memory_used_mib: int = MAX_MEMORY_USED_MIB,
 ) -> tuple[int, ...] | None:
     """Select the first requested-order subset satisfying formal Preflight."""
 
     safe = tuple(
         row["index"]
         for row in rows
-        if row["memory_used_mib"] <= MAX_MEMORY_USED_MIB
+        if row["memory_used_mib"] <= max_memory_used_mib
         and row["utilization_percent"] <= MAX_UTILIZATION_PERCENT
         and row["temperature_c"] <= MAX_TEMPERATURE_C
     )
@@ -40,6 +41,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate-gpus", type=parse_gpu_indices, required=True)
     parser.add_argument("--count", type=int, choices=range(1, 11), required=True)
+    parser.add_argument(
+        "--max-memory-used-mib",
+        type=int,
+        choices=(MAX_MEMORY_USED_MIB, 3072),
+        default=MAX_MEMORY_USED_MIB,
+    )
     parser.add_argument("--poll-seconds", type=int, default=60)
     parser.add_argument("--timeout-seconds", type=int, default=604_800)
     parser.add_argument("--prerequisite-path", type=Path)
@@ -59,7 +66,15 @@ def main() -> int:
     while True:
         prerequisite_ready = args.prerequisite_path is None or args.prerequisite_path.is_file()
         rows = inspect_gpus(args.candidate_gpus) if prerequisite_ready else ()
-        selected = select_gpus(rows, count=args.count) if rows else None
+        selected = (
+            select_gpus(
+                rows,
+                count=args.count,
+                max_memory_used_mib=args.max_memory_used_mib,
+            )
+            if rows
+            else None
+        )
         if selected is not None:
             replacements = {
                 "{gpu_index}": str(selected[0]),

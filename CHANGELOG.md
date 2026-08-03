@@ -5,6 +5,11 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- completed the real single-RTX-3090 Qwen3-8B BF16 LoRA route with 10M supervised
+  tokens, a fresh-process Exact Resume at 5,000,444 tokens, five pinned evaluation
+  checkpoints, thermal pause/resume evidence, an adapter-only Safetensors export and
+  Model Card; the final 200-item dual-mode evaluation reached 99.0% Thinking and 72.0%
+  Non-thinking accuracy with zero visible-reasoning leakage, without claiming a Base gain;
 - built the corrected `m5-r3-mixture-v2-b47723e1` before any R3 training or Dev
   evaluation: exact 700K/150K/150K supervised-token strata, label-aware 160-source
   selection, a measured 29–30 total uses per targeted source, immutable lineage, and

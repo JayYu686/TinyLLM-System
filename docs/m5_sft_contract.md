@@ -283,6 +283,13 @@ M5.2-R4 不再继续小样本格式修补。依据 Qwen 官方 Thinking Budget �
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M
 执行 Dev 评测。每段作业不超过 12 小时。
 
+8B BF16 LoRA 正式路线已经完成：单卡训练在 5,000,444 Token 受控中断并由全新进程 Exact
+Resume 到 10M Token，导出独立 Adapter 与 Model Card。最终 Thinking Budget v2 真实评测中，
+Thinking 正确率为 99.0%、自然闭合率为 99.5%、强制收束率为 0.5%；Non-thinking 正确率为
+72.0%，两种模式格式率均为 100%，可见推理泄漏均为 0。由于没有同协议 8B Base 结果，
+这些值只作为路线验收证据，不声明相对提升或 Candidate 晋级。详见
+[Qwen3-8B LoRA 中文报告](../reports/m5/m5_lora_formal.md)。
+
 ## 5. 配置与恢复
 
 新配置使用 `config_kind=qwen_sft` 和独立 `schema_version`，不改变 M1 Schema。至少记录模型

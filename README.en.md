@@ -160,7 +160,7 @@ sequenceDiagram
 | M2 data and evaluation | Complete | Pinned-source full build and offline rebuild; frozen 300-item suite; Exact contamination scan; Qwen3-0.6B Baseline |
 | M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
-| M5 dual-mode SFT | In progress | The two-seed Thinking Budget v2 gate passed; formal M5.3 training is authorized |
+| M5 dual-mode SFT | In progress | The 8B BF16 LoRA 10M-token run, Exact Resume, adapter, and dual-mode evaluation passed; 0.6B Full SFT remains |
 | M6 evaluation and promotion | Planned | Base/Candidate comparison, regression analysis, and Candidate Gate |
 | M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
 | M8 planner | Enhancement | Static memory estimation and short probe |
@@ -192,7 +192,8 @@ failure paths, real reports, and documentation. Evidence entry points:
   [M5.2-R2 length diagnostic design](docs/m5_r2_diagnostic_design.md), and
   [M5.2-R3 training gate (Chinese)](reports/m5/m5_r3_training_gate.md), and
   [Thinking Budget decision (Chinese)](docs/adr/0006-qwen3-thinking-budget-controller.md), and
-  [Thinking Budget v2 gate report (Chinese)](reports/m5/m5_thinking_budget_v2.md)
+  [Thinking Budget v2 gate report (Chinese)](reports/m5/m5_thinking_budget_v2.md), and
+  [formal Qwen3-8B LoRA report (Chinese)](reports/m5/m5_lora_formal.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured

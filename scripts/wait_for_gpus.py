@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -63,9 +64,27 @@ def main() -> int:
     if args.poll_seconds < 5 or args.timeout_seconds <= 0:
         raise SystemExit("invalid wait interval or timeout")
     started = time.monotonic()
+    consecutive_preflight_errors = 0
     while True:
         prerequisite_ready = args.prerequisite_path is None or args.prerequisite_path.is_file()
-        rows = inspect_gpus(args.candidate_gpus) if prerequisite_ready else ()
+        try:
+            rows = inspect_gpus(args.candidate_gpus) if prerequisite_ready else ()
+        except RuntimeError:
+            consecutive_preflight_errors += 1
+            rows = ()
+            print(
+                json.dumps(
+                    {
+                        "status": "preflight_retry",
+                        "reason": "nvidia_smi_preflight_failed",
+                        "consecutive_errors": consecutive_preflight_errors,
+                    }
+                ),
+                file=sys.stderr,
+                flush=True,
+            )
+        else:
+            consecutive_preflight_errors = 0
         selected = (
             select_gpus(
                 rows,

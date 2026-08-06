@@ -40,10 +40,13 @@ def parse_gpu_indices(value: str) -> tuple[int, ...]:
 def inspect_gpus(indices: tuple[int, ...]) -> tuple[GpuPreflight, ...]:
     """Capture the selected GPUs with one bounded read-only nvidia-smi query."""
 
+    if not indices:
+        raise RuntimeError("GPU preflight requires at least one physical index")
     try:
         completed = subprocess.run(
             [
                 "nvidia-smi",
+                f"--id={','.join(str(index) for index in indices)}",
                 "--query-gpu=index,name,memory.used,utilization.gpu,temperature.gpu,driver_version",
                 "--format=csv,noheader,nounits",
             ],

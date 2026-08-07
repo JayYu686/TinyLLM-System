@@ -40,6 +40,12 @@
       "type": "string"
     },
     "supervised_tokens": {
+      "maximum": 50000000,
+      "minimum": 10000000,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    },
+    "target_tokens": {
       "enum": [
         10000000,
         20000000,
@@ -47,13 +53,14 @@
         40000000,
         50000000
       ],
-      "title": "Supervised Tokens",
+      "title": "Target Tokens",
       "type": "integer"
     }
   },
   "required": [
     "run_id",
     "checkpoint_id",
+    "target_tokens",
     "supervised_tokens",
     "checkpoint_manifest_sha256",
     "export_sha256",

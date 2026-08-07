@@ -185,9 +185,11 @@ def _run_staged_evaluations(
         timeout_seconds=args.evaluation_wait_timeout_seconds,
     )
     points: list[M5FormalStagedEvaluation] = []
-    for checkpoint_id, export_sha256 in zip(
+    target_tokens = (10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000)
+    for checkpoint_id, export_sha256, target_token_count in zip(
         final.evaluation_checkpoints,
         final.evaluation_export_sha256s,
+        target_tokens,
         strict=True,
     ):
         snapshot_root = run / "evaluations" / checkpoint_id
@@ -249,10 +251,11 @@ def _run_staged_evaluations(
             raise M5FormalTrainingError("formal M5 staged evaluation lineage differs")
         point = M5FormalStagedEvaluation(
             checkpoint_id=checkpoint_id,
-            supervised_tokens=cast(
+            target_tokens=cast(
                 Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000],
-                summary.training_tokens,
+                target_token_count,
             ),
+            supervised_tokens=cast(int, summary.training_tokens),
             snapshot_export_sha256=export_sha256,
             evaluation_id=summary.evaluation_id,
             summary_sha256=hashlib.sha256(raw).hexdigest(),

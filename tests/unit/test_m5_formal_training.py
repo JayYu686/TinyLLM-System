@@ -15,6 +15,7 @@ from tinyllm.training.m5_formal import (
 from tinyllm.training.m5_formal_schema import (
     M5FormalCampaignResult,
     M5FormalEnvironment,
+    M5FormalEvaluationSnapshot,
     M5FormalHardware,
     M5FormalRankMemory,
     M5FormalRunResult,
@@ -25,6 +26,7 @@ def test_formal_campaign_binds_four_gpus_and_resume_boundary() -> None:
     staged_evaluations = tuple(
         {
             "checkpoint_id": f"checkpoint-tokens-{tokens:010d}",
+            "target_tokens": tokens,
             "supervised_tokens": tokens,
             "snapshot_export_sha256": str(index) * 64,
             "evaluation_id": f"evaluation-{tokens}",
@@ -204,6 +206,31 @@ def test_formal_result_requires_completion_export_and_distinct_ranks() -> None:
     duplicated[3] = duplicated[2]
     with pytest.raises(ValidationError, match="ordered 0–3"):
         M5FormalRunResult.model_validate(_result_mapping() | {"rank_memory": tuple(duplicated)})
+
+
+def test_formal_evaluation_snapshot_records_target_and_actual_batch_boundary() -> None:
+    payload = {
+        "run_id": "formal-run",
+        "checkpoint_id": "checkpoint-tokens-0010000532",
+        "target_tokens": 10_000_000,
+        "supervised_tokens": 10_000_532,
+        "checkpoint_manifest_sha256": "a" * 64,
+        "export_sha256": "b" * 64,
+        "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+        "git_commit": "c" * 40,
+    }
+
+    snapshot = M5FormalEvaluationSnapshot.model_validate(payload)
+    assert snapshot.target_tokens == 10_000_000
+    assert snapshot.supervised_tokens == 10_000_532
+    with pytest.raises(ValidationError, match="batch-boundary window"):
+        M5FormalEvaluationSnapshot.model_validate(
+            payload
+            | {
+                "checkpoint_id": "checkpoint-tokens-0010100000",
+                "supervised_tokens": 10_100_000,
+            }
+        )
 
 
 def test_formal_checkpoint_store_detects_payload_corruption(tmp_path: Path) -> None:

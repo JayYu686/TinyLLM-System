@@ -148,7 +148,8 @@ class M5FormalEvaluationSnapshot(StrictSchema):
     schema_version: Literal["1.0"] = "1.0"
     run_id: str = Field(min_length=1, max_length=180)
     checkpoint_id: str = Field(pattern=r"^checkpoint-tokens-[0-9]{10}$")
-    supervised_tokens: Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000]
+    target_tokens: Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000]
+    supervised_tokens: int = Field(ge=10_000_000, le=50_000_000)
     checkpoint_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     export_sha256: str = Field(pattern=SHA256_PATTERN)
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
@@ -160,6 +161,8 @@ class M5FormalEvaluationSnapshot(StrictSchema):
 
         if self.checkpoint_id != f"checkpoint-tokens-{self.supervised_tokens:010d}":
             raise ValueError("formal M5 evaluation snapshot differs from Token progress")
+        if not self.target_tokens <= self.supervised_tokens < self.target_tokens + 100_000:
+            raise ValueError("formal M5 evaluation snapshot exceeds its batch-boundary window")
         return self
 
 
@@ -254,7 +257,8 @@ class M5FormalStagedEvaluation(StrictSchema):
     """One real dual-mode Dev result from a staged Full-SFT export."""
 
     checkpoint_id: str = Field(pattern=r"^checkpoint-tokens-[0-9]{10}$")
-    supervised_tokens: Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000]
+    target_tokens: Literal[10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000]
+    supervised_tokens: int = Field(ge=10_000_000, le=50_000_000)
     snapshot_export_sha256: str = Field(pattern=SHA256_PATTERN)
     evaluation_id: str = Field(min_length=1, max_length=180)
     summary_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -268,6 +272,8 @@ class M5FormalStagedEvaluation(StrictSchema):
     def validate_identity(self) -> M5FormalStagedEvaluation:
         if self.checkpoint_id != f"checkpoint-tokens-{self.supervised_tokens:010d}":
             raise ValueError("formal M5 staged evaluation differs from Token progress")
+        if not self.target_tokens <= self.supervised_tokens < self.target_tokens + 100_000:
+            raise ValueError("formal M5 staged evaluation exceeds its batch-boundary window")
         return self
 
 
@@ -314,7 +320,7 @@ class M5FormalCampaignResult(StrictSchema):
         if self.resumed_from_tokens != self.interruption_tokens:
             raise ValueError("formal M5 campaign Resume point differs from interruption")
         expected_tokens = (10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000)
-        if tuple(item.supervised_tokens for item in self.staged_evaluations) != expected_tokens:
+        if tuple(item.target_tokens for item in self.staged_evaluations) != expected_tokens:
             raise ValueError("formal M5 campaign requires five ordered staged evaluations")
         final_evaluation = self.staged_evaluations[-1]
         if (

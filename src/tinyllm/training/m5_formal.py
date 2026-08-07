@@ -953,7 +953,7 @@ def run_m5_formal_ddp(
                         snapshot = M5FormalEvaluationSnapshot(
                             run_id=run_id,
                             checkpoint_id=checkpoint.checkpoint_id,
-                            supervised_tokens=cast(
+                            target_tokens=cast(
                                 Literal[
                                     10_000_000,
                                     20_000_000,
@@ -961,8 +961,9 @@ def run_m5_formal_ddp(
                                     40_000_000,
                                     50_000_000,
                                 ],
-                                checkpoint.supervised_tokens,
+                                next_evaluation,
                             ),
+                            supervised_tokens=checkpoint.supervised_tokens,
                             checkpoint_manifest_sha256=_sha256_file(
                                 artifact_dir
                                 / "checkpoints"

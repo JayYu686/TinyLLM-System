@@ -290,6 +290,13 @@ Thinking 正确率为 99.0%、自然闭合率为 99.5%、强制收束率为 0.5%
 这些值只作为路线验收证据，不声明相对提升或 Candidate 晋级。详见
 [Qwen3-8B LoRA 中文报告](../reports/m5/m5_lora_formal.md)。
 
+0.6B BF16 Full SFT 正式路线也已完成：四卡 DDP 在 2,002,739 Token 受控中断，由全新
+`torchrun` 进程 Exact Resume 到 50M Token，并保存 10M、20M、30M、40M、50M 五个不可变
+快照。冻结 M5 Dev 上，10M 快照取得最优联合结果：Thinking 95.0%、Non-thinking 47.5%；
+50M 终点为 91.5%和 39.0%。所有阶段格式率均为 100%，可见推理泄漏均为 0。五个快照在
+训练完成后统一评测，10M 作为 M6 优先比较点，50M 保留为完整训练与过拟合证据。详见
+[Qwen3-0.6B Full SFT 中文报告](../reports/m5/m5_full_sft_formal.md)。
+
 ## 5. 配置与恢复
 
 新配置使用 `config_kind=qwen_sft` 和独立 `schema_version`，不改变 M1 Schema。至少记录模型
@@ -301,9 +308,9 @@ Token 预算、精度、World Size、Checkpoint 策略和评测版本。CLI 只�
 Checkpoint 必须包含 Adapter、Optimizer、Scheduler、RNG、Sampler Cursor、基座 Revision、
 数据版本和配置哈希。部署导出与训练 Checkpoint 分离；8B 只导出 Adapter Safetensors。
 
-## 6. M5 完成条件
+## 6. M5 完成条件与状态
 
-M5 只有在以下证据全部合并后才能标记完成：
+以下证据已经全部完成并纳入 M5 总验收：
 
 1. 双模式设计、Schema、数据 Manifest、拒绝统计和污染报告；
 2. 训练前双模式 Baseline 与配比消融；
@@ -312,5 +319,6 @@ M5 只有在以下证据全部合并后才能标记完成：
 5. OOM、NaN/Inf、坏 Checkpoint、磁盘不足、数据漂移、错误 World Size 和进程退出失败路径；
 6. 中文主验收报告、英文公开摘要和完整血缘。
 
-结果没有质量提升时可以作为诚实的 M5 系统实验完成，但模型保持 `Development`。只有 M6
-满足 Thinking 提升、Non-thinking/通用回归、JSON Valid Rate 和血缘门禁后才能晋级。
+两条路线及失败路径均已完成，M5 状态为 `COMPLETE`。模型继续保持 `Development`；只有 M6
+满足 Thinking 提升、Non-thinking/通用回归、JSON Valid Rate 和血缘门禁后才能晋级。完整
+核对见[M5 总验收报告](../reports/m5/m5_acceptance.md)。

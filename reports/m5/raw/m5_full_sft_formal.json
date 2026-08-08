@@ -1,0 +1,162 @@
+{
+  "schema_version": "1.0",
+  "status": "pass",
+  "model": {
+    "repository": "Qwen/Qwen3-0.6B",
+    "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "attention_architecture": "gqa",
+    "adaptation": "full_sft"
+  },
+  "data": {
+    "dataset_version": "m5-dual-sft-v1-b5b9e839",
+    "manifest_sha256": "607b3b1a73ae03d5f183f11d8c4824b04243ed30f6352567ce7bd7a972c962f6",
+    "thinking_fraction_basis_points": 3000,
+    "sequence_length": 1024,
+    "assistant_only_loss": true
+  },
+  "training": {
+    "campaign_id": "20260807T071211Z-m5-formal-campaign",
+    "campaign_sha256": "1140fb9f420c4b4834917cb1dfe53bd7b4025bfea5d8689448cc30eef84ee657",
+    "run_id": "20260807T071224Z-m5-formal-qwen3-0-6b-d39dad35-3d15",
+    "config_sha256": "d39dad3534730dfde08d526f24a69344d3be1341a097e610eaec7038041ad676",
+    "git_commit": "c406e6760c6ea6b5eb19966740af4c494983576d",
+    "git_dirty": false,
+    "strategy": "ddp",
+    "world_size": 4,
+    "physical_gpu_indices": [5, 6, 8, 9],
+    "dtype": "bf16",
+    "global_step": 6485,
+    "supervised_tokens": 50000000,
+    "completed_dataset_epochs": 50.0,
+    "initial_loss": 1.6941867262561887,
+    "final_loss": 0.14348889278103136,
+    "minimum_observed_loss": 0.03216500563136341,
+    "maximum_observed_loss": 2.0196833038859374,
+    "metrics_sha256": "3b5aed75666dd0f80bc6e453ef6f6efecfcd304768f4542c53207ae0d34d03b7",
+    "fresh_duration_seconds": 479.6335740009963,
+    "resume_duration_seconds": 11614.818514906001,
+    "interruption_tokens": 2002739,
+    "resumed_from_tokens": 2002739,
+    "peak_allocated_bytes_per_rank": 16156301312,
+    "peak_reserved_bytes_per_rank": 20573061120,
+    "thermal_pause_count": 25,
+    "max_observed_temperature_c": 87,
+    "thermal_events_sha256": "5869699cf4edc073c9cbff601fefd9b18719296a3d1a237d6ca313562fafceb0"
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint-tokens-0002002739",
+      "target_kind": "interruption",
+      "supervised_tokens": 2002739,
+      "global_step": 260,
+      "payload_sha256": "18c8098485fd63dca05785d5f4543ed2a1f1855a77b0970145d47712a47356b0"
+    },
+    {
+      "checkpoint_id": "checkpoint-tokens-0010000532",
+      "target_tokens": 10000000,
+      "supervised_tokens": 10000532,
+      "global_step": 1297,
+      "payload_sha256": "716b5167199d427bd7d741b76954751a53c1325fce90f69417ab67cd5a64dbb6"
+    },
+    {
+      "checkpoint_id": "checkpoint-tokens-0020001758",
+      "target_tokens": 20000000,
+      "supervised_tokens": 20001758,
+      "global_step": 2594,
+      "payload_sha256": "5eba20e8b9cf366d3ffab7c8ea8a05835ade85870f4e5579d4f219bd789d4e4f"
+    },
+    {
+      "checkpoint_id": "checkpoint-tokens-0030002588",
+      "target_tokens": 30000000,
+      "supervised_tokens": 30002588,
+      "global_step": 3891,
+      "payload_sha256": "6b09133a6b7b1ba34bd1809088a1a1077b7cdd312e32d130c12a6b4704149ff2"
+    },
+    {
+      "checkpoint_id": "checkpoint-tokens-0040004805",
+      "target_tokens": 40000000,
+      "supervised_tokens": 40004805,
+      "global_step": 5188,
+      "payload_sha256": "b021807e318be5837f19e62a7126a1b6ca5bc8f948932aac5ed247083ebb5018"
+    },
+    {
+      "checkpoint_id": "checkpoint-tokens-0050000000",
+      "target_tokens": 50000000,
+      "supervised_tokens": 50000000,
+      "global_step": 6485,
+      "payload_sha256": "7723982bd0aabe31fd07306d000389c4eb824de53f9f5382b731331b4cf64fe3"
+    }
+  ],
+  "evaluation": {
+    "protocol_version": "m5-thinking-budget-v2",
+    "suite_version": "m5-reasoning-dev-v1-53ddf557",
+    "base": {
+      "thinking_score_basis_points": 7050,
+      "nonthinking_score_basis_points": 3700,
+      "thinking_natural_close_basis_points": 9300,
+      "thinking_forced_close_basis_points": 700
+    },
+    "stages": [
+      {
+        "target_tokens": 10000000,
+        "actual_tokens": 10000532,
+        "thinking_score_basis_points": 9500,
+        "nonthinking_score_basis_points": 4750,
+        "thinking_natural_close_basis_points": 9900,
+        "thinking_forced_close_basis_points": 100,
+        "summary_sha256": "ca1533d946d0386019203f17ffd1b95e0ef5aa810fd3970954996d738c94468f"
+      },
+      {
+        "target_tokens": 20000000,
+        "actual_tokens": 20001758,
+        "thinking_score_basis_points": 9250,
+        "nonthinking_score_basis_points": 4350,
+        "thinking_natural_close_basis_points": 9800,
+        "thinking_forced_close_basis_points": 200,
+        "summary_sha256": "2b2b8ab8d753fbb1db1bac75ac9ef3bf89989a140fe9f298920763b295c12798"
+      },
+      {
+        "target_tokens": 30000000,
+        "actual_tokens": 30002588,
+        "thinking_score_basis_points": 9200,
+        "nonthinking_score_basis_points": 4300,
+        "thinking_natural_close_basis_points": 9850,
+        "thinking_forced_close_basis_points": 150,
+        "summary_sha256": "fb461ee7e613e76ad40221a7dfdd1622bf64ced9d524d9e7605d8c28b3276441"
+      },
+      {
+        "target_tokens": 40000000,
+        "actual_tokens": 40004805,
+        "thinking_score_basis_points": 9100,
+        "nonthinking_score_basis_points": 4000,
+        "thinking_natural_close_basis_points": 9700,
+        "thinking_forced_close_basis_points": 300,
+        "summary_sha256": "047bc782227f6b78693ca14fbfe007a843cb6b74acc3690bef8e5dd80690bc3c"
+      },
+      {
+        "target_tokens": 50000000,
+        "actual_tokens": 50000000,
+        "thinking_score_basis_points": 9150,
+        "nonthinking_score_basis_points": 3900,
+        "thinking_natural_close_basis_points": 9850,
+        "thinking_forced_close_basis_points": 150,
+        "summary_sha256": "40601dab31d65a735cd4e21050a02eff73f19e9be90d229546df32060c44e168"
+      }
+    ],
+    "selected_development_checkpoint": "checkpoint-tokens-0010000532",
+    "selection_reason": "highest_joint_dual_mode_score"
+  },
+  "export": {
+    "tree_sha256": "9702ea5115c9d0c8b1545502e70cf8a18a283f1ba0f166a30d3d8fa268dade52",
+    "model_safetensors_sha256": "53a9813bde64f7ba4cadbe38bc5084a00010f20ad999c5160898414115fd3e0e",
+    "model_safetensors_size_bytes": 1192135096,
+    "purpose": "deployment_export_not_training_checkpoint"
+  },
+  "limitations": {
+    "m6_release_suite_consumed": false,
+    "candidate_status_claimed": false,
+    "production_status_claimed": false,
+    "online_stage_stopping_claimed": false,
+    "formal_throughput_benchmark_claimed": false
+  }
+}

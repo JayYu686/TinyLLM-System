@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 
 import pytest
 
@@ -59,7 +60,7 @@ def test_waiter_retries_transient_preflight_failure_before_exec(
         raise ExecCalled
 
     monkeypatch.setattr(wait_for_gpus, "inspect_gpus", inspect)
-    monkeypatch.setattr(wait_for_gpus.time, "sleep", lambda _: None)
+    monkeypatch.setattr(time, "sleep", lambda _: None)
     monkeypatch.setattr(os, "execvpe", execvpe)
     monkeypatch.setattr(
         sys,

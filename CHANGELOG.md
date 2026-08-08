@@ -5,6 +5,11 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- completed M5 with a real four-RTX-3090 Qwen3-0.6B BF16 Full-SFT campaign over 50M
+  supervised tokens, an independent-process Exact Resume from 2,002,739 tokens, five
+  immutable 10M–50M snapshots, thermal pause/resume evidence, and verified checkpoint,
+  evaluation, and export hashes; the 10M development snapshot led the curve at 95.0%
+  Thinking and 47.5% Non-thinking accuracy and is prioritized for the independent M6 gate;
 - completed the real single-RTX-3090 Qwen3-8B BF16 LoRA route with 10M supervised
   tokens, a fresh-process Exact Resume at 5,000,444 tokens, five pinned evaluation
   checkpoints, thermal pause/resume evidence, an adapter-only Safetensors export and

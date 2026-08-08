@@ -93,6 +93,39 @@ from tinyllm.training.m5_config import (
     M5TrainingLoopConfig,
     load_m5_sft_config,
 )
+from tinyllm.training.m5_formal import (
+    M5FormalCheckpointStore,
+    M5FormalProgress,
+    M5FormalTrainingError,
+    run_m5_formal_ddp,
+)
+from tinyllm.training.m5_formal_schema import (
+    M5FormalCampaignResult,
+    M5FormalCheckpointFile,
+    M5FormalCheckpointManifest,
+    M5FormalEnvironment,
+    M5FormalGPU,
+    M5FormalHardware,
+    M5FormalPackage,
+    M5FormalRankMemory,
+    M5FormalRunResult,
+)
+from tinyllm.training.m5_lora import (
+    M5LoRACheckpointStore,
+    M5LoRAError,
+    M5LoRAProgress,
+    run_m5_lora,
+)
+from tinyllm.training.m5_lora_schema import (
+    M5LoRACampaignResult,
+    M5LoRACheckpointFile,
+    M5LoRACheckpointManifest,
+    M5LoRAEnvironment,
+    M5LoRAGPU,
+    M5LoRAHardware,
+    M5LoRAMemory,
+    M5LoRARunResult,
+)
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
 from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.run import run_single_device_training
@@ -151,6 +184,29 @@ __all__ = [
     "M5AblationRunResult",
     "M5DataConfig",
     "M5EvaluationConfig",
+    "M5FormalCheckpointFile",
+    "M5FormalCheckpointManifest",
+    "M5FormalCampaignResult",
+    "M5FormalCheckpointStore",
+    "M5FormalEnvironment",
+    "M5FormalGPU",
+    "M5FormalHardware",
+    "M5FormalPackage",
+    "M5FormalProgress",
+    "M5FormalRankMemory",
+    "M5FormalRunResult",
+    "M5FormalTrainingError",
+    "M5LoRACheckpointFile",
+    "M5LoRACampaignResult",
+    "M5LoRACheckpointManifest",
+    "M5LoRACheckpointStore",
+    "M5LoRAEnvironment",
+    "M5LoRAError",
+    "M5LoRAGPU",
+    "M5LoRAHardware",
+    "M5LoRAMemory",
+    "M5LoRAProgress",
+    "M5LoRARunResult",
     "M5LoRAConfig",
     "M5ModelConfig",
     "M5ParallelConfig",
@@ -190,6 +246,8 @@ __all__ = [
     "run_fsdp2_correctness",
     "run_m4_dependency_smoke",
     "run_m5_ablation",
+    "run_m5_formal_ddp",
+    "run_m5_lora",
     "seed_everything",
     "token_learning_rate",
     "validate_sampler_partitions",

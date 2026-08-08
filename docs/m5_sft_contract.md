@@ -234,10 +234,68 @@ Compressor 只读取已验证答案、原始证据和 Evidence Anchor。它不�
 来源扩展；Mixture、训练和 99% 双 Seed 门禁仍未授权。
 详见 [P2 中文实验报告](../reports/m5/m5_r3_p2.md)。
 
+P2 的 33 条接受样本必须完成三项逐条维护者审查：标签与证据一致、短推理足以支撑所选
+标签、没有无依据或其他候选陈述。Codex 草案不能作为维护者判断；Review Finalizer 要求
+33/33 覆盖、固定来源 SHA256 和显式维护者确认。任一拒绝都会继续阻断正式扩展。准备状态
+见 [内容审查报告](../reports/m5/m5_r3_content_review.md)。
+
+维护者已确认全部 33 条草案判定，公开 Review Result 为 `approved`，因此正式 240 条来源
+扩展已解锁。该结果不授权 Mixture 或训练；必须先完成 160 条分层选择及独立污染检查。
+
+正式来源使用 `m5-r3-formal-source-v1`：Config 与 Log Diagnosis 各 120 条，每类英文
+84、中文 36；最终每类确定性选择英文 56、中文 24。Runner 支持 1–8 个独立 GPU 分片，
+因此可以按实际空闲卡并发完成，不要求八卡同时可用。Finalizer 要求分片同 Config、同
+Git Commit、任务集合完整且无重复，并重新执行 Trace 与污染门禁。CPU 合成 Smoke 只授权
+真实生成；详见 [正式来源扩展报告](../reports/m5/m5_r3_formal_source.md)。
+
+真实双卡分片已完成：240 条中接受 218 条，四个任务族/语言分层均满足门槛，最终选择
+160 条且所有污染计数为 0，正式来源门禁通过。门禁后精确 Token 审计发现，这 160 条来源
+每轮只有 4,933 个监督 Token；在单来源最多使用四次的限制下无法构成 150K Targeted
+Thinking Token。当前只授权制定版本化 Mixture 修订，不授权 R3 训练，且不会修改原始
+分片或静默放宽复用约束。
+
+Mixture v2 随后在任何 R3 训练或 Dev 评测前完成：标签分层后的 160 条来源每轮提供
+5,037 个监督 Token，单来源总使用上限冻结为 30，实际构建范围为 29–30。最终数据版本
+`m5-r3-mixture-v2-b47723e1` 精确包含 700K Non-thinking、150K General Thinking 和
+150K Targeted Thinking Token，并通过重新打开校验。`r3_training_authorized=true` 只授权
+两个固定 Seed 的 1M Token R3 训练，不代表质量门禁通过。详见
+[Mixture v2 报告](../reports/m5/m5_r3_mixture.md)。
+
+R3 Seed42 随后完成真实 1M Token 训练，但冻结 Thinking 格式率只有 92.5%，低于 99%
+门槛；R3 因此已经逻辑拒绝。第二 Seed 在 672,024 Token 时停止，保留 500,721 Token 的
+有效 Checkpoint，不再执行没有决策价值的剩余训练。详见
+[R3 训练与门禁报告](../reports/m5/m5_r3_training_gate.md)。
+
+M5.2-R4 不再继续小样本格式修补。依据 Qwen 官方 Thinking Budget 方案，版本化协议
+`m5-thinking-budget-v2` 使用 1536 Token 第一阶段预算；未自然闭合时显式记录控制器注入，
+再生成最终答案。99% 格式门槛不降低，同时新增强制收束率不高于 10%、Thinking 分数至少
+90% 和 Non-thinking 回退不超过 2pp。决策见
+[ADR-0006](adr/0006-qwen3-thinking-budget-controller.md)。
+
+协议 v2 的 Base 与 R1 双 Seed 真实评测已完成。两个 Candidate 的控制后 Thinking 格式率
+均为 100%，强制收束率为 2.0%/3.5%，Thinking 分数均为 96.0%，Non-thinking 分数为
+64.0%/66.0%；四项门禁全部通过，正式选择 30% Thinking 配比并解锁 M5.3。控制器注入与
+模型自然闭合分别记录，不把 100% 控制后格式率表述为 100% 自然闭合率。完整证据见
+[Thinking Budget v2 门禁报告](../reports/m5/m5_thinking_budget_v2.md)。
+
 0.6B 正式路径先做单卡 BF16 Smoke，再用四张通过 Preflight 的 RTX 3090 执行 DDP。最低
 50M Tokens、最高 100M，每 10M 执行继续训练门禁；每 2M 保存滚动 Checkpoint。8B 路线先做
 单卡 Memory Probe，再训练最低 10M、最高 30M Tokens；每 1M 保存滚动 Checkpoint、每 2M
 执行 Dev 评测。每段作业不超过 12 小时。
+
+8B BF16 LoRA 正式路线已经完成：单卡训练在 5,000,444 Token 受控中断并由全新进程 Exact
+Resume 到 10M Token，导出独立 Adapter 与 Model Card。最终 Thinking Budget v2 真实评测中，
+Thinking 正确率为 99.0%、自然闭合率为 99.5%、强制收束率为 0.5%；Non-thinking 正确率为
+72.0%，两种模式格式率均为 100%，可见推理泄漏均为 0。由于没有同协议 8B Base 结果，
+这些值只作为路线验收证据，不声明相对提升或 Candidate 晋级。详见
+[Qwen3-8B LoRA 中文报告](../reports/m5/m5_lora_formal.md)。
+
+0.6B BF16 Full SFT 正式路线也已完成：四卡 DDP 在 2,002,739 Token 受控中断，由全新
+`torchrun` 进程 Exact Resume 到 50M Token，并保存 10M、20M、30M、40M、50M 五个不可变
+快照。冻结 M5 Dev 上，10M 快照取得最优联合结果：Thinking 95.0%、Non-thinking 47.5%；
+50M 终点为 91.5%和 39.0%。所有阶段格式率均为 100%，可见推理泄漏均为 0。五个快照在
+训练完成后统一评测，10M 作为 M6 优先比较点，50M 保留为完整训练与过拟合证据。详见
+[Qwen3-0.6B Full SFT 中文报告](../reports/m5/m5_full_sft_formal.md)。
 
 ## 5. 配置与恢复
 
@@ -250,9 +308,9 @@ Token 预算、精度、World Size、Checkpoint 策略和评测版本。CLI 只�
 Checkpoint 必须包含 Adapter、Optimizer、Scheduler、RNG、Sampler Cursor、基座 Revision、
 数据版本和配置哈希。部署导出与训练 Checkpoint 分离；8B 只导出 Adapter Safetensors。
 
-## 6. M5 完成条件
+## 6. M5 完成条件与状态
 
-M5 只有在以下证据全部合并后才能标记完成：
+以下证据已经全部完成并纳入 M5 总验收：
 
 1. 双模式设计、Schema、数据 Manifest、拒绝统计和污染报告；
 2. 训练前双模式 Baseline 与配比消融；
@@ -261,5 +319,6 @@ M5 只有在以下证据全部合并后才能标记完成：
 5. OOM、NaN/Inf、坏 Checkpoint、磁盘不足、数据漂移、错误 World Size 和进程退出失败路径；
 6. 中文主验收报告、英文公开摘要和完整血缘。
 
-结果没有质量提升时可以作为诚实的 M5 系统实验完成，但模型保持 `Development`。只有 M6
-满足 Thinking 提升、Non-thinking/通用回归、JSON Valid Rate 和血缘门禁后才能晋级。
+两条路线及失败路径均已完成，M5 状态为 `COMPLETE`。模型继续保持 `Development`；只有 M6
+满足 Thinking 提升、Non-thinking/通用回归、JSON Valid Rate 和血缘门禁后才能晋级。完整
+核对见[M5 总验收报告](../reports/m5/m5_acceptance.md)。

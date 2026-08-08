@@ -6,6 +6,7 @@ from typing import cast
 
 from tinyllm.data import (
     M5FormatRepairMixtureManifest,
+    M5R3ContentReviewResult,
     M5R3P0Result,
     M5R3P1CPUSmoke,
     M5R3P1Result,
@@ -481,6 +482,30 @@ def test_m5_r3_p2_real_result_authorizes_only_source_expansion() -> None:
     assert result.r3_training_authorized is False
     public = path.read_text(encoding="utf-8")
     assert "raw_output" not in public
+    assert "reasoning_content" not in public
+    assert "/home/" not in public
+    assert "/data/" not in public
+
+
+def test_m5_r3_p2_content_review_records_full_maintainer_approval() -> None:
+    path = Path("reports/m5/raw/m5_r3_p2_content_review.json")
+    result = M5R3ContentReviewResult.model_validate_json(path.read_text(encoding="utf-8"))
+
+    assert result.status == "approved"
+    assert result.reviewer_role == "maintainer"
+    assert result.reviewed_items == result.passed_items == 33
+    assert result.rejected_items == 0
+    assert result.family_counts == {"config": 17, "log_diagnosis": 16}
+    assert result.language_counts == {"en": 24, "zh": 9}
+    assert (
+        result.private_judgments_sha256
+        == "30b669b2d4ec4aa86208e7dee44962283272a3aec05d17d4b1ef33f927adce7a"
+    )
+    assert result.formal_source_expansion_authorized is True
+    assert result.r3_mixture_authorized is False
+    assert result.r3_training_authorized is False
+    public = path.read_text(encoding="utf-8")
+    assert "prompt" not in public
     assert "reasoning_content" not in public
     assert "/home/" not in public
     assert "/data/" not in public

@@ -1,0 +1,217 @@
+{
+  "$defs": {
+    "M5R3FormalSourceLineage": {
+      "additionalProperties": false,
+      "description": "Immutable formal-source inputs consumed by the mixture builder.",
+      "properties": {
+        "accepted_samples_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Accepted Samples Sha256",
+          "type": "string"
+        },
+        "raw_artifact_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Raw Artifact Sha256",
+          "type": "string"
+        },
+        "result_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Result Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_sha256",
+        "raw_artifact_sha256",
+        "accepted_samples_sha256"
+      ],
+      "title": "M5R3FormalSourceLineage",
+      "type": "object"
+    },
+    "M5R3MixtureSelectionPolicy": {
+      "additionalProperties": false,
+      "description": "Outcome-independent family/language/label selection and exposure cap.",
+      "properties": {
+        "max_source_uses": {
+          "const": 30,
+          "title": "Max Source Uses",
+          "type": "integer"
+        },
+        "policy_id": {
+          "const": "family-language-label-balanced-v2",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "quotas": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "propertyNames": {
+              "enum": [
+                "en",
+                "zh"
+              ]
+            },
+            "type": "object"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Quotas",
+          "type": "object"
+        },
+        "stable_sort": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "const": "reasoning_tokens",
+              "type": "string"
+            },
+            {
+              "const": "repeated_8gram_basis_points",
+              "type": "string"
+            },
+            {
+              "const": "sample_id",
+              "type": "string"
+            }
+          ],
+          "title": "Stable Sort",
+          "type": "array"
+        }
+      },
+      "required": [
+        "policy_id",
+        "quotas",
+        "stable_sort",
+        "max_source_uses"
+      ],
+      "title": "M5R3MixtureSelectionPolicy",
+      "type": "object"
+    },
+    "M5R3MixtureTokenBudget": {
+      "additionalProperties": false,
+      "description": "Frozen exact supervised-token allocation.",
+      "properties": {
+        "general_thinking_supervised_tokens": {
+          "const": 150000,
+          "title": "General Thinking Supervised Tokens",
+          "type": "integer"
+        },
+        "nonthinking_supervised_tokens": {
+          "const": 700000,
+          "title": "Nonthinking Supervised Tokens",
+          "type": "integer"
+        },
+        "targeted_thinking_supervised_tokens": {
+          "const": 150000,
+          "title": "Targeted Thinking Supervised Tokens",
+          "type": "integer"
+        },
+        "total_supervised_tokens": {
+          "const": 1000000,
+          "title": "Total Supervised Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total_supervised_tokens",
+        "nonthinking_supervised_tokens",
+        "general_thinking_supervised_tokens",
+        "targeted_thinking_supervised_tokens"
+      ],
+      "title": "M5R3MixtureTokenBudget",
+      "type": "object"
+    },
+    "M5R3PilotLineage": {
+      "additionalProperties": false,
+      "description": "Immutable original Thinking Pilot used for the general stratum.",
+      "properties": {
+        "content_sha256": {
+          "const": "b4db5ac8c9252b701c573de56a1f91629e3b1716e23223e5b2b979c5cc285684",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "dataset_version": {
+          "const": "m5-reasoning-pilot-v1-b4db5ac8",
+          "title": "Dataset Version",
+          "type": "string"
+        },
+        "raw_artifact_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Raw Artifact Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "raw_artifact_sha256",
+        "dataset_version",
+        "content_sha256"
+      ],
+      "title": "M5R3PilotLineage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete versioned correction to the infeasible four-use contract.",
+  "properties": {
+    "build_seed": {
+      "const": 20260731,
+      "title": "Build Seed",
+      "type": "integer"
+    },
+    "consume_m6_frozen_results": {
+      "const": false,
+      "title": "Consume M6 Frozen Results",
+      "type": "boolean"
+    },
+    "formal_source": {
+      "$ref": "#/$defs/M5R3FormalSourceLineage"
+    },
+    "mixture_protocol": {
+      "const": "m5-r3-mixture-v2",
+      "title": "Mixture Protocol",
+      "type": "string"
+    },
+    "pilot": {
+      "$ref": "#/$defs/M5R3PilotLineage"
+    },
+    "r3_training_authorized": {
+      "const": false,
+      "title": "R3 Training Authorized",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection": {
+      "$ref": "#/$defs/M5R3MixtureSelectionPolicy"
+    },
+    "token_budget": {
+      "$ref": "#/$defs/M5R3MixtureTokenBudget"
+    }
+  },
+  "required": [
+    "schema_version",
+    "mixture_protocol",
+    "formal_source",
+    "pilot",
+    "token_budget",
+    "selection",
+    "build_seed",
+    "consume_m6_frozen_results",
+    "r3_training_authorized"
+  ],
+  "title": "M5R3MixtureConfig",
+  "type": "object"
+}

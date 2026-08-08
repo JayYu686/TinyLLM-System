@@ -1,0 +1,203 @@
+{
+  "$defs": {
+    "M5ThinkingBudgetGenerationConfig": {
+      "additionalProperties": false,
+      "description": "Qwen-official two-stage generation policy with a bounded final continuation.",
+      "properties": {
+        "base_seed": {
+          "const": 20260726,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "batch_size": {
+          "const": 4,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "early_stopping_text": {
+          "const": "\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n</think>\n\n",
+          "title": "Early Stopping Text",
+          "type": "string"
+        },
+        "final_answer_max_new_tokens": {
+          "const": 128,
+          "title": "Final Answer Max New Tokens",
+          "type": "integer"
+        },
+        "nonthinking_do_sample": {
+          "const": false,
+          "title": "Nonthinking Do Sample",
+          "type": "boolean"
+        },
+        "nonthinking_max_new_tokens": {
+          "const": 128,
+          "title": "Nonthinking Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "thinking_budget_tokens": {
+          "const": 1536,
+          "title": "Thinking Budget Tokens",
+          "type": "integer"
+        },
+        "thinking_do_sample": {
+          "const": true,
+          "title": "Thinking Do Sample",
+          "type": "boolean"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "batch_size",
+        "thinking_budget_tokens",
+        "final_answer_max_new_tokens",
+        "nonthinking_max_new_tokens",
+        "thinking_do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "nonthinking_do_sample",
+        "base_seed",
+        "early_stopping_text"
+      ],
+      "title": "M5ThinkingBudgetGenerationConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Frozen M5-only protocol v2; it never consumes the M6 release set.",
+  "properties": {
+    "attention_architecture": {
+      "const": "gqa",
+      "title": "Attention Architecture",
+      "type": "string"
+    },
+    "base_revision": {
+      "enum": [
+        "c1899de289a04d12100db370d81485cdf75e47ca",
+        "b968826d9c46dd6066d109eabc6255188de91218"
+      ],
+      "title": "Base Revision",
+      "type": "string"
+    },
+    "compare_modes_separately": {
+      "const": true,
+      "title": "Compare Modes Separately",
+      "type": "boolean"
+    },
+    "consume_m6_frozen_results": {
+      "const": false,
+      "title": "Consume M6 Frozen Results",
+      "type": "boolean"
+    },
+    "controlled_format_min_basis_points": {
+      "const": 9900,
+      "title": "Controlled Format Min Basis Points",
+      "type": "integer"
+    },
+    "expected_items": {
+      "const": 200,
+      "title": "Expected Items",
+      "type": "integer"
+    },
+    "generation": {
+      "$ref": "#/$defs/M5ThinkingBudgetGenerationConfig"
+    },
+    "max_forced_close_basis_points": {
+      "const": 1000,
+      "title": "Max Forced Close Basis Points",
+      "type": "integer"
+    },
+    "min_thinking_score_basis_points": {
+      "const": 9000,
+      "title": "Min Thinking Score Basis Points",
+      "type": "integer"
+    },
+    "model_repository": {
+      "enum": [
+        "Qwen/Qwen3-0.6B",
+        "Qwen/Qwen3-8B"
+      ],
+      "title": "Model Repository",
+      "type": "string"
+    },
+    "nonthinking_regression_tolerance_basis_points": {
+      "const": 200,
+      "title": "Nonthinking Regression Tolerance Basis Points",
+      "type": "integer"
+    },
+    "nonthinking_template_id": {
+      "const": "qwen3-chatml-nonthinking-generation-v1",
+      "title": "Nonthinking Template Id",
+      "type": "string"
+    },
+    "protocol_version": {
+      "const": "m5-thinking-budget-v2",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_version": {
+      "const": "m5-reasoning-dev-v1-53ddf557",
+      "title": "Suite Version",
+      "type": "string"
+    },
+    "task_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Task Config Sha256",
+      "type": "string"
+    },
+    "thinking_template_id": {
+      "const": "qwen3-chatml-thinking-v1",
+      "title": "Thinking Template Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "suite_version",
+    "expected_items",
+    "task_config_sha256",
+    "model_repository",
+    "base_revision",
+    "attention_architecture",
+    "thinking_template_id",
+    "nonthinking_template_id",
+    "compare_modes_separately",
+    "consume_m6_frozen_results",
+    "controlled_format_min_basis_points",
+    "max_forced_close_basis_points",
+    "min_thinking_score_basis_points",
+    "nonthinking_regression_tolerance_basis_points",
+    "generation"
+  ],
+  "title": "M5ThinkingBudgetEvaluationConfig",
+  "type": "object"
+}

@@ -1,0 +1,401 @@
+{
+  "$defs": {
+    "M5R3P1StageGeneration": {
+      "additionalProperties": false,
+      "description": "One private solver or compressor generation with explicit lineage.",
+      "properties": {
+        "error_code": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9_]{2,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "finish_reason": {
+          "enum": [
+            "stop",
+            "length",
+            "error"
+          ],
+          "title": "Finish Reason",
+          "type": "string"
+        },
+        "generated_token_count": {
+          "minimum": 0,
+          "title": "Generated Token Count",
+          "type": "integer"
+        },
+        "generation_id": {
+          "pattern": "^m5-reasoning:pilot:r3(?:p1|formal)-(config|log)-(en|zh)-\\d{3}:(solver|compressor)$",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "input_token_count": {
+          "minimum": 0,
+          "title": "Input Token Count",
+          "type": "integer"
+        },
+        "prompt_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "raw_output": {
+          "anyOf": [
+            {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Output"
+        },
+        "raw_output_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Output Sha256"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "solver",
+            "compressor"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "succeeded",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^m5-reasoning:pilot:r3(?:p1|formal)-(config|log)-(en|zh)-\\d{3}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "generation_id",
+        "task_id",
+        "stage",
+        "seed",
+        "prompt_sha256",
+        "status",
+        "finish_reason",
+        "input_token_count",
+        "generated_token_count"
+      ],
+      "title": "M5R3P1StageGeneration",
+      "type": "object"
+    },
+    "M5R3P1TaskContext": {
+      "additionalProperties": false,
+      "description": "Private P1 task plus frozen evidence required by the compressor verifier.",
+      "properties": {
+        "allowed_labels": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Allowed Labels",
+          "type": "array"
+        },
+        "evidence": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "evidence_anchor": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Evidence Anchor",
+          "type": "string"
+        },
+        "expected_label": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Expected Label",
+          "type": "string"
+        },
+        "label_key": {
+          "enum": [
+            "issue",
+            "root_cause"
+          ],
+          "title": "Label Key",
+          "type": "string"
+        },
+        "task": {
+          "$ref": "#/$defs/ReasoningTask"
+        }
+      },
+      "required": [
+        "task",
+        "evidence",
+        "evidence_anchor",
+        "label_key",
+        "allowed_labels",
+        "expected_label"
+      ],
+      "title": "M5R3P1TaskContext",
+      "type": "object"
+    },
+    "ReasoningTask": {
+      "additionalProperties": false,
+      "description": "One deterministic reasoning prompt and its non-executable expected answer.",
+      "properties": {
+        "expected_answer_json": {
+          "maxLength": 4096,
+          "minLength": 2,
+          "title": "Expected Answer Json",
+          "type": "string"
+        },
+        "expected_answer_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Answer Sha256",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^m5-reasoning:(pilot|dev):[a-z0-9][a-z0-9._-]{2,95}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "language": {
+          "enum": [
+            "en",
+            "zh"
+          ],
+          "title": "Language",
+          "type": "string"
+        },
+        "prompt": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "split": {
+          "enum": [
+            "pilot_train",
+            "reasoning_dev"
+          ],
+          "title": "Split",
+          "type": "string"
+        },
+        "task_family": {
+          "enum": [
+            "config",
+            "json",
+            "linux",
+            "log_diagnosis",
+            "python"
+          ],
+          "title": "Task Family",
+          "type": "string"
+        },
+        "template_family": {
+          "pattern": "^(pilot|dev)\\.[a-z0-9][a-z0-9._-]+\\.v[12]$",
+          "title": "Template Family",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "split",
+        "task_family",
+        "language",
+        "template_family",
+        "prompt",
+        "prompt_sha256",
+        "expected_answer_json",
+        "expected_answer_sha256"
+      ],
+      "title": "ReasoningTask",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Private independently reproducible generation shard.",
+  "properties": {
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "contexts": {
+      "items": {
+        "$ref": "#/$defs/M5R3P1TaskContext"
+      },
+      "maxItems": 240,
+      "minItems": 1,
+      "title": "Contexts",
+      "type": "array"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "expansion_version": {
+      "const": "m5-r3-formal-source-v1",
+      "title": "Expansion Version",
+      "type": "string"
+    },
+    "generations": {
+      "items": {
+        "$ref": "#/$defs/M5R3P1StageGeneration"
+      },
+      "maxItems": 480,
+      "minItems": 1,
+      "title": "Generations",
+      "type": "array"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "peak_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "shard_count": {
+      "maximum": 8,
+      "minimum": 1,
+      "title": "Shard Count",
+      "type": "integer"
+    },
+    "shard_index": {
+      "maximum": 7,
+      "minimum": 0,
+      "title": "Shard Index",
+      "type": "integer"
+    },
+    "task_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 240,
+      "minItems": 1,
+      "title": "Task Ids",
+      "type": "array"
+    },
+    "torch_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Torch Version",
+      "type": "string"
+    },
+    "transformers_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Transformers Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "expansion_version",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "shard_index",
+    "shard_count",
+    "physical_gpu_index",
+    "gpu_name",
+    "torch_version",
+    "transformers_version",
+    "task_ids",
+    "contexts",
+    "generations",
+    "duration_seconds",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes"
+  ],
+  "title": "M5R3FormalShardArtifact",
+  "type": "object"
+}

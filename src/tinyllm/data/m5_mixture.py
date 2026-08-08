@@ -23,6 +23,7 @@ from tinyllm.data.m5_mixture_schema import (
     M5MixtureArtifactFile,
     M5MixtureManifest,
 )
+from tinyllm.data.m5_r3_mixture_schema import M5R3MixtureManifest
 from tinyllm.data.reasoning import (
     build_reasoning_dataset,
     generate_reasoning_dev_tasks,
@@ -250,6 +251,21 @@ def _thinking_candidates_with_metadata(
     tokenizer_config_path: Path,
     model_dir: Path,
 ) -> tuple[M5ThinkingCandidate, ...]:
+    return thinking_candidates_from_samples(
+        pilot.samples,
+        tokenizer_config_path=tokenizer_config_path,
+        model_dir=model_dir,
+    )
+
+
+def thinking_candidates_from_samples(
+    samples: tuple[ReasoningSample, ...],
+    *,
+    tokenizer_config_path: Path,
+    model_dir: Path,
+) -> tuple[M5ThinkingCandidate, ...]:
+    """Tokenize verified Thinking samples into fixed-length training candidates."""
+
     tokenization = load_m2_tokenization_config(tokenizer_config_path)
     backend = TokenizersBackend.from_files(
         model_dir / tokenization.tokenizer.tokenizer_file,
@@ -257,7 +273,7 @@ def _thinking_candidates_with_metadata(
         tokenization.tokenizer,
     )
     candidates: list[M5ThinkingCandidate] = []
-    for sample in pilot.samples:
+    for sample in samples:
         encoded = tokenize_thinking_messages(
             (
                 ImportedMessage(role="user", content=sample.prompt),
@@ -644,7 +660,7 @@ def build_m5_format_repair_mixture(
     return opened.manifest
 
 
-M5MixtureManifestType = M5MixtureManifest | M5FormatRepairMixtureManifest
+M5MixtureManifestType = M5MixtureManifest | M5FormatRepairMixtureManifest | M5R3MixtureManifest
 
 
 @dataclass(frozen=True, slots=True)
@@ -658,7 +674,7 @@ class OpenM5Mixture:
 def m5_mixture_config_dataset_version(manifest: M5MixtureManifestType) -> str:
     """Return the dataset identity that a training config must bind."""
 
-    if isinstance(manifest, M5FormatRepairMixtureManifest):
+    if isinstance(manifest, (M5FormatRepairMixtureManifest, M5R3MixtureManifest)):
         return manifest.mixture_version
     return manifest.pilot_dataset_version
 
@@ -669,10 +685,13 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
     try:
         manifest_bytes = (root / _MANIFEST_FILE).read_bytes()
         manifest_mapping = cast(dict[str, object], json.loads(manifest_bytes))
-        if manifest_mapping.get("dataset_name") == "m5-format-repair-mixture":
+        dataset_name = manifest_mapping.get("dataset_name")
+        if dataset_name == "m5-format-repair-mixture":
             manifest: M5MixtureManifestType = M5FormatRepairMixtureManifest.model_validate(
                 manifest_mapping
             )
+        elif dataset_name == "m5-r3-mixture":
+            manifest = M5R3MixtureManifest.model_validate(manifest_mapping)
         else:
             manifest = M5MixtureManifest.model_validate(manifest_mapping)
         marker = cast(dict[str, str], json.loads((root / _COMMIT_FILE).read_text(encoding="utf-8")))
@@ -708,7 +727,9 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
             if bool(np.logical_and(attention_masks == 0, labels != -100).any()):
                 raise M5MixtureError("mixture padding cannot carry supervised labels")
             allowed_modes = (
-                {0, 1, 2} if isinstance(manifest, M5FormatRepairMixtureManifest) else {0, 1}
+                {0, 1, 2}
+                if isinstance(manifest, (M5FormatRepairMixtureManifest, M5R3MixtureManifest))
+                else {0, 1}
             )
             if (
                 modes.shape != (manifest.sequence_count,)
@@ -724,33 +745,64 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
             ):
                 raise M5MixtureError("mixture supervised-token counts do not match manifest")
             arrays_hash = _array_content_hash(input_ids, labels, attention_masks, modes)
-            if isinstance(manifest, M5FormatRepairMixtureManifest):
+            if isinstance(manifest, (M5FormatRepairMixtureManifest, M5R3MixtureManifest)):
                 general_count = int(valid[modes == 1].sum())
                 repair_count = int(valid[modes == 2].sum())
-                if (
-                    general_count != manifest.general_thinking_supervised_tokens
-                    or repair_count != manifest.repair_thinking_supervised_tokens
-                ):
+                expected_general = manifest.general_thinking_supervised_tokens
+                expected_repair = (
+                    manifest.repair_thinking_supervised_tokens
+                    if isinstance(manifest, M5FormatRepairMixtureManifest)
+                    else manifest.targeted_thinking_supervised_tokens
+                )
+                if general_count != expected_general or repair_count != expected_repair:
                     raise M5MixtureError(
                         "format-repair supervised-token strata do not match manifest"
                     )
-                expected_content = content_sha256(
-                    {
-                        "arrays_sha256": arrays_hash,
-                        "build_seed": manifest.build_seed,
-                        "general_thinking_supervised_tokens": (
-                            manifest.general_thinking_supervised_tokens
-                        ),
-                        "nonthinking_supervised_tokens": (manifest.nonthinking_supervised_tokens),
-                        "parent_content_sha256": manifest.parent_content_sha256,
-                        "pilot_content_sha256": manifest.pilot_content_sha256,
-                        "repair_policy_id": manifest.repair_policy_id,
-                        "repair_source_sha256": manifest.repair_source_sha256,
-                        "repair_thinking_supervised_tokens": (
-                            manifest.repair_thinking_supervised_tokens
-                        ),
-                    }
-                )
+                if isinstance(manifest, M5FormatRepairMixtureManifest):
+                    expected_content = content_sha256(
+                        {
+                            "arrays_sha256": arrays_hash,
+                            "build_seed": manifest.build_seed,
+                            "general_thinking_supervised_tokens": (
+                                manifest.general_thinking_supervised_tokens
+                            ),
+                            "nonthinking_supervised_tokens": (
+                                manifest.nonthinking_supervised_tokens
+                            ),
+                            "parent_content_sha256": manifest.parent_content_sha256,
+                            "pilot_content_sha256": manifest.pilot_content_sha256,
+                            "repair_policy_id": manifest.repair_policy_id,
+                            "repair_source_sha256": manifest.repair_source_sha256,
+                            "repair_thinking_supervised_tokens": (
+                                manifest.repair_thinking_supervised_tokens
+                            ),
+                        }
+                    )
+                else:
+                    expected_content = content_sha256(
+                        {
+                            "arrays_sha256": arrays_hash,
+                            "build_seed": manifest.build_seed,
+                            "config_sha256": manifest.config_sha256,
+                            "formal_accepted_samples_sha256": (
+                                manifest.formal_accepted_samples_sha256
+                            ),
+                            "formal_raw_artifact_sha256": (manifest.formal_raw_artifact_sha256),
+                            "formal_result_sha256": manifest.formal_result_sha256,
+                            "general_thinking_supervised_tokens": (
+                                manifest.general_thinking_supervised_tokens
+                            ),
+                            "nonthinking_supervised_tokens": (
+                                manifest.nonthinking_supervised_tokens
+                            ),
+                            "parent_content_sha256": manifest.parent_content_sha256,
+                            "pilot_content_sha256": manifest.pilot_content_sha256,
+                            "targeted_selection_sha256": (manifest.targeted_selection_sha256),
+                            "targeted_thinking_supervised_tokens": (
+                                manifest.targeted_thinking_supervised_tokens
+                            ),
+                        }
+                    )
             else:
                 expected_content = content_sha256(
                     {

@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "status": "passed",
+  "generated_at": "2026-08-03T04:22:23.882542Z",
+  "git_commit": "ee636c0362310d3ab118b4bb80db4cc531454542",
+  "git_dirty": false,
+  "model_generated": false,
+  "quality_metric": false,
+  "cases": [
+    {
+      "name": "cuda_oom",
+      "status": "rejected_as_expected",
+      "injection_kind": "safe_cpu_fault_injection",
+      "observed_error": "M5 CUDA out of memory: injected allocation failure"
+    },
+    {
+      "name": "non_finite",
+      "status": "rejected_as_expected",
+      "injection_kind": "safe_cpu_fault_injection",
+      "observed_error": "M5 training produced non-finite loss"
+    },
+    {
+      "name": "corrupt_checkpoint",
+      "status": "rejected_as_expected",
+      "injection_kind": "safe_cpu_fault_injection",
+      "observed_error": "M5 Checkpoint integrity validation failed"
+    },
+    {
+      "name": "disk_insufficient",
+      "status": "rejected_as_expected",
+      "injection_kind": "safe_cpu_fault_injection",
+      "observed_error": "M5 storage preflight failed: requires 2 free bytes, observed 1"
+    },
+    {
+      "name": "dataset_drift",
+      "status": "rejected_as_expected",
+      "injection_kind": "safe_cpu_fault_injection",
+      "observed_error": "M5 Dataset identity drift detected"
+    },
+    {
+      "name": "world_size_mismatch",
+      "status": "rejected_as_expected",
+      "injection_kind": "safe_cpu_fault_injection",
+      "observed_error": "M5 World Size mismatch: expected 4, observed 2"
+    },
+    {
+      "name": "child_process_exit",
+      "status": "rejected_as_expected",
+      "injection_kind": "safe_cpu_fault_injection",
+      "observed_error": "M5 training child exited unsuccessfully with code 17"
+    }
+  ]
+}

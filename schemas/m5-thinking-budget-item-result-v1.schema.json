@@ -1,0 +1,151 @@
+{
+  "additionalProperties": false,
+  "description": "One private result with model output and controller intervention separated.",
+  "properties": {
+    "budget_forced_close": {
+      "title": "Budget Forced Close",
+      "type": "boolean"
+    },
+    "continuation_response": {
+      "maxLength": 32768,
+      "title": "Continuation Response",
+      "type": "string"
+    },
+    "continuation_tokens": {
+      "maximum": 128,
+      "minimum": 0,
+      "title": "Continuation Tokens",
+      "type": "integer"
+    },
+    "controller_action": {
+      "enum": [
+        "not_applicable",
+        "natural_complete",
+        "natural_close_continue",
+        "forced_close_continue"
+      ],
+      "title": "Controller Action",
+      "type": "string"
+    },
+    "controller_injected_text": {
+      "maxLength": 512,
+      "title": "Controller Injected Text",
+      "type": "string"
+    },
+    "final_answer_correct": {
+      "title": "Final Answer Correct",
+      "type": "boolean"
+    },
+    "final_json_valid": {
+      "title": "Final Json Valid",
+      "type": "boolean"
+    },
+    "finish_reason": {
+      "enum": [
+        "eos",
+        "length"
+      ],
+      "title": "Finish Reason",
+      "type": "string"
+    },
+    "first_pass_response": {
+      "maxLength": 131072,
+      "title": "First Pass Response",
+      "type": "string"
+    },
+    "first_pass_tokens": {
+      "maximum": 1536,
+      "minimum": 0,
+      "title": "First Pass Tokens",
+      "type": "integer"
+    },
+    "format_valid": {
+      "title": "Format Valid",
+      "type": "boolean"
+    },
+    "generated_tokens": {
+      "maximum": 1664,
+      "minimum": 0,
+      "title": "Generated Tokens",
+      "type": "integer"
+    },
+    "injected_tokens": {
+      "maximum": 128,
+      "minimum": 0,
+      "title": "Injected Tokens",
+      "type": "integer"
+    },
+    "item_id": {
+      "pattern": "^m5-reasoning:dev:[a-z0-9][a-z0-9._-]{2,95}$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "natural_thinking_closed": {
+      "title": "Natural Thinking Closed",
+      "type": "boolean"
+    },
+    "prompt_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "prompt_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Prompt Tokens",
+      "type": "integer"
+    },
+    "response": {
+      "maxLength": 131072,
+      "title": "Response",
+      "type": "string"
+    },
+    "response_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Response Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "visible_reasoning_leakage": {
+      "title": "Visible Reasoning Leakage",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "item_id",
+    "mode",
+    "prompt_sha256",
+    "response",
+    "response_sha256",
+    "first_pass_response",
+    "continuation_response",
+    "controller_injected_text",
+    "controller_action",
+    "prompt_tokens",
+    "first_pass_tokens",
+    "continuation_tokens",
+    "injected_tokens",
+    "generated_tokens",
+    "finish_reason",
+    "natural_thinking_closed",
+    "budget_forced_close",
+    "format_valid",
+    "final_json_valid",
+    "final_answer_correct",
+    "visible_reasoning_leakage"
+  ],
+  "title": "M5ThinkingBudgetItemResult",
+  "type": "object"
+}

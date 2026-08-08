@@ -50,16 +50,24 @@ def test_gpu_inspection_parses_requested_indices_in_rank_order(
             "6, NVIDIA GeForce RTX 3090, 20, 1, 32, 570.00",
         ]
     )
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, output, ""),
-    )
+    observed_command: list[str] = []
+
+    def run(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        observed_command.extend(command)
+        return subprocess.CompletedProcess(command, 0, output, "")
+
+    monkeypatch.setattr(subprocess, "run", run)
 
     rows = inspect_gpus((6, 4))
 
+    assert "--id=6,4" in observed_command
     assert [row["index"] for row in rows] == [6, 4]
     assert rows[0]["memory_used_mib"] == 20
+
+
+def test_gpu_inspection_rejects_empty_selection() -> None:
+    with pytest.raises(RuntimeError, match="at least one"):
+        inspect_gpus(())
 
 
 def test_gpu_inspection_rejects_missing_or_malformed_rows(

@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "M5R3ContentCriterionJudgment": {
+      "additionalProperties": false,
+      "description": "One fixed content-review criterion judgment.",
+      "properties": {
+        "criterion": {
+          "enum": [
+            "label_matches_direct_evidence",
+            "rationale_supports_selected_label",
+            "no_unsupported_or_alternative_claims"
+          ],
+          "title": "Criterion",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "criterion",
+        "passed"
+      ],
+      "title": "M5R3ContentCriterionJudgment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Private item-level review record.",
+  "properties": {
+    "criteria": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5R3ContentCriterionJudgment"
+        },
+        {
+          "$ref": "#/$defs/M5R3ContentCriterionJudgment"
+        },
+        {
+          "$ref": "#/$defs/M5R3ContentCriterionJudgment"
+        }
+      ],
+      "title": "Criteria",
+      "type": "array"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "rationale": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "reviewer_role": {
+      "enum": [
+        "codex_draft",
+        "maintainer"
+      ],
+      "title": "Reviewer Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}$",
+      "title": "Task Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "reviewer_role",
+    "criteria",
+    "passed",
+    "rationale"
+  ],
+  "title": "M5R3ContentReviewJudgment",
+  "type": "object"
+}

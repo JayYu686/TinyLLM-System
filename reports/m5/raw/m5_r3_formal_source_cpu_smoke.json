@@ -1,0 +1,84 @@
+{
+  "accepted_samples": 240,
+  "config_sha256": "08ccc14ca01173df853b60065aad978833dd617fc5ae38c01263e2023f5d8eba",
+  "contamination": {
+    "algorithm": "m5-r3-formal-exact-normalized-template-v1",
+    "dev_exact_prompt_matches": 0,
+    "dev_task_count": 200,
+    "dev_template_family_overlaps": 0,
+    "formal_task_count": 240,
+    "historical_exact_prompt_matches": 0,
+    "historical_normalized_prompt_matches": 0,
+    "historical_pilot_task_count": 100,
+    "historical_template_family_overlaps": 0,
+    "p0_exact_prompt_matches": 0,
+    "p0_normalized_prompt_matches": 0,
+    "p0_r1_exact_prompt_matches": 0,
+    "p0_r1_normalized_prompt_matches": 0,
+    "p0_r1_template_family_overlaps": 0,
+    "p0_template_family_overlaps": 0,
+    "p1_exact_prompt_matches": 0,
+    "p1_normalized_prompt_matches": 0,
+    "p1_template_family_overlaps": 0,
+    "parent_p0_r1_task_count": 40,
+    "parent_p0_task_count": 40,
+    "parent_p1_task_count": 40,
+    "schema_version": "1.0",
+    "status": "pass",
+    "task_set_sha256": "7bd4af40ac3325c77612ed41c9edb54bbe2ed6c8b10f97c5da9b6d522f3336fd"
+  },
+  "evidence_kind": "synthetic_cpu_contract_smoke",
+  "expansion_version": "m5-r3-formal-source-v1",
+  "gpu_expansion_authorized": true,
+  "input_tasks": 240,
+  "model_generated": false,
+  "quality_metric": false,
+  "r3_mixture_authorized": false,
+  "r3_training_authorized": false,
+  "schema_version": "1.0",
+  "selected_samples": 160,
+  "stratum_results": [
+    {
+      "accepted_items": 84,
+      "gate_passed": true,
+      "input_tasks": 84,
+      "language": "en",
+      "required_items": 56,
+      "selected_items": 56,
+      "task_family": "config"
+    },
+    {
+      "accepted_items": 36,
+      "gate_passed": true,
+      "input_tasks": 36,
+      "language": "zh",
+      "required_items": 24,
+      "selected_items": 24,
+      "task_family": "config"
+    },
+    {
+      "accepted_items": 84,
+      "gate_passed": true,
+      "input_tasks": 84,
+      "language": "en",
+      "required_items": 56,
+      "selected_items": 56,
+      "task_family": "log_diagnosis"
+    },
+    {
+      "accepted_items": 36,
+      "gate_passed": true,
+      "input_tasks": 36,
+      "language": "zh",
+      "required_items": 24,
+      "selected_items": 24,
+      "task_family": "log_diagnosis"
+    }
+  ],
+  "task_set_sha256": "7bd4af40ac3325c77612ed41c9edb54bbe2ed6c8b10f97c5da9b6d522f3336fd",
+  "tested_failure_paths": [
+    "insufficient_language_stratum",
+    "parent_task_contamination",
+    "solver_lineage_drift"
+  ]
+}

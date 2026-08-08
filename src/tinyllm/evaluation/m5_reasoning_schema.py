@@ -236,7 +236,9 @@ class M5FormatRepairGateResult(StrictSchema):
     status: Literal["passed", "rejected"]
     base_evaluation_id: str = Field(min_length=1, max_length=180)
     base_nonthinking_score_basis_points: int = Field(ge=0, le=10_000)
-    mixture_version: str = Field(pattern=r"^m5-format-repair-mixture-v1-[0-9a-f]{8}$")
+    mixture_version: str = Field(
+        pattern=r"^m5-(?:format-repair-mixture-v1|r3-mixture-v2)-[0-9a-f]{8}$"
+    )
     mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     training_run_ids: tuple[str, str]
     training_seeds: tuple[Literal[42, 20260727], Literal[42, 20260727]]

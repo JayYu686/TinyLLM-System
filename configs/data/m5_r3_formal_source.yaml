@@ -1,0 +1,71 @@
+schema_version: "1.0"
+expansion_version: m5-r3-formal-source-v1
+parent_content_review_sha256: ec42e7a3f62d5db7953677a75960e3c7e3bd6a328782e2353ea0130ddf4211ae
+task_policy:
+  task_seed: 20260808
+  target_families:
+    - config
+    - log_diagnosis
+  tasks_per_family: 120
+  language_counts_per_family:
+    en: 84
+    zh: 36
+  variants_per_label: 30
+solver:
+  repository: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  attention_architecture: gqa
+  trust_remote_code: false
+  local_files_only: true
+  dtype: bfloat16
+  mode: thinking
+  do_sample: true
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 20
+  repetition_penalty: 1.0
+  candidate_count: 1
+  max_new_tokens: 896
+  base_seed: 20260809
+  prompt_protocol: m5-r3-concise-solver-v2
+compressor:
+  repository: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  attention_architecture: gqa
+  trust_remote_code: false
+  local_files_only: true
+  dtype: bfloat16
+  mode: nonthinking
+  do_sample: false
+  candidate_count: 1
+  max_new_tokens: 256
+  base_seed: 20260810
+  input_protocol: verified-evidence-answer-only-v1
+  output_protocol: m5-r3-compressed-rationale-json-v2
+trace_policy:
+  max_reasoning_tokens: 192
+  max_repeated_8gram_basis_points: 500
+  max_identical_line_hash_repetitions: 1
+  require_unique_normalized_trace: true
+  require_exact_evidence_anchor: true
+  reject_other_labels: true
+  max_training_sequence_tokens: 1024
+selection:
+  selected_per_family:
+    config: 80
+    log_diagnosis: 80
+  selected_languages_per_family:
+    config:
+      en: 56
+      zh: 24
+    log_diagnosis:
+      en: 56
+      zh: 24
+  stable_sort:
+    - reasoning_tokens
+    - repeated_8gram_basis_points
+    - sample_id
+  max_source_reuse: 4
+r3_mixture_authorized: false
+r3_training_authorized: false
+consume_m6_frozen_results: false

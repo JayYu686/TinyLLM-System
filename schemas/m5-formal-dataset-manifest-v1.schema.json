@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "M5FormalArtifactFile": {
+      "additionalProperties": false,
+      "description": "One immutable payload in the formal M5 dataset.",
+      "properties": {
+        "path": {
+          "enum": [
+            "sequences.npz",
+            "epoch_plan.npy"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "source_sequences",
+            "epoch_plan"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "role",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M5FormalArtifactFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Content-addressed 50M-token view over the selected R1 source mixture.",
+  "properties": {
+    "artifacts": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5FormalArtifactFile"
+        },
+        {
+          "$ref": "#/$defs/M5FormalArtifactFile"
+        }
+      ],
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "authorization_gate_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Authorization Gate Sha256",
+      "type": "string"
+    },
+    "build_git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Build Git Commit",
+      "type": "string"
+    },
+    "build_seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Build Seed",
+      "type": "integer"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_name": {
+      "const": "m5-dual-sft",
+      "default": "m5-dual-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m5-dual-sft-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "nonthinking_supervised_tokens": {
+      "const": 35000000,
+      "title": "Nonthinking Supervised Tokens",
+      "type": "integer"
+    },
+    "nonthinking_template_id": {
+      "const": "qwen3-chatml-nonthinking-v1",
+      "title": "Nonthinking Template Id",
+      "type": "string"
+    },
+    "pad_token_id": {
+      "const": 151643,
+      "title": "Pad Token Id",
+      "type": "integer"
+    },
+    "plan_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "repeated_epochs": {
+      "const": 50,
+      "title": "Repeated Epochs",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Count",
+      "type": "integer"
+    },
+    "sequence_length": {
+      "const": 1024,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "source_content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Content Sha256",
+      "type": "string"
+    },
+    "source_manifest_sha256": {
+      "const": "2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e",
+      "title": "Source Manifest Sha256",
+      "type": "string"
+    },
+    "source_mixture_version": {
+      "const": "m5-format-repair-mixture-v1-1396b60b",
+      "title": "Source Mixture Version",
+      "type": "string"
+    },
+    "source_nonthinking_tokens": {
+      "const": 700000,
+      "title": "Source Nonthinking Tokens",
+      "type": "integer"
+    },
+    "source_sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Source Sequence Count",
+      "type": "integer"
+    },
+    "source_supervised_tokens": {
+      "const": 1000000,
+      "title": "Source Supervised Tokens",
+      "type": "integer"
+    },
+    "source_thinking_tokens": {
+      "const": 300000,
+      "title": "Source Thinking Tokens",
+      "type": "integer"
+    },
+    "target_supervised_tokens": {
+      "const": 50000000,
+      "title": "Target Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_fraction_basis_points": {
+      "const": 3000,
+      "title": "Thinking Fraction Basis Points",
+      "type": "integer"
+    },
+    "thinking_supervised_tokens": {
+      "const": 15000000,
+      "title": "Thinking Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_template_id": {
+      "const": "qwen3-chatml-thinking-v1",
+      "title": "Thinking Template Id",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_version",
+    "source_mixture_version",
+    "source_manifest_sha256",
+    "source_content_sha256",
+    "authorization_gate_sha256",
+    "build_git_commit",
+    "tokenizer_revision",
+    "nonthinking_template_id",
+    "thinking_template_id",
+    "sequence_length",
+    "pad_token_id",
+    "thinking_fraction_basis_points",
+    "source_supervised_tokens",
+    "source_nonthinking_tokens",
+    "source_thinking_tokens",
+    "repeated_epochs",
+    "target_supervised_tokens",
+    "nonthinking_supervised_tokens",
+    "thinking_supervised_tokens",
+    "source_sequence_count",
+    "sequence_count",
+    "build_seed",
+    "plan_sha256",
+    "content_sha256",
+    "artifacts"
+  ],
+  "title": "M5FormalDatasetManifest",
+  "type": "object"
+}

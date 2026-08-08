@@ -262,9 +262,11 @@ def evaluate_m5_format_repair_gate(
     if (
         len(mixture_versions) != 1
         or len(mixture_hashes) != 1
-        or not next(iter(mixture_versions)).startswith("m5-format-repair-mixture-v1-")
+        or not next(iter(mixture_versions)).startswith(
+            ("m5-format-repair-mixture-v1-", "m5-r3-mixture-v2-")
+        )
     ):
-        raise M5ReasoningEvaluationError("M5 R1 runs do not share one format-repair mixture")
+        raise M5ReasoningEvaluationError("M5 repair runs do not share one versioned mixture")
     nonthinking = cast(
         tuple[int, int],
         tuple(item[0].nonthinking.final_answer_score_basis_points for item in ordered),

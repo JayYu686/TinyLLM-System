@@ -1,0 +1,177 @@
+{
+  "$defs": {
+    "M5LoRACheckpointFile": {
+      "additionalProperties": false,
+      "description": "One integrity-checked LoRA training-state file.",
+      "properties": {
+        "path": {
+          "const": "training_state.pt",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M5LoRACheckpointFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Atomic adapter, optimizer, RNG, and cursor recovery point.",
+  "properties": {
+    "checkpoint_id": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "dataset_epoch": {
+      "maximum": 10.0,
+      "minimum": 0.0,
+      "title": "Dataset Epoch",
+      "type": "number"
+    },
+    "dataset_manifest_sha256": {
+      "const": "607b3b1a73ae03d5f183f11d8c4824b04243ed30f6352567ce7bd7a972c962f6",
+      "title": "Dataset Manifest Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "const": "m5-dual-sft-v1-b5b9e839",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "file": {
+      "$ref": "#/$defs/M5LoRACheckpointFile"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "global_step": {
+      "minimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "hardware_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
+    },
+    "model_revision": {
+      "const": "b968826d9c46dd6066d109eabc6255188de91218",
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "peft_version": {
+      "const": "0.19.1",
+      "title": "Peft Version",
+      "type": "string"
+    },
+    "pin_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "interruption",
+            "evaluation",
+            "final"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pin Reason"
+    },
+    "pinned": {
+      "title": "Pinned",
+      "type": "boolean"
+    },
+    "resume_capability": {
+      "const": "exact",
+      "default": "exact",
+      "title": "Resume Capability",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_cursor": {
+      "minimum": 0,
+      "title": "Sequence Cursor",
+      "type": "integer"
+    },
+    "strategy": {
+      "const": "single_gpu_bf16_lora",
+      "default": "single_gpu_bf16_lora",
+      "title": "Strategy",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "maximum": 10000000,
+      "minimum": 0,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    },
+    "world_size": {
+      "const": 1,
+      "default": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "run_id",
+    "global_step",
+    "sequence_cursor",
+    "supervised_tokens",
+    "dataset_epoch",
+    "config_sha256",
+    "dataset_version",
+    "dataset_manifest_sha256",
+    "model_revision",
+    "peft_version",
+    "git_commit",
+    "environment_sha256",
+    "hardware_sha256",
+    "file",
+    "pinned"
+  ],
+  "title": "M5LoRACheckpointManifest",
+  "type": "object"
+}

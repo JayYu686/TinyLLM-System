@@ -1,0 +1,247 @@
+{
+  "additionalProperties": false,
+  "description": "Two-seed quality gate that authorizes the formal M5.3 training stage.",
+  "properties": {
+    "base_evaluation_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Base Evaluation Id",
+      "type": "string"
+    },
+    "base_nonthinking_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Base Nonthinking Score Basis Points",
+      "type": "integer"
+    },
+    "base_summary_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Base Summary Sha256",
+      "type": "string"
+    },
+    "candidate_evaluation_ids": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Candidate Evaluation Ids",
+      "type": "array"
+    },
+    "candidate_summary_sha256": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Candidate Summary Sha256",
+      "type": "array"
+    },
+    "controlled_format_basis_points": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Controlled Format Basis Points",
+      "type": "array"
+    },
+    "controlled_format_gate_passed": {
+      "title": "Controlled Format Gate Passed",
+      "type": "boolean"
+    },
+    "evaluation_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Evaluation Config Sha256",
+      "type": "string"
+    },
+    "evaluation_git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Evaluation Git Commit",
+      "type": "string"
+    },
+    "forced_close_basis_points": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Forced Close Basis Points",
+      "type": "array"
+    },
+    "forced_close_gate_passed": {
+      "title": "Forced Close Gate Passed",
+      "type": "boolean"
+    },
+    "gate_reason": {
+      "enum": [
+        "all_protocol_v2_gates_passed",
+        "controlled_format_gate_failed",
+        "forced_close_gate_failed",
+        "thinking_score_gate_failed",
+        "nonthinking_regression_gate_failed",
+        "multiple_gates_failed"
+      ],
+      "title": "Gate Reason",
+      "type": "string"
+    },
+    "m5_3_authorized": {
+      "title": "M5 3 Authorized",
+      "type": "boolean"
+    },
+    "mixture_manifest_sha256": {
+      "const": "2467b5dce0d909b865b73219d2f608bdbc9c6fcc1bb09b93c5ebea8a7b60bd0e",
+      "title": "Mixture Manifest Sha256",
+      "type": "string"
+    },
+    "mixture_version": {
+      "const": "m5-format-repair-mixture-v1-1396b60b",
+      "title": "Mixture Version",
+      "type": "string"
+    },
+    "nonthinking_regression_gate_passed": {
+      "title": "Nonthinking Regression Gate Passed",
+      "type": "boolean"
+    },
+    "nonthinking_scores_basis_points": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Nonthinking Scores Basis Points",
+      "type": "array"
+    },
+    "protocol_version": {
+      "const": "m5-thinking-budget-v2",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_thinking_fraction_basis_points": {
+      "const": 3000,
+      "title": "Selected Thinking Fraction Basis Points",
+      "type": "integer"
+    },
+    "source_format_repair_gate_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Format Repair Gate Sha256",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "thinking_score_gate_passed": {
+      "title": "Thinking Score Gate Passed",
+      "type": "boolean"
+    },
+    "thinking_scores_basis_points": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Thinking Scores Basis Points",
+      "type": "array"
+    },
+    "training_run_ids": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Training Run Ids",
+      "type": "array"
+    },
+    "training_seeds": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "const": 42,
+          "type": "integer"
+        },
+        {
+          "const": 20260727,
+          "type": "integer"
+        }
+      ],
+      "title": "Training Seeds",
+      "type": "array"
+    }
+  },
+  "required": [
+    "status",
+    "protocol_version",
+    "base_evaluation_id",
+    "candidate_evaluation_ids",
+    "evaluation_config_sha256",
+    "evaluation_git_commit",
+    "base_summary_sha256",
+    "candidate_summary_sha256",
+    "source_format_repair_gate_sha256",
+    "mixture_version",
+    "mixture_manifest_sha256",
+    "training_run_ids",
+    "training_seeds",
+    "selected_thinking_fraction_basis_points",
+    "base_nonthinking_score_basis_points",
+    "controlled_format_basis_points",
+    "forced_close_basis_points",
+    "thinking_scores_basis_points",
+    "nonthinking_scores_basis_points",
+    "controlled_format_gate_passed",
+    "forced_close_gate_passed",
+    "thinking_score_gate_passed",
+    "nonthinking_regression_gate_passed",
+    "m5_3_authorized",
+    "gate_reason"
+  ],
+  "title": "M5ThinkingBudgetGateResult",
+  "type": "object"
+}

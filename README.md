@@ -147,7 +147,7 @@ sequenceDiagram
 | M2 数据与评测 | 已完成 | 固定源全量构建与离线重建；300 条冻结领域集；Exact 污染扫描；Qwen3-0.6B Baseline |
 | M3 DDP | 已完成 | 初始化、Sampler、Loss Reduce、Rank 故障恢复和真实 1/2/4 卡扩展 |
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
-| M5 双模式 SFT | 进行中 | P2 真实来源 Pilot 接受 33/40 并通过 14/10/4 门禁；进入内容审查与正式扩展 |
+| M5 双模式 SFT | 已完成 | 0.6B 四卡 Full SFT 50M Token 与 8B BF16 LoRA 10M Token；两条路线均完成 Exact Resume、双模式评测和导出 |
 | M6 评测与晋级 | 计划中 | Base/Candidate 比较、回归分析和 Candidate Gate |
 | M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
 | M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |
@@ -181,7 +181,16 @@ sequenceDiagram
   [M5.2-R3-P0-R1 实验报告](reports/m5/m5_r3_p0_r1.md)、
   [M5.2-R3 Teacher 来源策略报告](reports/m5/m5_r3_teacher_source_strategy.md)、
   [M5.2-R3-P1 实验报告](reports/m5/m5_r3_p1.md)、
-  [M5.2-R3-P2 实验报告](reports/m5/m5_r3_p2.md)
+  [M5.2-R3-P2 实验报告](reports/m5/m5_r3_p2.md)、
+  [M5.2-R3 内容审查结果](reports/m5/m5_r3_content_review.md)、
+  [M5.2-R3 正式来源扩展](reports/m5/m5_r3_formal_source.md)、
+  [M5.2-R3 训练门禁](reports/m5/m5_r3_training_gate.md)、
+  [Thinking Budget 决策](docs/adr/0006-qwen3-thinking-budget-controller.md)、
+  [Thinking Budget v2 门禁](reports/m5/m5_thinking_budget_v2.md)、
+  [Qwen3-0.6B Full SFT 正式验收](reports/m5/m5_full_sft_formal.md)、
+  [Qwen3-8B LoRA 正式验收](reports/m5/m5_lora_formal.md)、
+  [M5 总验收](reports/m5/m5_acceptance.md)与
+  [英文公开摘要](reports/m5/m5_public_summary.en.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。

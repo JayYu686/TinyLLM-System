@@ -1,0 +1,712 @@
+{
+  "$defs": {
+    "M5R3FormalCompressor": {
+      "additionalProperties": false,
+      "description": "Greedy isolated compressor for verified formal answers.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_seed": {
+          "const": 20260810,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 1,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": false,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "input_protocol": {
+          "const": "verified-evidence-answer-only-v1",
+          "title": "Input Protocol",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 256,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "mode": {
+          "const": "nonthinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "output_protocol": {
+          "const": "m5-r3-compressed-rationale-json-v2",
+          "title": "Output Protocol",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode",
+        "do_sample",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed",
+        "input_protocol",
+        "output_protocol"
+      ],
+      "title": "M5R3FormalCompressor",
+      "type": "object"
+    },
+    "M5R3FormalContaminationReport": {
+      "additionalProperties": false,
+      "description": "Collision counts against every frozen M5 task source.",
+      "properties": {
+        "algorithm": {
+          "const": "m5-r3-formal-exact-normalized-template-v1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "dev_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "Dev Exact Prompt Matches",
+          "type": "integer"
+        },
+        "dev_task_count": {
+          "const": 200,
+          "title": "Dev Task Count",
+          "type": "integer"
+        },
+        "dev_template_family_overlaps": {
+          "minimum": 0,
+          "title": "Dev Template Family Overlaps",
+          "type": "integer"
+        },
+        "formal_task_count": {
+          "const": 240,
+          "title": "Formal Task Count",
+          "type": "integer"
+        },
+        "historical_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "Historical Exact Prompt Matches",
+          "type": "integer"
+        },
+        "historical_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "Historical Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "historical_pilot_task_count": {
+          "const": 100,
+          "title": "Historical Pilot Task Count",
+          "type": "integer"
+        },
+        "historical_template_family_overlaps": {
+          "minimum": 0,
+          "title": "Historical Template Family Overlaps",
+          "type": "integer"
+        },
+        "p0_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p0_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 R1 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P0 R1 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p0_r1_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P0 R1 Template Family Overlaps",
+          "type": "integer"
+        },
+        "p0_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P0 Template Family Overlaps",
+          "type": "integer"
+        },
+        "p1_exact_prompt_matches": {
+          "minimum": 0,
+          "title": "P1 Exact Prompt Matches",
+          "type": "integer"
+        },
+        "p1_normalized_prompt_matches": {
+          "minimum": 0,
+          "title": "P1 Normalized Prompt Matches",
+          "type": "integer"
+        },
+        "p1_template_family_overlaps": {
+          "minimum": 0,
+          "title": "P1 Template Family Overlaps",
+          "type": "integer"
+        },
+        "parent_p0_r1_task_count": {
+          "const": 40,
+          "title": "Parent P0 R1 Task Count",
+          "type": "integer"
+        },
+        "parent_p0_task_count": {
+          "const": 40,
+          "title": "Parent P0 Task Count",
+          "type": "integer"
+        },
+        "parent_p1_task_count": {
+          "const": 40,
+          "title": "Parent P1 Task Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_set_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Task Set Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "task_set_sha256",
+        "formal_task_count",
+        "dev_task_count",
+        "historical_pilot_task_count",
+        "parent_p0_task_count",
+        "parent_p0_r1_task_count",
+        "parent_p1_task_count",
+        "dev_exact_prompt_matches",
+        "dev_template_family_overlaps",
+        "historical_exact_prompt_matches",
+        "historical_normalized_prompt_matches",
+        "historical_template_family_overlaps",
+        "p0_exact_prompt_matches",
+        "p0_normalized_prompt_matches",
+        "p0_template_family_overlaps",
+        "p0_r1_exact_prompt_matches",
+        "p0_r1_normalized_prompt_matches",
+        "p0_r1_template_family_overlaps",
+        "p1_exact_prompt_matches",
+        "p1_normalized_prompt_matches",
+        "p1_template_family_overlaps",
+        "status"
+      ],
+      "title": "M5R3FormalContaminationReport",
+      "type": "object"
+    },
+    "M5R3FormalSolver": {
+      "additionalProperties": false,
+      "description": "One concise Thinking solve attempt per formal task.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_seed": {
+          "const": 20260809,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 1,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 896,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "mode": {
+          "const": "thinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "prompt_protocol": {
+          "const": "m5-r3-concise-solver-v2",
+          "title": "Prompt Protocol",
+          "type": "string"
+        },
+        "repetition_penalty": {
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "temperature": {
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "title": "Top P",
+          "type": "number"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode",
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed",
+        "prompt_protocol"
+      ],
+      "title": "M5R3FormalSolver",
+      "type": "object"
+    },
+    "M5R3FormalStratumResult": {
+      "additionalProperties": false,
+      "description": "Acceptance and selection accounting for one family/language stratum.",
+      "properties": {
+        "accepted_items": {
+          "maximum": 84,
+          "minimum": 0,
+          "title": "Accepted Items",
+          "type": "integer"
+        },
+        "gate_passed": {
+          "title": "Gate Passed",
+          "type": "boolean"
+        },
+        "input_tasks": {
+          "maximum": 84,
+          "minimum": 36,
+          "title": "Input Tasks",
+          "type": "integer"
+        },
+        "language": {
+          "enum": [
+            "en",
+            "zh"
+          ],
+          "title": "Language",
+          "type": "string"
+        },
+        "required_items": {
+          "maximum": 56,
+          "minimum": 24,
+          "title": "Required Items",
+          "type": "integer"
+        },
+        "selected_items": {
+          "maximum": 56,
+          "minimum": 0,
+          "title": "Selected Items",
+          "type": "integer"
+        },
+        "task_family": {
+          "enum": [
+            "config",
+            "log_diagnosis"
+          ],
+          "title": "Task Family",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_family",
+        "language",
+        "input_tasks",
+        "accepted_items",
+        "required_items",
+        "selected_items",
+        "gate_passed"
+      ],
+      "title": "M5R3FormalStratumResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Path-free public result for generation and 160-sample selection.",
+  "properties": {
+    "accepted_samples": {
+      "maximum": 240,
+      "minimum": 0,
+      "title": "Accepted Samples",
+      "type": "integer"
+    },
+    "accepted_samples_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Accepted Samples Sha256",
+      "type": "string"
+    },
+    "compressor": {
+      "$ref": "#/$defs/M5R3FormalCompressor"
+    },
+    "compressor_attempts": {
+      "maximum": 240,
+      "minimum": 0,
+      "title": "Compressor Attempts",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "consumes_m6_frozen_results": {
+      "const": false,
+      "default": false,
+      "title": "Consumes M6 Frozen Results",
+      "type": "boolean"
+    },
+    "contamination": {
+      "$ref": "#/$defs/M5R3FormalContaminationReport"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "expansion_version": {
+      "const": "m5-r3-formal-source-v1",
+      "title": "Expansion Version",
+      "type": "string"
+    },
+    "finalizer_git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Finalizer Git Commit",
+      "type": "string"
+    },
+    "formal_source_expansion_complete": {
+      "title": "Formal Source Expansion Complete",
+      "type": "boolean"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_names": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Gpu Names",
+      "type": "array"
+    },
+    "input_tasks": {
+      "const": 240,
+      "title": "Input Tasks",
+      "type": "integer"
+    },
+    "parent_content_review_sha256": {
+      "const": "ec42e7a3f62d5db7953677a75960e3c7e3bd6a328782e2353ea0130ddf4211ae",
+      "title": "Parent Content Review Sha256",
+      "type": "string"
+    },
+    "peak_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_indices": {
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Physical Gpu Indices",
+      "type": "array"
+    },
+    "policy_tokenizers_version": {
+      "const": "0.21.4",
+      "title": "Policy Tokenizers Version",
+      "type": "string"
+    },
+    "r3_mixture_authorized": {
+      "title": "R3 Mixture Authorized",
+      "type": "boolean"
+    },
+    "r3_training_authorized": {
+      "const": false,
+      "title": "R3 Training Authorized",
+      "type": "boolean"
+    },
+    "raw_artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Raw Artifact Sha256",
+      "type": "string"
+    },
+    "rejected_tasks": {
+      "maximum": 240,
+      "minimum": 0,
+      "title": "Rejected Tasks",
+      "type": "integer"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "compressor_answer_mismatch",
+          "compressor_empty_reasoning",
+          "compressor_invalid_json",
+          "compressor_length_limit",
+          "compressor_runtime_error",
+          "duplicate_normalized_trace",
+          "identical_line_repetition",
+          "missing_evidence_anchor",
+          "other_label_mentioned",
+          "reasoning_over_192_tokens",
+          "repeated_8gram_over_500bp",
+          "sequence_over_1024_tokens",
+          "solver_answer_mismatch",
+          "solver_invalid_output",
+          "solver_length_limit",
+          "solver_runtime_error"
+        ]
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Selected Artifact Sha256",
+      "type": "string"
+    },
+    "selected_samples": {
+      "maximum": 160,
+      "minimum": 0,
+      "title": "Selected Samples",
+      "type": "integer"
+    },
+    "selected_samples_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Selected Samples Sha256",
+      "type": "string"
+    },
+    "shard_artifact_sha256s": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Shard Artifact Sha256S",
+      "type": "array"
+    },
+    "shard_count": {
+      "maximum": 8,
+      "minimum": 1,
+      "title": "Shard Count",
+      "type": "integer"
+    },
+    "solver": {
+      "$ref": "#/$defs/M5R3FormalSolver"
+    },
+    "solver_attempts": {
+      "const": 240,
+      "title": "Solver Attempts",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "stratum_results": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        },
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        },
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        },
+        {
+          "$ref": "#/$defs/M5R3FormalStratumResult"
+        }
+      ],
+      "title": "Stratum Results",
+      "type": "array"
+    },
+    "task_set_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Task Set Sha256",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    },
+    "torch_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Torch Version",
+      "type": "string"
+    },
+    "transformers_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Transformers Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "status",
+    "expansion_version",
+    "generated_at",
+    "config_sha256",
+    "parent_content_review_sha256",
+    "git_commit",
+    "finalizer_git_commit",
+    "git_dirty",
+    "solver",
+    "compressor",
+    "tokenizer_revision",
+    "physical_gpu_indices",
+    "gpu_names",
+    "torch_version",
+    "transformers_version",
+    "policy_tokenizers_version",
+    "shard_count",
+    "shard_artifact_sha256s",
+    "input_tasks",
+    "solver_attempts",
+    "compressor_attempts",
+    "accepted_samples",
+    "rejected_tasks",
+    "selected_samples",
+    "stratum_results",
+    "rejection_counts",
+    "contamination",
+    "task_set_sha256",
+    "accepted_samples_sha256",
+    "selected_samples_sha256",
+    "duration_seconds",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes",
+    "raw_artifact_sha256",
+    "selected_artifact_sha256",
+    "formal_source_expansion_complete",
+    "r3_mixture_authorized",
+    "r3_training_authorized"
+  ],
+  "title": "M5R3FormalSourceResult",
+  "type": "object"
+}

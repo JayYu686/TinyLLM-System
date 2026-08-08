@@ -5,6 +5,30 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- completed M5 with a real four-RTX-3090 Qwen3-0.6B BF16 Full-SFT campaign over 50M
+  supervised tokens, an independent-process Exact Resume from 2,002,739 tokens, five
+  immutable 10M–50M snapshots, thermal pause/resume evidence, and verified checkpoint,
+  evaluation, and export hashes; the 10M development snapshot led the curve at 95.0%
+  Thinking and 47.5% Non-thinking accuracy and is prioritized for the independent M6 gate;
+- completed the real single-RTX-3090 Qwen3-8B BF16 LoRA route with 10M supervised
+  tokens, a fresh-process Exact Resume at 5,000,444 tokens, five pinned evaluation
+  checkpoints, thermal pause/resume evidence, an adapter-only Safetensors export and
+  Model Card; the final 200-item dual-mode evaluation reached 99.0% Thinking and 72.0%
+  Non-thinking accuracy with zero visible-reasoning leakage, without claiming a Base gain;
+- built the corrected `m5-r3-mixture-v2-b47723e1` before any R3 training or Dev
+  evaluation: exact 700K/150K/150K supervised-token strata, label-aware 160-source
+  selection, a measured 29–30 total uses per targeted source, immutable lineage, and
+  explicit training authorization for only the two fixed 1M-token Seeds;
+- completed the real two-RTX-3090 M5 R3 formal-source expansion with 218/240 accepted,
+  all four family/language strata passing, a deterministic 160/160 selection, and zero
+  frozen-source contamination; a post-gate exact-token audit keeps training blocked because
+  the selected sources cannot satisfy both the 150K targeted-token budget and four-use cap;
+- added the sharded M5 R3 formal-source expansion contract: 240 deterministic bilingual
+  Config/Log tasks, isolated Qwen3-8B solve/compress generation, fail-closed shard lineage,
+  and stable 56/24-per-family selection into 160 sources;
+- added and completed a fail-closed private maintainer review for all 33 accepted R3 P2
+  samples; all 33 judgments passed and authorized formal source expansion while the public
+  summary remains free of prompts and distilled rationales and training stays blocked;
 - implemented and ran the parent-bound M5 R3 P2 protocol, which retries only rejected P1
   solvers and prevents raw solver reasoning or alternative labels from entering the isolated
   compressor input; the real Qwen3-8B pilot accepted 33/40, passed both family/language gates

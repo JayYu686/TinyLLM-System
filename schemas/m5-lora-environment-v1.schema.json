@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "M5FormalPackage": {
+      "additionalProperties": false,
+      "description": "One installed Python distribution in the immutable Run environment.",
+      "properties": {
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "M5FormalPackage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Software identity including the reviewed PEFT dependency.",
+  "properties": {
+    "cuda_runtime": {
+      "const": "11.8",
+      "title": "Cuda Runtime",
+      "type": "string"
+    },
+    "packages": {
+      "items": {
+        "$ref": "#/$defs/M5FormalPackage"
+      },
+      "minItems": 1,
+      "title": "Packages",
+      "type": "array"
+    },
+    "peft_version": {
+      "const": "0.19.1",
+      "title": "Peft Version",
+      "type": "string"
+    },
+    "python_executable": {
+      "minLength": 1,
+      "title": "Python Executable",
+      "type": "string"
+    },
+    "python_implementation": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Python Implementation",
+      "type": "string"
+    },
+    "python_version": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Python Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "torch_version": {
+      "const": "2.7.1+cu118",
+      "title": "Torch Version",
+      "type": "string"
+    },
+    "transformers_version": {
+      "const": "4.57.6",
+      "title": "Transformers Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "python_version",
+    "python_implementation",
+    "python_executable",
+    "torch_version",
+    "cuda_runtime",
+    "transformers_version",
+    "peft_version",
+    "packages"
+  ],
+  "title": "M5LoRAEnvironment",
+  "type": "object"
+}

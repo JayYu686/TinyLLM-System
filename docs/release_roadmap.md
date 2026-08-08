@@ -21,8 +21,10 @@ order, not permission to skip milestone gates when shared GPUs are unavailable.
 | Weeks 8–10 | M5 | Qwen3 GQA dual-mode data, Qwen3-0.6B Full SFT, and Qwen3-8B LoRA with real evaluations | — |
 | After M5 | M6 | Compare, Candidate gate, reports, release notes, and end-to-end demo | `v0.6.0-rc.1` |
 
-M3 establishes the distributed-training baseline. Public release materials use merged
-results and reproducible metrics.
+M0–M5 are complete. M5 produced a four-GPU Qwen3-0.6B Full-SFT run over 50M supervised
+tokens and a single-GPU Qwen3-8B LoRA run over 10M tokens, both with fresh-process Exact
+Resume and real dual-mode evaluation. Public release materials use merged results and
+reproducible metrics; the models remain in Development until M6 applies its independent gate.
 
 ## Frozen experiment targets
 

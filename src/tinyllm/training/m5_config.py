@@ -94,7 +94,7 @@ class M5DataConfig(StrictSchema):
 
     dataset_version: str = Field(
         pattern=(
-            r"^m5-(reasoning-pilot|dual-sft|format-repair-mixture)"
+            r"^m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture)"
             r"-v[0-9]+-[a-f0-9]{8}$"
         )
     )
@@ -234,14 +234,20 @@ class M5SFTConfig(StrictSchema):
             if self.model.adaptation != "full_sft":
                 raise ValueError("M5 mixture ablation is restricted to Qwen3-0.6B Full SFT")
             if not self.data.dataset_version.startswith(
-                ("m5-reasoning-pilot-", "m5-format-repair-mixture-")
+                (
+                    "m5-reasoning-pilot-",
+                    "m5-format-repair-mixture-",
+                    "m5-r3-mixture-",
+                )
             ):
                 raise ValueError(
                     "ablation requires an m5-reasoning-pilot or "
-                    "m5-format-repair-mixture Dataset Version"
+                    "versioned repair-mixture Dataset Version"
                 )
             if (
-                self.data.dataset_version.startswith("m5-format-repair-mixture-")
+                self.data.dataset_version.startswith(
+                    ("m5-format-repair-mixture-", "m5-r3-mixture-")
+                )
                 and self.data.thinking_token_fraction != 0.3
             ):
                 raise ValueError("M5 format repair is preregistered at 30% Thinking")

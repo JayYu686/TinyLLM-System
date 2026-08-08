@@ -10,6 +10,7 @@ updated.
 | `constraints/dev.txt` | Direct quality-tool versions | CPU CI and RTX 3090 development environment |
 | `constraints/baseline.txt` | Qwen3 and lm-eval Baseline dependencies | RTX 3090 M2.4c compatibility Smoke |
 | `constraints/m4.txt` | FSDP2/DCP and Qwen3 training dependencies | Isolated M4 CPU/API compatibility Smoke |
+| `constraints/m5.txt` | Qwen3 Full SFT and reviewed PEFT LoRA dependencies | M5 CPU/API and RTX 3090 compatibility gates |
 | `torch-cpu.txt` | CPU-only CI and local smoke tests | CPU CI |
 | `torch-cu118.txt` | RTX 3090 CUDA 11.8 profile | M0 hardware smoke |
 | `torch-v100-cu118.txt` | Prospective V100 FP16 profile | Not validated; cannot be used for a release claim |
@@ -47,3 +48,7 @@ described in [the M4 contract](../docs/m4_fsdp2_contract.md). This is dependency
 evidence only: it does not prove that the fixed Qwen3-8B revision has been acquired or fits on
 four RTX 3090 GPUs. Run `make m4-dependency-smoke` and `make audit-m4`; the scoped audit exceptions
 are documented in [m4_security_exceptions.md](m4_security_exceptions.md).
+
+M5 uses a separate `.venv-m5` profile. This keeps PEFT isolated from the frozen Baseline
+environment, so installing LoRA support cannot silently change evaluation dependencies or
+invalidate an in-progress Exact Resume.

@@ -36,8 +36,18 @@ from tinyllm.data import (
     M2PackingConfig,
     M2ProcessingConfig,
     M2TokenizationConfig,
+    M5FormalDatasetManifest,
     M5FormatRepairMixtureManifest,
     M5MixtureManifest,
+    M5R3ContentReviewJudgment,
+    M5R3ContentReviewResult,
+    M5R3FormalContaminationReport,
+    M5R3FormalCPUSmoke,
+    M5R3FormalShardArtifact,
+    M5R3FormalSourceConfig,
+    M5R3FormalSourceResult,
+    M5R3MixtureConfig,
+    M5R3MixtureManifest,
     M5R3P0CandidateAudit,
     M5R3P0Config,
     M5R3P0ContaminationReport,
@@ -115,6 +125,12 @@ from tinyllm.evaluation.m5_reasoning_schema import (
     M5ReasoningEvaluationSummary,
     M5ReasoningItemResult,
 )
+from tinyllm.evaluation.m5_thinking_budget_schema import (
+    M5ThinkingBudgetEvaluationConfig,
+    M5ThinkingBudgetEvaluationSummary,
+    M5ThinkingBudgetGateResult,
+    M5ThinkingBudgetItemResult,
+)
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
 from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
@@ -141,6 +157,23 @@ from tinyllm.training.m4_qwen_config import M4QwenFSDP2Config
 from tinyllm.training.m4_qwen_schema import M4QwenRankMemory, M4QwenRunResult
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult, M5CheckpointManifest
 from tinyllm.training.m5_config import M5SFTConfig
+from tinyllm.training.m5_failure_schema import M5FailurePathEvidence
+from tinyllm.training.m5_formal_schema import (
+    M5FormalCampaignResult,
+    M5FormalCheckpointManifest,
+    M5FormalEnvironment,
+    M5FormalEvaluationSnapshot,
+    M5FormalHardware,
+    M5FormalRunResult,
+    M5FormalStagedEvaluation,
+)
+from tinyllm.training.m5_lora_schema import (
+    M5LoRACampaignResult,
+    M5LoRACheckpointManifest,
+    M5LoRAEnvironment,
+    M5LoRAHardware,
+    M5LoRARunResult,
+)
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -206,7 +239,15 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m4-qwen-run-result-v1.schema.json": M4QwenRunResult,
     "m5-sft-config-v1.schema.json": M5SFTConfig,
     "m5-ablation-mixture-manifest-v1.schema.json": M5MixtureManifest,
+    "m5-formal-dataset-manifest-v1.schema.json": M5FormalDatasetManifest,
     "m5-format-repair-mixture-manifest-v1.schema.json": M5FormatRepairMixtureManifest,
+    "m5-r3-formal-contamination-report-v1.schema.json": M5R3FormalContaminationReport,
+    "m5-r3-formal-cpu-smoke-v1.schema.json": M5R3FormalCPUSmoke,
+    "m5-r3-formal-shard-artifact-v1.schema.json": M5R3FormalShardArtifact,
+    "m5-r3-formal-source-config-v1.schema.json": M5R3FormalSourceConfig,
+    "m5-r3-formal-source-result-v1.schema.json": M5R3FormalSourceResult,
+    "m5-r3-mixture-config-v1.schema.json": M5R3MixtureConfig,
+    "m5-r3-mixture-manifest-v1.schema.json": M5R3MixtureManifest,
     "m5-r3-source-audit-config-v1.schema.json": M5R3SourceAuditConfig,
     "m5-r3-source-audit-v1.schema.json": M5R3SourceAudit,
     "m5-r3-teacher-source-strategy-config-v1.schema.json": M5R3TeacherSourceStrategyConfig,
@@ -225,14 +266,33 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-r3-p2-cpu-smoke-v1.schema.json": M5R3P2CPUSmoke,
     "m5-r3-p2-generation-delta-v1.schema.json": M5R3P2GenerationDelta,
     "m5-r3-p2-result-v1.schema.json": M5R3P2Result,
+    "m5-r3-content-review-judgment-v1.schema.json": M5R3ContentReviewJudgment,
+    "m5-r3-content-review-result-v1.schema.json": M5R3ContentReviewResult,
     "m5-ablation-run-result-v1.schema.json": M5AblationRunResult,
     "m5-ablation-selection-v1.schema.json": M5AblationSelection,
     "m5-format-failure-analysis-v1.schema.json": M5FormatFailureAnalysis,
     "m5-format-repair-gate-result-v1.schema.json": M5FormatRepairGateResult,
     "m5-checkpoint-manifest-v1.schema.json": M5CheckpointManifest,
+    "m5-formal-checkpoint-manifest-v1.schema.json": M5FormalCheckpointManifest,
+    "m5-formal-campaign-result-v1.schema.json": M5FormalCampaignResult,
+    "m5-formal-environment-v1.schema.json": M5FormalEnvironment,
+    "m5-formal-evaluation-snapshot-v1.schema.json": M5FormalEvaluationSnapshot,
+    "m5-formal-hardware-v1.schema.json": M5FormalHardware,
+    "m5-formal-run-result-v1.schema.json": M5FormalRunResult,
+    "m5-formal-staged-evaluation-v1.schema.json": M5FormalStagedEvaluation,
+    "m5-failure-path-evidence-v1.schema.json": M5FailurePathEvidence,
+    "m5-lora-checkpoint-manifest-v1.schema.json": M5LoRACheckpointManifest,
+    "m5-lora-campaign-result-v1.schema.json": M5LoRACampaignResult,
+    "m5-lora-environment-v1.schema.json": M5LoRAEnvironment,
+    "m5-lora-hardware-v1.schema.json": M5LoRAHardware,
+    "m5-lora-run-result-v1.schema.json": M5LoRARunResult,
     "m5-reasoning-evaluation-config-v1.schema.json": M5ReasoningEvaluationConfig,
     "m5-reasoning-evaluation-summary-v1.schema.json": M5ReasoningEvaluationSummary,
     "m5-reasoning-item-result-v1.schema.json": M5ReasoningItemResult,
+    "m5-thinking-budget-evaluation-config-v1.schema.json": M5ThinkingBudgetEvaluationConfig,
+    "m5-thinking-budget-evaluation-summary-v1.schema.json": M5ThinkingBudgetEvaluationSummary,
+    "m5-thinking-budget-gate-result-v1.schema.json": M5ThinkingBudgetGateResult,
+    "m5-thinking-budget-item-result-v1.schema.json": M5ThinkingBudgetItemResult,
     "m5-r2-diagnostic-decision-v1.schema.json": M5R2DiagnosticDecision,
     "m5-r2-offline-analysis-v1.schema.json": M5R2OfflineAnalysis,
     "m5-r2-replay-config-v1.schema.json": M5R2ReplayConfig,

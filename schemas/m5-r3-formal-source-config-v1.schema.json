@@ -1,0 +1,444 @@
+{
+  "$defs": {
+    "M5R3FormalCompressor": {
+      "additionalProperties": false,
+      "description": "Greedy isolated compressor for verified formal answers.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_seed": {
+          "const": 20260810,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 1,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": false,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "input_protocol": {
+          "const": "verified-evidence-answer-only-v1",
+          "title": "Input Protocol",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 256,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "mode": {
+          "const": "nonthinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "output_protocol": {
+          "const": "m5-r3-compressed-rationale-json-v2",
+          "title": "Output Protocol",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode",
+        "do_sample",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed",
+        "input_protocol",
+        "output_protocol"
+      ],
+      "title": "M5R3FormalCompressor",
+      "type": "object"
+    },
+    "M5R3FormalSelectionPolicy": {
+      "additionalProperties": false,
+      "description": "Frozen 160-sample stratified selection.",
+      "properties": {
+        "max_source_reuse": {
+          "const": 4,
+          "title": "Max Source Reuse",
+          "type": "integer"
+        },
+        "selected_languages_per_family": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "en",
+                "zh"
+              ]
+            },
+            "type": "object"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Selected Languages Per Family",
+          "type": "object"
+        },
+        "selected_per_family": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "config",
+              "log_diagnosis"
+            ]
+          },
+          "title": "Selected Per Family",
+          "type": "object"
+        },
+        "stable_sort": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "const": "reasoning_tokens",
+              "type": "string"
+            },
+            {
+              "const": "repeated_8gram_basis_points",
+              "type": "string"
+            },
+            {
+              "const": "sample_id",
+              "type": "string"
+            }
+          ],
+          "title": "Stable Sort",
+          "type": "array"
+        }
+      },
+      "required": [
+        "selected_per_family",
+        "selected_languages_per_family",
+        "stable_sort",
+        "max_source_reuse"
+      ],
+      "title": "M5R3FormalSelectionPolicy",
+      "type": "object"
+    },
+    "M5R3FormalSolver": {
+      "additionalProperties": false,
+      "description": "One concise Thinking solve attempt per formal task.",
+      "properties": {
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_seed": {
+          "const": 20260809,
+          "title": "Base Seed",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "const": 1,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bfloat16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "local_files_only": {
+          "const": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 896,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "mode": {
+          "const": "thinking",
+          "title": "Mode",
+          "type": "string"
+        },
+        "prompt_protocol": {
+          "const": "m5-r3-concise-solver-v2",
+          "title": "Prompt Protocol",
+          "type": "string"
+        },
+        "repetition_penalty": {
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "temperature": {
+          "title": "Temperature",
+          "type": "number"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "title": "Top P",
+          "type": "number"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "attention_architecture",
+        "trust_remote_code",
+        "local_files_only",
+        "dtype",
+        "mode",
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "candidate_count",
+        "max_new_tokens",
+        "base_seed",
+        "prompt_protocol"
+      ],
+      "title": "M5R3FormalSolver",
+      "type": "object"
+    },
+    "M5R3FormalTaskPolicy": {
+      "additionalProperties": false,
+      "description": "Balanced deterministic 240-task source policy.",
+      "properties": {
+        "language_counts_per_family": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "en",
+              "zh"
+            ]
+          },
+          "title": "Language Counts Per Family",
+          "type": "object"
+        },
+        "target_families": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "const": "config",
+              "type": "string"
+            },
+            {
+              "const": "log_diagnosis",
+              "type": "string"
+            }
+          ],
+          "title": "Target Families",
+          "type": "array"
+        },
+        "task_seed": {
+          "const": 20260808,
+          "title": "Task Seed",
+          "type": "integer"
+        },
+        "tasks_per_family": {
+          "const": 120,
+          "title": "Tasks Per Family",
+          "type": "integer"
+        },
+        "variants_per_label": {
+          "const": 30,
+          "title": "Variants Per Label",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "task_seed",
+        "target_families",
+        "tasks_per_family",
+        "language_counts_per_family",
+        "variants_per_label"
+      ],
+      "title": "M5R3FormalTaskPolicy",
+      "type": "object"
+    },
+    "M5R3P1TracePolicy": {
+      "additionalProperties": false,
+      "description": "Acceptance policy for model-distilled P1 visible rationales.",
+      "properties": {
+        "max_identical_line_hash_repetitions": {
+          "const": 1,
+          "title": "Max Identical Line Hash Repetitions",
+          "type": "integer"
+        },
+        "max_reasoning_tokens": {
+          "const": 192,
+          "title": "Max Reasoning Tokens",
+          "type": "integer"
+        },
+        "max_repeated_8gram_basis_points": {
+          "const": 500,
+          "title": "Max Repeated 8Gram Basis Points",
+          "type": "integer"
+        },
+        "max_training_sequence_tokens": {
+          "const": 1024,
+          "title": "Max Training Sequence Tokens",
+          "type": "integer"
+        },
+        "reject_other_labels": {
+          "const": true,
+          "title": "Reject Other Labels",
+          "type": "boolean"
+        },
+        "require_exact_evidence_anchor": {
+          "const": true,
+          "title": "Require Exact Evidence Anchor",
+          "type": "boolean"
+        },
+        "require_unique_normalized_trace": {
+          "const": true,
+          "title": "Require Unique Normalized Trace",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "max_reasoning_tokens",
+        "max_repeated_8gram_basis_points",
+        "max_identical_line_hash_repetitions",
+        "require_unique_normalized_trace",
+        "require_exact_evidence_anchor",
+        "reject_other_labels",
+        "max_training_sequence_tokens"
+      ],
+      "title": "M5R3P1TracePolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete formal source-expansion contract.",
+  "properties": {
+    "compressor": {
+      "$ref": "#/$defs/M5R3FormalCompressor"
+    },
+    "consume_m6_frozen_results": {
+      "const": false,
+      "title": "Consume M6 Frozen Results",
+      "type": "boolean"
+    },
+    "expansion_version": {
+      "const": "m5-r3-formal-source-v1",
+      "title": "Expansion Version",
+      "type": "string"
+    },
+    "parent_content_review_sha256": {
+      "const": "ec42e7a3f62d5db7953677a75960e3c7e3bd6a328782e2353ea0130ddf4211ae",
+      "title": "Parent Content Review Sha256",
+      "type": "string"
+    },
+    "r3_mixture_authorized": {
+      "const": false,
+      "title": "R3 Mixture Authorized",
+      "type": "boolean"
+    },
+    "r3_training_authorized": {
+      "const": false,
+      "title": "R3 Training Authorized",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection": {
+      "$ref": "#/$defs/M5R3FormalSelectionPolicy"
+    },
+    "solver": {
+      "$ref": "#/$defs/M5R3FormalSolver"
+    },
+    "task_policy": {
+      "$ref": "#/$defs/M5R3FormalTaskPolicy"
+    },
+    "trace_policy": {
+      "$ref": "#/$defs/M5R3P1TracePolicy"
+    }
+  },
+  "required": [
+    "schema_version",
+    "expansion_version",
+    "parent_content_review_sha256",
+    "task_policy",
+    "solver",
+    "compressor",
+    "trace_policy",
+    "selection",
+    "r3_mixture_authorized",
+    "r3_training_authorized",
+    "consume_m6_frozen_results"
+  ],
+  "title": "M5R3FormalSourceConfig",
+  "type": "object"
+}

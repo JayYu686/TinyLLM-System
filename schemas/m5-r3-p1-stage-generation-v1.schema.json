@@ -30,7 +30,7 @@
       "type": "integer"
     },
     "generation_id": {
-      "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}:(solver|compressor)$",
+      "pattern": "^m5-reasoning:pilot:r3(?:p1|formal)-(config|log)-(en|zh)-\\d{3}:(solver|compressor)$",
       "title": "Generation Id",
       "type": "string"
     },
@@ -99,7 +99,7 @@
       "type": "string"
     },
     "task_id": {
-      "pattern": "^m5-reasoning:pilot:r3p1-(config|log)-(en|zh)-\\d{3}$",
+      "pattern": "^m5-reasoning:pilot:r3(?:p1|formal)-(config|log)-(en|zh)-\\d{3}$",
       "title": "Task Id",
       "type": "string"
     }

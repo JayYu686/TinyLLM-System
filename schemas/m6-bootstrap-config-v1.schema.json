@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "Paired cluster-bootstrap policy fixed before release-set evaluation.",
+  "properties": {
+    "confidence_basis_points": {
+      "const": 9500,
+      "title": "Confidence Basis Points",
+      "type": "integer"
+    },
+    "percentile_method": {
+      "const": "nearest-rank-v1",
+      "title": "Percentile Method",
+      "type": "string"
+    },
+    "replicates": {
+      "const": 10000,
+      "title": "Replicates",
+      "type": "integer"
+    },
+    "resampling_unit": {
+      "const": "bilingual-pair-or-english-singleton",
+      "title": "Resampling Unit",
+      "type": "string"
+    },
+    "seed": {
+      "const": 20260809,
+      "title": "Seed",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "seed",
+    "replicates",
+    "confidence_basis_points",
+    "resampling_unit",
+    "percentile_method"
+  ],
+  "title": "M6BootstrapConfig",
+  "type": "object"
+}

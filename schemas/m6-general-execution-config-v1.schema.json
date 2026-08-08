@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "M6GeneralTaskConfig": {
+      "additionalProperties": false,
+      "description": "Pinned lm-eval Task Adapter and immutable dataset identity.",
+      "properties": {
+        "adapter_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Adapter Sha256",
+          "type": "string"
+        },
+        "dataset_revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Dataset Revision",
+          "type": "string"
+        },
+        "expected_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Expected Samples",
+          "type": "integer"
+        },
+        "task": {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task",
+        "adapter_sha256",
+        "dataset_revision",
+        "expected_samples"
+      ],
+      "title": "M6GeneralTaskConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Pinned Non-thinking lm-eval execution policy.",
+  "properties": {
+    "apply_chat_template": {
+      "const": true,
+      "title": "Apply Chat Template",
+      "type": "boolean"
+    },
+    "batch_size": {
+      "const": 8,
+      "title": "Batch Size",
+      "type": "integer"
+    },
+    "enable_thinking": {
+      "const": false,
+      "title": "Enable Thinking",
+      "type": "boolean"
+    },
+    "harness_version": {
+      "const": "0.4.12",
+      "title": "Harness Version",
+      "type": "string"
+    },
+    "log_samples": {
+      "const": true,
+      "title": "Log Samples",
+      "type": "boolean"
+    },
+    "max_length": {
+      "const": 1024,
+      "title": "Max Length",
+      "type": "integer"
+    },
+    "num_fewshot": {
+      "const": 0,
+      "title": "Num Fewshot",
+      "type": "integer"
+    },
+    "tasks": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M6GeneralTaskConfig"
+        },
+        {
+          "$ref": "#/$defs/M6GeneralTaskConfig"
+        },
+        {
+          "$ref": "#/$defs/M6GeneralTaskConfig"
+        }
+      ],
+      "title": "Tasks",
+      "type": "array"
+    },
+    "tokenizer_chat_template_sha256": {
+      "const": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+      "title": "Tokenizer Chat Template Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "harness_version",
+    "tokenizer_chat_template_sha256",
+    "apply_chat_template",
+    "enable_thinking",
+    "num_fewshot",
+    "batch_size",
+    "max_length",
+    "log_samples",
+    "tasks"
+  ],
+  "title": "M6GeneralExecutionConfig",
+  "type": "object"
+}

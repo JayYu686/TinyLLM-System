@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "M6NonthinkingGenerationConfig": {
+      "additionalProperties": false,
+      "description": "Pinned Qwen3 Non-thinking greedy-generation policy.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": true,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "do_sample": {
+          "const": false,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 512,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-nonthinking-generation-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "b9a510e2f016a112860e47056f770b04e5c93131cc4a8ecd47fcc950cfdb6273",
+          "title": "Template Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "add_generation_prompt",
+        "max_new_tokens",
+        "do_sample"
+      ],
+      "title": "M6NonthinkingGenerationConfig",
+      "type": "object"
+    },
+    "M6ThinkingGenerationConfig": {
+      "additionalProperties": false,
+      "description": "Pinned Qwen3 Thinking generation and bounded-controller policy.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": true,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "early_stopping_text": {
+          "const": "\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n</think>\n\n",
+          "title": "Early Stopping Text",
+          "type": "string"
+        },
+        "final_answer_max_new_tokens": {
+          "const": 512,
+          "title": "Final Answer Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "seed": {
+          "const": 20260809,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-thinking-generation-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "7c37a1ab66f274f52208e50167e6cafbf00b6f5319207beca572e4b8cb1f8451",
+          "title": "Template Sha256",
+          "type": "string"
+        },
+        "thinking_budget_tokens": {
+          "const": 1536,
+          "title": "Thinking Budget Tokens",
+          "type": "integer"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "add_generation_prompt",
+        "thinking_budget_tokens",
+        "final_answer_max_new_tokens",
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "seed",
+        "early_stopping_text"
+      ],
+      "title": "M6ThinkingGenerationConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete generation/scoring policy for the frozen domain suite.",
+  "properties": {
+    "batch_size": {
+      "const": 4,
+      "title": "Batch Size",
+      "type": "integer"
+    },
+    "max_sequence_length": {
+      "const": 1024,
+      "title": "Max Sequence Length",
+      "type": "integer"
+    },
+    "nonthinking": {
+      "$ref": "#/$defs/M6NonthinkingGenerationConfig"
+    },
+    "scorer_policy": {
+      "const": "tinyllm-domain-scorer-v1",
+      "title": "Scorer Policy",
+      "type": "string"
+    },
+    "thinking": {
+      "$ref": "#/$defs/M6ThinkingGenerationConfig"
+    }
+  },
+  "required": [
+    "batch_size",
+    "max_sequence_length",
+    "scorer_policy",
+    "thinking",
+    "nonthinking"
+  ],
+  "title": "M6DomainExecutionConfig",
+  "type": "object"
+}

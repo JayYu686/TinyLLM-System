@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "description": "Equal-task general-regression comparison.",
+  "properties": {
+    "aggregation": {
+      "const": "equal-task-mean",
+      "title": "Aggregation",
+      "type": "string"
+    },
+    "base_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Base Basis Points",
+      "type": "integer"
+    },
+    "candidate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Candidate Basis Points",
+      "type": "integer"
+    },
+    "delta_basis_points": {
+      "maximum": 10000,
+      "minimum": -10000,
+      "title": "Delta Basis Points",
+      "type": "integer"
+    },
+    "metric": {
+      "const": "acc_norm",
+      "title": "Metric",
+      "type": "string"
+    }
+  },
+  "required": [
+    "metric",
+    "aggregation",
+    "base_basis_points",
+    "candidate_basis_points",
+    "delta_basis_points"
+  ],
+  "title": "M6GeneralComparison",
+  "type": "object"
+}

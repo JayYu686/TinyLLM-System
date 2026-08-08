@@ -1,0 +1,500 @@
+{
+  "$defs": {
+    "M6BootstrapConfig": {
+      "additionalProperties": false,
+      "description": "Paired cluster-bootstrap policy fixed before release-set evaluation.",
+      "properties": {
+        "confidence_basis_points": {
+          "const": 9500,
+          "title": "Confidence Basis Points",
+          "type": "integer"
+        },
+        "percentile_method": {
+          "const": "nearest-rank-v1",
+          "title": "Percentile Method",
+          "type": "string"
+        },
+        "replicates": {
+          "const": 10000,
+          "title": "Replicates",
+          "type": "integer"
+        },
+        "resampling_unit": {
+          "const": "bilingual-pair-or-english-singleton",
+          "title": "Resampling Unit",
+          "type": "string"
+        },
+        "seed": {
+          "const": 20260809,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "seed",
+        "replicates",
+        "confidence_basis_points",
+        "resampling_unit",
+        "percentile_method"
+      ],
+      "title": "M6BootstrapConfig",
+      "type": "object"
+    },
+    "M6DomainExecutionConfig": {
+      "additionalProperties": false,
+      "description": "Complete generation/scoring policy for the frozen domain suite.",
+      "properties": {
+        "batch_size": {
+          "const": 4,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "max_sequence_length": {
+          "const": 1024,
+          "title": "Max Sequence Length",
+          "type": "integer"
+        },
+        "nonthinking": {
+          "$ref": "#/$defs/M6NonthinkingGenerationConfig"
+        },
+        "scorer_policy": {
+          "const": "tinyllm-domain-scorer-v1",
+          "title": "Scorer Policy",
+          "type": "string"
+        },
+        "thinking": {
+          "$ref": "#/$defs/M6ThinkingGenerationConfig"
+        }
+      },
+      "required": [
+        "batch_size",
+        "max_sequence_length",
+        "scorer_policy",
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "M6DomainExecutionConfig",
+      "type": "object"
+    },
+    "M6GateConfig": {
+      "additionalProperties": false,
+      "description": "Pre-registered Candidate thresholds expressed as integer basis points.",
+      "properties": {
+        "domain_ci_lower_min_exclusive_basis_points": {
+          "const": 0,
+          "title": "Domain Ci Lower Min Exclusive Basis Points",
+          "type": "integer"
+        },
+        "domain_min_delta_basis_points": {
+          "const": 300,
+          "title": "Domain Min Delta Basis Points",
+          "type": "integer"
+        },
+        "general_max_drop_basis_points": {
+          "const": 200,
+          "title": "General Max Drop Basis Points",
+          "type": "integer"
+        },
+        "json_valid_min_basis_points": {
+          "const": 9800,
+          "title": "Json Valid Min Basis Points",
+          "type": "integer"
+        },
+        "nonthinking_leakage_max_basis_points": {
+          "const": 0,
+          "title": "Nonthinking Leakage Max Basis Points",
+          "type": "integer"
+        },
+        "production_gate_enabled": {
+          "const": false,
+          "title": "Production Gate Enabled",
+          "type": "boolean"
+        },
+        "require_both_domain_modes": {
+          "const": true,
+          "title": "Require Both Domain Modes",
+          "type": "boolean"
+        },
+        "require_complete_lineage": {
+          "const": true,
+          "title": "Require Complete Lineage",
+          "type": "boolean"
+        },
+        "thinking_forced_close_max_basis_points": {
+          "const": 1000,
+          "title": "Thinking Forced Close Max Basis Points",
+          "type": "integer"
+        },
+        "thinking_format_min_basis_points": {
+          "const": 9900,
+          "title": "Thinking Format Min Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "domain_min_delta_basis_points",
+        "domain_ci_lower_min_exclusive_basis_points",
+        "general_max_drop_basis_points",
+        "json_valid_min_basis_points",
+        "thinking_format_min_basis_points",
+        "thinking_forced_close_max_basis_points",
+        "nonthinking_leakage_max_basis_points",
+        "require_both_domain_modes",
+        "require_complete_lineage",
+        "production_gate_enabled"
+      ],
+      "title": "M6GateConfig",
+      "type": "object"
+    },
+    "M6GeneralExecutionConfig": {
+      "additionalProperties": false,
+      "description": "Pinned Non-thinking lm-eval execution policy.",
+      "properties": {
+        "apply_chat_template": {
+          "const": true,
+          "title": "Apply Chat Template",
+          "type": "boolean"
+        },
+        "batch_size": {
+          "const": 8,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "const": false,
+          "title": "Enable Thinking",
+          "type": "boolean"
+        },
+        "harness_version": {
+          "const": "0.4.12",
+          "title": "Harness Version",
+          "type": "string"
+        },
+        "log_samples": {
+          "const": true,
+          "title": "Log Samples",
+          "type": "boolean"
+        },
+        "max_length": {
+          "const": 1024,
+          "title": "Max Length",
+          "type": "integer"
+        },
+        "num_fewshot": {
+          "const": 0,
+          "title": "Num Fewshot",
+          "type": "integer"
+        },
+        "tasks": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/M6GeneralTaskConfig"
+            },
+            {
+              "$ref": "#/$defs/M6GeneralTaskConfig"
+            },
+            {
+              "$ref": "#/$defs/M6GeneralTaskConfig"
+            }
+          ],
+          "title": "Tasks",
+          "type": "array"
+        },
+        "tokenizer_chat_template_sha256": {
+          "const": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+          "title": "Tokenizer Chat Template Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "harness_version",
+        "tokenizer_chat_template_sha256",
+        "apply_chat_template",
+        "enable_thinking",
+        "num_fewshot",
+        "batch_size",
+        "max_length",
+        "log_samples",
+        "tasks"
+      ],
+      "title": "M6GeneralExecutionConfig",
+      "type": "object"
+    },
+    "M6GeneralTaskConfig": {
+      "additionalProperties": false,
+      "description": "Pinned lm-eval Task Adapter and immutable dataset identity.",
+      "properties": {
+        "adapter_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Adapter Sha256",
+          "type": "string"
+        },
+        "dataset_revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Dataset Revision",
+          "type": "string"
+        },
+        "expected_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Expected Samples",
+          "type": "integer"
+        },
+        "task": {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task",
+        "adapter_sha256",
+        "dataset_revision",
+        "expected_samples"
+      ],
+      "title": "M6GeneralTaskConfig",
+      "type": "object"
+    },
+    "M6NonthinkingGenerationConfig": {
+      "additionalProperties": false,
+      "description": "Pinned Qwen3 Non-thinking greedy-generation policy.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": true,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "do_sample": {
+          "const": false,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "max_new_tokens": {
+          "const": 512,
+          "title": "Max New Tokens",
+          "type": "integer"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-nonthinking-generation-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "b9a510e2f016a112860e47056f770b04e5c93131cc4a8ecd47fcc950cfdb6273",
+          "title": "Template Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "add_generation_prompt",
+        "max_new_tokens",
+        "do_sample"
+      ],
+      "title": "M6NonthinkingGenerationConfig",
+      "type": "object"
+    },
+    "M6ThinkingGenerationConfig": {
+      "additionalProperties": false,
+      "description": "Pinned Qwen3 Thinking generation and bounded-controller policy.",
+      "properties": {
+        "add_generation_prompt": {
+          "const": true,
+          "title": "Add Generation Prompt",
+          "type": "boolean"
+        },
+        "do_sample": {
+          "const": true,
+          "title": "Do Sample",
+          "type": "boolean"
+        },
+        "early_stopping_text": {
+          "const": "\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n</think>\n\n",
+          "title": "Early Stopping Text",
+          "type": "string"
+        },
+        "final_answer_max_new_tokens": {
+          "const": 512,
+          "title": "Final Answer Max New Tokens",
+          "type": "integer"
+        },
+        "repetition_penalty": {
+          "maximum": 2.0,
+          "minimum": 1.0,
+          "title": "Repetition Penalty",
+          "type": "number"
+        },
+        "seed": {
+          "const": 20260809,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "temperature": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Temperature",
+          "type": "number"
+        },
+        "template_id": {
+          "const": "qwen3-chatml-thinking-generation-v1",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_sha256": {
+          "const": "7c37a1ab66f274f52208e50167e6cafbf00b6f5319207beca572e4b8cb1f8451",
+          "title": "Template Sha256",
+          "type": "string"
+        },
+        "thinking_budget_tokens": {
+          "const": 1536,
+          "title": "Thinking Budget Tokens",
+          "type": "integer"
+        },
+        "top_k": {
+          "const": 20,
+          "title": "Top K",
+          "type": "integer"
+        },
+        "top_p": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Top P",
+          "type": "number"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_sha256",
+        "add_generation_prompt",
+        "thinking_budget_tokens",
+        "final_answer_max_new_tokens",
+        "do_sample",
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "seed",
+        "early_stopping_text"
+      ],
+      "title": "M6ThinkingGenerationConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Frozen M6 comparison policy, independent from model outputs.",
+  "properties": {
+    "bootstrap": {
+      "$ref": "#/$defs/M6BootstrapConfig"
+    },
+    "compare_modes_separately": {
+      "const": true,
+      "title": "Compare Modes Separately",
+      "type": "boolean"
+    },
+    "domain_execution": {
+      "$ref": "#/$defs/M6DomainExecutionConfig"
+    },
+    "expected_domain_items": {
+      "const": 300,
+      "title": "Expected Domain Items",
+      "type": "integer"
+    },
+    "expected_languages": {
+      "const": "en-210_zh-90",
+      "title": "Expected Languages",
+      "type": "string"
+    },
+    "gate": {
+      "$ref": "#/$defs/M6GateConfig"
+    },
+    "general_aggregation": {
+      "const": "equal-task-mean",
+      "title": "General Aggregation",
+      "type": "string"
+    },
+    "general_execution": {
+      "$ref": "#/$defs/M6GeneralExecutionConfig"
+    },
+    "general_metric": {
+      "const": "acc_norm",
+      "title": "General Metric",
+      "type": "string"
+    },
+    "general_tasks": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "type": "string"
+        },
+        {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "type": "string"
+        },
+        {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "type": "string"
+        }
+      ],
+      "title": "General Tasks",
+      "type": "array"
+    },
+    "protocol_version": {
+      "const": "m6-release-v1",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_content_sha256": {
+      "const": "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+      "title": "Suite Content Sha256",
+      "type": "string"
+    },
+    "suite_version": {
+      "const": "tinyllm-domain-v1-83bdd8ef",
+      "title": "Suite Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "suite_version",
+    "suite_content_sha256",
+    "expected_domain_items",
+    "expected_languages",
+    "compare_modes_separately",
+    "general_metric",
+    "general_aggregation",
+    "general_tasks",
+    "domain_execution",
+    "general_execution",
+    "bootstrap",
+    "gate"
+  ],
+  "title": "M6ReleaseConfig",
+  "type": "object"
+}

@@ -5,6 +5,10 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- started M6 by preregistering the isolated release-evaluation protocol before Candidate
+  inference: separate Thinking/Non-thinking comparisons, a deterministic 10,000-replicate
+  paired cluster bootstrap, equal-task `acc_norm` regression, strict lineage and format checks,
+  stable JSON CLI outputs, and atomic Candidate-only registry promotion;
 - completed M5 with a real four-RTX-3090 Qwen3-0.6B BF16 Full-SFT campaign over 50M
   supervised tokens, an independent-process Exact Resume from 2,002,739 tokens, five
   immutable 10M–50M snapshots, thermal pause/resume evidence, and verified checkpoint,

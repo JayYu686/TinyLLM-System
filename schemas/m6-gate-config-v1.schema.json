@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "description": "Pre-registered Candidate thresholds expressed as integer basis points.",
+  "properties": {
+    "domain_ci_lower_min_exclusive_basis_points": {
+      "const": 0,
+      "title": "Domain Ci Lower Min Exclusive Basis Points",
+      "type": "integer"
+    },
+    "domain_min_delta_basis_points": {
+      "const": 300,
+      "title": "Domain Min Delta Basis Points",
+      "type": "integer"
+    },
+    "general_max_drop_basis_points": {
+      "const": 200,
+      "title": "General Max Drop Basis Points",
+      "type": "integer"
+    },
+    "json_valid_min_basis_points": {
+      "const": 9800,
+      "title": "Json Valid Min Basis Points",
+      "type": "integer"
+    },
+    "nonthinking_leakage_max_basis_points": {
+      "const": 0,
+      "title": "Nonthinking Leakage Max Basis Points",
+      "type": "integer"
+    },
+    "production_gate_enabled": {
+      "const": false,
+      "title": "Production Gate Enabled",
+      "type": "boolean"
+    },
+    "require_both_domain_modes": {
+      "const": true,
+      "title": "Require Both Domain Modes",
+      "type": "boolean"
+    },
+    "require_complete_lineage": {
+      "const": true,
+      "title": "Require Complete Lineage",
+      "type": "boolean"
+    },
+    "thinking_forced_close_max_basis_points": {
+      "const": 1000,
+      "title": "Thinking Forced Close Max Basis Points",
+      "type": "integer"
+    },
+    "thinking_format_min_basis_points": {
+      "const": 9900,
+      "title": "Thinking Format Min Basis Points",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "domain_min_delta_basis_points",
+    "domain_ci_lower_min_exclusive_basis_points",
+    "general_max_drop_basis_points",
+    "json_valid_min_basis_points",
+    "thinking_format_min_basis_points",
+    "thinking_forced_close_max_basis_points",
+    "nonthinking_leakage_max_basis_points",
+    "require_both_domain_modes",
+    "require_complete_lineage",
+    "production_gate_enabled"
+  ],
+  "title": "M6GateConfig",
+  "type": "object"
+}

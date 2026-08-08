@@ -1,0 +1,479 @@
+{
+  "$defs": {
+    "M6BootstrapInterval": {
+      "additionalProperties": false,
+      "description": "Deterministic paired cluster-bootstrap interval in basis points.",
+      "properties": {
+        "confidence_basis_points": {
+          "const": 9500,
+          "title": "Confidence Basis Points",
+          "type": "integer"
+        },
+        "lower_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Lower Basis Points",
+          "type": "integer"
+        },
+        "point_delta_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Point Delta Basis Points",
+          "type": "integer"
+        },
+        "replicates": {
+          "const": 10000,
+          "title": "Replicates",
+          "type": "integer"
+        },
+        "upper_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Upper Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "replicates",
+        "confidence_basis_points",
+        "point_delta_basis_points",
+        "lower_basis_points",
+        "upper_basis_points"
+      ],
+      "title": "M6BootstrapInterval",
+      "type": "object"
+    },
+    "M6GateCheck": {
+      "additionalProperties": false,
+      "description": "One transparent Promotion Gate predicate.",
+      "properties": {
+        "actual_basis_points": {
+          "anyOf": [
+            {
+              "maximum": 10000,
+              "minimum": -10000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Basis Points"
+        },
+        "comparison": {
+          "enum": [
+            "gte",
+            "gt",
+            "lte",
+            "boolean"
+          ],
+          "title": "Comparison",
+          "type": "string"
+        },
+        "detail": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Detail",
+          "type": "string"
+        },
+        "name": {
+          "enum": [
+            "thinking_domain_delta",
+            "thinking_domain_ci",
+            "nonthinking_domain_delta",
+            "nonthinking_domain_ci",
+            "general_regression",
+            "json_valid_rate",
+            "thinking_format",
+            "thinking_forced_close",
+            "nonthinking_leakage",
+            "evaluation_integrity",
+            "lineage"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "threshold_basis_points": {
+          "anyOf": [
+            {
+              "maximum": 10000,
+              "minimum": -10000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold Basis Points"
+        }
+      },
+      "required": [
+        "name",
+        "passed",
+        "comparison",
+        "detail"
+      ],
+      "title": "M6GateCheck",
+      "type": "object"
+    },
+    "M6GeneralComparison": {
+      "additionalProperties": false,
+      "description": "Equal-task general-regression comparison.",
+      "properties": {
+        "aggregation": {
+          "const": "equal-task-mean",
+          "title": "Aggregation",
+          "type": "string"
+        },
+        "base_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Base Basis Points",
+          "type": "integer"
+        },
+        "candidate_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Candidate Basis Points",
+          "type": "integer"
+        },
+        "delta_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Delta Basis Points",
+          "type": "integer"
+        },
+        "metric": {
+          "const": "acc_norm",
+          "title": "Metric",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "aggregation",
+        "base_basis_points",
+        "candidate_basis_points",
+        "delta_basis_points"
+      ],
+      "title": "M6GeneralComparison",
+      "type": "object"
+    },
+    "M6ModeComparison": {
+      "additionalProperties": false,
+      "description": "Base/Candidate domain comparison for one explicit generation mode.",
+      "properties": {
+        "base_score_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Base Score Basis Points",
+          "type": "integer"
+        },
+        "bootstrap": {
+          "$ref": "#/$defs/M6BootstrapInterval"
+        },
+        "candidate_score_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Candidate Score Basis Points",
+          "type": "integer"
+        },
+        "delta_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Delta Basis Points",
+          "type": "integer"
+        },
+        "mode": {
+          "enum": [
+            "thinking",
+            "nonthinking"
+          ],
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "base_score_basis_points",
+        "candidate_score_basis_points",
+        "delta_basis_points",
+        "bootstrap"
+      ],
+      "title": "M6ModeComparison",
+      "type": "object"
+    },
+    "M6ModelIdentity": {
+      "additionalProperties": false,
+      "description": "Base or trained-model identity used by one M6 evaluation.",
+      "properties": {
+        "adaptation": {
+          "enum": [
+            "base",
+            "full_sft",
+            "lora"
+          ],
+          "title": "Adaptation",
+          "type": "string"
+        },
+        "adapter_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adapter Sha256"
+        },
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_revision": {
+          "enum": [
+            "c1899de289a04d12100db370d81485cdf75e47ca",
+            "b968826d9c46dd6066d109eabc6255188de91218"
+          ],
+          "title": "Base Revision",
+          "type": "string"
+        },
+        "dataset_manifest_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Manifest Sha256"
+        },
+        "dataset_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Version"
+        },
+        "model_artifact_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Model Artifact Sha256",
+          "type": "string"
+        },
+        "model_parameters": {
+          "exclusiveMinimum": 0,
+          "title": "Model Parameters",
+          "type": "integer"
+        },
+        "repository": {
+          "enum": [
+            "Qwen/Qwen3-0.6B",
+            "Qwen/Qwen3-8B"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "base",
+            "candidate"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "training_checkpoint_id": {
+          "anyOf": [
+            {
+              "pattern": "^checkpoint-tokens-[0-9]{10}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Checkpoint Id"
+        },
+        "training_config_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Config Sha256"
+        },
+        "training_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 180,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Run Id"
+        },
+        "training_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Tokens"
+        }
+      },
+      "required": [
+        "role",
+        "repository",
+        "base_revision",
+        "attention_architecture",
+        "adaptation",
+        "model_artifact_sha256",
+        "model_parameters"
+      ],
+      "title": "M6ModelIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Path-free Base/Candidate comparison and Candidate decision.",
+  "properties": {
+    "base_evaluation_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Base Evaluation Id",
+      "type": "string"
+    },
+    "base_evaluation_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Base Evaluation Sha256",
+      "type": "string"
+    },
+    "base_model": {
+      "$ref": "#/$defs/M6ModelIdentity"
+    },
+    "candidate_eligible": {
+      "title": "Candidate Eligible",
+      "type": "boolean"
+    },
+    "candidate_evaluation_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Candidate Evaluation Id",
+      "type": "string"
+    },
+    "candidate_evaluation_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Evaluation Sha256",
+      "type": "string"
+    },
+    "candidate_model": {
+      "$ref": "#/$defs/M6ModelIdentity"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/M6GateCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "general_comparison": {
+      "$ref": "#/$defs/M6GeneralComparison"
+    },
+    "mode_comparisons": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M6ModeComparison"
+        },
+        {
+          "$ref": "#/$defs/M6ModeComparison"
+        }
+      ],
+      "title": "Mode Comparisons",
+      "type": "array"
+    },
+    "production_eligible": {
+      "const": false,
+      "title": "Production Eligible",
+      "type": "boolean"
+    },
+    "protocol_version": {
+      "const": "m6-release-v1",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "protocol_version",
+    "config_sha256",
+    "base_evaluation_id",
+    "base_evaluation_sha256",
+    "candidate_evaluation_id",
+    "candidate_evaluation_sha256",
+    "base_model",
+    "candidate_model",
+    "mode_comparisons",
+    "general_comparison",
+    "checks",
+    "candidate_eligible",
+    "production_eligible"
+  ],
+  "title": "M6ComparisonResult",
+  "type": "object"
+}

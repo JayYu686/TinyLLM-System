@@ -46,10 +46,19 @@ from tinyllm.evaluation import (
     BaselinePreflightError,
     BaselineRuntimeError,
     EvaluationContractError,
+    M6ComparisonError,
+    M6ContractError,
+    M6PromotionError,
+    compare_m6_evaluations,
     complete_baseline_human_review,
+    load_m6_comparison,
+    load_m6_evaluation,
+    load_m6_release_config,
     preflight_baseline_gpu,
+    promote_m6_candidate,
     run_baseline_evaluation,
     run_contamination_check,
+    write_m6_comparison,
 )
 from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
 from tinyllm.training import (
@@ -134,6 +143,119 @@ def _output_error(
         typer.echo(json.dumps(payload, sort_keys=True), err=True)
     else:
         typer.echo(f"error: {message}", err=True)
+
+
+@app.command("compare")
+def compare_models(
+    ctx: typer.Context,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Frozen M6 release-policy YAML."),
+    ],
+    baseline: Annotated[
+        Path,
+        typer.Option("--baseline", help="Complete private M6 Base evaluation JSON."),
+    ],
+    candidate: Annotated[
+        Path,
+        typer.Option("--candidate", help="Complete private M6 Candidate evaluation JSON."),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option("--output", help="Absolute path for the atomic comparison JSON."),
+    ],
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Compare one Base/Candidate pair and apply the M6 Candidate Gate."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not output.is_absolute():
+        _output_error("M6 comparison output must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        release_config = load_m6_release_config(config)
+        base_result, base_sha256 = load_m6_evaluation(baseline)
+        candidate_result, candidate_sha256 = load_m6_evaluation(candidate)
+        result = compare_m6_evaluations(
+            release_config,
+            base_result,
+            candidate_result,
+            base_evaluation_sha256=base_sha256,
+            candidate_evaluation_sha256=candidate_sha256,
+        )
+        write_m6_comparison(output, result)
+    except (M6ContractError, M6ComparisonError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_COMPARISON_INPUT_ERROR")
+        raise typer.Exit(code=2) from exc
+    except OSError as exc:
+        _output_error(
+            "cannot persist M6 comparison",
+            json_output=json_output,
+            error_code="M6_ARTIFACT_ERROR",
+        )
+        raise typer.Exit(code=3) from exc
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"{result.status}: candidate={result.candidate_evaluation_id} "
+            f"eligible={result.candidate_eligible}"
+        )
+    if not result.candidate_eligible:
+        raise typer.Exit(code=6)
+
+
+@app.command("promote")
+def promote_model(
+    ctx: typer.Context,
+    comparison: Annotated[
+        Path,
+        typer.Option("--comparison", help="Accepted M6 comparison JSON."),
+    ],
+    registry_root: Annotated[
+        Path,
+        typer.Option("--registry-root", help="Absolute private model Registry root."),
+    ],
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Atomically register an accepted M6 model as Candidate."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not registry_root.is_absolute():
+        _output_error("M6 Registry root must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        result, comparison_sha256 = load_m6_comparison(comparison)
+        record = promote_m6_candidate(
+            result,
+            comparison_sha256=comparison_sha256,
+            registry_root=registry_root,
+        )
+    except M6ContractError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_PROMOTION_INPUT_ERROR")
+        raise typer.Exit(code=2) from exc
+    except M6PromotionError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_PROMOTION_REJECTED")
+        raise typer.Exit(code=6) from exc
+    except OSError as exc:
+        _output_error(
+            "cannot access M6 Registry",
+            json_output=json_output,
+            error_code="M6_REGISTRY_ERROR",
+        )
+        raise typer.Exit(code=3) from exc
+    if json_output:
+        typer.echo(record.model_dump_json(indent=2))
+    else:
+        typer.echo(f"Candidate: {record.model_version}")
 
 
 @data_app.command("inspect")

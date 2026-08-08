@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "M6GeneralTaskResult": {
+      "additionalProperties": false,
+      "description": "One full pinned lm-eval aggregate used for M6 regression checks.",
+      "properties": {
+        "acc": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc",
+          "type": "number"
+        },
+        "acc_norm": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Norm",
+          "type": "number"
+        },
+        "acc_norm_stderr": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Norm Stderr",
+          "type": "number"
+        },
+        "acc_stderr": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Acc Stderr",
+          "type": "number"
+        },
+        "samples": {
+          "exclusiveMinimum": 0,
+          "title": "Samples",
+          "type": "integer"
+        },
+        "task": {
+          "enum": [
+            "tinyllm_arc_easy",
+            "tinyllm_hellaswag",
+            "tinyllm_piqa"
+          ],
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task",
+        "samples",
+        "acc",
+        "acc_stderr",
+        "acc_norm",
+        "acc_norm_stderr"
+      ],
+      "title": "M6GeneralTaskResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Fixed equal-task mean over ARC-Easy, HellaSwag, and PIQA.",
+  "properties": {
+    "aggregate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Aggregate Basis Points",
+      "type": "integer"
+    },
+    "aggregation": {
+      "const": "equal-task-mean",
+      "title": "Aggregation",
+      "type": "string"
+    },
+    "harness_version": {
+      "const": "0.4.12",
+      "title": "Harness Version",
+      "type": "string"
+    },
+    "metric": {
+      "const": "acc_norm",
+      "title": "Metric",
+      "type": "string"
+    },
+    "tasks": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M6GeneralTaskResult"
+        },
+        {
+          "$ref": "#/$defs/M6GeneralTaskResult"
+        },
+        {
+          "$ref": "#/$defs/M6GeneralTaskResult"
+        }
+      ],
+      "title": "Tasks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "harness_version",
+    "metric",
+    "aggregation",
+    "tasks",
+    "aggregate_basis_points"
+  ],
+  "title": "M6GeneralResult",
+  "type": "object"
+}

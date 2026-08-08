@@ -1,0 +1,84 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free private score for one frozen domain item.",
+  "properties": {
+    "category": {
+      "enum": [
+        "config",
+        "json",
+        "linux",
+        "logs",
+        "python",
+        "refusal",
+        "short_code"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "cluster_id": {
+      "pattern": "^(pair:(config|json|linux|logs|python|refusal|short_code):[0-9]{3}|singleton:domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3})$",
+      "title": "Cluster Id",
+      "type": "string"
+    },
+    "correct": {
+      "title": "Correct",
+      "type": "boolean"
+    },
+    "format_valid": {
+      "title": "Format Valid",
+      "type": "boolean"
+    },
+    "item_id": {
+      "pattern": "^domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3}$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "json_valid": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Json Valid"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "scorer_kind": {
+      "enum": [
+        "exact_match",
+        "human_rubric",
+        "json_object",
+        "multiple_choice",
+        "required_terms"
+      ],
+      "title": "Scorer Kind",
+      "type": "string"
+    },
+    "visible_reasoning_leakage": {
+      "title": "Visible Reasoning Leakage",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "item_id",
+    "cluster_id",
+    "language",
+    "category",
+    "scorer_kind",
+    "correct",
+    "json_valid",
+    "format_valid",
+    "visible_reasoning_leakage"
+  ],
+  "title": "M6DomainItemScore",
+  "type": "object"
+}

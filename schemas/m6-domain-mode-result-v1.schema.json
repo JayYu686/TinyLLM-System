@@ -1,0 +1,214 @@
+{
+  "$defs": {
+    "M6DomainItemScore": {
+      "additionalProperties": false,
+      "description": "Content-free private score for one frozen domain item.",
+      "properties": {
+        "category": {
+          "enum": [
+            "config",
+            "json",
+            "linux",
+            "logs",
+            "python",
+            "refusal",
+            "short_code"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "cluster_id": {
+          "pattern": "^(pair:(config|json|linux|logs|python|refusal|short_code):[0-9]{3}|singleton:domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3})$",
+          "title": "Cluster Id",
+          "type": "string"
+        },
+        "correct": {
+          "title": "Correct",
+          "type": "boolean"
+        },
+        "format_valid": {
+          "title": "Format Valid",
+          "type": "boolean"
+        },
+        "item_id": {
+          "pattern": "^domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3}$",
+          "title": "Item Id",
+          "type": "string"
+        },
+        "json_valid": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Json Valid"
+        },
+        "language": {
+          "enum": [
+            "en",
+            "zh"
+          ],
+          "title": "Language",
+          "type": "string"
+        },
+        "scorer_kind": {
+          "enum": [
+            "exact_match",
+            "human_rubric",
+            "json_object",
+            "multiple_choice",
+            "required_terms"
+          ],
+          "title": "Scorer Kind",
+          "type": "string"
+        },
+        "visible_reasoning_leakage": {
+          "title": "Visible Reasoning Leakage",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "item_id",
+        "cluster_id",
+        "language",
+        "category",
+        "scorer_kind",
+        "correct",
+        "json_valid",
+        "format_valid",
+        "visible_reasoning_leakage"
+      ],
+      "title": "M6DomainItemScore",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Exactly one Thinking or Non-thinking pass over the 300-item suite.",
+  "properties": {
+    "budget_forced_close_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Budget Forced Close Items",
+      "type": "integer"
+    },
+    "correct_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Correct Items",
+      "type": "integer"
+    },
+    "evaluated_items": {
+      "const": 300,
+      "title": "Evaluated Items",
+      "type": "integer"
+    },
+    "forced_close_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Forced Close Basis Points",
+      "type": "integer"
+    },
+    "format_valid_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Format Valid Basis Points",
+      "type": "integer"
+    },
+    "format_valid_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Format Valid Items",
+      "type": "integer"
+    },
+    "generated_tokens": {
+      "minimum": 0,
+      "title": "Generated Tokens",
+      "type": "integer"
+    },
+    "injected_tokens": {
+      "minimum": 0,
+      "title": "Injected Tokens",
+      "type": "integer"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/M6DomainItemScore"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "json_items": {
+      "const": 80,
+      "title": "Json Items",
+      "type": "integer"
+    },
+    "json_valid_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Json Valid Basis Points",
+      "type": "integer"
+    },
+    "json_valid_items": {
+      "maximum": 80,
+      "minimum": 0,
+      "title": "Json Valid Items",
+      "type": "integer"
+    },
+    "mode": {
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "natural_thinking_closed_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Natural Thinking Closed Items",
+      "type": "integer"
+    },
+    "score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Score Basis Points",
+      "type": "integer"
+    },
+    "visible_reasoning_leakage_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Visible Reasoning Leakage Basis Points",
+      "type": "integer"
+    },
+    "visible_reasoning_leakage_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Visible Reasoning Leakage Items",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "mode",
+    "items",
+    "evaluated_items",
+    "correct_items",
+    "score_basis_points",
+    "format_valid_items",
+    "format_valid_basis_points",
+    "json_items",
+    "json_valid_items",
+    "json_valid_basis_points",
+    "visible_reasoning_leakage_items",
+    "visible_reasoning_leakage_basis_points",
+    "natural_thinking_closed_items",
+    "budget_forced_close_items",
+    "forced_close_basis_points",
+    "generated_tokens",
+    "injected_tokens"
+  ],
+  "title": "M6DomainModeResult",
+  "type": "object"
+}

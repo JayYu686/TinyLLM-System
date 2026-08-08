@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "Pinned Qwen3 Non-thinking greedy-generation policy.",
+  "properties": {
+    "add_generation_prompt": {
+      "const": true,
+      "title": "Add Generation Prompt",
+      "type": "boolean"
+    },
+    "do_sample": {
+      "const": false,
+      "title": "Do Sample",
+      "type": "boolean"
+    },
+    "max_new_tokens": {
+      "const": 512,
+      "title": "Max New Tokens",
+      "type": "integer"
+    },
+    "template_id": {
+      "const": "qwen3-chatml-nonthinking-generation-v1",
+      "title": "Template Id",
+      "type": "string"
+    },
+    "template_sha256": {
+      "const": "b9a510e2f016a112860e47056f770b04e5c93131cc4a8ecd47fcc950cfdb6273",
+      "title": "Template Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "template_id",
+    "template_sha256",
+    "add_generation_prompt",
+    "max_new_tokens",
+    "do_sample"
+  ],
+  "title": "M6NonthinkingGenerationConfig",
+  "type": "object"
+}

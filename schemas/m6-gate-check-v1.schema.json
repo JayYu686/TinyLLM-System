@@ -1,0 +1,79 @@
+{
+  "additionalProperties": false,
+  "description": "One transparent Promotion Gate predicate.",
+  "properties": {
+    "actual_basis_points": {
+      "anyOf": [
+        {
+          "maximum": 10000,
+          "minimum": -10000,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actual Basis Points"
+    },
+    "comparison": {
+      "enum": [
+        "gte",
+        "gt",
+        "lte",
+        "boolean"
+      ],
+      "title": "Comparison",
+      "type": "string"
+    },
+    "detail": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Detail",
+      "type": "string"
+    },
+    "name": {
+      "enum": [
+        "thinking_domain_delta",
+        "thinking_domain_ci",
+        "nonthinking_domain_delta",
+        "nonthinking_domain_ci",
+        "general_regression",
+        "json_valid_rate",
+        "thinking_format",
+        "thinking_forced_close",
+        "nonthinking_leakage",
+        "evaluation_integrity",
+        "lineage"
+      ],
+      "title": "Name",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "threshold_basis_points": {
+      "anyOf": [
+        {
+          "maximum": 10000,
+          "minimum": -10000,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Threshold Basis Points"
+    }
+  },
+  "required": [
+    "name",
+    "passed",
+    "comparison",
+    "detail"
+  ],
+  "title": "M6GateCheck",
+  "type": "object"
+}

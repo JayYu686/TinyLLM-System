@@ -164,6 +164,8 @@ def preflight_baseline_gpu(physical_index: int) -> BaselineGpuPreflight:
         completed = subprocess.run(
             [
                 "nvidia-smi",
+                "--id",
+                str(physical_index),
                 "--query-gpu=index,memory.used,utilization.gpu,temperature.gpu",
                 "--format=csv,noheader,nounits",
             ],

@@ -1,0 +1,194 @@
+{
+  "additionalProperties": false,
+  "description": "Private M6 transcript with model output and controller actions separated.",
+  "properties": {
+    "automatic_correct": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Automatic Correct"
+    },
+    "budget_forced_close": {
+      "title": "Budget Forced Close",
+      "type": "boolean"
+    },
+    "continuation_response": {
+      "maxLength": 131072,
+      "title": "Continuation Response",
+      "type": "string"
+    },
+    "continuation_tokens": {
+      "maximum": 512,
+      "minimum": 0,
+      "title": "Continuation Tokens",
+      "type": "integer"
+    },
+    "controller_action": {
+      "enum": [
+        "not_applicable",
+        "natural_complete",
+        "natural_close_continue",
+        "forced_close_continue"
+      ],
+      "title": "Controller Action",
+      "type": "string"
+    },
+    "controller_injected_text": {
+      "maxLength": 512,
+      "title": "Controller Injected Text",
+      "type": "string"
+    },
+    "final_answer": {
+      "maxLength": 131072,
+      "title": "Final Answer",
+      "type": "string"
+    },
+    "final_answer_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Final Answer Sha256",
+      "type": "string"
+    },
+    "finish_reason": {
+      "enum": [
+        "eos",
+        "length"
+      ],
+      "title": "Finish Reason",
+      "type": "string"
+    },
+    "first_pass_response": {
+      "maxLength": 131072,
+      "title": "First Pass Response",
+      "type": "string"
+    },
+    "first_pass_tokens": {
+      "maximum": 1536,
+      "minimum": 0,
+      "title": "First Pass Tokens",
+      "type": "integer"
+    },
+    "format_valid": {
+      "title": "Format Valid",
+      "type": "boolean"
+    },
+    "generated_tokens": {
+      "maximum": 2048,
+      "minimum": 0,
+      "title": "Generated Tokens",
+      "type": "integer"
+    },
+    "human_review_required": {
+      "title": "Human Review Required",
+      "type": "boolean"
+    },
+    "injected_tokens": {
+      "maximum": 128,
+      "minimum": 0,
+      "title": "Injected Tokens",
+      "type": "integer"
+    },
+    "item_id": {
+      "pattern": "^domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3}$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "json_valid": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Json Valid"
+    },
+    "mode": {
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "natural_thinking_closed": {
+      "title": "Natural Thinking Closed",
+      "type": "boolean"
+    },
+    "prompt_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "prompt_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Prompt Tokens",
+      "type": "integer"
+    },
+    "response": {
+      "maxLength": 131072,
+      "title": "Response",
+      "type": "string"
+    },
+    "response_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Response Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scorer_kind": {
+      "enum": [
+        "exact_match",
+        "human_rubric",
+        "json_object",
+        "multiple_choice",
+        "required_terms"
+      ],
+      "title": "Scorer Kind",
+      "type": "string"
+    },
+    "visible_reasoning_leakage": {
+      "title": "Visible Reasoning Leakage",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "item_id",
+    "mode",
+    "prompt_sha256",
+    "response",
+    "response_sha256",
+    "first_pass_response",
+    "continuation_response",
+    "controller_injected_text",
+    "controller_action",
+    "final_answer",
+    "final_answer_sha256",
+    "prompt_tokens",
+    "first_pass_tokens",
+    "continuation_tokens",
+    "injected_tokens",
+    "generated_tokens",
+    "finish_reason",
+    "scorer_kind",
+    "automatic_correct",
+    "json_valid",
+    "human_review_required",
+    "format_valid",
+    "visible_reasoning_leakage",
+    "natural_thinking_closed",
+    "budget_forced_close"
+  ],
+  "title": "M6DomainTranscript",
+  "type": "object"
+}

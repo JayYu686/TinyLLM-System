@@ -1,0 +1,675 @@
+"""Independent M6 dual-mode domain generation and human-review finalization."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import platform
+import random
+import time
+import uuid
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, Literal, cast
+
+import numpy as np
+import torch
+
+from tinyllm.evaluation.baseline import (
+    load_baseline_config,
+    load_human_rubric_judgments,
+    score_domain_response,
+)
+from tinyllm.evaluation.baseline_schema import HumanRubricJudgment
+from tinyllm.evaluation.contamination import load_evaluation_items
+from tinyllm.evaluation.m5_thinking_budget_schema import EARLY_STOPPING_TEXT
+from tinyllm.evaluation.m6 import load_m6_release_config
+from tinyllm.evaluation.m6_base import (
+    domain_cluster_id,
+    model_artifact_sha256,
+    sha256_file,
+)
+from tinyllm.evaluation.m6_schema import (
+    M6DomainItemScore,
+    M6DomainModeResult,
+    M6DomainPassSummary,
+    M6DomainTranscript,
+    M6ModelIdentity,
+)
+from tinyllm.evaluation.schema import EvaluationItem
+from tinyllm.lineage import read_git_identity
+from tinyllm.schemas import canonical_config_hash
+
+
+class M6DomainError(RuntimeError):
+    """Raised when M6 domain generation or review fails closed."""
+
+
+def _atomic_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{uuid.uuid4().hex}")
+    payload = (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+    with temporary.open("wb") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
+def _atomic_jsonl(path: Path, values: Sequence[M6DomainTranscript]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{uuid.uuid4().hex}")
+    with temporary.open("w", encoding="utf-8") as handle:
+        for value in values:
+            handle.write(json.dumps(value.to_dict(), ensure_ascii=False, sort_keys=True) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
+def _load_transcripts(path: Path) -> tuple[M6DomainTranscript, ...]:
+    if not path.is_file() or path.is_symlink():
+        raise M6DomainError("M6 transcript JSONL is missing or unsafe")
+    values: list[M6DomainTranscript] = []
+    try:
+        with path.open(encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    raise M6DomainError(
+                        f"M6 transcript JSONL contains a blank line at {line_number}"
+                    )
+                values.append(M6DomainTranscript.model_validate_json(line))
+    except (OSError, ValueError) as exc:
+        raise M6DomainError("M6 transcript JSONL is invalid") from exc
+    return tuple(values)
+
+
+def _set_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed % (2**32))
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
+def _eos_ids(tokenizer: Any) -> set[int]:
+    value = tokenizer.eos_token_id
+    result = {value} if isinstance(value, int) else set(cast(list[int], value))
+    if not result:
+        raise M6DomainError("Qwen tokenizer has no EOS Token")
+    return result
+
+
+def _trim_at_eos(
+    raw_ids: Sequence[int],
+    eos_ids: set[int],
+    *,
+    include_eos: bool,
+) -> tuple[list[int], bool]:
+    token_ids = list(raw_ids)
+    for index, token_id in enumerate(token_ids):
+        if token_id in eos_ids:
+            end = index + 1 if include_eos else index
+            return token_ids[:end], True
+    return token_ids, False
+
+
+def _decode(tokenizer: Any, token_ids: Sequence[int]) -> str:
+    return str(
+        tokenizer.decode(
+            list(token_ids),
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+    )
+
+
+def parse_m6_final_answer(
+    response: str,
+    *,
+    mode: Literal["thinking", "nonthinking"],
+) -> tuple[str, bool, bool]:
+    """Return final answer, controlled-format state, and visible-reasoning leakage."""
+
+    if mode == "nonthinking":
+        answer = response.strip()
+        leakage = "<think>" in answer or "</think>" in answer
+        return answer, bool(answer) and not leakage, leakage
+    closing_count = response.count("</think>")
+    if closing_count != 1:
+        return "", False, False
+    answer = response.split("</think>", 1)[1].strip()
+    format_valid = bool(answer) and "<think>" not in answer and "</think>" not in answer
+    return answer, format_valid, False
+
+
+def build_m6_domain_transcript(
+    item: EvaluationItem,
+    *,
+    mode: Literal["thinking", "nonthinking"],
+    prompt: str,
+    response: str,
+    first_pass_response: str,
+    continuation_response: str,
+    controller_action: Literal[
+        "not_applicable",
+        "natural_complete",
+        "natural_close_continue",
+        "forced_close_continue",
+    ],
+    prompt_tokens: int,
+    first_pass_tokens: int,
+    continuation_tokens: int,
+    injected_tokens: int,
+    finish_reason: Literal["eos", "length"],
+) -> M6DomainTranscript:
+    """Parse and score one transcript without fabricating human-rubric judgments."""
+
+    final_answer, format_valid, leakage = parse_m6_final_answer(response, mode=mode)
+    scored = score_domain_response(
+        item,
+        final_answer,
+        prompt_tokens=prompt_tokens,
+        generated_tokens=first_pass_tokens + continuation_tokens,
+        finish_reason=finish_reason,
+    )
+    automatic_correct = scored.automatic_correct
+    if automatic_correct is not None:
+        automatic_correct = automatic_correct and format_valid
+    forced = controller_action == "forced_close_continue"
+    natural = mode == "thinking" and not forced
+    return M6DomainTranscript(
+        item_id=item.id,
+        mode=mode,
+        prompt_sha256=hashlib.sha256(prompt.encode()).hexdigest(),
+        response=response,
+        response_sha256=hashlib.sha256(response.encode()).hexdigest(),
+        first_pass_response=first_pass_response,
+        continuation_response=continuation_response,
+        controller_injected_text=EARLY_STOPPING_TEXT if forced else "",
+        controller_action=controller_action,
+        final_answer=final_answer,
+        final_answer_sha256=hashlib.sha256(final_answer.encode()).hexdigest(),
+        prompt_tokens=prompt_tokens,
+        first_pass_tokens=first_pass_tokens,
+        continuation_tokens=continuation_tokens,
+        injected_tokens=injected_tokens,
+        generated_tokens=first_pass_tokens + continuation_tokens,
+        finish_reason=finish_reason,
+        scorer_kind=item.scorer.kind,
+        automatic_correct=automatic_correct,
+        json_valid=scored.json_valid,
+        human_review_required=scored.human_review_required,
+        format_valid=format_valid,
+        visible_reasoning_leakage=leakage,
+        natural_thinking_closed=natural,
+        budget_forced_close=forced,
+    )
+
+
+def _generate(
+    model: Any,
+    *,
+    model_inputs: dict[str, Any],
+    input_width: int,
+    tokenizer: Any,
+    eos_ids: set[int],
+    seed: int,
+    max_new_tokens: int,
+    do_sample: bool,
+    temperature: float | None,
+    top_p: float | None,
+    top_k: int | None,
+) -> list[list[int]]:
+    _set_seed(seed)
+    with torch.inference_mode():
+        generated = model.generate(
+            **model_inputs,
+            do_sample=do_sample,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            repetition_penalty=1.0,
+            max_new_tokens=max_new_tokens,
+            pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=sorted(eos_ids),
+            use_cache=True,
+        )
+    return cast(list[list[int]], generated[:, input_width:].detach().cpu().tolist())
+
+
+def _validate_runtime(model_dir: Path, tokenizer: Any, model: M6ModelIdentity) -> None:
+    probe = [{"role": "user", "content": "TinyLLM template probe."}]
+    thinking = tokenizer.apply_chat_template(
+        probe,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=True,
+    )
+    nonthinking = tokenizer.apply_chat_template(
+        probe,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,
+    )
+    if thinking != (
+        "<|im_start|>user\nTinyLLM template probe.<|im_end|>\n<|im_start|>assistant\n"
+    ) or nonthinking != (
+        "<|im_start|>user\nTinyLLM template probe.<|im_end|>\n"
+        "<|im_start|>assistant\n<think>\n\n</think>\n\n"
+    ):
+        raise M6DomainError("Qwen3 M6 generation Template drifted")
+    try:
+        config = cast(
+            dict[str, object],
+            json.loads((model_dir / "config.json").read_text(encoding="utf-8")),
+        )
+    except (OSError, json.JSONDecodeError) as exc:
+        raise M6DomainError("M6 model config cannot be parsed") from exc
+    expected_heads = 16 if model.repository.endswith("0.6B") else 32
+    if {
+        "model_type": config.get("model_type"),
+        "num_attention_heads": config.get("num_attention_heads"),
+        "num_key_value_heads": config.get("num_key_value_heads"),
+    } != {
+        "model_type": "qwen3",
+        "num_attention_heads": expected_heads,
+        "num_key_value_heads": 8,
+    }:
+        raise M6DomainError("M6 evaluated model is not the frozen Qwen3 GQA route")
+
+
+def _environment_payload() -> dict[str, object]:
+    import transformers  # type: ignore[import-not-found]
+
+    return {
+        "schema_version": "1.0",
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "torch": torch.__version__,
+        "transformers": transformers.__version__,
+        "cuda_runtime": torch.version.cuda,
+    }
+
+
+def _hardware_payload(device: torch.device, physical_gpu_index: int) -> dict[str, object]:
+    properties = torch.cuda.get_device_properties(device)
+    return {
+        "schema_version": "1.0",
+        "physical_gpu_index": physical_gpu_index,
+        "logical_gpu_index": 0,
+        "gpu_name": torch.cuda.get_device_name(device),
+        "memory_total_bytes": int(properties.total_memory),
+        "compute_capability": f"{properties.major}.{properties.minor}",
+        "bf16_supported": bool(torch.cuda.is_bf16_supported()),
+    }
+
+
+def _summary(
+    *,
+    model: M6ModelIdentity,
+    mode: Literal["thinking", "nonthinking"],
+    config_sha256: str,
+    git_commit: str,
+    transcripts: tuple[M6DomainTranscript, ...],
+    evaluation_id: str,
+    duration_seconds: float,
+    peak_allocated_bytes: int,
+    peak_reserved_bytes: int,
+    physical_gpu_index: int,
+    gpu_name: str,
+    environment_sha256: str,
+    hardware_sha256: str,
+    raw_results_sha256: str,
+) -> M6DomainPassSummary:
+    return M6DomainPassSummary(
+        status="awaiting_human_review",
+        evaluation_id=evaluation_id,
+        protocol_version="m6-release-v1",
+        suite_version="tinyllm-domain-v1-83bdd8ef",
+        config_sha256=config_sha256,
+        git_commit=git_commit,
+        git_dirty=False,
+        model=model,
+        mode=mode,
+        evaluated_items=300,
+        objective_items=260,
+        objective_correct_items=sum(item.automatic_correct is True for item in transcripts),
+        human_review_pending=40,
+        human_reviewed=0,
+        human_passed=0,
+        json_items=80,
+        json_valid_items=sum(item.json_valid is True for item in transcripts),
+        format_valid_items=sum(item.format_valid for item in transcripts),
+        visible_reasoning_leakage_items=sum(item.visible_reasoning_leakage for item in transcripts),
+        natural_thinking_closed_items=sum(item.natural_thinking_closed for item in transcripts),
+        budget_forced_close_items=sum(item.budget_forced_close for item in transcripts),
+        generated_tokens=sum(item.generated_tokens for item in transcripts),
+        injected_tokens=sum(item.injected_tokens for item in transcripts),
+        duration_seconds=duration_seconds,
+        peak_allocated_bytes=peak_allocated_bytes,
+        peak_reserved_bytes=peak_reserved_bytes,
+        physical_gpu_index=physical_gpu_index,
+        gpu_name=gpu_name,
+        environment_sha256=environment_sha256,
+        hardware_sha256=hardware_sha256,
+        raw_results_sha256=raw_results_sha256,
+    )
+
+
+def run_m6_domain_pass(
+    *,
+    release_config_path: Path,
+    model_dir: Path,
+    tokenizer_dir: Path,
+    output_dir: Path,
+    project_root: Path,
+    physical_gpu_index: int,
+    model_identity: M6ModelIdentity,
+    mode: Literal["thinking", "nonthinking"],
+    expected_config_sha256: str,
+) -> M6DomainPassSummary:
+    """Run one clean-Git, single-GPU M6 domain mode into private artifacts."""
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
+        raise M6DomainError("M6 domain evaluation requires exactly one visible CUDA GPU")
+    project_root = project_root.resolve()
+    git_commit, git_dirty = read_git_identity(project_root)
+    if git_dirty:
+        raise M6DomainError("formal M6 evaluation requires a clean Git worktree")
+    if output_dir.exists() or not output_dir.is_absolute():
+        raise M6DomainError("M6 output directory must be absolute and absent")
+    release = load_m6_release_config(release_config_path)
+    if canonical_config_hash(release) != expected_config_sha256:
+        raise M6DomainError("M6 Base import and Release config identities differ")
+    if model_identity.role != "base" or model_identity.adaptation != "base":
+        raise M6DomainError("M6.1 domain command requires the imported Base identity")
+    source_config = load_baseline_config(project_root / "configs/eval/m2_baseline.yaml")
+    if (
+        model_dir.resolve() != tokenizer_dir.resolve()
+        or model_artifact_sha256(model_dir, source_config.model.files)
+        != model_identity.model_artifact_sha256
+    ):
+        raise M6DomainError("M6 Base model or Tokenizer identity differs from imported evidence")
+    items = load_evaluation_items(project_root / "evals/domain/v1/items.jsonl")
+    if len(items) != 300:
+        raise M6DomainError("M6 domain suite must contain exactly 300 items")
+    output_dir.mkdir(parents=True)
+    device = torch.device("cuda", 0)
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_dir,
+        local_files_only=True,
+        trust_remote_code=False,
+    )
+    tokenizer.padding_side = "left"
+    if tokenizer.pad_token_id is None:
+        raise M6DomainError("M6 tokenizer has no padding Token")
+    _validate_runtime(model_dir, tokenizer, model_identity)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_dir,
+        local_files_only=True,
+        trust_remote_code=False,
+        dtype=torch.bfloat16,
+        attn_implementation="sdpa",
+        low_cpu_mem_usage=True,
+    ).to(device)
+    model.eval()
+    eos_ids = _eos_ids(tokenizer)
+    injection_ids = list(tokenizer.encode(EARLY_STOPPING_TEXT, add_special_tokens=False))
+    if not injection_ids or _decode(tokenizer, injection_ids) != EARLY_STOPPING_TEXT:
+        raise M6DomainError("M6 controller injection does not round-trip")
+    config_sha256 = canonical_config_hash(release)
+    environment_path = output_dir / "environment.json"
+    hardware_path = output_dir / "hardware.json"
+    _atomic_json(environment_path, _environment_payload())
+    _atomic_json(hardware_path, _hardware_payload(device, physical_gpu_index))
+    torch.cuda.reset_peak_memory_stats(device)
+    started = time.monotonic()
+    transcripts: list[M6DomainTranscript] = []
+    generation = release.domain_execution
+    for offset in range(0, len(items), generation.batch_size):
+        batch_items = items[offset : offset + generation.batch_size]
+        prompts = [
+            tokenizer.apply_chat_template(
+                [message.to_dict() for message in item.prompt_messages],
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=mode == "thinking",
+            )
+            for item in batch_items
+        ]
+        encoded: dict[str, Any] = tokenizer(prompts, padding=True, return_tensors="pt")
+        prompt_lengths = [int(value) for value in encoded["attention_mask"].sum(dim=1)]
+        if any(length > generation.max_sequence_length for length in prompt_lengths):
+            raise M6DomainError("M6 domain prompt exceeds maximum sequence length")
+        model_inputs = {key: value.to(device) for key, value in encoded.items()}
+        input_width = int(model_inputs["input_ids"].shape[1])
+        first_rows = _generate(
+            model,
+            model_inputs=model_inputs,
+            input_width=input_width,
+            tokenizer=tokenizer,
+            eos_ids=eos_ids,
+            seed=generation.thinking.seed + offset,
+            max_new_tokens=(
+                generation.thinking.thinking_budget_tokens
+                if mode == "thinking"
+                else generation.nonthinking.max_new_tokens
+            ),
+            do_sample=mode == "thinking",
+            temperature=generation.thinking.temperature if mode == "thinking" else None,
+            top_p=generation.thinking.top_p if mode == "thinking" else None,
+            top_k=generation.thinking.top_k if mode == "thinking" else None,
+        )
+        for item_index, (item, prompt, prompt_tokens, raw_ids) in enumerate(
+            zip(batch_items, prompts, prompt_lengths, first_rows, strict=True)
+        ):
+            first_ids, first_eos = _trim_at_eos(raw_ids, eos_ids, include_eos=True)
+            first_response = _decode(tokenizer, first_ids)
+            if mode == "nonthinking":
+                transcripts.append(
+                    build_m6_domain_transcript(
+                        item,
+                        mode=mode,
+                        prompt=prompt,
+                        response=first_response,
+                        first_pass_response=first_response,
+                        continuation_response="",
+                        controller_action="not_applicable",
+                        prompt_tokens=prompt_tokens,
+                        first_pass_tokens=len(first_ids),
+                        continuation_tokens=0,
+                        injected_tokens=0,
+                        finish_reason="eos" if first_eos else "length",
+                    )
+                )
+                continue
+            natural_close = "</think>" in first_response
+            if natural_close and first_eos:
+                transcripts.append(
+                    build_m6_domain_transcript(
+                        item,
+                        mode=mode,
+                        prompt=prompt,
+                        response=first_response,
+                        first_pass_response=first_response,
+                        continuation_response="",
+                        controller_action="natural_complete",
+                        prompt_tokens=prompt_tokens,
+                        first_pass_tokens=len(first_ids),
+                        continuation_tokens=0,
+                        injected_tokens=0,
+                        finish_reason="eos",
+                    )
+                )
+                continue
+            prompt_row = model_inputs["input_ids"][item_index]
+            mask_row = model_inputs["attention_mask"][item_index].bool()
+            unpadded_prompt = prompt_row[mask_row].detach().cpu().tolist()
+            first_for_continue, _ = _trim_at_eos(first_ids, eos_ids, include_eos=False)
+            forced = not natural_close
+            controlled_ids = first_for_continue + (injection_ids if forced else [])
+            continuation_input = torch.tensor(
+                [unpadded_prompt + controlled_ids],
+                dtype=torch.long,
+                device=device,
+            )
+            continuation_rows = _generate(
+                model,
+                model_inputs={
+                    "input_ids": continuation_input,
+                    "attention_mask": torch.ones_like(continuation_input),
+                },
+                input_width=int(continuation_input.shape[1]),
+                tokenizer=tokenizer,
+                eos_ids=eos_ids,
+                seed=generation.thinking.seed + 2_000_000 + offset + item_index,
+                max_new_tokens=generation.thinking.final_answer_max_new_tokens,
+                do_sample=True,
+                temperature=generation.thinking.temperature,
+                top_p=generation.thinking.top_p,
+                top_k=generation.thinking.top_k,
+            )
+            continuation_ids, continuation_eos = _trim_at_eos(
+                continuation_rows[0],
+                eos_ids,
+                include_eos=True,
+            )
+            response = _decode(tokenizer, controlled_ids + continuation_ids)
+            transcripts.append(
+                build_m6_domain_transcript(
+                    item,
+                    mode=mode,
+                    prompt=prompt,
+                    response=response,
+                    first_pass_response=first_response,
+                    continuation_response=_decode(tokenizer, continuation_ids),
+                    controller_action=(
+                        "forced_close_continue" if forced else "natural_close_continue"
+                    ),
+                    prompt_tokens=prompt_tokens,
+                    first_pass_tokens=len(first_ids),
+                    continuation_tokens=len(continuation_ids),
+                    injected_tokens=len(injection_ids) if forced else 0,
+                    finish_reason="eos" if continuation_eos else "length",
+                )
+            )
+    raw_path = output_dir / "results.jsonl"
+    ordered = tuple(transcripts)
+    if tuple(item.item_id for item in ordered) != tuple(item.id for item in items):
+        raise M6DomainError("M6 domain transcript identities differ from frozen suite")
+    _atomic_jsonl(raw_path, ordered)
+    evaluation_id = (
+        f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-m6-domain-{mode}-"
+        f"{model_identity.role}-{model_identity.model_artifact_sha256[:8]}"
+    )
+    summary = _summary(
+        model=model_identity,
+        mode=mode,
+        config_sha256=config_sha256,
+        git_commit=git_commit,
+        transcripts=ordered,
+        evaluation_id=evaluation_id,
+        duration_seconds=time.monotonic() - started,
+        peak_allocated_bytes=int(torch.cuda.max_memory_allocated(device)),
+        peak_reserved_bytes=int(torch.cuda.max_memory_reserved(device)),
+        physical_gpu_index=physical_gpu_index,
+        gpu_name=torch.cuda.get_device_name(device),
+        environment_sha256=sha256_file(environment_path),
+        hardware_sha256=sha256_file(hardware_path),
+        raw_results_sha256=sha256_file(raw_path),
+    )
+    _atomic_json(output_dir / "summary.json", summary.to_dict())
+    return summary
+
+
+def finalize_m6_domain_pass(
+    *,
+    project_root: Path,
+    pass_directory: Path,
+    judgments_path: Path,
+) -> M6DomainModeResult:
+    """Apply all 40 maintainer judgments and emit content-free item scores."""
+
+    try:
+        summary = M6DomainPassSummary.model_validate_json(
+            (pass_directory / "summary.json").read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError) as exc:
+        raise M6DomainError("M6 domain pass summary is invalid") from exc
+    raw_path = pass_directory / "results.jsonl"
+    if summary.raw_results_sha256 != sha256_file(raw_path):
+        raise M6DomainError("M6 transcript identity differs from pass summary")
+    transcripts = _load_transcripts(raw_path)
+    items = load_evaluation_items(project_root.resolve() / "evals/domain/v1/items.jsonl")
+    judgments = load_human_rubric_judgments(judgments_path)
+    judgment_map: dict[str, HumanRubricJudgment] = {
+        judgment.item_id: judgment for judgment in judgments
+    }
+    expected_human = tuple(item.id for item in items if item.scorer.kind == "human_rubric")
+    if tuple(judgment_map) != expected_human:
+        raise M6DomainError("M6 review must cover the exact 40 human-rubric items in order")
+    if tuple(item.id for item in items) != tuple(item.item_id for item in transcripts):
+        raise M6DomainError("M6 transcript identities differ from frozen suite")
+    scores: list[M6DomainItemScore] = []
+    for item, transcript in zip(items, transcripts, strict=True):
+        correct = (
+            judgment_map[item.id].passed
+            if transcript.human_review_required
+            else bool(transcript.automatic_correct)
+        )
+        correct = correct and transcript.format_valid
+        scores.append(
+            M6DomainItemScore(
+                item_id=item.id,
+                cluster_id=domain_cluster_id(item),
+                language=item.language,
+                category=item.category,
+                scorer_kind=item.scorer.kind,
+                correct=correct,
+                json_valid=transcript.json_valid,
+                format_valid=transcript.format_valid,
+                visible_reasoning_leakage=transcript.visible_reasoning_leakage,
+            )
+        )
+    result_items = tuple(scores)
+    correct_items = sum(item.correct for item in result_items)
+    format_items = sum(item.format_valid for item in result_items)
+    json_valid = sum(item.json_valid is True for item in result_items)
+    leakage = sum(item.visible_reasoning_leakage for item in result_items)
+    forced = sum(item.budget_forced_close for item in transcripts)
+    result = M6DomainModeResult(
+        mode=summary.mode,
+        items=result_items,
+        evaluated_items=300,
+        correct_items=correct_items,
+        score_basis_points=round(correct_items * 10000 / 300),
+        format_valid_items=format_items,
+        format_valid_basis_points=round(format_items * 10000 / 300),
+        json_items=80,
+        json_valid_items=json_valid,
+        json_valid_basis_points=round(json_valid * 10000 / 80),
+        visible_reasoning_leakage_items=leakage,
+        visible_reasoning_leakage_basis_points=round(leakage * 10000 / 300),
+        natural_thinking_closed_items=sum(item.natural_thinking_closed for item in transcripts),
+        budget_forced_close_items=forced,
+        forced_close_basis_points=round(forced * 10000 / 300),
+        generated_tokens=sum(item.generated_tokens for item in transcripts),
+        injected_tokens=sum(item.injected_tokens for item in transcripts),
+    )
+    _atomic_json(pass_directory / "mode_result.json", result.to_dict())
+    judgment_hash = sha256_file(judgments_path)
+    completed = summary.model_copy(
+        update={
+            "status": "succeeded",
+            "human_review_pending": 0,
+            "human_reviewed": 40,
+            "human_passed": sum(judgment.passed for judgment in judgments),
+            "human_review_sha256": judgment_hash,
+        }
+    )
+    _atomic_json(pass_directory / "summary.json", completed.to_dict())
+    return result

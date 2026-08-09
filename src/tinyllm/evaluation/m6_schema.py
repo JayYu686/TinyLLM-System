@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from typing import Literal
 
@@ -382,6 +383,174 @@ class M6DomainModeResult(StrictSchema):
             or self.injected_tokens
         ):
             raise ValueError("M6 Non-thinking mode cannot claim controller activity")
+        return self
+
+
+class M6DomainTranscript(StrictSchema):
+    """Private M6 transcript with model output and controller actions separated."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    item_id: str = Field(
+        pattern=r"^domain-(config|json|linux|logs|python|refusal|short-code)-[0-9]{3}$"
+    )
+    mode: M6Mode
+    prompt_sha256: str = Field(pattern=SHA256_PATTERN)
+    response: str = Field(max_length=131_072)
+    response_sha256: str = Field(pattern=SHA256_PATTERN)
+    first_pass_response: str = Field(max_length=131_072)
+    continuation_response: str = Field(max_length=131_072)
+    controller_injected_text: str = Field(max_length=512)
+    controller_action: Literal[
+        "not_applicable",
+        "natural_complete",
+        "natural_close_continue",
+        "forced_close_continue",
+    ]
+    final_answer: str = Field(max_length=131_072)
+    final_answer_sha256: str = Field(pattern=SHA256_PATTERN)
+    prompt_tokens: int = Field(gt=0)
+    first_pass_tokens: int = Field(ge=0, le=1536)
+    continuation_tokens: int = Field(ge=0, le=512)
+    injected_tokens: int = Field(ge=0, le=128)
+    generated_tokens: int = Field(ge=0, le=2048)
+    finish_reason: Literal["eos", "length"]
+    scorer_kind: M6ScorerKind
+    automatic_correct: bool | None
+    json_valid: bool | None
+    human_review_required: bool
+    format_valid: bool
+    visible_reasoning_leakage: bool
+    natural_thinking_closed: bool
+    budget_forced_close: bool
+
+    @model_validator(mode="after")
+    def validate_transcript(self) -> M6DomainTranscript:
+        if hashlib.sha256(self.response.encode()).hexdigest() != self.response_sha256:
+            raise ValueError("M6 response hash differs from private response text")
+        if hashlib.sha256(self.final_answer.encode()).hexdigest() != self.final_answer_sha256:
+            raise ValueError("M6 final-answer hash differs from private answer text")
+        if self.generated_tokens != self.first_pass_tokens + self.continuation_tokens:
+            raise ValueError("M6 generated Token accounting differs")
+        is_human = self.scorer_kind == "human_rubric"
+        if self.human_review_required != is_human:
+            raise ValueError("M6 human-review flag differs from scorer kind")
+        if is_human != (self.automatic_correct is None):
+            raise ValueError("M6 automatic score must be absent exactly for human rubrics")
+        if (self.scorer_kind == "json_object") != (self.json_valid is not None):
+            raise ValueError("M6 JSON validity must exist exactly for JSON scorers")
+        if self.mode == "nonthinking":
+            if (
+                self.controller_action != "not_applicable"
+                or self.controller_injected_text
+                or self.injected_tokens
+                or self.natural_thinking_closed
+                or self.budget_forced_close
+            ):
+                raise ValueError("M6 Non-thinking transcript cannot claim controller activity")
+        elif self.controller_action == "forced_close_continue":
+            if (
+                not self.budget_forced_close
+                or self.natural_thinking_closed
+                or not self.controller_injected_text
+                or not self.injected_tokens
+            ):
+                raise ValueError("M6 forced-close transcript requires disclosed injection")
+        elif (
+            self.budget_forced_close
+            or self.controller_injected_text
+            or self.injected_tokens
+            or not self.natural_thinking_closed
+        ):
+            raise ValueError("M6 natural Thinking transcript cannot claim controller injection")
+        return self
+
+
+class M6DomainPassSummary(StrictSchema):
+    """Path-free result of one mode before or after human-rubric review."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["awaiting_human_review", "succeeded"]
+    evaluation_id: str = Field(min_length=1, max_length=180)
+    protocol_version: Literal["m6-release-v1"]
+    suite_version: Literal["tinyllm-domain-v1-83bdd8ef"]
+    config_sha256: str = Field(pattern=SHA256_PATTERN)
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    git_dirty: Literal[False]
+    model: M6ModelIdentity
+    mode: M6Mode
+    evaluated_items: Literal[300]
+    objective_items: Literal[260]
+    objective_correct_items: int = Field(ge=0, le=260)
+    human_review_pending: int = Field(ge=0, le=40)
+    human_reviewed: int = Field(ge=0, le=40)
+    human_passed: int = Field(ge=0, le=40)
+    json_items: Literal[80]
+    json_valid_items: int = Field(ge=0, le=80)
+    format_valid_items: int = Field(ge=0, le=300)
+    visible_reasoning_leakage_items: int = Field(ge=0, le=300)
+    natural_thinking_closed_items: int = Field(ge=0, le=300)
+    budget_forced_close_items: int = Field(ge=0, le=300)
+    generated_tokens: int = Field(ge=0)
+    injected_tokens: int = Field(ge=0)
+    duration_seconds: float = Field(ge=0.0)
+    peak_allocated_bytes: int = Field(ge=0)
+    peak_reserved_bytes: int = Field(ge=0)
+    physical_gpu_index: int | None = Field(default=None, ge=0)
+    gpu_name: str | None = Field(default=None, min_length=1, max_length=128)
+    environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    hardware_sha256: str = Field(pattern=SHA256_PATTERN)
+    raw_results_sha256: str = Field(pattern=SHA256_PATTERN)
+    human_review_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+
+    @model_validator(mode="after")
+    def validate_pass(self) -> M6DomainPassSummary:
+        if self.human_review_pending + self.human_reviewed != 40:
+            raise ValueError("M6 domain pass must account for all 40 human-rubric items")
+        expected = "awaiting_human_review" if self.human_review_pending else "succeeded"
+        if self.status != expected:
+            raise ValueError("M6 domain pass status differs from human-review state")
+        if (self.human_review_sha256 is not None) != (self.human_reviewed == 40):
+            raise ValueError("M6 review hash must exist exactly after complete review")
+        if self.human_passed > self.human_reviewed:
+            raise ValueError("M6 human pass count exceeds reviewed items")
+        if self.mode == "thinking":
+            if self.natural_thinking_closed_items + self.budget_forced_close_items != 300:
+                raise ValueError("M6 Thinking close paths must cover all items")
+            if self.physical_gpu_index is None or self.gpu_name is None:
+                raise ValueError("M6 Thinking generation requires GPU identity")
+        elif (
+            self.natural_thinking_closed_items
+            or self.budget_forced_close_items
+            or self.injected_tokens
+        ):
+            raise ValueError("M6 Non-thinking summary cannot claim controller activity")
+        return self
+
+
+class M6BaseImportResult(StrictSchema):
+    """Verified reuse of the pre-training Base Non-thinking and general evidence."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["succeeded"]
+    protocol_version: Literal["m6-release-v1"]
+    config_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_run_id: str = Field(min_length=1, max_length=180)
+    source_config_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    source_evaluation_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_domain_results_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_human_review_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_general_tree_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_hardware_sha256: str = Field(pattern=SHA256_PATTERN)
+    model: M6ModelIdentity
+    nonthinking: M6DomainModeResult
+    general: M6GeneralResult
+
+    @model_validator(mode="after")
+    def validate_import(self) -> M6BaseImportResult:
+        if self.model.role != "base" or self.nonthinking.mode != "nonthinking":
+            raise ValueError("M6 Base import requires Base Non-thinking evidence")
         return self
 
 

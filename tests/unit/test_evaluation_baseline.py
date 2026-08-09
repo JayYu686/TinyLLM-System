@@ -351,10 +351,19 @@ def test_domain_generation_preserves_order_and_backend_accounting() -> None:
 def test_gpu_preflight_accepts_idle_card_and_rejects_busy_or_hot_card(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    inventory = "4, 1, 0, 30\n5, 2048, 0, 40\n6, 1, 0, 81\n"
+    inventory = {
+        4: "4, 1, 0, 30\n",
+        5: "5, 2048, 0, 40\n",
+        6: "6, 1, 0, 81\n",
+    }
+
+    def run(command: Sequence[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert command[1] == "--id"
+        return subprocess.CompletedProcess([], 0, inventory.get(int(command[2]), ""), "")
+
     monkeypatch.setattr(
         "tinyllm.evaluation.baseline_runtime.subprocess.run",
-        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 0, inventory, ""),
+        run,
     )
 
     assert preflight_baseline_gpu(4) == BaselineGpuPreflight(

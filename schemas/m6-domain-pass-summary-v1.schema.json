@@ -1,0 +1,405 @@
+{
+  "$defs": {
+    "M6ModelIdentity": {
+      "additionalProperties": false,
+      "description": "Base or trained-model identity used by one M6 evaluation.",
+      "properties": {
+        "adaptation": {
+          "enum": [
+            "base",
+            "full_sft",
+            "lora"
+          ],
+          "title": "Adaptation",
+          "type": "string"
+        },
+        "adapter_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adapter Sha256"
+        },
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_revision": {
+          "enum": [
+            "c1899de289a04d12100db370d81485cdf75e47ca",
+            "b968826d9c46dd6066d109eabc6255188de91218"
+          ],
+          "title": "Base Revision",
+          "type": "string"
+        },
+        "dataset_manifest_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Manifest Sha256"
+        },
+        "dataset_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Version"
+        },
+        "model_artifact_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Model Artifact Sha256",
+          "type": "string"
+        },
+        "model_parameters": {
+          "exclusiveMinimum": 0,
+          "title": "Model Parameters",
+          "type": "integer"
+        },
+        "repository": {
+          "enum": [
+            "Qwen/Qwen3-0.6B",
+            "Qwen/Qwen3-8B"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "base",
+            "candidate"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "training_checkpoint_id": {
+          "anyOf": [
+            {
+              "pattern": "^checkpoint-tokens-[0-9]{10}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Checkpoint Id"
+        },
+        "training_config_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Config Sha256"
+        },
+        "training_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 180,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Run Id"
+        },
+        "training_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Tokens"
+        }
+      },
+      "required": [
+        "role",
+        "repository",
+        "base_revision",
+        "attention_architecture",
+        "adaptation",
+        "model_artifact_sha256",
+        "model_parameters"
+      ],
+      "title": "M6ModelIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Path-free result of one mode before or after human-rubric review.",
+  "properties": {
+    "budget_forced_close_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Budget Forced Close Items",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "duration_seconds": {
+      "minimum": 0.0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "environment_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "evaluated_items": {
+      "const": 300,
+      "title": "Evaluated Items",
+      "type": "integer"
+    },
+    "evaluation_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Evaluation Id",
+      "type": "string"
+    },
+    "format_valid_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Format Valid Items",
+      "type": "integer"
+    },
+    "generated_tokens": {
+      "minimum": 0,
+      "title": "Generated Tokens",
+      "type": "integer"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_name": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gpu Name"
+    },
+    "hardware_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
+    },
+    "human_passed": {
+      "maximum": 40,
+      "minimum": 0,
+      "title": "Human Passed",
+      "type": "integer"
+    },
+    "human_review_pending": {
+      "maximum": 40,
+      "minimum": 0,
+      "title": "Human Review Pending",
+      "type": "integer"
+    },
+    "human_review_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Human Review Sha256"
+    },
+    "human_reviewed": {
+      "maximum": 40,
+      "minimum": 0,
+      "title": "Human Reviewed",
+      "type": "integer"
+    },
+    "injected_tokens": {
+      "minimum": 0,
+      "title": "Injected Tokens",
+      "type": "integer"
+    },
+    "json_items": {
+      "const": 80,
+      "title": "Json Items",
+      "type": "integer"
+    },
+    "json_valid_items": {
+      "maximum": 80,
+      "minimum": 0,
+      "title": "Json Valid Items",
+      "type": "integer"
+    },
+    "mode": {
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model": {
+      "$ref": "#/$defs/M6ModelIdentity"
+    },
+    "natural_thinking_closed_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Natural Thinking Closed Items",
+      "type": "integer"
+    },
+    "objective_correct_items": {
+      "maximum": 260,
+      "minimum": 0,
+      "title": "Objective Correct Items",
+      "type": "integer"
+    },
+    "objective_items": {
+      "const": 260,
+      "title": "Objective Items",
+      "type": "integer"
+    },
+    "peak_allocated_bytes": {
+      "minimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "minimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Physical Gpu Index"
+    },
+    "protocol_version": {
+      "const": "m6-release-v1",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "raw_results_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Raw Results Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "awaiting_human_review",
+        "succeeded"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "suite_version": {
+      "const": "tinyllm-domain-v1-83bdd8ef",
+      "title": "Suite Version",
+      "type": "string"
+    },
+    "visible_reasoning_leakage_items": {
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Visible Reasoning Leakage Items",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "status",
+    "evaluation_id",
+    "protocol_version",
+    "suite_version",
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "model",
+    "mode",
+    "evaluated_items",
+    "objective_items",
+    "objective_correct_items",
+    "human_review_pending",
+    "human_reviewed",
+    "human_passed",
+    "json_items",
+    "json_valid_items",
+    "format_valid_items",
+    "visible_reasoning_leakage_items",
+    "natural_thinking_closed_items",
+    "budget_forced_close_items",
+    "generated_tokens",
+    "injected_tokens",
+    "duration_seconds",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes",
+    "environment_sha256",
+    "hardware_sha256",
+    "raw_results_sha256"
+  ],
+  "title": "M6DomainPassSummary",
+  "type": "object"
+}

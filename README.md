@@ -192,6 +192,7 @@ sequenceDiagram
   [M5 总验收](reports/m5/m5_acceptance.md)与
   [英文公开摘要](reports/m5/m5_public_summary.en.md)
 - [M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)
+- [M6.1 Base 证据复用与执行准备](reports/m6/m6_base_evidence.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。

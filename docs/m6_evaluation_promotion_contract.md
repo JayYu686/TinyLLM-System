@@ -115,3 +115,9 @@ comparison.json
 4. M6.3：生成比较、执行 Promotion Gate、重建 SQLite 查询索引和发布中文报告；
 5. M6.4：运行 50M 过拟合对照；资源允许时再建立 8B Base/LoRA 可比批次；
 6. M6.5：发布 `v0.6.0-rc.1`、演示脚本和真实指标版本说明。
+
+M6.1 的历史复用仅适用于与 Release 配置逐字段等价的 M2 正式证据。导入器必须重新校验 Run
+状态、配置 Hash、模型文件、300 条输出、40 条人工判断、通用任务原始结果树、软件环境和硬件
+快照；只复制聚合数字或缺少原始文件时直接拒绝。Thinking 没有兼容历史证据，必须通过
+`tinyllm eval m6-domain --mode thinking` 在 clean `main` 上重新生成，并由
+`tinyllm eval m6-domain-review` 完成 40 条维护者判断。

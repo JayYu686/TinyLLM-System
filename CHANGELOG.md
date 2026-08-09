@@ -5,6 +5,10 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- added the M6.1 Base-evidence bridge and independent domain runner: the formal M2
+  Non-thinking/general evidence is reused only after full protocol, model, file, human-review,
+  environment, and raw-tree verification; Base Thinking remains a separate clean-main GPU run
+  with private transcripts, explicit controller actions, and a 40-item review gate;
 - started M6 by preregistering the isolated release-evaluation protocol before Candidate
   inference: separate Thinking/Non-thinking comparisons, a deterministic 10,000-replicate
   paired cluster bootstrap, equal-task `acc_norm` regression, strict lineage and format checks,

@@ -1,0 +1,85 @@
+{
+  "additionalProperties": false,
+  "description": "Pinned Qwen3 Thinking generation and bounded-controller policy.",
+  "properties": {
+    "add_generation_prompt": {
+      "const": true,
+      "title": "Add Generation Prompt",
+      "type": "boolean"
+    },
+    "do_sample": {
+      "const": true,
+      "title": "Do Sample",
+      "type": "boolean"
+    },
+    "early_stopping_text": {
+      "const": "\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n</think>\n\n",
+      "title": "Early Stopping Text",
+      "type": "string"
+    },
+    "final_answer_max_new_tokens": {
+      "const": 512,
+      "title": "Final Answer Max New Tokens",
+      "type": "integer"
+    },
+    "repetition_penalty": {
+      "maximum": 2.0,
+      "minimum": 1.0,
+      "title": "Repetition Penalty",
+      "type": "number"
+    },
+    "seed": {
+      "const": 20260809,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "temperature": {
+      "exclusiveMinimum": 0.0,
+      "maximum": 2.0,
+      "title": "Temperature",
+      "type": "number"
+    },
+    "template_id": {
+      "const": "qwen3-chatml-thinking-generation-v1",
+      "title": "Template Id",
+      "type": "string"
+    },
+    "template_sha256": {
+      "const": "7c37a1ab66f274f52208e50167e6cafbf00b6f5319207beca572e4b8cb1f8451",
+      "title": "Template Sha256",
+      "type": "string"
+    },
+    "thinking_budget_tokens": {
+      "const": 1536,
+      "title": "Thinking Budget Tokens",
+      "type": "integer"
+    },
+    "top_k": {
+      "const": 20,
+      "title": "Top K",
+      "type": "integer"
+    },
+    "top_p": {
+      "exclusiveMinimum": 0.0,
+      "maximum": 1.0,
+      "title": "Top P",
+      "type": "number"
+    }
+  },
+  "required": [
+    "template_id",
+    "template_sha256",
+    "add_generation_prompt",
+    "thinking_budget_tokens",
+    "final_answer_max_new_tokens",
+    "do_sample",
+    "temperature",
+    "top_p",
+    "top_k",
+    "repetition_penalty",
+    "seed",
+    "early_stopping_text"
+  ],
+  "title": "M6ThinkingGenerationConfig",
+  "type": "object"
+}

@@ -210,6 +210,11 @@ M6 对双模式分别报告：Thinking Candidate 对比同模型 Base-Thinking�
 `m5-reasoning-dev-v1-3eb153c2` 仅保留为历史证据，禁止跨身份比较。详细协议与修订依据见
 [M5 契约](m5_sft_contract.md)。
 
+M6 发布门禁在查看 Release Candidate 输出前进一步冻结为：90 个中英翻译对与 120 个英文
+独立项组成 210 个 Cluster，执行 10,000 次配对 Cluster Bootstrap；通用回归使用三个任务
+`acc_norm` 的等权平均。完整阈值、Schema、CLI 与晋级边界见
+[M6 独立评测与 Candidate 晋级契约](m6_evaluation_promotion_contract.md)。
+
 ## 11. M2.4c 训练前 Baseline 契约
 
 M2.4c 固定使用 `Qwen/Qwen3-0.6B@c1899de289a04d12100db370d81485cdf75e47ca` 的

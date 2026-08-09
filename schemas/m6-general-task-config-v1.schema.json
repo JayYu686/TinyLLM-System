@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "description": "Pinned lm-eval Task Adapter and immutable dataset identity.",
+  "properties": {
+    "adapter_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Adapter Sha256",
+      "type": "string"
+    },
+    "dataset_revision": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Dataset Revision",
+      "type": "string"
+    },
+    "expected_samples": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Samples",
+      "type": "integer"
+    },
+    "task": {
+      "enum": [
+        "tinyllm_arc_easy",
+        "tinyllm_hellaswag",
+        "tinyllm_piqa"
+      ],
+      "title": "Task",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task",
+    "adapter_sha256",
+    "dataset_revision",
+    "expected_samples"
+  ],
+  "title": "M6GeneralTaskConfig",
+  "type": "object"
+}

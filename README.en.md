@@ -161,7 +161,7 @@ sequenceDiagram
 | M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
 | M5 dual-mode SFT | Complete | 0.6B four-GPU Full SFT over 50M tokens and 8B BF16 LoRA over 10M tokens; both routes completed Exact Resume, dual-mode evaluation, and export |
-| M6 evaluation and promotion | Planned | Base/Candidate comparison, regression analysis, and Candidate Gate |
+| M6 evaluation and promotion | In progress | Dual-mode comparison, cluster bootstrap, Candidate Gate, and atomic registry contracts are frozen; real release evaluation remains pending |
 | M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
 | M8 planner | Enhancement | Static memory estimation and short probe |
 
@@ -197,6 +197,7 @@ failure paths, real reports, and documentation. Evidence entry points:
   [formal Qwen3-8B LoRA report (Chinese)](reports/m5/m5_lora_formal.md),
   [M5 acceptance report (Chinese)](reports/m5/m5_acceptance.md), and
   [M5 public summary](reports/m5/m5_public_summary.en.md)
+- [M6 evaluation and promotion contract (Chinese)](docs/m6_evaluation_promotion_contract.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -387,12 +388,14 @@ domain suite spanning Python, Linux, JSON/configuration, log diagnosis, and unsu
 claim refusal. The evaluation records prompt templates, tokenizer revision, decoding
 configuration, raw outputs, scoring evidence, and bootstrap 95% confidence intervals.
 
-The preregistered Candidate Gate targets:
+The preregistered Candidate Gate requires:
 
-- at least +3 percentage points on the domain aggregate, with a bootstrap 95% confidence
-  interval lower bound above zero;
+- at least +3 percentage points in both Thinking and Non-thinking against their matching
+  Base mode, with both cluster-bootstrap 95% confidence-interval lower bounds above zero;
 - general-task aggregate regression within 2 percentage points;
-- JSON Valid Rate of at least 98%;
+- JSON Valid Rate of at least 98% in both modes;
+- Thinking format validity of at least 99%, forced-close rate at most 10%, and zero visible
+  reasoning leakage in Non-thinking;
 - complete data, model, checkpoint, environment, and evaluation lineage.
 
 Rejected models retain Development status with regression metrics and failure examples.

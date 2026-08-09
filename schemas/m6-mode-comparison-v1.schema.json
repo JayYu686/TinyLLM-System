@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "M6BootstrapInterval": {
+      "additionalProperties": false,
+      "description": "Deterministic paired cluster-bootstrap interval in basis points.",
+      "properties": {
+        "confidence_basis_points": {
+          "const": 9500,
+          "title": "Confidence Basis Points",
+          "type": "integer"
+        },
+        "lower_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Lower Basis Points",
+          "type": "integer"
+        },
+        "point_delta_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Point Delta Basis Points",
+          "type": "integer"
+        },
+        "replicates": {
+          "const": 10000,
+          "title": "Replicates",
+          "type": "integer"
+        },
+        "upper_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Upper Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "replicates",
+        "confidence_basis_points",
+        "point_delta_basis_points",
+        "lower_basis_points",
+        "upper_basis_points"
+      ],
+      "title": "M6BootstrapInterval",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Base/Candidate domain comparison for one explicit generation mode.",
+  "properties": {
+    "base_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Base Score Basis Points",
+      "type": "integer"
+    },
+    "bootstrap": {
+      "$ref": "#/$defs/M6BootstrapInterval"
+    },
+    "candidate_score_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Candidate Score Basis Points",
+      "type": "integer"
+    },
+    "delta_basis_points": {
+      "maximum": 10000,
+      "minimum": -10000,
+      "title": "Delta Basis Points",
+      "type": "integer"
+    },
+    "mode": {
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    }
+  },
+  "required": [
+    "mode",
+    "base_score_basis_points",
+    "candidate_score_basis_points",
+    "delta_basis_points",
+    "bootstrap"
+  ],
+  "title": "M6ModeComparison",
+  "type": "object"
+}

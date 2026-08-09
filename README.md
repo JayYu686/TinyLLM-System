@@ -148,7 +148,7 @@ sequenceDiagram
 | M3 DDP | 已完成 | 初始化、Sampler、Loss Reduce、Rank 故障恢复和真实 1/2/4 卡扩展 |
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
 | M5 双模式 SFT | 已完成 | 0.6B 四卡 Full SFT 50M Token 与 8B BF16 LoRA 10M Token；两条路线均完成 Exact Resume、双模式评测和导出 |
-| M6 评测与晋级 | 计划中 | Base/Candidate 比较、回归分析和 Candidate Gate |
+| M6 评测与晋级 | 进行中 | 已冻结双模式比较、Cluster Bootstrap、Candidate Gate 与原子 Registry 契约；真实 Release 评测待运行 |
 | M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
 | M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |
 
@@ -191,6 +191,7 @@ sequenceDiagram
   [Qwen3-8B LoRA 正式验收](reports/m5/m5_lora_formal.md)、
   [M5 总验收](reports/m5/m5_acceptance.md)与
   [英文公开摘要](reports/m5/m5_public_summary.en.md)
+- [M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -375,9 +376,11 @@ Revision、解码配置、原始输出、评分依据和 Bootstrap 95% 置信区
 
 Candidate Gate 的预注册目标包括：
 
-- 领域聚合分数相对 Base 提升至少 3 个百分点，且 Bootstrap 95% 置信区间下界大于零；
+- Thinking 与 Non-thinking 分别相对同模式 Base 提升至少 3 个百分点，且各自的 Cluster
+  Bootstrap 95% 置信区间下界大于零；
 - 通用任务聚合回退控制在 2 个百分点以内；
-- JSON Valid Rate 达到 98%；
+- 两种模式的 JSON Valid Rate 均达到 98%；
+- Thinking 格式有效率达到 99% 且强制收束率不超过 10%，Non-thinking 可见推理泄漏为零；
 - 数据、模型、Checkpoint、环境和评测血缘完整。
 
 门禁拒绝的模型保留 Development 状态，并记录回退指标和失败样例。Candidate 通过 M7 的真实
@@ -404,7 +407,7 @@ M7 直接集成 vLLM 的 OpenAI-compatible API，并在其外层增加血缘感�
 - [贡献、PR 与代码审查流程](CONTRIBUTING.md)
 - [版本发布路线](docs/release_roadmap.md)与[能力证据映射](docs/capability_map.md)
 - [系统架构](docs/architecture.md)、[训练设计](docs/training_design.md)与
-  [M5 SFT 契约](docs/m5_sft_contract.md)
+  [M5 SFT 契约](docs/m5_sft_contract.md)、[M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)
 - [数据契约](docs/dataset_contract.md)、[评测规范](docs/evaluation_spec.md)与
   [实验血缘](docs/experiment_lineage.md)
 - [硬件策略](docs/hardware_strategy.md)与[Benchmark 规范](docs/benchmark_plan.md)

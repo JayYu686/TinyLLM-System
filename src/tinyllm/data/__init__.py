@@ -62,6 +62,7 @@ from tinyllm.data.m5_mixture_schema import (
     M5MixtureArtifactFile,
     M5MixtureManifest,
     M6GateRepairMixtureManifest,
+    M6GateReplayMixtureManifest,
 )
 from tinyllm.data.m5_r3_audit import (
     M5R3AuditError,
@@ -208,6 +209,7 @@ from tinyllm.data.m6_gate_repair import (
     build_m6_gate_repair_mixture,
     generate_m6_gate_repair_tasks,
 )
+from tinyllm.data.m6_gate_replay import build_m6_gate_replay_mixture
 from tinyllm.data.packing import (
     DatasetBuild,
     PackingError,
@@ -478,6 +480,7 @@ __all__ = [
     "M5ThinkingCandidate",
     "M6GateRepairMixtureManifest",
     "M6GateRepairTask",
+    "M6GateReplayMixtureManifest",
     "NormalizationConfig",
     "OASST1ImportConfig",
     "OffsetTokenizer",
@@ -527,6 +530,7 @@ __all__ = [
     "build_m2_dataset",
     "build_m5_ablation_mixture",
     "build_m5_format_repair_mixture",
+    "build_m6_gate_replay_mixture",
     "build_m5_formal_dataset",
     "build_m5_dual_mode_correction_mixture",
     "build_m6_gate_repair_mixture",

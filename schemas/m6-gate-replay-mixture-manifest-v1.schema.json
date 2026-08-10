@@ -1,0 +1,292 @@
+{
+  "$defs": {
+    "M5MixtureArtifactFile": {
+      "additionalProperties": false,
+      "description": "One immutable private mixture payload.",
+      "properties": {
+        "path": {
+          "const": "sequences.npz",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M5MixtureArtifactFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Continual-learning replay that preserves v2 gains while repairing its failures.",
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/M5MixtureArtifactFile"
+    },
+    "build_seed": {
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Build Seed",
+      "type": "integer"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "correction_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Correction Manifest Sha256",
+      "type": "string"
+    },
+    "correction_mixture_version": {
+      "const": "m5-dual-mode-correction-mixture-v1-4bc342d4",
+      "title": "Correction Mixture Version",
+      "type": "string"
+    },
+    "correction_nonthinking_reuse_count": {
+      "minimum": 0,
+      "title": "Correction Nonthinking Reuse Count",
+      "type": "integer"
+    },
+    "correction_nonthinking_source_sequences": {
+      "exclusiveMinimum": 0,
+      "title": "Correction Nonthinking Source Sequences",
+      "type": "integer"
+    },
+    "correction_nonthinking_supervised_tokens": {
+      "const": 400000,
+      "title": "Correction Nonthinking Supervised Tokens",
+      "type": "integer"
+    },
+    "correction_thinking_reuse_count": {
+      "minimum": 0,
+      "title": "Correction Thinking Reuse Count",
+      "type": "integer"
+    },
+    "correction_thinking_source_sequences": {
+      "exclusiveMinimum": 0,
+      "title": "Correction Thinking Source Sequences",
+      "type": "integer"
+    },
+    "correction_thinking_supervised_tokens": {
+      "const": 150000,
+      "title": "Correction Thinking Supervised Tokens",
+      "type": "integer"
+    },
+    "dataset_name": {
+      "const": "m6-gate-replay-mixture",
+      "default": "m6-gate-replay-mixture",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "diagnostic_protocol_version": {
+      "const": "m6-release-v2",
+      "title": "Diagnostic Protocol Version",
+      "type": "string"
+    },
+    "evaluation_prompt_overlap_count": {
+      "const": 0,
+      "title": "Evaluation Prompt Overlap Count",
+      "type": "integer"
+    },
+    "mixture_version": {
+      "pattern": "^m6-gate-replay-mixture-v1-[0-9a-f]{8}$",
+      "title": "Mixture Version",
+      "type": "string"
+    },
+    "nonthinking_sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Nonthinking Sequence Count",
+      "type": "integer"
+    },
+    "nonthinking_supervised_tokens": {
+      "const": 700000,
+      "title": "Nonthinking Supervised Tokens",
+      "type": "integer"
+    },
+    "nonthinking_template_id": {
+      "const": "qwen3-chatml-nonthinking-sft-v2",
+      "title": "Nonthinking Template Id",
+      "type": "string"
+    },
+    "nonthinking_template_sha256": {
+      "const": "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2",
+      "title": "Nonthinking Template Sha256",
+      "type": "string"
+    },
+    "pad_token_id": {
+      "const": 151643,
+      "title": "Pad Token Id",
+      "type": "integer"
+    },
+    "parent_content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Parent Content Sha256",
+      "type": "string"
+    },
+    "parent_dataset_version": {
+      "const": "m2-sft-v1-f82ff32e",
+      "title": "Parent Dataset Version",
+      "type": "string"
+    },
+    "partially_masked_sequences": {
+      "maximum": 4,
+      "minimum": 0,
+      "title": "Partially Masked Sequences",
+      "type": "integer"
+    },
+    "repair_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Repair Manifest Sha256",
+      "type": "string"
+    },
+    "repair_mixture_version": {
+      "const": "m6-gate-repair-mixture-v1-be2aa7fa",
+      "title": "Repair Mixture Version",
+      "type": "string"
+    },
+    "repair_nonthinking_reuse_count": {
+      "minimum": 0,
+      "title": "Repair Nonthinking Reuse Count",
+      "type": "integer"
+    },
+    "repair_nonthinking_source_sequences": {
+      "exclusiveMinimum": 0,
+      "title": "Repair Nonthinking Source Sequences",
+      "type": "integer"
+    },
+    "repair_nonthinking_supervised_tokens": {
+      "const": 300000,
+      "title": "Repair Nonthinking Supervised Tokens",
+      "type": "integer"
+    },
+    "repair_thinking_reuse_count": {
+      "minimum": 0,
+      "title": "Repair Thinking Reuse Count",
+      "type": "integer"
+    },
+    "repair_thinking_source_sequences": {
+      "exclusiveMinimum": 0,
+      "title": "Repair Thinking Source Sequences",
+      "type": "integer"
+    },
+    "repair_thinking_supervised_tokens": {
+      "const": 150000,
+      "title": "Repair Thinking Supervised Tokens",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Count",
+      "type": "integer"
+    },
+    "sequence_length": {
+      "const": 1024,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "source_consumed_evaluation_content": {
+      "const": false,
+      "title": "Source Consumed Evaluation Content",
+      "type": "boolean"
+    },
+    "target_supervised_tokens": {
+      "const": 1000000,
+      "title": "Target Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_fraction_basis_points": {
+      "const": 3000,
+      "title": "Thinking Fraction Basis Points",
+      "type": "integer"
+    },
+    "thinking_sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Thinking Sequence Count",
+      "type": "integer"
+    },
+    "thinking_supervised_tokens": {
+      "const": 300000,
+      "title": "Thinking Supervised Tokens",
+      "type": "integer"
+    },
+    "thinking_template_id": {
+      "const": "qwen3-chatml-thinking-v1",
+      "title": "Thinking Template Id",
+      "type": "string"
+    },
+    "thinking_template_sha256": {
+      "const": "4786143dbb7adb72a922d5efdcbe6596f2d65dcdc35d7bbf1b22830b795c2af9",
+      "title": "Thinking Template Sha256",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "mixture_version",
+    "parent_dataset_version",
+    "parent_content_sha256",
+    "diagnostic_protocol_version",
+    "source_consumed_evaluation_content",
+    "evaluation_prompt_overlap_count",
+    "correction_mixture_version",
+    "correction_manifest_sha256",
+    "repair_mixture_version",
+    "repair_manifest_sha256",
+    "tokenizer_revision",
+    "nonthinking_template_id",
+    "nonthinking_template_sha256",
+    "thinking_template_id",
+    "thinking_template_sha256",
+    "sequence_length",
+    "pad_token_id",
+    "target_supervised_tokens",
+    "thinking_fraction_basis_points",
+    "nonthinking_supervised_tokens",
+    "thinking_supervised_tokens",
+    "correction_nonthinking_supervised_tokens",
+    "repair_nonthinking_supervised_tokens",
+    "correction_thinking_supervised_tokens",
+    "repair_thinking_supervised_tokens",
+    "sequence_count",
+    "nonthinking_sequence_count",
+    "thinking_sequence_count",
+    "correction_nonthinking_source_sequences",
+    "repair_nonthinking_source_sequences",
+    "correction_thinking_source_sequences",
+    "repair_thinking_source_sequences",
+    "correction_nonthinking_reuse_count",
+    "repair_nonthinking_reuse_count",
+    "correction_thinking_reuse_count",
+    "repair_thinking_reuse_count",
+    "partially_masked_sequences",
+    "build_seed",
+    "content_sha256",
+    "artifact"
+  ],
+  "title": "M6GateReplayMixtureManifest",
+  "type": "object"
+}

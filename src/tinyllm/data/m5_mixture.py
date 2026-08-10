@@ -24,6 +24,7 @@ from tinyllm.data.m5_mixture_schema import (
     M5MixtureArtifactFile,
     M5MixtureManifest,
     M6GateRepairMixtureManifest,
+    M6GateReplayMixtureManifest,
 )
 from tinyllm.data.m5_r3_mixture_schema import M5R3MixtureManifest
 from tinyllm.data.reasoning import (
@@ -668,6 +669,7 @@ M5MixtureManifestType = (
     | M5R3MixtureManifest
     | M5DualModeCorrectionMixtureManifest
     | M6GateRepairMixtureManifest
+    | M6GateReplayMixtureManifest
 )
 
 
@@ -689,6 +691,7 @@ def m5_mixture_config_dataset_version(manifest: M5MixtureManifestType) -> str:
             M5R3MixtureManifest,
             M5DualModeCorrectionMixtureManifest,
             M6GateRepairMixtureManifest,
+            M6GateReplayMixtureManifest,
         ),
     ):
         return manifest.mixture_version
@@ -712,6 +715,8 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
             manifest = M5DualModeCorrectionMixtureManifest.model_validate(manifest_mapping)
         elif dataset_name == "m6-gate-repair-mixture":
             manifest = M6GateRepairMixtureManifest.model_validate(manifest_mapping)
+        elif dataset_name == "m6-gate-replay-mixture":
+            manifest = M6GateReplayMixtureManifest.model_validate(manifest_mapping)
         else:
             manifest = M5MixtureManifest.model_validate(manifest_mapping)
         marker = cast(dict[str, str], json.loads((root / _COMMIT_FILE).read_text(encoding="utf-8")))
@@ -862,6 +867,29 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
                         "nonthinking_template_sha256": (manifest.nonthinking_template_sha256),
                         "parent_content_sha256": manifest.parent_content_sha256,
                         "thinking_template_sha256": manifest.thinking_template_sha256,
+                    }
+                )
+            elif isinstance(manifest, M6GateReplayMixtureManifest):
+                expected_content = content_sha256(
+                    {
+                        "arrays_sha256": arrays_hash,
+                        "build_seed": manifest.build_seed,
+                        "correction_manifest_sha256": manifest.correction_manifest_sha256,
+                        "correction_nonthinking_supervised_tokens": (
+                            manifest.correction_nonthinking_supervised_tokens
+                        ),
+                        "correction_thinking_supervised_tokens": (
+                            manifest.correction_thinking_supervised_tokens
+                        ),
+                        "diagnostic_protocol_version": manifest.diagnostic_protocol_version,
+                        "parent_content_sha256": manifest.parent_content_sha256,
+                        "repair_manifest_sha256": manifest.repair_manifest_sha256,
+                        "repair_nonthinking_supervised_tokens": (
+                            manifest.repair_nonthinking_supervised_tokens
+                        ),
+                        "repair_thinking_supervised_tokens": (
+                            manifest.repair_thinking_supervised_tokens
+                        ),
                     }
                 )
             else:

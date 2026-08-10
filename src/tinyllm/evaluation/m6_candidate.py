@@ -58,15 +58,15 @@ def _import_correction_candidate(
     except (OSError, ValueError, ValidationError) as exc:
         raise M6CandidateImportError("M6 correction source metadata is invalid") from exc
     release = load_m6_release_config(release_config_path)
-    source_kind: Literal["m6-dual-mode-correction", "m6-gate-repair"]
+    source_kind: Literal["m6-dual-mode-correction", "m6-gate-repair", "m6-gate-replay"]
     if release.protocol_version == "m6-release-v2":
         source_kind = "m6-dual-mode-correction"
         expected_mixture = "m5-dual-mode-correction-mixture-v1-4bc342d4"
         expected_manifest = "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
     elif release.protocol_version == "m6-release-v3":
-        source_kind = "m6-gate-repair"
-        expected_mixture = "m6-gate-repair-mixture-v1-be2aa7fa"
-        expected_manifest = "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
+        source_kind = "m6-gate-replay"
+        expected_mixture = "m6-gate-replay-mixture-v1-6c169970"
+        expected_manifest = "c5ceb1e5597a8e253d7c370484f9aa06d22b0a26dbfe597043d9302d8e580fa9"
     else:
         raise M6CandidateImportError("M6 remediation requires a holdout release protocol")
     export_sha256 = model_export_sha256(model_dir)

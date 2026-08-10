@@ -272,3 +272,74 @@ class M6GateRepairMixtureManifest(StrictSchema):
         if self.nonthinking_sequence_count + self.thinking_sequence_count != self.sequence_count:
             raise ValueError("M6 gate-repair sequence counts differ")
         return self
+
+
+class M6GateReplayMixtureManifest(StrictSchema):
+    """Continual-learning replay that preserves v2 gains while repairing its failures."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    dataset_name: Literal["m6-gate-replay-mixture"] = "m6-gate-replay-mixture"
+    mixture_version: str = Field(pattern=r"^m6-gate-replay-mixture-v1-[0-9a-f]{8}$")
+    parent_dataset_version: Literal["m2-sft-v1-f82ff32e"]
+    parent_content_sha256: str = Field(pattern=SHA256_PATTERN)
+    diagnostic_protocol_version: Literal["m6-release-v2"]
+    source_consumed_evaluation_content: Literal[False]
+    evaluation_prompt_overlap_count: Literal[0]
+    correction_mixture_version: Literal["m5-dual-mode-correction-mixture-v1-4bc342d4"]
+    correction_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    repair_mixture_version: Literal["m6-gate-repair-mixture-v1-be2aa7fa"]
+    repair_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    tokenizer_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
+    nonthinking_template_id: Literal["qwen3-chatml-nonthinking-sft-v2"]
+    nonthinking_template_sha256: Literal[
+        "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2"
+    ]
+    thinking_template_id: Literal["qwen3-chatml-thinking-v1"]
+    thinking_template_sha256: Literal[
+        "4786143dbb7adb72a922d5efdcbe6596f2d65dcdc35d7bbf1b22830b795c2af9"
+    ]
+    sequence_length: Literal[1024]
+    pad_token_id: Literal[151643]
+    target_supervised_tokens: Literal[1_000_000]
+    thinking_fraction_basis_points: Literal[3000]
+    nonthinking_supervised_tokens: Literal[700_000]
+    thinking_supervised_tokens: Literal[300_000]
+    correction_nonthinking_supervised_tokens: Literal[400_000]
+    repair_nonthinking_supervised_tokens: Literal[300_000]
+    correction_thinking_supervised_tokens: Literal[150_000]
+    repair_thinking_supervised_tokens: Literal[150_000]
+    sequence_count: int = Field(gt=0)
+    nonthinking_sequence_count: int = Field(gt=0)
+    thinking_sequence_count: int = Field(gt=0)
+    correction_nonthinking_source_sequences: int = Field(gt=0)
+    repair_nonthinking_source_sequences: int = Field(gt=0)
+    correction_thinking_source_sequences: int = Field(gt=0)
+    repair_thinking_source_sequences: int = Field(gt=0)
+    correction_nonthinking_reuse_count: int = Field(ge=0)
+    repair_nonthinking_reuse_count: int = Field(ge=0)
+    correction_thinking_reuse_count: int = Field(ge=0)
+    repair_thinking_reuse_count: int = Field(ge=0)
+    partially_masked_sequences: int = Field(ge=0, le=4)
+    build_seed: int = Field(ge=0, le=2**32 - 1)
+    content_sha256: str = Field(pattern=SHA256_PATTERN)
+    artifact: M5MixtureArtifactFile
+
+    @model_validator(mode="after")
+    def validate_counts_and_identity(self) -> M6GateReplayMixtureManifest:
+        """Bind the replay ratios and content-addressed dataset identity."""
+
+        if self.mixture_version != f"m6-gate-replay-mixture-v1-{self.content_sha256[:8]}":
+            raise ValueError("M6 gate-replay version does not match content hash")
+        if (
+            self.correction_nonthinking_supervised_tokens
+            + self.repair_nonthinking_supervised_tokens
+            != self.nonthinking_supervised_tokens
+            or self.correction_thinking_supervised_tokens + self.repair_thinking_supervised_tokens
+            != self.thinking_supervised_tokens
+            or self.nonthinking_supervised_tokens + self.thinking_supervised_tokens
+            != self.target_supervised_tokens
+        ):
+            raise ValueError("M6 gate-replay supervised-token strata differ")
+        if self.nonthinking_sequence_count + self.thinking_sequence_count != self.sequence_count:
+            raise ValueError("M6 gate-replay sequence counts differ")
+        return self

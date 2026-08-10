@@ -38,6 +38,8 @@ from tinyllm.evaluation.m6_schema import (
     M6DomainPassSummary,
     M6DomainTranscript,
     M6ModelIdentity,
+    M6ProtocolVersion,
+    M6SuiteVersion,
 )
 from tinyllm.evaluation.schema import EvaluationItem
 from tinyllm.lineage import read_git_identity
@@ -46,6 +48,14 @@ from tinyllm.schemas import canonical_config_hash
 
 class M6DomainError(RuntimeError):
     """Raised when M6 domain generation or review fails closed."""
+
+
+def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path:
+    relative = {
+        "tinyllm-domain-v1-83bdd8ef": Path("evals/domain/v1/items.jsonl"),
+        "tinyllm-domain-holdout-v1-c0c948cc": Path("evals/domain/v2/items.jsonl"),
+    }[suite_version]
+    return project_root / relative
 
 
 def _atomic_json(path: Path, value: object) -> None:
@@ -323,12 +333,14 @@ def _summary(
     environment_sha256: str,
     hardware_sha256: str,
     raw_results_sha256: str,
+    protocol_version: M6ProtocolVersion,
+    suite_version: M6SuiteVersion,
 ) -> M6DomainPassSummary:
     return M6DomainPassSummary(
         status="awaiting_human_review",
         evaluation_id=evaluation_id,
-        protocol_version="m6-release-v1",
-        suite_version="tinyllm-domain-v1-83bdd8ef",
+        protocol_version=protocol_version,
+        suite_version=suite_version,
         config_sha256=config_sha256,
         git_commit=git_commit,
         git_dirty=False,
@@ -404,7 +416,7 @@ def run_m6_domain_pass(
         or model_export_sha256(model_dir) != model_identity.model_artifact_sha256
     ):
         raise M6DomainError("M6 Candidate model or Tokenizer identity differs from its import")
-    items = load_evaluation_items(project_root / "evals/domain/v1/items.jsonl")
+    items = load_evaluation_items(_suite_items_path(project_root, release.suite_version))
     if len(items) != 300:
         raise M6DomainError("M6 domain suite must contain exactly 300 items")
     output_dir.mkdir(parents=True)
@@ -591,6 +603,8 @@ def run_m6_domain_pass(
         environment_sha256=sha256_file(environment_path),
         hardware_sha256=sha256_file(hardware_path),
         raw_results_sha256=sha256_file(raw_path),
+        protocol_version=release.protocol_version,
+        suite_version=release.suite_version,
     )
     _atomic_json(output_dir / "summary.json", summary.to_dict())
     return summary
@@ -614,7 +628,7 @@ def finalize_m6_domain_pass(
     if summary.raw_results_sha256 != sha256_file(raw_path):
         raise M6DomainError("M6 transcript identity differs from pass summary")
     transcripts = _load_transcripts(raw_path)
-    items = load_evaluation_items(project_root.resolve() / "evals/domain/v1/items.jsonl")
+    items = load_evaluation_items(_suite_items_path(project_root.resolve(), summary.suite_version))
     judgments = load_human_rubric_judgments(judgments_path)
     judgment_map: dict[str, HumanRubricJudgment] = {
         judgment.item_id: judgment for judgment in judgments

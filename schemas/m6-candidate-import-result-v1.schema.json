@@ -177,7 +177,10 @@
       "$ref": "#/$defs/M6ModelIdentity"
     },
     "protocol_version": {
-      "const": "m6-release-v1",
+      "enum": [
+        "m6-release-v1",
+        "m6-release-v2"
+      ],
       "title": "Protocol Version",
       "type": "string"
     },
@@ -205,6 +208,15 @@
     "source_hardware_sha256": {
       "pattern": "^[a-f0-9]{64}$",
       "title": "Source Hardware Sha256",
+      "type": "string"
+    },
+    "source_kind": {
+      "default": "m5-formal-snapshot",
+      "enum": [
+        "m5-formal-snapshot",
+        "m6-dual-mode-correction"
+      ],
+      "title": "Source Kind",
       "type": "string"
     },
     "source_result_sha256": {

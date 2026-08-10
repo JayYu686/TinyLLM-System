@@ -57,6 +57,7 @@ from tinyllm.evaluation import (
     M6ModelIdentity,
     M6PromotionError,
     assemble_m6_base_evaluation,
+    assemble_m6_base_v2_evaluation,
     assemble_m6_candidate_evaluation,
     compare_m6_evaluations,
     complete_baseline_human_review,
@@ -76,6 +77,7 @@ from tinyllm.evaluation import (
     run_m6_general_pass,
     write_m6_comparison,
 )
+from tinyllm.schemas import canonical_config_hash
 from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
 from tinyllm.training import (
     CheckpointError,
@@ -722,7 +724,7 @@ def eval_m6_import_candidate(
     ],
     model_dir: Annotated[
         Path,
-        typer.Option("--model-dir", help="Absolute frozen M5 10M model export."),
+        typer.Option("--model-dir", help="Absolute frozen Candidate model export."),
     ],
     output: Annotated[
         Path,
@@ -891,12 +893,17 @@ def eval_m6_domain(
     )
     try:
         imported = load_m6_base_import(base_import)
+        release = load_m6_release_config(config)
     except (M6BaseImportError, M6ContractError) as exc:
         _output_error(str(exc), json_output=json_output, error_code="M6_CONFIG_ERROR")
         raise typer.Exit(code=2) from exc
     result = _run_m6_domain_cli(
         model_identity=imported.model,
-        expected_config_sha256=imported.config_sha256,
+        expected_config_sha256=(
+            canonical_config_hash(release)
+            if release.protocol_version == "m6-release-v2"
+            else imported.config_sha256
+        ),
         config=config,
         model_dir=model_dir,
         tokenizer_dir=tokenizer_dir,
@@ -918,7 +925,7 @@ def eval_m6_candidate_domain(
     ],
     model_dir: Annotated[
         Path,
-        typer.Option("--model-dir", help="Absolute frozen M5 10M model export."),
+        typer.Option("--model-dir", help="Absolute frozen Candidate model export."),
     ],
     tokenizer_dir: Annotated[
         Path,
@@ -1175,21 +1182,45 @@ def eval_m6_assemble(
         _output_error("M6 assembly artifact paths must be absolute", json_output=json_output)
         raise typer.Exit(code=2)
     try:
+        release = load_m6_release_config(config)
         if role == "base":
-            if any(
-                path is not None for path in (nonthinking_pass, nonthinking_judgments, general_pass)
-            ):
-                raise M6AssemblyError(
-                    "Base assembly reuses imported Non-thinking and general evidence"
+            if release.protocol_version == "m6-release-v2":
+                if (
+                    nonthinking_pass is None
+                    or nonthinking_judgments is None
+                    or general_pass is not None
+                    or not nonthinking_pass.is_absolute()
+                    or not nonthinking_judgments.is_absolute()
+                ):
+                    raise M6AssemblyError(
+                        "M6 v2 Base assembly requires absolute Non-thinking evidence"
+                    )
+                result = assemble_m6_base_v2_evaluation(
+                    release_config_path=config,
+                    base_import_path=evidence_import,
+                    thinking_pass_directory=thinking_pass,
+                    thinking_judgments_path=thinking_judgments,
+                    nonthinking_pass_directory=nonthinking_pass,
+                    nonthinking_judgments_path=nonthinking_judgments,
+                    output_path=output,
+                    project_root=project_root,
                 )
-            result = assemble_m6_base_evaluation(
-                release_config_path=config,
-                base_import_path=evidence_import,
-                thinking_pass_directory=thinking_pass,
-                thinking_judgments_path=thinking_judgments,
-                output_path=output,
-                project_root=project_root,
-            )
+            else:
+                if any(
+                    path is not None
+                    for path in (nonthinking_pass, nonthinking_judgments, general_pass)
+                ):
+                    raise M6AssemblyError(
+                        "M6 v1 Base assembly reuses imported Non-thinking and general evidence"
+                    )
+                result = assemble_m6_base_evaluation(
+                    release_config_path=config,
+                    base_import_path=evidence_import,
+                    thinking_pass_directory=thinking_pass,
+                    thinking_judgments_path=thinking_judgments,
+                    output_path=output,
+                    project_root=project_root,
+                )
         else:
             if (
                 nonthinking_pass is None

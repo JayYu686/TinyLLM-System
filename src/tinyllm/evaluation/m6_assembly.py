@@ -242,6 +242,78 @@ def assemble_m6_base_evaluation(
     return result
 
 
+def assemble_m6_base_v2_evaluation(
+    *,
+    release_config_path: Path,
+    base_import_path: Path,
+    thinking_pass_directory: Path,
+    thinking_judgments_path: Path,
+    nonthinking_pass_directory: Path,
+    nonthinking_judgments_path: Path,
+    output_path: Path,
+    project_root: Path,
+) -> M6EvaluationResult:
+    """Assemble v2 Base from two new domain passes and unchanged general evidence."""
+
+    release = load_m6_release_config(release_config_path)
+    imported = load_m6_base_import(base_import_path)
+    if release.protocol_version != "m6-release-v2":
+        raise M6AssemblyError("full Base assembly is reserved for M6 v2")
+    config_sha256 = canonical_config_hash(release)
+    thinking_summary, thinking = _load_domain_component(
+        thinking_pass_directory,
+        thinking_judgments_path,
+        expected_mode="thinking",
+        expected_model=imported.model,
+        expected_config_sha256=config_sha256,
+    )
+    nonthinking_summary, nonthinking = _load_domain_component(
+        nonthinking_pass_directory,
+        nonthinking_judgments_path,
+        expected_mode="nonthinking",
+        expected_model=imported.model,
+        expected_config_sha256=config_sha256,
+    )
+    git_commit, git_dirty = read_git_identity(project_root.resolve())
+    if git_dirty:
+        raise M6AssemblyError("formal M6 assembly requires a clean Git worktree")
+    raw_domain = _component_sha256(
+        {
+            "base_import": sha256_file(base_import_path),
+            "thinking_raw": thinking_summary.raw_results_sha256,
+            "nonthinking_raw": nonthinking_summary.raw_results_sha256,
+        }
+    )
+    result = _build_evaluation(
+        release=release,
+        git_commit=git_commit,
+        model=imported.model,
+        thinking=thinking,
+        nonthinking=nonthinking,
+        general=imported.general,
+        thinking_review_sha256=cast(str, thinking_summary.human_review_sha256),
+        nonthinking_review_sha256=cast(str, nonthinking_summary.human_review_sha256),
+        software_environment_sha256=_component_sha256(
+            {
+                "thinking": thinking_summary.environment_sha256,
+                "nonthinking": nonthinking_summary.environment_sha256,
+                "general_reuse": imported.source_environment_sha256,
+            }
+        ),
+        hardware_sha256=_component_sha256(
+            {
+                "thinking": thinking_summary.hardware_sha256,
+                "nonthinking": nonthinking_summary.hardware_sha256,
+                "general_reuse": imported.source_hardware_sha256,
+            }
+        ),
+        raw_domain_results_sha256=raw_domain,
+        raw_general_results_sha256=imported.source_general_tree_sha256,
+    )
+    _atomic_evaluation(output_path, result)
+    return result
+
+
 def assemble_m6_candidate_evaluation(
     *,
     release_config_path: Path,

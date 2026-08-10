@@ -71,7 +71,10 @@
           "type": "number"
         },
         "seed": {
-          "const": 20260809,
+          "enum": [
+            20260809,
+            20260810
+          ],
           "title": "Seed",
           "type": "integer"
         },

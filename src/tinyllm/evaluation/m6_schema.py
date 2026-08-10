@@ -12,6 +12,11 @@ from tinyllm.schemas.base import StrictSchema
 from tinyllm.schemas.run import SHA256_PATTERN
 
 M6Mode = Literal["thinking", "nonthinking"]
+M6ProtocolVersion = Literal["m6-release-v1", "m6-release-v2"]
+M6SuiteVersion = Literal[
+    "tinyllm-domain-v1-83bdd8ef",
+    "tinyllm-domain-holdout-v1-c0c948cc",
+]
 M6Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
 M6ScorerKind = Literal[
     "exact_match",
@@ -40,7 +45,7 @@ def _freeze(value: object) -> object:
 class M6BootstrapConfig(StrictSchema):
     """Paired cluster-bootstrap policy fixed before release-set evaluation."""
 
-    seed: Literal[20260809]
+    seed: Literal[20260809, 20260810]
     replicates: Literal[10000]
     confidence_basis_points: Literal[9500]
     resampling_unit: Literal["bilingual-pair-or-english-singleton"]
@@ -75,7 +80,7 @@ class M6ThinkingGenerationConfig(StrictSchema):
     top_p: float = Field(gt=0.0, le=1.0)
     top_k: Literal[20]
     repetition_penalty: float = Field(ge=1.0, le=2.0)
-    seed: Literal[20260809]
+    seed: Literal[20260809, 20260810]
     early_stopping_text: Literal[
         "\n\n Considering the limited time by the user, I have to give the solution "
         "based on the thinking directly now.\n</think>\n\n"
@@ -172,10 +177,11 @@ class M6ReleaseConfig(StrictSchema):
     """Frozen M6 comparison policy, independent from model outputs."""
 
     schema_version: Literal["1.0"] = "1.0"
-    protocol_version: Literal["m6-release-v1"]
-    suite_version: Literal["tinyllm-domain-v1-83bdd8ef"]
+    protocol_version: M6ProtocolVersion
+    suite_version: M6SuiteVersion
     suite_content_sha256: Literal[
-        "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27"
+        "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+        "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
     ]
     expected_domain_items: Literal[300]
     expected_languages: Literal["en-210_zh-90"]
@@ -198,6 +204,26 @@ class M6ReleaseConfig(StrictSchema):
         expected = ("tinyllm_arc_easy", "tinyllm_hellaswag", "tinyllm_piqa")
         if self.general_tasks != expected:
             raise ValueError("M6 general tasks must use the fixed order")
+        releases = {
+            "m6-release-v1": (
+                "tinyllm-domain-v1-83bdd8ef",
+                "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+                20260809,
+            ),
+            "m6-release-v2": (
+                "tinyllm-domain-holdout-v1-c0c948cc",
+                "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
+                20260810,
+            ),
+        }
+        suite, content, seed = releases[self.protocol_version]
+        if (
+            self.suite_version != suite
+            or self.suite_content_sha256 != content
+            or self.bootstrap.seed != seed
+            or self.domain_execution.thinking.seed != seed
+        ):
+            raise ValueError("M6 protocol, suite identity, and deterministic seeds differ")
         return self
 
 
@@ -471,8 +497,8 @@ class M6DomainPassSummary(StrictSchema):
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["awaiting_human_review", "succeeded"]
     evaluation_id: str = Field(min_length=1, max_length=180)
-    protocol_version: Literal["m6-release-v1"]
-    suite_version: Literal["tinyllm-domain-v1-83bdd8ef"]
+    protocol_version: M6ProtocolVersion
+    suite_version: M6SuiteVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
@@ -532,7 +558,7 @@ class M6BaseImportResult(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
-    protocol_version: Literal["m6-release-v1"]
+    protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     source_run_id: str = Field(min_length=1, max_length=180)
     source_config_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -559,7 +585,8 @@ class M6CandidateImportResult(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
-    protocol_version: Literal["m6-release-v1"]
+    source_kind: Literal["m5-formal-snapshot", "m6-dual-mode-correction"] = "m5-formal-snapshot"
+    protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     source_run_id: str = Field(min_length=1, max_length=180)
     source_result_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -572,15 +599,23 @@ class M6CandidateImportResult(StrictSchema):
 
     @model_validator(mode="after")
     def validate_import(self) -> M6CandidateImportResult:
-        if (
-            self.model.role != "candidate"
-            or self.model.adaptation != "full_sft"
-            or self.model.training_checkpoint_id != "checkpoint-tokens-0010000532"
+        if self.model.role != "candidate" or self.model.adaptation != "full_sft":
+            raise ValueError("M6 Candidate import requires one Full-SFT Candidate")
+        if self.source_kind == "m5-formal-snapshot" and (
+            self.model.training_checkpoint_id != "checkpoint-tokens-0010000532"
             or self.model.training_tokens != 10_000_532
             or self.model.model_artifact_sha256
             != "b894b6ea081bd174ef0132182c231afea491ced2e4593c61cf1ef103447e3c5c"
         ):
             raise ValueError("M6 Candidate import differs from the frozen M5 10M snapshot")
+        if self.source_kind == "m6-dual-mode-correction" and (
+            self.model.training_checkpoint_id != "checkpoint-tokens-0001000000"
+            or self.model.training_tokens != 1_000_000
+            or self.model.dataset_version != "m5-dual-mode-correction-mixture-v1-4bc342d4"
+            or self.model.dataset_manifest_sha256
+            != "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+        ):
+            raise ValueError("M6 Candidate import differs from the dual-mode correction contract")
         return self
 
 
@@ -629,7 +664,7 @@ class M6GeneralPassSummary(StrictSchema):
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
     evaluation_id: str = Field(min_length=1, max_length=180)
-    protocol_version: Literal["m6-release-v1"]
+    protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
@@ -655,8 +690,8 @@ class M6EvaluationResult(StrictSchema):
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
     evaluation_id: str = Field(min_length=1, max_length=180)
-    protocol_version: Literal["m6-release-v1"]
-    suite_version: Literal["tinyllm-domain-v1-83bdd8ef"]
+    protocol_version: M6ProtocolVersion
+    suite_version: M6SuiteVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: bool
@@ -788,7 +823,7 @@ class M6ComparisonResult(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["accepted", "rejected"]
-    protocol_version: Literal["m6-release-v1"]
+    protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     base_evaluation_id: str = Field(min_length=1, max_length=180)
     base_evaluation_sha256: str = Field(pattern=SHA256_PATTERN)

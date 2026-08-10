@@ -551,7 +551,10 @@
       "type": "string"
     },
     "protocol_version": {
-      "const": "m6-release-v1",
+      "enum": [
+        "m6-release-v1",
+        "m6-release-v2"
+      ],
       "title": "Protocol Version",
       "type": "string"
     },
@@ -582,7 +585,10 @@
       "type": "string"
     },
     "suite_version": {
-      "const": "tinyllm-domain-v1-83bdd8ef",
+      "enum": [
+        "tinyllm-domain-v1-83bdd8ef",
+        "tinyllm-domain-holdout-v1-c0c948cc"
+      ],
       "title": "Suite Version",
       "type": "string"
     },

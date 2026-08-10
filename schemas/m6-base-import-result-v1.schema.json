@@ -497,7 +497,10 @@
       "$ref": "#/$defs/M6DomainModeResult"
     },
     "protocol_version": {
-      "const": "m6-release-v1",
+      "enum": [
+        "m6-release-v1",
+        "m6-release-v2"
+      ],
       "title": "Protocol Version",
       "type": "string"
     },

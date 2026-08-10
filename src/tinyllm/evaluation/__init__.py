@@ -133,6 +133,7 @@ from tinyllm.evaluation.m6 import (
 from tinyllm.evaluation.m6_assembly import (
     M6AssemblyError,
     assemble_m6_base_evaluation,
+    assemble_m6_base_v2_evaluation,
     assemble_m6_candidate_evaluation,
 )
 from tinyllm.evaluation.m6_base import (
@@ -304,6 +305,7 @@ __all__ = [
     "analyze_m5_format_failures",
     "analyze_m5_r2_failures",
     "assemble_m6_base_evaluation",
+    "assemble_m6_base_v2_evaluation",
     "assemble_m6_candidate_evaluation",
     "build_evaluation_manifest",
     "build_lm_eval_command",

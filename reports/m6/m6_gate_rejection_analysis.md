@@ -82,5 +82,11 @@ Think 块作为已 Mask 的输入上下文，只监督最终答案。Thinking �
   Packing 为 2,562 条序列，避免将短样本逐条 Pad 到 1,024 所产生的无效计算；
 - Token 审计：1,000,000 个监督 Token，10,557 个 Non-thinking 监督起点全部具有被 Mask 的
   v2 模式上下文，2,185 条 Thinking 序列全部从 `<think>` 开始，错误计数均为 0；
-- 双 Seed Proxy：尚未执行；
+- Seed 42 Proxy：已完成；Thinking 93.5%、Non-thinking 79.5%，Non-thinking JSON
+  完整率 100%，可见推理泄漏为 0；
+- Seed 20260810 Proxy：已完成；Thinking 91.0%、Non-thinking 80.5%，Non-thinking JSON
+  完整率 100%，可见推理泄漏为 0；
 - M6 v2 正式晋级：尚未执行。
+
+后续正式执行的 Candidate 选择、独立 Suite 和不变门禁已在
+[M6 v2 正式执行预注册](m6_v2_execution_plan.md)中固定。

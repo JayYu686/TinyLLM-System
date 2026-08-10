@@ -14,6 +14,7 @@ from tinyllm.evaluation.m6 import load_m6_release_config
 from tinyllm.evaluation.m6_base import sha256_file
 from tinyllm.evaluation.m6_schema import M6CandidateImportResult, M6ModelIdentity
 from tinyllm.schemas import canonical_config_hash
+from tinyllm.training.m5_ablation_schema import M5AblationRunResult, M5CheckpointManifest
 from tinyllm.training.m5_config import load_m5_sft_config
 from tinyllm.training.m5_formal_schema import (
     M5FormalCheckpointManifest,
@@ -30,6 +31,106 @@ FROZEN_MODEL_PARAMETERS = 596_049_920
 
 class M6CandidateImportError(RuntimeError):
     """Raised when the frozen M5 Candidate lineage is incomplete or inconsistent."""
+
+
+def _import_correction_candidate(
+    *,
+    release_config_path: Path,
+    source_run: Path,
+    model_dir: Path,
+    output_path: Path | None,
+) -> M6CandidateImportResult:
+    """Import one completed, preregistered dual-mode template correction Run."""
+
+    expected_model_dir = source_run / "exports" / "model"
+    if model_dir.resolve() != expected_model_dir.resolve():
+        raise M6CandidateImportError("M6 correction model path differs from its Run export")
+    result_path = source_run / "result.json"
+    config_path = source_run / "config.original.yaml"
+    environment_path = source_run / "environment.json"
+    try:
+        result = M5AblationRunResult.model_validate_json(result_path.read_bytes())
+        config = load_m5_sft_config(config_path)
+        checkpoint_path = source_run / "checkpoints" / result.latest_checkpoint
+        manifest_path = checkpoint_path / "manifest.json"
+        manifest = M5CheckpointManifest.model_validate_json(manifest_path.read_bytes())
+    except (OSError, ValueError, ValidationError) as exc:
+        raise M6CandidateImportError("M6 correction source metadata is invalid") from exc
+    release = load_m6_release_config(release_config_path)
+    export_sha256 = model_export_sha256(model_dir)
+    config_sha256 = canonical_config_hash(config)
+    hardware_sha256 = hashlib.sha256(
+        json.dumps(
+            {
+                "gpu_name": result.gpu_name,
+                "peak_allocated_bytes": result.peak_allocated_bytes,
+                "peak_reserved_bytes": result.peak_reserved_bytes,
+                "physical_gpu_index": result.physical_gpu_index,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+    ).hexdigest()
+    if (
+        release.protocol_version != "m6-release-v2"
+        or result.status != "succeeded"
+        or result.run_id != source_run.name
+        or result.git_dirty
+        or result.config_sha256 != config_sha256
+        or result.supervised_tokens != 1_000_000
+        or result.latest_checkpoint != "checkpoint-tokens-0001000000"
+        or result.mixture_version != "m5-dual-mode-correction-mixture-v1-4bc342d4"
+        or result.mixture_manifest_sha256
+        != "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+        or result.export_sha256 != export_sha256
+        or config.data.dataset_version != result.mixture_version
+        or config.data.mix_manifest_sha256 != result.mixture_manifest_sha256
+        or config.evaluation.consume_m6_frozen_results
+        or manifest.run_id != result.run_id
+        or manifest.checkpoint_id != result.latest_checkpoint
+        or manifest.supervised_tokens != result.supervised_tokens
+        or manifest.config_sha256 != result.config_sha256
+        or manifest.mixture_version != result.mixture_version
+        or manifest.mixture_manifest_sha256 != result.mixture_manifest_sha256
+        or manifest.git_commit != result.git_commit
+        or not manifest.pinned
+        or manifest.pin_reason != "final"
+        or sha256_file(checkpoint_path / manifest.file.path) != manifest.file.sha256
+    ):
+        raise M6CandidateImportError("M6 correction lineage is incomplete or inconsistent")
+    imported = M6CandidateImportResult(
+        status="succeeded",
+        source_kind="m6-dual-mode-correction",
+        protocol_version=release.protocol_version,
+        config_sha256=canonical_config_hash(release),
+        source_run_id=result.run_id,
+        source_result_sha256=sha256_file(result_path),
+        source_git_commit=result.git_commit,
+        source_environment_sha256=sha256_file(environment_path),
+        source_hardware_sha256=hardware_sha256,
+        checkpoint_manifest_sha256=sha256_file(manifest_path),
+        snapshot_sha256=export_sha256,
+        model=M6ModelIdentity(
+            role="candidate",
+            repository="Qwen/Qwen3-0.6B",
+            base_revision=result.model_revision,
+            attention_architecture=result.attention_architecture,
+            adaptation="full_sft",
+            model_artifact_sha256=export_sha256,
+            model_parameters=FROZEN_MODEL_PARAMETERS,
+            training_run_id=result.run_id,
+            training_checkpoint_id=result.latest_checkpoint,
+            training_tokens=result.supervised_tokens,
+            training_config_sha256=result.config_sha256,
+            dataset_version=result.mixture_version,
+            dataset_manifest_sha256=result.mixture_manifest_sha256,
+        ),
+    )
+    if output_path is not None:
+        if not output_path.is_absolute():
+            raise M6CandidateImportError("M6 Candidate import output path must be absolute")
+        _atomic_json(output_path, imported.to_dict())
+    return imported
 
 
 def model_export_sha256(root: Path) -> str:
@@ -68,15 +169,17 @@ def import_m5_candidate_evidence(
     model_dir: Path,
     output_path: Path | None = None,
 ) -> M6CandidateImportResult:
-    """Validate the frozen M5 10M Full-SFT snapshot and emit its M6 identity."""
+    """Validate a supported Full-SFT Candidate and emit its bound M6 identity."""
 
-    if (
-        not source_run.is_absolute()
-        or not source_run.is_dir()
-        or source_run.is_symlink()
-        or source_run.name != FROZEN_RUN_ID
-    ):
+    if not source_run.is_absolute() or not source_run.is_dir() or source_run.is_symlink():
         raise M6CandidateImportError("M6 Candidate source Run differs from the frozen Run")
+    if source_run.name != FROZEN_RUN_ID:
+        return _import_correction_candidate(
+            release_config_path=release_config_path,
+            source_run=source_run,
+            model_dir=model_dir,
+            output_path=output_path,
+        )
     snapshot_root = source_run / "evaluations" / FROZEN_CHECKPOINT_ID
     expected_model_dir = snapshot_root / "model"
     if model_dir.resolve() != expected_model_dir.resolve():

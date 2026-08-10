@@ -25,7 +25,10 @@
           "type": "string"
         },
         "seed": {
-          "const": 20260809,
+          "enum": [
+            20260809,
+            20260810
+          ],
           "title": "Seed",
           "type": "integer"
         }
@@ -331,7 +334,10 @@
           "type": "number"
         },
         "seed": {
-          "const": 20260809,
+          "enum": [
+            20260809,
+            20260810
+          ],
           "title": "Seed",
           "type": "integer"
         },
@@ -459,7 +465,10 @@
       "type": "array"
     },
     "protocol_version": {
-      "const": "m6-release-v1",
+      "enum": [
+        "m6-release-v1",
+        "m6-release-v2"
+      ],
       "title": "Protocol Version",
       "type": "string"
     },
@@ -470,12 +479,18 @@
       "type": "string"
     },
     "suite_content_sha256": {
-      "const": "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+      "enum": [
+        "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
+        "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842"
+      ],
       "title": "Suite Content Sha256",
       "type": "string"
     },
     "suite_version": {
-      "const": "tinyllm-domain-v1-83bdd8ef",
+      "enum": [
+        "tinyllm-domain-v1-83bdd8ef",
+        "tinyllm-domain-holdout-v1-c0c948cc"
+      ],
       "title": "Suite Version",
       "type": "string"
     }

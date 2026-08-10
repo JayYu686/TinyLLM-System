@@ -20,6 +20,7 @@ from tinyllm.evaluation import (
     model_export_sha256,
     sha256_file,
 )
+from tinyllm.training.m5_ablation_schema import M5AblationRunResult, M5CheckpointManifest
 
 
 def _candidate_import() -> M6CandidateImportResult:
@@ -62,6 +63,116 @@ def test_m6_candidate_import_freezes_selected_snapshot() -> None:
             imported.to_dict()
             | {"model": imported.model.to_dict() | {"training_tokens": 20_001_758}}
         )
+
+
+def test_m6_candidate_import_accepts_only_aligned_correction_identity() -> None:
+    model = _candidate_import().model.model_copy(
+        update={
+            "model_artifact_sha256": "4" * 64,
+            "training_run_id": "20260810T095257Z-m6-dual-mode-fix-seed42-ffd49bd9-aeb6",
+            "training_checkpoint_id": "checkpoint-tokens-0001000000",
+            "training_tokens": 1_000_000,
+            "training_config_sha256": "5" * 64,
+            "dataset_version": "m5-dual-mode-correction-mixture-v1-4bc342d4",
+            "dataset_manifest_sha256": (
+                "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+            ),
+        }
+    )
+    imported = _candidate_import().model_copy(
+        update={
+            "source_kind": "m6-dual-mode-correction",
+            "protocol_version": "m6-release-v2",
+            "model": model,
+        }
+    )
+
+    assert imported.model.training_tokens == 1_000_000
+    with pytest.raises(ValidationError, match="correction contract"):
+        M6CandidateImportResult.model_validate(
+            imported.to_dict() | {"model": imported.model.to_dict() | {"training_tokens": 999_999}}
+        )
+
+
+def test_m6_correction_import_binds_run_checkpoint_and_export(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    run = (tmp_path / "20260810T095257Z-m6-dual-mode-fix-seed42-ffd49bd9-aeb6").resolve()
+    model = run / "exports/model"
+    checkpoint = run / "checkpoints/checkpoint-tokens-0001000000"
+    model.mkdir(parents=True)
+    checkpoint.mkdir(parents=True)
+    (model / "model.safetensors").write_bytes(b"model")
+    (run / "result.json").write_text("{}", encoding="utf-8")
+    (run / "config.original.yaml").write_text("config", encoding="utf-8")
+    (run / "environment.json").write_text("{}", encoding="utf-8")
+    (checkpoint / "manifest.json").write_text("{}", encoding="utf-8")
+    state = checkpoint / "training_state.pt"
+    state.write_bytes(b"state")
+    config_sha256 = "5" * 64
+    mixture_sha256 = "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+    result = SimpleNamespace(
+        status="succeeded",
+        run_id=run.name,
+        git_dirty=False,
+        config_sha256=config_sha256,
+        supervised_tokens=1_000_000,
+        latest_checkpoint="checkpoint-tokens-0001000000",
+        mixture_version="m5-dual-mode-correction-mixture-v1-4bc342d4",
+        mixture_manifest_sha256=mixture_sha256,
+        export_sha256="4" * 64,
+        gpu_name="NVIDIA GeForce RTX 3090",
+        peak_allocated_bytes=100,
+        peak_reserved_bytes=200,
+        physical_gpu_index=4,
+        git_commit="6" * 40,
+        model_revision="c1899de289a04d12100db370d81485cdf75e47ca",
+        attention_architecture="gqa",
+    )
+    config = SimpleNamespace(
+        data=SimpleNamespace(
+            dataset_version=result.mixture_version,
+            mix_manifest_sha256=mixture_sha256,
+        ),
+        evaluation=SimpleNamespace(consume_m6_frozen_results=False),
+    )
+    manifest = SimpleNamespace(
+        run_id=run.name,
+        checkpoint_id=result.latest_checkpoint,
+        supervised_tokens=1_000_000,
+        config_sha256=config_sha256,
+        mixture_version=result.mixture_version,
+        mixture_manifest_sha256=mixture_sha256,
+        git_commit=result.git_commit,
+        pinned=True,
+        pin_reason="final",
+        file=SimpleNamespace(path="training_state.pt", sha256=sha256_file(state)),
+    )
+    monkeypatch.setattr(
+        M5AblationRunResult,
+        "model_validate_json",
+        lambda _: result,
+    )
+    monkeypatch.setattr(
+        M5CheckpointManifest,
+        "model_validate_json",
+        lambda _: manifest,
+    )
+    monkeypatch.setattr(m6_candidate_module, "load_m5_sft_config", lambda _: config)
+    monkeypatch.setattr(m6_candidate_module, "canonical_config_hash", lambda _: config_sha256)
+    monkeypatch.setattr(m6_candidate_module, "model_export_sha256", lambda _: "4" * 64)
+
+    imported = import_m5_candidate_evidence(
+        release_config_path=Path("configs/eval/m6_release_v2.yaml"),
+        source_run=run,
+        model_dir=model,
+    )
+
+    assert imported.source_kind == "m6-dual-mode-correction"
+    assert imported.model.training_run_id == run.name
+    assert imported.model.training_checkpoint_id == result.latest_checkpoint
+    assert imported.model.model_artifact_sha256 == "4" * 64
 
 
 def test_m6_candidate_export_hash_is_stable_and_rejects_symlinks(tmp_path: Path) -> None:

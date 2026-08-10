@@ -199,6 +199,20 @@ def test_m6_formal_config_and_cluster_contract_are_frozen() -> None:
         M6EvaluationResult.model_validate(evaluation_payload)
 
 
+def test_m6_v2_release_keeps_gate_and_binds_independent_suite() -> None:
+    config = load_m6_release_config(Path("configs/eval/m6_release_v2.yaml"))
+
+    assert config.protocol_version == "m6-release-v2"
+    assert config.suite_version == "tinyllm-domain-holdout-v1-c0c948cc"
+    assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260810
+    assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
+
+    payload = config.to_dict()
+    payload["suite_version"] = "tinyllm-domain-v1-83bdd8ef"
+    with pytest.raises(ValidationError, match="protocol, suite identity"):
+        type(config).model_validate(payload)
+
+
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:
     config = load_m6_release_config(Path("configs/eval/m6_release.yaml"))
     result = compare_m6_evaluations(

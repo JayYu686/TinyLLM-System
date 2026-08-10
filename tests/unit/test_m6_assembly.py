@@ -510,3 +510,49 @@ def test_m6_assemble_cli_rejects_invalid_shapes_and_maps_artifact_failure(
     relative[relative.index(absolute)] = "relative.json"
     assert main([*relative, "--role", "base"]) == 2
     assert json.loads(capsys.readouterr().err)["error"]["code"] == "CLI_OUTPUT_ERROR"
+
+
+def test_m6_v2_base_cli_requires_and_routes_both_domain_modes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    artifact = str((tmp_path / "artifact").resolve())
+    calls: list[str] = []
+
+    def assemble(**_kwargs: object) -> SimpleNamespace:
+        calls.append("v2-base")
+        return SimpleNamespace(
+            evaluation_id="m6-v2-base",
+            model=SimpleNamespace(role="base"),
+            model_dump_json=lambda *, indent: json.dumps(
+                {"evaluation_id": "m6-v2-base", "indent": indent}
+            ),
+        )
+
+    monkeypatch.setattr(cli_module, "assemble_m6_base_v2_evaluation", assemble)
+    command = [
+        "eval",
+        "m6-assemble",
+        "--role",
+        "base",
+        "--config",
+        "configs/eval/m6_release_v2.yaml",
+        "--evidence-import",
+        artifact,
+        "--thinking-pass",
+        artifact,
+        "--thinking-judgments",
+        artifact,
+        "--nonthinking-pass",
+        artifact,
+        "--nonthinking-judgments",
+        artifact,
+        "--output",
+        artifact,
+        "--json",
+    ]
+
+    assert main(command) == 0
+    assert json.loads(capsys.readouterr().out)["evaluation_id"] == "m6-v2-base"
+    assert calls == ["v2-base"]

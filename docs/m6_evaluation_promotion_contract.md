@@ -156,8 +156,15 @@ M6 v2 证明 Non-thinking 模板对齐和通用能力保持已生效，同时识
 以及证据拒答泛化不足。R2 使用独立创作的短推理、证据拒答双模式数据处理这两个失败机制；
 训练数据不读取 M6 v3 的答案、模型输出或逐项得分。
 
+R2 的开发代理评测显示长度问题已改善，但 Thinking/Non-thinking 正确率分别回退到 25.50%和
+15.00%。根因是 R2 从基座重新训练时替换了上一版成功的领域纠错监督，形成灾难性遗忘。R2
+因此不进入 v3。R3 预注册为 55% 上一版纠错回放与 45% R2 修复监督的精确 Token 混合，保持
+70/30 双模式比例；完整诊断和数据身份见
+[R2 失败与 R3 回放计划](../reports/m6/m6_r2_failure_and_r3_replay_plan.md)。
+
 最终复判使用训练前冻结的 `tinyllm-domain-holdout-v1-2b167ce6`，完整内容 SHA256 为
 `2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2`。v3 与 v1/v2 的
 精确 Prompt 交集均为 0，继续沿用第 5 节全部门禁阈值。生成方法见
 [v3 评测集说明](../evals/domain/v3/README.md)，执行预注册见
-[M6 R2/v3 计划](../reports/m6/m6_r2_v3_execution_plan.md)。
+[M6 R2/v3 计划](../reports/m6/m6_r2_v3_execution_plan.md)。R3 只有先通过开发代理检查，才可使用
+该冻结 v3 执行一次正式复判。

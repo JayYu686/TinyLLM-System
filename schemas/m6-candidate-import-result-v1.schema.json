@@ -216,7 +216,8 @@
       "enum": [
         "m5-formal-snapshot",
         "m6-dual-mode-correction",
-        "m6-gate-repair"
+        "m6-gate-repair",
+        "m6-gate-replay"
       ],
       "title": "Source Kind",
       "type": "string"

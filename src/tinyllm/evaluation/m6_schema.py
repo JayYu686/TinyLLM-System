@@ -596,6 +596,7 @@ class M6CandidateImportResult(StrictSchema):
         "m5-formal-snapshot",
         "m6-dual-mode-correction",
         "m6-gate-repair",
+        "m6-gate-replay",
     ] = "m5-formal-snapshot"
     protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -635,6 +636,14 @@ class M6CandidateImportResult(StrictSchema):
             != "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
         ):
             raise ValueError("M6 Candidate import differs from the gate-repair contract")
+        if self.source_kind == "m6-gate-replay" and (
+            self.model.training_checkpoint_id != "checkpoint-tokens-0001000000"
+            or self.model.training_tokens != 1_000_000
+            or self.model.dataset_version != "m6-gate-replay-mixture-v1-6c169970"
+            or self.model.dataset_manifest_sha256
+            != "c5ceb1e5597a8e253d7c370484f9aa06d22b0a26dbfe597043d9302d8e580fa9"
+        ):
+            raise ValueError("M6 Candidate import differs from the gate-replay contract")
         return self
 
 

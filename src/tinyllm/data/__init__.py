@@ -61,6 +61,7 @@ from tinyllm.data.m5_mixture_schema import (
     M5FormatRepairMixtureManifest,
     M5MixtureArtifactFile,
     M5MixtureManifest,
+    M6GateRepairMixtureManifest,
 )
 from tinyllm.data.m5_r3_audit import (
     M5R3AuditError,
@@ -201,6 +202,11 @@ from tinyllm.data.m5_r3_source_strategy_schema import (
     M5R3StrategyObservation,
     M5R3TeacherSourceStrategyConfig,
     M5R3TeacherSourceStrategyReview,
+)
+from tinyllm.data.m6_gate_repair import (
+    M6GateRepairTask,
+    build_m6_gate_repair_mixture,
+    generate_m6_gate_repair_tasks,
 )
 from tinyllm.data.packing import (
     DatasetBuild,
@@ -470,6 +476,8 @@ __all__ = [
     "M5TeacherPilotResult",
     "M5TeacherSmokeResult",
     "M5ThinkingCandidate",
+    "M6GateRepairMixtureManifest",
+    "M6GateRepairTask",
     "NormalizationConfig",
     "OASST1ImportConfig",
     "OffsetTokenizer",
@@ -521,6 +529,7 @@ __all__ = [
     "build_m5_format_repair_mixture",
     "build_m5_formal_dataset",
     "build_m5_dual_mode_correction_mixture",
+    "build_m6_gate_repair_mixture",
     "build_m5_r3_mixture",
     "build_m5_r3_formal_source",
     "build_m5_r3_p0_dataset",
@@ -544,6 +553,7 @@ __all__ = [
     "generate_m5_r3_p0_tasks",
     "generate_m5_r3_p1_contexts",
     "generate_m5_r3_formal_contexts",
+    "generate_m6_gate_repair_tasks",
     "finalize_m5_r3_content_review",
     "import_commitpackft",
     "import_oasst1",

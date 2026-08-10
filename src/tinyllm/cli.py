@@ -901,7 +901,7 @@ def eval_m6_domain(
         model_identity=imported.model,
         expected_config_sha256=(
             canonical_config_hash(release)
-            if release.protocol_version == "m6-release-v2"
+            if release.protocol_version != "m6-release-v1"
             else imported.config_sha256
         ),
         config=config,
@@ -1190,7 +1190,7 @@ def eval_m6_assemble(
     try:
         release = load_m6_release_config(config)
         if role == "base":
-            if release.protocol_version == "m6-release-v2":
+            if release.protocol_version != "m6-release-v1":
                 if (
                     nonthinking_pass is None
                     or nonthinking_judgments is None
@@ -1199,7 +1199,7 @@ def eval_m6_assemble(
                     or not nonthinking_judgments.is_absolute()
                 ):
                     raise M6AssemblyError(
-                        "M6 v2 Base assembly requires absolute Non-thinking evidence"
+                        "M6 holdout Base assembly requires absolute Non-thinking evidence"
                     )
                 result = assemble_m6_base_v2_evaluation(
                     release_config_path=config,

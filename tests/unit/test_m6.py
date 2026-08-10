@@ -213,6 +213,15 @@ def test_m6_v2_release_keeps_gate_and_binds_independent_suite() -> None:
         type(config).model_validate(payload)
 
 
+def test_m6_v3_release_keeps_gate_and_binds_second_holdout() -> None:
+    config = load_m6_release_config(Path("configs/eval/m6_release_v3.yaml"))
+
+    assert config.protocol_version == "m6-release-v3"
+    assert config.suite_version == "tinyllm-domain-holdout-v1-2b167ce6"
+    assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260811
+    assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
+
+
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:
     config = load_m6_release_config(Path("configs/eval/m6_release.yaml"))
     result = compare_m6_evaluations(

@@ -149,3 +149,15 @@ M6 v2 已在修复模型 Proxy 结果产生前冻结为
 `c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842`。v2 保持 300 条、
 英文 210/中文 90、七类任务、80 条 JSON、40 条人工 Rubric 和 90 个双语 Cluster；与 v1
 的精确 Prompt 交集为 0。生成与重建方法见 [v2 评测集说明](../evals/domain/v2/README.md)。
+
+## 9. v2 诊断与 v3 独立复判
+
+M6 v2 证明 Non-thinking 模板对齐和通用能力保持已生效，同时识别出 Thinking 强制收束率超限
+以及证据拒答泛化不足。R2 使用独立创作的短推理、证据拒答双模式数据处理这两个失败机制；
+训练数据不读取 M6 v3 的答案、模型输出或逐项得分。
+
+最终复判使用训练前冻结的 `tinyllm-domain-holdout-v1-2b167ce6`，完整内容 SHA256 为
+`2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2`。v3 与 v1/v2 的
+精确 Prompt 交集均为 0，继续沿用第 5 节全部门禁阈值。生成方法见
+[v3 评测集说明](../evals/domain/v3/README.md)，执行预注册见
+[M6 R2/v3 计划](../reports/m6/m6_r2_v3_execution_plan.md)。

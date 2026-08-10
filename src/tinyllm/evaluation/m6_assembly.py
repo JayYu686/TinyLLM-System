@@ -253,12 +253,12 @@ def assemble_m6_base_v2_evaluation(
     output_path: Path,
     project_root: Path,
 ) -> M6EvaluationResult:
-    """Assemble v2 Base from two new domain passes and unchanged general evidence."""
+    """Assemble a holdout Base from two new domain passes and unchanged general evidence."""
 
     release = load_m6_release_config(release_config_path)
     imported = load_m6_base_import(base_import_path)
-    if release.protocol_version != "m6-release-v2":
-        raise M6AssemblyError("full Base assembly is reserved for M6 v2")
+    if release.protocol_version == "m6-release-v1":
+        raise M6AssemblyError("full Base assembly requires an M6 holdout protocol")
     config_sha256 = canonical_config_hash(release)
     thinking_summary, thinking = _load_domain_component(
         thinking_pass_directory,

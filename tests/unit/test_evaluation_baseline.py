@@ -197,16 +197,19 @@ def test_human_judgment_requires_three_of_three_and_rationale() -> None:
 def test_lm_eval_command_is_reviewable_and_smoke_is_bounded(tmp_path: Path) -> None:
     config = load_baseline_config(SMOKE_CONFIG)
     project_root = Path.cwd().resolve()
+    tokenizer_path = (tmp_path / "tokenizer").resolve()
     command = build_lm_eval_command(
         config,
         project_root=project_root,
         model_path=(tmp_path / "model").resolve(),
+        tokenizer_path=tokenizer_path,
         output_path=(tmp_path / "results").resolve(),
         device="cuda:0",
     )
 
     joined = " ".join(command)
     assert "tinyllm_arc_easy,tinyllm_hellaswag,tinyllm_piqa" in joined
+    assert f"tokenizer={tokenizer_path}" in joined
     assert "enable_thinking=False" in joined
     assert "--apply_chat_template" in command
     assert "--log_samples" in command

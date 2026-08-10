@@ -222,6 +222,7 @@ def _run_general_baseline(
     project_root: Path,
     artifact_root: Path,
     model_path: Path,
+    tokenizer_path: Path | None = None,
     output_path: Path,
     device: Literal["cpu", "cuda"],
     offline: bool,
@@ -261,6 +262,7 @@ def _run_general_baseline(
         config,
         project_root=project_root,
         model_path=model_path,
+        tokenizer_path=tokenizer_path,
         output_path=raw_path,
         device="cuda:0" if device == "cuda" else "cpu",
     )

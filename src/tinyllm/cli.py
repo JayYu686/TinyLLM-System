@@ -46,6 +46,7 @@ from tinyllm.evaluation import (
     BaselinePreflightError,
     BaselineRuntimeError,
     EvaluationContractError,
+    M6AssemblyError,
     M6BaseImportError,
     M6CandidateImportError,
     M6ComparisonError,
@@ -55,6 +56,8 @@ from tinyllm.evaluation import (
     M6GeneralError,
     M6ModelIdentity,
     M6PromotionError,
+    assemble_m6_base_evaluation,
+    assemble_m6_candidate_evaluation,
     compare_m6_evaluations,
     complete_baseline_human_review,
     finalize_m6_domain_pass,
@@ -1104,6 +1107,120 @@ def eval_m6_domain_review(
             f"succeeded: mode={result.mode} score={result.correct_items}/300 "
             f"format={result.format_valid_items}/300"
         )
+
+
+@eval_app.command("m6-assemble")
+def eval_m6_assemble(
+    ctx: typer.Context,
+    role: Annotated[
+        str,
+        typer.Option("--role", help="Evaluation role: base or candidate."),
+    ],
+    evidence_import: Annotated[
+        Path,
+        typer.Option("--evidence-import", help="Verified Base/Candidate import JSON."),
+    ],
+    thinking_pass: Annotated[
+        Path,
+        typer.Option("--thinking-pass", help="Finalized absolute Thinking pass directory."),
+    ],
+    thinking_judgments: Annotated[
+        Path,
+        typer.Option("--thinking-judgments", help="Approved Thinking Judgment JSONL."),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option("--output", help="Absolute evaluation.json output path."),
+    ],
+    nonthinking_pass: Annotated[
+        Path | None,
+        typer.Option(
+            "--nonthinking-pass",
+            help="Finalized Candidate Non-thinking pass directory.",
+        ),
+    ] = None,
+    nonthinking_judgments: Annotated[
+        Path | None,
+        typer.Option(
+            "--nonthinking-judgments",
+            help="Approved Candidate Non-thinking Judgment JSONL.",
+        ),
+    ] = None,
+    general_pass: Annotated[
+        Path | None,
+        typer.Option("--general-pass", help="Completed Candidate general pass directory."),
+    ] = None,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Frozen M6 release-policy YAML."),
+    ] = Path("configs/eval/m6_release.yaml"),
+    project_root: Annotated[
+        Path,
+        typer.Option("--project-root", help="Clean Git project root."),
+    ] = Path("."),
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable path-free machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Assemble one complete content-free M6 evaluation artifact."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if role not in {"base", "candidate"}:
+        _output_error("M6 assembly role must be base or candidate", json_output=json_output)
+        raise typer.Exit(code=2)
+    required = (evidence_import, thinking_pass, thinking_judgments, output)
+    if not all(path.is_absolute() for path in required):
+        _output_error("M6 assembly artifact paths must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        if role == "base":
+            if any(
+                path is not None for path in (nonthinking_pass, nonthinking_judgments, general_pass)
+            ):
+                raise M6AssemblyError(
+                    "Base assembly reuses imported Non-thinking and general evidence"
+                )
+            result = assemble_m6_base_evaluation(
+                release_config_path=config,
+                base_import_path=evidence_import,
+                thinking_pass_directory=thinking_pass,
+                thinking_judgments_path=thinking_judgments,
+                output_path=output,
+                project_root=project_root,
+            )
+        else:
+            if (
+                nonthinking_pass is None
+                or nonthinking_judgments is None
+                or general_pass is None
+                or not all(
+                    path.is_absolute()
+                    for path in (nonthinking_pass, nonthinking_judgments, general_pass)
+                )
+            ):
+                raise M6AssemblyError(
+                    "Candidate assembly requires absolute Non-thinking and general evidence"
+                )
+            result = assemble_m6_candidate_evaluation(
+                release_config_path=config,
+                candidate_import_path=evidence_import,
+                thinking_pass_directory=thinking_pass,
+                thinking_judgments_path=thinking_judgments,
+                nonthinking_pass_directory=nonthinking_pass,
+                nonthinking_judgments_path=nonthinking_judgments,
+                general_pass_directory=general_pass,
+                output_path=output,
+                project_root=project_root,
+            )
+    except (M6AssemblyError, M6BaseImportError, M6CandidateImportError, M6ContractError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_ASSEMBLY_FAILED")
+        raise typer.Exit(code=3) from exc
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(f"succeeded: {result.evaluation_id} role={result.model.role}")
 
 
 @app.command()

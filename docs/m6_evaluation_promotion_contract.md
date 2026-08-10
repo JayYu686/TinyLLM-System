@@ -81,9 +81,15 @@ Rate 以 80 条 `json_object` 项为分母，并要求两种模式分别达标�
 首批稳定接口为：
 
 ```text
+tinyllm eval m6-assemble --role base|candidate ... --output ... --json
 tinyllm compare --config ... --baseline ... --candidate ... --output ... --json
 tinyllm promote --comparison ... --registry-root ... --json
 ```
+
+`m6-assemble` 在生成最终 `evaluation.json` 前重新校验导入记录、双模式原始结果、维护者判断、
+软件/硬件快照和通用评测结果；Base 复用已验证的 M2 Non-thinking 与通用证据，Candidate 必须
+提供本轮 Thinking、Non-thinking 和完整通用评测。最终文件只保存内容无关的逐项得分和组合
+Hash，不复制私有 Prompt、模型输出或 Thinking 内容。
 
 `compare` 只接受相同模型 Revision、Tokenizer、Prompt、Suite 和 M6 配置身份的完整结果。
 `promote` 只接受 `accepted` 比较结果，在私有 Registry 中原子写入不可变 Candidate 记录；相同

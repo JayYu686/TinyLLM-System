@@ -130,6 +130,11 @@ from tinyllm.evaluation.m6 import (
     promote_m6_candidate,
     write_m6_comparison,
 )
+from tinyllm.evaluation.m6_assembly import (
+    M6AssemblyError,
+    assemble_m6_base_evaluation,
+    assemble_m6_candidate_evaluation,
+)
 from tinyllm.evaluation.m6_base import (
     M6BaseImportError,
     domain_cluster_id,
@@ -252,6 +257,7 @@ __all__ = [
     "M6ContractError",
     "M6BaseImportError",
     "M6BaseImportResult",
+    "M6AssemblyError",
     "M6CandidateImportError",
     "M6CandidateImportResult",
     "M6DomainError",
@@ -297,6 +303,8 @@ __all__ = [
     "acquire_baseline_model",
     "analyze_m5_format_failures",
     "analyze_m5_r2_failures",
+    "assemble_m6_base_evaluation",
+    "assemble_m6_candidate_evaluation",
     "build_evaluation_manifest",
     "build_lm_eval_command",
     "build_lm_eval_validation_command",

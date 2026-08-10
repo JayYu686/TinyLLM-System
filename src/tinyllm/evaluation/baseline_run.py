@@ -279,6 +279,9 @@ def _run_general_baseline(
     return load_general_summary(config, output_path=raw_path)
 
 
+run_general_evaluation = _run_general_baseline
+
+
 def _new_run_directory(
     *,
     config_path: Path,

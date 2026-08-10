@@ -36,6 +36,18 @@ QWEN3_NONTHINKING_TEMPLATE_SPEC: dict[str, object] = {
 QWEN3_NONTHINKING_TEMPLATE_SHA256 = (
     "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33"
 )
+_QWEN3_NONTHINKING_CONTEXT = "<think>\n\n</think>\n\n"
+QWEN3_NONTHINKING_SFT_TEMPLATE_SPEC: dict[str, object] = {
+    "add_generation_prompt": False,
+    "assistant_context": _QWEN3_NONTHINKING_CONTEXT,
+    "assistant_supervision": "content_and_im_end",
+    "id": "qwen3-chatml-nonthinking-sft-v2",
+    "message_format": _QWEN3_MESSAGE_FORMAT,
+    "mode": "non-thinking",
+}
+QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256 = (
+    "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2"
+)
 QWEN3_THINKING_TEMPLATE_SPEC: dict[str, object] = {
     "add_generation_prompt": False,
     "assistant_supervision": "think_tags_reasoning_final_and_im_end",
@@ -119,6 +131,16 @@ def _template_hash() -> str:
 def _thinking_template_hash() -> str:
     payload = json.dumps(
         QWEN3_THINKING_TEMPLATE_SPEC,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _nonthinking_sft_template_hash() -> str:
+    payload = json.dumps(
+        QWEN3_NONTHINKING_SFT_TEMPLATE_SPEC,
         ensure_ascii=False,
         separators=(",", ":"),
         sort_keys=True,
@@ -224,7 +246,12 @@ class TokenizersBackend:
 
 
 def render_qwen3_nonthinking(messages: tuple[ImportedMessage, ...]) -> RenderedConversation:
-    """Render the frozen system/user/assistant ChatML subset without thinking tags."""
+    """Render the immutable M2 ChatML identity without thinking tags.
+
+    M5 dual-mode training must use :func:`render_qwen3_nonthinking_sft`.  This
+    historical renderer remains unchanged so registered M2 artifacts can still
+    be rebuilt and verified byte for byte.
+    """
 
     parts: list[str] = []
     assistant_spans: list[tuple[int, int]] = []
@@ -233,6 +260,42 @@ def render_qwen3_nonthinking(messages: tuple[ImportedMessage, ...]) -> RenderedC
         header = f"{_CHATML_START}{message.role}\n"
         parts.append(header)
         length += len(header)
+        content_start = length
+        parts.append(message.content)
+        length += len(message.content)
+        parts.append(_CHATML_END)
+        length += len(_CHATML_END)
+        if message.role == "assistant":
+            assistant_spans.append((content_start, length))
+        parts.append("\n")
+        length += 1
+    return RenderedConversation(text="".join(parts), assistant_spans=tuple(assistant_spans))
+
+
+def render_qwen3_nonthinking_sft(
+    messages: tuple[ImportedMessage, ...],
+) -> RenderedConversation:
+    """Render Non-thinking SFT exactly as Qwen3 conditions generation.
+
+    Qwen3's hard Non-thinking switch appends an empty Think block after the
+    Assistant header.  The block is input context, not a prediction target;
+    only the final answer and Assistant end token are supervised.  Keeping the
+    context masked prevents Non-thinking samples from competing with Thinking
+    samples at the first token after the shared Assistant header.
+    """
+
+    if _nonthinking_sft_template_hash() != QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256:
+        raise TokenizerContractError("built-in Non-thinking SFT Chat Template hash is invalid")
+    parts: list[str] = []
+    assistant_spans: list[tuple[int, int]] = []
+    length = 0
+    for message in messages:
+        header = f"{_CHATML_START}{message.role}\n"
+        parts.append(header)
+        length += len(header)
+        if message.role == "assistant":
+            parts.append(_QWEN3_NONTHINKING_CONTEXT)
+            length += len(_QWEN3_NONTHINKING_CONTEXT)
         content_start = length
         parts.append(message.content)
         length += len(message.content)
@@ -380,6 +443,30 @@ def tokenize_thinking_messages(
         messages,
         assistant_reasoning=assistant_reasoning,
     )
+    encoding = backend.encode(rendered.text)
+    labels = _labels_from_offsets(
+        text=rendered.text,
+        encoding=encoding,
+        assistant_spans=rendered.assistant_spans,
+        vocab_size=tokenizer.vocab_size,
+    )
+    return ConversationTokenization(
+        input_ids=encoding.ids,
+        labels=labels,
+        rendered_sha256=hashlib.sha256(rendered.text.encode()).hexdigest(),
+    )
+
+
+def tokenize_nonthinking_sft_messages(
+    messages: tuple[ImportedMessage, ...],
+    *,
+    backend: OffsetTokenizer,
+    tokenizer: TokenizerIdentity,
+) -> ConversationTokenization:
+    """Tokenize corrected M5+ Non-thinking SFT with a masked mode prefix."""
+
+    _validate_backend(backend, tokenizer)
+    rendered = render_qwen3_nonthinking_sft(messages)
     encoding = backend.encode(rendered.text)
     labels = _labels_from_offsets(
         text=rendered.text,

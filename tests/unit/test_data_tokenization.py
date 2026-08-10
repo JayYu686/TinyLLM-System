@@ -10,6 +10,7 @@ from tokenizers import Tokenizer, models  # type: ignore[import-untyped]
 
 from tinyllm.data import (
     OASST1_SOURCE,
+    QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256,
     QWEN3_NONTHINKING_TEMPLATE_SHA256,
     QWEN3_THINKING_TEMPLATE_SHA256,
     ImportedMessage,
@@ -28,7 +29,9 @@ from tinyllm.data import (
     load_m2_tokenization_config,
     process_imported_samples,
     render_qwen3_nonthinking,
+    render_qwen3_nonthinking_sft,
     render_qwen3_thinking,
+    tokenize_nonthinking_sft_messages,
     tokenize_processed_sample,
     tokenize_processed_samples,
     tokenize_thinking_messages,
@@ -178,6 +181,67 @@ def test_nonthinking_render_is_exact_and_marks_assistant_content_plus_end() -> N
     assert len(rendered.assistant_spans) == 1
     start, end = rendered.assistant_spans[0]
     assert rendered.text[start:end] == "answer<|im_end|>"
+
+
+def test_nonthinking_sft_render_matches_qwen3_hard_switch_and_masks_prefix() -> None:
+    messages = (
+        ImportedMessage(role="system", content="system text"),
+        ImportedMessage(role="user", content="question"),
+        ImportedMessage(role="assistant", content="answer"),
+    )
+    backend = CharacterTokenizer()
+    tokenizer = fake_config().tokenizer
+
+    rendered = render_qwen3_nonthinking_sft(messages)
+    tokenized = tokenize_nonthinking_sft_messages(
+        messages,
+        backend=backend,
+        tokenizer=tokenizer,
+    )
+
+    assert QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256 == (
+        "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2"
+    )
+    assert rendered.text == (
+        "<|im_start|>system\nsystem text<|im_end|>\n"
+        "<|im_start|>user\nquestion<|im_end|>\n"
+        "<|im_start|>assistant\n<think>\n\n</think>\n\nanswer<|im_end|>\n"
+    )
+    start, end = rendered.assistant_spans[0]
+    assert rendered.text[start:end] == "answer<|im_end|>"
+    encoding = backend.encode(rendered.text)
+    supervised_text = "".join(
+        rendered.text[offset_start:offset_end]
+        for label, (offset_start, offset_end) in zip(
+            tokenized.labels, encoding.offsets, strict=True
+        )
+        if label != -100
+    )
+    assert supervised_text == "answer<|im_end|>"
+    assert all(
+        label == -100
+        for label, (offset_start, offset_end) in zip(
+            tokenized.labels, encoding.offsets, strict=True
+        )
+        if rendered.text[offset_start:offset_end] in {"<", ">", "t", "h", "i", "n", "k", "/"}
+        and offset_end <= start
+    )
+
+
+def test_nonthinking_sft_masks_each_prefix_in_multiturn_conversation() -> None:
+    messages = (
+        ImportedMessage(role="user", content="q1"),
+        ImportedMessage(role="assistant", content="a1"),
+        ImportedMessage(role="user", content="q2"),
+        ImportedMessage(role="assistant", content="a2"),
+    )
+    rendered = render_qwen3_nonthinking_sft(messages)
+
+    assert rendered.text.count("<think>\n\n</think>\n\n") == 2
+    assert tuple(rendered.text[start:end] for start, end in rendered.assistant_spans) == (
+        "a1<|im_end|>",
+        "a2<|im_end|>",
+    )
 
 
 def test_thinking_render_is_exact_and_supervises_trace_answer_and_end() -> None:

@@ -19,6 +19,7 @@ from torch import Tensor
 from torch.utils.data import Dataset
 
 from tinyllm.data.m5_mixture_schema import (
+    M5DualModeCorrectionMixtureManifest,
     M5FormatRepairMixtureManifest,
     M5MixtureArtifactFile,
     M5MixtureManifest,
@@ -660,7 +661,12 @@ def build_m5_format_repair_mixture(
     return opened.manifest
 
 
-M5MixtureManifestType = M5MixtureManifest | M5FormatRepairMixtureManifest | M5R3MixtureManifest
+M5MixtureManifestType = (
+    M5MixtureManifest
+    | M5FormatRepairMixtureManifest
+    | M5R3MixtureManifest
+    | M5DualModeCorrectionMixtureManifest
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -674,7 +680,14 @@ class OpenM5Mixture:
 def m5_mixture_config_dataset_version(manifest: M5MixtureManifestType) -> str:
     """Return the dataset identity that a training config must bind."""
 
-    if isinstance(manifest, (M5FormatRepairMixtureManifest, M5R3MixtureManifest)):
+    if isinstance(
+        manifest,
+        (
+            M5FormatRepairMixtureManifest,
+            M5R3MixtureManifest,
+            M5DualModeCorrectionMixtureManifest,
+        ),
+    ):
         return manifest.mixture_version
     return manifest.pilot_dataset_version
 
@@ -692,6 +705,8 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
             )
         elif dataset_name == "m5-r3-mixture":
             manifest = M5R3MixtureManifest.model_validate(manifest_mapping)
+        elif dataset_name == "m5-dual-mode-correction-mixture":
+            manifest = M5DualModeCorrectionMixtureManifest.model_validate(manifest_mapping)
         else:
             manifest = M5MixtureManifest.model_validate(manifest_mapping)
         marker = cast(dict[str, str], json.loads((root / _COMMIT_FILE).read_text(encoding="utf-8")))
@@ -803,6 +818,26 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
                             ),
                         }
                     )
+            elif isinstance(manifest, M5DualModeCorrectionMixtureManifest):
+                expected_content = content_sha256(
+                    {
+                        "arrays_sha256": arrays_hash,
+                        "build_seed": manifest.build_seed,
+                        "domain_nonthinking_supervised_tokens": (
+                            manifest.domain_nonthinking_supervised_tokens
+                        ),
+                        "domain_thinking_supervised_tokens": (
+                            manifest.domain_thinking_supervised_tokens
+                        ),
+                        "general_nonthinking_supervised_tokens": (
+                            manifest.general_nonthinking_supervised_tokens
+                        ),
+                        "nonthinking_template_sha256": (manifest.nonthinking_template_sha256),
+                        "parent_content_sha256": manifest.parent_content_sha256,
+                        "source_r3_manifest_sha256": manifest.source_r3_manifest_sha256,
+                        "thinking_template_sha256": manifest.thinking_template_sha256,
+                    }
+                )
             else:
                 expected_content = content_sha256(
                     {

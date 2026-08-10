@@ -1,5 +1,8 @@
 # M6 Candidate 正式评测就绪报告
 
+> 历史状态说明：本报告记录评测启动前的输入就绪状态。该 Candidate 后续已完成 M6 v1 并被
+> 门禁拒绝，实际结果与修复进展见 [M6 v1 门禁拒绝分析](m6_gate_rejection_analysis.md)。
+
 ## 结论
 
 M5 正式 Full SFT Run 的 10M Token 快照已通过 M6 Candidate 血缘校验，可以进入冻结发布集的双模式评测。当前结论仅代表评测输入就绪，不包含尚未运行的 M6 Candidate 指标。
@@ -29,4 +32,3 @@ M5 正式 Full SFT Run 的 10M Token 快照已通过 M6 Candidate 血缘校验�
 ## 下一步
 
 在干净 Git Commit 上分别运行 Candidate Thinking 与 Non-thinking 300 条正式领域评测。两种模式完成 40 条人工评分后，再运行完整 ARC-Easy、HellaSwag 和 PIQA 通用回归评测，随后组装 Base/Candidate 证据并执行 Candidate Gate。
-

@@ -130,6 +130,22 @@ def test_formal_full_sft_contract_freezes_gqa_dual_mode_and_four_gpu_ddp() -> No
     assert config.to_dict()["config_kind"] == "qwen_sft"
 
 
+@pytest.mark.parametrize(
+    "path",
+    (
+        Path("configs/sft/m6_dual_mode_fix_seed42.yaml"),
+        Path("configs/sft/m6_dual_mode_fix_seed20260810.yaml"),
+    ),
+)
+def test_dual_mode_correction_configs_bind_template_v2(path: Path) -> None:
+    config = load_m5_sft_config(path)
+
+    assert config.run.purpose == "ablation"
+    assert config.data.dataset_version == "m5-dual-mode-correction-mixture-v1-84c0345e"
+    assert config.reasoning.nonthinking_template_id == "qwen3-chatml-nonthinking-sft-v2"
+    assert config.evaluation.consume_m6_frozen_results is False
+
+
 def test_formal_qwen3_8b_lora_contract_is_single_gpu_and_fixed_policy() -> None:
     mapping = _full_formal_mapping()
     _section(mapping, "model").update(

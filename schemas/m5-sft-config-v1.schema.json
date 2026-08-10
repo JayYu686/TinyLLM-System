@@ -42,7 +42,7 @@
           "type": "boolean"
         },
         "dataset_version": {
-          "pattern": "^m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture)-v[0-9]+-[a-f0-9]{8}$",
+          "pattern": "^m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture|dual-mode-correction-mixture)-v[0-9]+-[a-f0-9]{8}$",
           "title": "Dataset Version",
           "type": "string"
         },
@@ -334,12 +334,18 @@
           "type": "boolean"
         },
         "nonthinking_template_id": {
-          "const": "qwen3-chatml-nonthinking-v1",
+          "enum": [
+            "qwen3-chatml-nonthinking-v1",
+            "qwen3-chatml-nonthinking-sft-v2"
+          ],
           "title": "Nonthinking Template Id",
           "type": "string"
         },
         "nonthinking_template_sha256": {
-          "const": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+          "enum": [
+            "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+            "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2"
+          ],
           "title": "Nonthinking Template Sha256",
           "type": "string"
         },

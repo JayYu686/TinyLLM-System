@@ -127,3 +127,19 @@ M6.1 的历史复用仅适用于与 Release 配置逐字段等价的 M2 正式�
 快照；只复制聚合数字或缺少原始文件时直接拒绝。Thinking 没有兼容历史证据，必须通过
 `tinyllm eval m6-domain --mode thinking` 在 clean `main` 上重新生成，并由
 `tinyllm eval m6-domain-review` 完成 40 条维护者判断。
+
+## 8. v1 执行结果与修复边界
+
+首个 0.6B 10M Candidate 已完成 v1 双模式领域、人工审查和通用评测。门禁有效拒绝：Thinking
+领域分数从 Base 的 26.67% 降至 9.33%，Non-thinking 只提升 0.67pp；两种模式 JSON Valid
+Rate 分别为 71.25%和 56.25%，Thinking 强制收束率为 99.67%。通用任务等权 `acc_norm` 仅
+回退 0.65pp，通过该单项门禁。
+
+代码审计确认 M5 Non-thinking SFT 缺少 Qwen3 Hard Switch 使用的空 Think 上下文，导致双模式
+在 Assistant Header 后形成竞争目标。该问题按
+[ADR-0007](adr/0007-qwen3-dual-mode-sft-template-alignment.md) 修复；完整证据见
+[M6 v1 门禁拒绝分析](../reports/m6/m6_gate_rejection_analysis.md)。v1 结果保持不可变，旧
+Candidate 保持 `Development`。
+
+修复模型不能在已经用于诊断的 v1 发布集上反复选优。后续晋级使用新的 M6 v2 内容与配置
+身份，继续沿用第 5 节的量化阈值、双模式分别报告、完整人工审查、通用回归和血缘要求。

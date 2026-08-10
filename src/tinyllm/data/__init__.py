@@ -26,6 +26,7 @@ from tinyllm.data.importers import (
 from tinyllm.data.m5_dual_mode_correction import (
     align_legacy_nonthinking_sequence_v2,
     build_m5_dual_mode_correction_mixture,
+    pack_correction_sequences,
     pair_thinking_sequence_as_nonthinking_v2,
 )
 from tinyllm.data.m5_formal import (
@@ -573,6 +574,7 @@ __all__ = [
     "open_m5_formal_dataset",
     "open_registered_dataset",
     "pack_tokenized_samples",
+    "pack_correction_sequences",
     "pair_thinking_sequence_as_nonthinking_v2",
     "prepare_m2_dataset",
     "process_imported_samples",

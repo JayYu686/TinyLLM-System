@@ -141,7 +141,11 @@ def test_dual_mode_correction_configs_bind_template_v2(path: Path) -> None:
     config = load_m5_sft_config(path)
 
     assert config.run.purpose == "ablation"
-    assert config.data.dataset_version == "m5-dual-mode-correction-mixture-v1-84c0345e"
+    assert config.data.dataset_version == "m5-dual-mode-correction-mixture-v1-4bc342d4"
+    assert (
+        config.data.mix_manifest_sha256
+        == "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+    )
     assert config.reasoning.nonthinking_template_id == "qwen3-chatml-nonthinking-sft-v2"
     assert config.evaluation.consume_m6_frozen_results is False
 

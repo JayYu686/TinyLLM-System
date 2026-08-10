@@ -77,8 +77,9 @@ Think 块作为已 Mask 的输入上下文，只监督最终答案。Thinking �
 - M6 v1：`COMPLETED_GATE_REJECTED`；
 - 旧 Candidate：`Development`；
 - 模板 v2 与防回归测试：已实现；
-- 修复 Mixture：`m5-dual-mode-correction-mixture-v1-84c0345e`，Manifest SHA256
-  `8630d5ca44196580341c4de4b3e06ac5f9d767986e3c629ab81dccedb98aebeb`；
+- 修复 Mixture：`m5-dual-mode-correction-mixture-v1-4bc342d4`，Manifest SHA256
+  `db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c`；对齐后重新
+  Packing 为 2,562 条序列，避免将短样本逐条 Pad 到 1,024 所产生的无效计算；
 - Token 审计：1,000,000 个监督 Token，10,557 个 Non-thinking 监督起点全部具有被 Mask 的
   v2 模式上下文，2,185 条 Thinking 序列全部从 `<think>` 开始，错误计数均为 0；
 - 双 Seed Proxy：尚未执行；

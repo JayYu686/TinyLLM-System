@@ -36,6 +36,7 @@ from tinyllm.data import (
     M2PackingConfig,
     M2ProcessingConfig,
     M2TokenizationConfig,
+    M5DualModeCorrectionMixtureManifest,
     M5FormalDatasetManifest,
     M5FormatRepairMixtureManifest,
     M5MixtureManifest,
@@ -265,6 +266,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-sft-config-v1.schema.json": M5SFTConfig,
     "m5-ablation-mixture-manifest-v1.schema.json": M5MixtureManifest,
     "m5-formal-dataset-manifest-v1.schema.json": M5FormalDatasetManifest,
+    "m5-dual-mode-correction-mixture-manifest-v1.schema.json": (
+        M5DualModeCorrectionMixtureManifest
+    ),
     "m5-format-repair-mixture-manifest-v1.schema.json": M5FormatRepairMixtureManifest,
     "m5-r3-formal-contamination-report-v1.schema.json": M5R3FormalContaminationReport,
     "m5-r3-formal-cpu-smoke-v1.schema.json": M5R3FormalCPUSmoke,

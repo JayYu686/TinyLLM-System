@@ -161,7 +161,7 @@ sequenceDiagram
 | M3 DDP | Complete | Initialization, sampler, loss reduction, rank-failure recovery, and real 1/2/4-GPU scaling |
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
 | M5 dual-mode SFT | Complete | 0.6B four-GPU Full SFT over 50M tokens and 8B BF16 LoRA over 10M tokens; both routes completed Exact Resume, dual-mode evaluation, and export |
-| M6 evaluation and promotion | In progress | Dual-mode comparison, cluster bootstrap, Candidate Gate, and atomic registry contracts are frozen; real release evaluation remains pending |
+| M6 evaluation and promotion | Remediation | The real v1 Gate rejected the first 0.6B Candidate; a dual-mode SFT template mismatch was isolated and an independent v2 remediation is underway |
 | M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
 | M8 planner | Enhancement | Static memory estimation and short probe |
 
@@ -197,8 +197,10 @@ failure paths, real reports, and documentation. Evidence entry points:
   [formal Qwen3-8B LoRA report (Chinese)](reports/m5/m5_lora_formal.md),
   [M5 acceptance report (Chinese)](reports/m5/m5_acceptance.md), and
   [M5 public summary](reports/m5/m5_public_summary.en.md)
-- [M6 evaluation and promotion contract (Chinese)](docs/m6_evaluation_promotion_contract.md)
-- [M6.1 Base evidence and execution readiness (Chinese)](reports/m6/m6_base_evidence.md)
+- [M6 evaluation and promotion contract (Chinese)](docs/m6_evaluation_promotion_contract.md),
+  [M6.1 Base evidence and execution readiness (Chinese)](reports/m6/m6_base_evidence.md),
+  [M6 v1 Gate rejection analysis (Chinese)](reports/m6/m6_gate_rejection_analysis.md), and
+  [dual-mode template-alignment decision (Chinese)](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured

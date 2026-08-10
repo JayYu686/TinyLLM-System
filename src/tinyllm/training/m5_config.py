@@ -9,6 +9,7 @@ import yaml
 from pydantic import Field, ValidationError, model_validator
 
 from tinyllm.data import (
+    QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256,
     QWEN3_NONTHINKING_TEMPLATE_SHA256,
     QWEN3_THINKING_TEMPLATE_SHA256,
 )
@@ -94,7 +95,8 @@ class M5DataConfig(StrictSchema):
 
     dataset_version: str = Field(
         pattern=(
-            r"^m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture)"
+            r"^m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture|"
+            r"dual-mode-correction-mixture)"
             r"-v[0-9]+-[a-f0-9]{8}$"
         )
     )
@@ -120,9 +122,13 @@ class M5ReasoningConfig(StrictSchema):
 
     explicit_mode_selection: Literal[True]
     supervise_visible_reasoning: Literal[True]
-    nonthinking_template_id: Literal["qwen3-chatml-nonthinking-v1"]
+    nonthinking_template_id: Literal[
+        "qwen3-chatml-nonthinking-v1",
+        "qwen3-chatml-nonthinking-sft-v2",
+    ]
     nonthinking_template_sha256: Literal[
-        "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33"
+        "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+        "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2",
     ]
     thinking_template_id: Literal["qwen3-chatml-thinking-v1"]
     thinking_template_sha256: Literal[
@@ -133,7 +139,11 @@ class M5ReasoningConfig(StrictSchema):
     def validate_template_implementation(self) -> M5ReasoningConfig:
         """Detect drift between the public config and built-in renderers."""
 
-        if self.nonthinking_template_sha256 != QWEN3_NONTHINKING_TEMPLATE_SHA256:
+        expected_nonthinking = {
+            "qwen3-chatml-nonthinking-v1": QWEN3_NONTHINKING_TEMPLATE_SHA256,
+            "qwen3-chatml-nonthinking-sft-v2": QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256,
+        }[self.nonthinking_template_id]
+        if self.nonthinking_template_sha256 != expected_nonthinking:
             raise ValueError("Non-thinking Template hash does not match the implementation")
         if self.thinking_template_sha256 != QWEN3_THINKING_TEMPLATE_SHA256:
             raise ValueError("Thinking Template hash does not match the implementation")
@@ -238,6 +248,7 @@ class M5SFTConfig(StrictSchema):
                     "m5-reasoning-pilot-",
                     "m5-format-repair-mixture-",
                     "m5-r3-mixture-",
+                    "m5-dual-mode-correction-mixture-",
                 )
             ):
                 raise ValueError(
@@ -246,7 +257,11 @@ class M5SFTConfig(StrictSchema):
                 )
             if (
                 self.data.dataset_version.startswith(
-                    ("m5-format-repair-mixture-", "m5-r3-mixture-")
+                    (
+                        "m5-format-repair-mixture-",
+                        "m5-r3-mixture-",
+                        "m5-dual-mode-correction-mixture-",
+                    )
                 )
                 and self.data.thinking_token_fraction != 0.3
             ):

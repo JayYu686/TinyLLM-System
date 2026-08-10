@@ -23,6 +23,11 @@ from tinyllm.data.importers import (
     import_commitpackft,
     import_oasst1,
 )
+from tinyllm.data.m5_dual_mode_correction import (
+    align_legacy_nonthinking_sequence_v2,
+    build_m5_dual_mode_correction_mixture,
+    pair_thinking_sequence_as_nonthinking_v2,
+)
 from tinyllm.data.m5_formal import (
     M5FormalDataset,
     M5FormalDatasetError,
@@ -51,6 +56,7 @@ from tinyllm.data.m5_mixture import (
     thinking_candidates_from_samples,
 )
 from tinyllm.data.m5_mixture_schema import (
+    M5DualModeCorrectionMixtureManifest,
     M5FormatRepairMixtureManifest,
     M5MixtureArtifactFile,
     M5MixtureManifest,
@@ -301,6 +307,7 @@ from tinyllm.data.stateful_sampler import (
     StatefulSequentialSampler,
 )
 from tinyllm.data.tokenization import (
+    QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256,
     QWEN3_NONTHINKING_TEMPLATE_SHA256,
     QWEN3_THINKING_TEMPLATE_SHA256,
     ConversationTokenization,
@@ -312,8 +319,10 @@ from tinyllm.data.tokenization import (
     TokenizersBackend,
     load_m2_tokenization_config,
     render_qwen3_nonthinking,
+    render_qwen3_nonthinking_sft,
     render_qwen3_thinking,
     tokenize_messages,
+    tokenize_nonthinking_sft_messages,
     tokenize_processed_sample,
     tokenize_processed_samples,
     tokenize_thinking_messages,
@@ -337,6 +346,7 @@ __all__ = [
     "OASST1_JSONL_ARTIFACT",
     "OASST1_SOURCE",
     "QWEN3_NONTHINKING_TEMPLATE_SHA256",
+    "QWEN3_NONTHINKING_SFT_TEMPLATE_SHA256",
     "QWEN3_THINKING_TEMPLATE_SHA256",
     "QWEN3_TOKENIZER_ARTIFACT",
     "QWEN3_TOKENIZER_CONFIG_ARTIFACT",
@@ -374,6 +384,7 @@ __all__ = [
     "M2TokenizationConfig",
     "M5AblationDataset",
     "M5FormatRepairMixtureManifest",
+    "M5DualModeCorrectionMixtureManifest",
     "M5FormalArtifactFile",
     "M5FormalDataset",
     "M5FormalDatasetError",
@@ -508,6 +519,7 @@ __all__ = [
     "build_m5_ablation_mixture",
     "build_m5_format_repair_mixture",
     "build_m5_formal_dataset",
+    "build_m5_dual_mode_correction_mixture",
     "build_m5_r3_mixture",
     "build_m5_r3_formal_source",
     "build_m5_r3_p0_dataset",
@@ -543,6 +555,7 @@ __all__ = [
     "load_m5_r3_formal_source_config",
     "load_m5_r3_p2_config",
     "load_m2_tokenization_config",
+    "align_legacy_nonthinking_sequence_v2",
     "load_m5_reasoning_data_config",
     "load_m5_r3_content_judgments",
     "load_verified_reasoning_pilot",
@@ -560,6 +573,7 @@ __all__ = [
     "open_m5_formal_dataset",
     "open_registered_dataset",
     "pack_tokenized_samples",
+    "pair_thinking_sequence_as_nonthinking_v2",
     "prepare_m2_dataset",
     "process_imported_samples",
     "parse_teacher_output",
@@ -568,6 +582,7 @@ __all__ = [
     "select_m5_r3_p2_generations",
     "reasoning_config_sha256",
     "render_qwen3_nonthinking",
+    "render_qwen3_nonthinking_sft",
     "render_qwen3_thinking",
     "select_exact_supervised_tokens",
     "select_exact_supervised_tokens_capped",
@@ -581,6 +596,7 @@ __all__ = [
     "tokenize_processed_sample",
     "tokenize_processed_samples",
     "tokenize_messages",
+    "tokenize_nonthinking_sft_messages",
     "tokenize_thinking_messages",
     "verify_reasoning_answer",
     "verify_pinned_artifact",

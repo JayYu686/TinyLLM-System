@@ -148,7 +148,7 @@ sequenceDiagram
 | M3 DDP | 已完成 | 初始化、Sampler、Loss Reduce、Rank 故障恢复和真实 1/2/4 卡扩展 |
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
 | M5 双模式 SFT | 已完成 | 0.6B 四卡 Full SFT 50M Token 与 8B BF16 LoRA 10M Token；两条路线均完成 Exact Resume、双模式评测和导出 |
-| M6 评测与晋级 | 进行中 | 已冻结双模式比较、Cluster Bootstrap、Candidate Gate 与原子 Registry 契约；真实 Release 评测待运行 |
+| M6 评测与晋级 | 修复中 | v1 真实门禁有效拒绝首个 0.6B Candidate；已定位双模式 SFT 模板错位并启动独立 v2 修复批次 |
 | M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
 | M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |
 
@@ -191,8 +191,10 @@ sequenceDiagram
   [Qwen3-8B LoRA 正式验收](reports/m5/m5_lora_formal.md)、
   [M5 总验收](reports/m5/m5_acceptance.md)与
   [英文公开摘要](reports/m5/m5_public_summary.en.md)
-- [M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)
-- [M6.1 Base 证据复用与执行准备](reports/m6/m6_base_evidence.md)
+- [M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)、
+  [M6.1 Base 证据复用与执行准备](reports/m6/m6_base_evidence.md)、
+  [M6 v1 门禁拒绝分析](reports/m6/m6_gate_rejection_analysis.md)与
+  [双模式模板对齐决策](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。

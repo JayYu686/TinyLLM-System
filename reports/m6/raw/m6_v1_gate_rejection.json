@@ -1,0 +1,41 @@
+{
+  "candidate": {
+    "checkpoint_id": "checkpoint-tokens-0010000532",
+    "dataset_version": "m5-dual-sft-v1-b5b9e839",
+    "model_artifact_sha256": "b894b6ea081bd174ef0132182c231afea491ced2e4593c61cf1ef103447e3c5c",
+    "training_run_id": "20260807T071224Z-m5-formal-qwen3-0-6b-d39dad35-3d15",
+    "training_tokens": 10000532
+  },
+  "diagnosis": {
+    "cause": "qwen3_dual_mode_sft_template_misalignment",
+    "legacy_nonthinking_template_sha256": "d41161e0416a1047b0f31cce1497e610a4050fbe4d3fb7bda19cc56a1523cb33",
+    "replacement_nonthinking_template_sha256": "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2"
+  },
+  "general": {
+    "base_acc_norm_basis_points": 5180,
+    "candidate_acc_norm_basis_points": 5115,
+    "delta_basis_points": -65,
+    "gate_passed": true
+  },
+  "nonthinking": {
+    "base_correct_items": 16,
+    "candidate_correct_items": 18,
+    "candidate_json_valid_items": 45,
+    "domain_items": 300,
+    "json_items": 80
+  },
+  "protocol_version": "m6-release-v1",
+  "schema_version": "1.0",
+  "status": "rejected",
+  "suite_version": "tinyllm-domain-v1-83bdd8ef",
+  "thinking": {
+    "base_correct_items": 80,
+    "base_natural_closed_items": 292,
+    "candidate_correct_items": 28,
+    "candidate_forced_close_items": 299,
+    "candidate_json_valid_items": 57,
+    "candidate_natural_closed_items": 1,
+    "domain_items": 300,
+    "json_items": 80
+  }
+}

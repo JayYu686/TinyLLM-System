@@ -72,7 +72,7 @@
       "type": "string"
     },
     "mixture_version": {
-      "pattern": "^m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2)-[0-9a-f]{8}$",
+      "pattern": "^m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2|dual-mode-correction-mixture-v1)-[0-9a-f]{8}$",
       "title": "Mixture Version",
       "type": "string"
     },

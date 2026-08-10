@@ -138,6 +138,12 @@ from tinyllm.evaluation.m6_base import (
     sha256_file,
     sha256_tree,
 )
+from tinyllm.evaluation.m6_candidate import (
+    M6CandidateImportError,
+    import_m5_candidate_evidence,
+    load_m6_candidate_import,
+    model_export_sha256,
+)
 from tinyllm.evaluation.m6_domain import (
     M6DomainError,
     build_m6_domain_transcript,
@@ -149,6 +155,7 @@ from tinyllm.evaluation.m6_schema import (
     M6BaseImportResult,
     M6BootstrapConfig,
     M6BootstrapInterval,
+    M6CandidateImportResult,
     M6ComparisonResult,
     M6DomainExecutionConfig,
     M6DomainItemScore,
@@ -242,6 +249,8 @@ __all__ = [
     "M6ContractError",
     "M6BaseImportError",
     "M6BaseImportResult",
+    "M6CandidateImportError",
+    "M6CandidateImportResult",
     "M6DomainError",
     "M6DomainExecutionConfig",
     "M6DomainItemScore",
@@ -315,7 +324,10 @@ __all__ = [
     "domain_cluster_id",
     "finalize_m6_domain_pass",
     "import_m2_base_evidence",
+    "import_m5_candidate_evidence",
+    "load_m6_candidate_import",
     "model_artifact_sha256",
+    "model_export_sha256",
     "parse_m6_final_answer",
     "run_m6_domain_pass",
     "sha256_file",

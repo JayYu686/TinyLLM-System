@@ -47,7 +47,7 @@
       "type": "string"
     },
     "correction_manifest_sha256": {
-      "const": "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c",
+      "pattern": "^[a-f0-9]{64}$",
       "title": "Correction Manifest Sha256",
       "type": "string"
     },
@@ -149,7 +149,7 @@
       "type": "integer"
     },
     "repair_manifest_sha256": {
-      "const": "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1",
+      "pattern": "^[a-f0-9]{64}$",
       "title": "Repair Manifest Sha256",
       "type": "string"
     },

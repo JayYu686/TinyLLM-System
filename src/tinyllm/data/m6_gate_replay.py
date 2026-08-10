@@ -77,6 +77,12 @@ def build_m6_gate_replay_mixture(
     repair_root: Path,
     output_root: Path,
     build_seed: int,
+    expected_correction_manifest_sha256: str = (
+        "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+    ),
+    expected_repair_manifest_sha256: str = (
+        "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
+    ),
 ) -> M6GateReplayMixtureManifest:
     """Build the preregistered 55% correction / 45% repair replay mixture."""
 
@@ -94,11 +100,9 @@ def build_m6_gate_replay_mixture(
     ).hexdigest()
     if (
         correction.manifest.mixture_version != "m5-dual-mode-correction-mixture-v1-4bc342d4"
-        or correction_manifest_sha256
-        != "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+        or correction_manifest_sha256 != expected_correction_manifest_sha256
         or repair.manifest.mixture_version != "m6-gate-repair-mixture-v1-be2aa7fa"
-        or repair_manifest_sha256
-        != "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
+        or repair_manifest_sha256 != expected_repair_manifest_sha256
     ):
         raise M5MixtureError("M6 replay source identity differs from preregistration")
     if correction.manifest.parent_content_sha256 != repair.manifest.parent_content_sha256:
@@ -176,13 +180,9 @@ def build_m6_gate_replay_mixture(
             source_consumed_evaluation_content=False,
             evaluation_prompt_overlap_count=0,
             correction_mixture_version="m5-dual-mode-correction-mixture-v1-4bc342d4",
-            correction_manifest_sha256=(
-                "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
-            ),
+            correction_manifest_sha256=correction_manifest_sha256,
             repair_mixture_version="m6-gate-repair-mixture-v1-be2aa7fa",
-            repair_manifest_sha256=(
-                "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
-            ),
+            repair_manifest_sha256=repair_manifest_sha256,
             tokenizer_revision="c1899de289a04d12100db370d81485cdf75e47ca",
             nonthinking_template_id="qwen3-chatml-nonthinking-sft-v2",
             nonthinking_template_sha256=(

@@ -286,13 +286,9 @@ class M6GateReplayMixtureManifest(StrictSchema):
     source_consumed_evaluation_content: Literal[False]
     evaluation_prompt_overlap_count: Literal[0]
     correction_mixture_version: Literal["m5-dual-mode-correction-mixture-v1-4bc342d4"]
-    correction_manifest_sha256: Literal[
-        "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
-    ]
+    correction_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     repair_mixture_version: Literal["m6-gate-repair-mixture-v1-be2aa7fa"]
-    repair_manifest_sha256: Literal[
-        "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
-    ]
+    repair_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     tokenizer_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     nonthinking_template_id: Literal["qwen3-chatml-nonthinking-sft-v2"]
     nonthinking_template_sha256: Literal[

@@ -13,14 +13,14 @@ model:
   adaptation: full_sft
   trust_remote_code: false
 data:
-  dataset_version: m5-dual-mode-correction-mixture-v1-84c0345e
+  dataset_version: m5-dual-mode-correction-mixture-v1-4bc342d4
   parent_dataset_version: m2-sft-v1-f82ff32e
   split: train
   sequence_length: 1024
   assistant_only_loss: true
   mode: dual
   thinking_token_fraction: 0.3
-  mix_manifest_sha256: 8630d5ca44196580341c4de4b3e06ac5f9d767986e3c629ab81dccedb98aebeb
+  mix_manifest_sha256: db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c
 reasoning:
   explicit_mode_selection: true
   supervise_visible_reasoning: true

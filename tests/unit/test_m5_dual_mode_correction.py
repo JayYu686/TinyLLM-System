@@ -14,6 +14,7 @@ from tinyllm.data import (
     M5MixtureSequence,
     M5R3MixtureManifest,
     align_legacy_nonthinking_sequence_v2,
+    pack_correction_sequences,
     pair_thinking_sequence_as_nonthinking_v2,
 )
 from tinyllm.data.m5_mixture import open_m5_ablation_mixture
@@ -105,6 +106,32 @@ def test_thinking_source_becomes_paired_nonthinking_final_answer() -> None:
     )
     assert labels == (-100,) * 8 + (77, IM_END, -100)
     assert corrected.mode == 0
+
+
+def test_correction_repacking_preserves_tokens_labels_and_supervision() -> None:
+    first = padded([10, 11, 12], [-100, 11, 12], mode=0)
+    second = padded([20, 21], [-100, 21], mode=0)
+    third = padded([30] * 1020, [-100] + [30] * 1018 + [IM_END], mode=0)
+
+    packed = pack_correction_sequences((first, second, third), mode=0)
+
+    assert len(packed) == 2
+    first_ids, first_labels = active(packed[0])
+    assert first_ids == (10, 11, 12, 20, 21)
+    assert first_labels == (-100, 11, 12, -100, 21)
+    assert sum(item.supervised_tokens for item in packed) == 1022
+
+
+def test_correction_repacking_rejects_empty_invalid_or_mixed_modes() -> None:
+    nonthinking = padded([10, 11], [-100, 11], mode=0)
+    thinking = padded([20, 21], [-100, 21], mode=1)
+
+    with pytest.raises(M5MixtureError, match="non-empty valid mode"):
+        pack_correction_sequences((), mode=0)
+    with pytest.raises(M5MixtureError, match="non-empty valid mode"):
+        pack_correction_sequences((nonthinking,), mode=2)
+    with pytest.raises(M5MixtureError, match="cannot mix modes"):
+        pack_correction_sequences((nonthinking, thinking), mode=0)
 
 
 def test_correction_rejects_ambiguous_or_partial_sources() -> None:

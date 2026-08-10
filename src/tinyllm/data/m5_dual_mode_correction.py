@@ -104,6 +104,42 @@ def _pad(input_ids: list[int], labels: list[int], *, mode: int) -> M5MixtureSequ
     )
 
 
+def pack_correction_sequences(
+    sequences: tuple[M5MixtureSequence, ...],
+    *,
+    mode: int,
+) -> tuple[M5MixtureSequence, ...]:
+    """Greedily repack aligned samples without changing labels or sample order.
+
+    Alignment may add four masked tokens to each legacy sample.  Repacking after
+    that insertion avoids running a full 1,024-token forward pass for every
+    short source sample while retaining the exact supervised-token budget.
+    """
+
+    if mode not in {0, 1} or not sequences:
+        raise M5MixtureError("correction packing requires a non-empty valid mode")
+    packed: list[M5MixtureSequence] = []
+    current_ids: list[int] = []
+    current_labels: list[int] = []
+    source_supervision = 0
+    for sequence in sequences:
+        if sequence.mode != mode:
+            raise M5MixtureError("correction packing cannot mix modes")
+        input_ids, labels = _active_tokens(sequence)
+        if len(current_ids) + len(input_ids) > _SEQUENCE_LENGTH:
+            packed.append(_pad(current_ids, current_labels, mode=mode))
+            current_ids = []
+            current_labels = []
+        current_ids.extend(input_ids)
+        current_labels.extend(labels)
+        source_supervision += sequence.supervised_tokens
+    if current_ids:
+        packed.append(_pad(current_ids, current_labels, mode=mode))
+    if sum(sequence.supervised_tokens for sequence in packed) != source_supervision:
+        raise M5MixtureError("correction packing changed the supervised-token count")
+    return tuple(packed)
+
+
 def align_legacy_nonthinking_sequence_v2(
     sequence: M5MixtureSequence,
 ) -> M5MixtureSequence:
@@ -251,8 +287,13 @@ def build_m5_dual_mode_correction_mixture(
         raise M5MixtureError("R3 source identity or M6 isolation differs")
     source_manifest_bytes = (source_r3_root / "manifest.json").read_bytes()
     source_manifest_sha256 = hashlib.sha256(source_manifest_bytes).hexdigest()
-    general = _general_nonthinking_sources(artifact_root=artifact_root)
-    domain_nonthinking, domain_thinking = _domain_source_pairs(source_root=source_r3_root)
+    general_sources = _general_nonthinking_sources(artifact_root=artifact_root)
+    domain_nonthinking_sources, domain_thinking_sources = _domain_source_pairs(
+        source_root=source_r3_root
+    )
+    general = pack_correction_sequences(general_sources, mode=0)
+    domain_nonthinking = pack_correction_sequences(domain_nonthinking_sources, mode=0)
+    domain_thinking = pack_correction_sequences(domain_thinking_sources, mode=1)
     selected_general, general_reuse, general_partial = select_exact_supervised_tokens(
         general,
         target=640_000,
@@ -343,8 +384,8 @@ def build_m5_dual_mode_correction_mixture(
             sequence_count=len(combined),
             nonthinking_sequence_count=len(selected_general) + len(selected_domain_non),
             thinking_sequence_count=len(selected_domain_think),
-            general_nonthinking_source_sequences=len(general),
-            domain_source_pairs=len(domain_thinking),
+            general_nonthinking_source_sequences=len(general_sources),
+            domain_source_pairs=len(domain_thinking_sources),
             general_nonthinking_reuse_count=general_reuse,
             domain_nonthinking_reuse_count=domain_non_reuse,
             domain_thinking_reuse_count=domain_think_reuse,

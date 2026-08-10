@@ -561,7 +561,7 @@ class M6DomainPassSummary(StrictSchema):
 
 
 class M6BaseImportResult(StrictSchema):
-    """Verified reuse of the pre-training Base Non-thinking and general evidence."""
+    """Verified Base identity plus protocol-compatible reusable evidence."""
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
@@ -571,19 +571,31 @@ class M6BaseImportResult(StrictSchema):
     source_config_sha256: str = Field(pattern=SHA256_PATTERN)
     source_git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     source_evaluation_sha256: str = Field(pattern=SHA256_PATTERN)
-    source_domain_results_sha256: str = Field(pattern=SHA256_PATTERN)
-    source_human_review_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_domain_results_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    source_human_review_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     source_general_tree_sha256: str = Field(pattern=SHA256_PATTERN)
     source_environment_sha256: str = Field(pattern=SHA256_PATTERN)
     source_hardware_sha256: str = Field(pattern=SHA256_PATTERN)
     model: M6ModelIdentity
-    nonthinking: M6DomainModeResult
+    nonthinking: M6DomainModeResult | None = None
     general: M6GeneralResult
 
     @model_validator(mode="after")
     def validate_import(self) -> M6BaseImportResult:
-        if self.model.role != "base" or self.nonthinking.mode != "nonthinking":
-            raise ValueError("M6 Base import requires Base Non-thinking evidence")
+        if self.model.role != "base":
+            raise ValueError("M6 Base import requires a Base model identity")
+        domain_values = (
+            self.source_domain_results_sha256,
+            self.source_human_review_sha256,
+            self.nonthinking,
+        )
+        if self.protocol_version == "m6-release-v1":
+            if any(value is None for value in domain_values):
+                raise ValueError("M6 v1 Base import requires reusable Non-thinking evidence")
+            if self.nonthinking is None or self.nonthinking.mode != "nonthinking":
+                raise ValueError("M6 v1 Base import requires Base Non-thinking evidence")
+        elif any(value is not None for value in domain_values):
+            raise ValueError("M6 holdout Base import cannot reuse prior domain evidence")
         return self
 
 

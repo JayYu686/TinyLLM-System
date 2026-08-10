@@ -197,6 +197,12 @@ def assemble_m6_base_evaluation(
     config_sha256 = canonical_config_hash(release)
     if imported.config_sha256 != config_sha256:
         raise M6AssemblyError("M6 Base import and Release config identities differ")
+    if (
+        imported.nonthinking is None
+        or imported.source_domain_results_sha256 is None
+        or imported.source_human_review_sha256 is None
+    ):
+        raise M6AssemblyError("M6 v1 Base assembly requires imported Non-thinking evidence")
     thinking_summary, thinking = _load_domain_component(
         thinking_pass_directory,
         thinking_judgments_path,

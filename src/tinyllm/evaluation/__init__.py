@@ -24,6 +24,7 @@ from tinyllm.evaluation.baseline_results import (
 from tinyllm.evaluation.baseline_run import (
     complete_baseline_human_review,
     run_baseline_evaluation,
+    run_general_evaluation,
 )
 from tinyllm.evaluation.baseline_runtime import (
     BaselineGpuPreflight,
@@ -151,6 +152,7 @@ from tinyllm.evaluation.m6_domain import (
     parse_m6_final_answer,
     run_m6_domain_pass,
 )
+from tinyllm.evaluation.m6_general import M6GeneralError, run_m6_general_pass
 from tinyllm.evaluation.m6_schema import (
     M6BaseImportResult,
     M6BootstrapConfig,
@@ -167,6 +169,7 @@ from tinyllm.evaluation.m6_schema import (
     M6GateConfig,
     M6GeneralComparison,
     M6GeneralExecutionConfig,
+    M6GeneralPassSummary,
     M6GeneralResult,
     M6GeneralTaskConfig,
     M6GeneralTaskResult,
@@ -262,6 +265,8 @@ __all__ = [
     "M6GateConfig",
     "M6GeneralComparison",
     "M6GeneralExecutionConfig",
+    "M6GeneralError",
+    "M6GeneralPassSummary",
     "M6GeneralResult",
     "M6GeneralTaskConfig",
     "M6GeneralTaskResult",
@@ -336,6 +341,8 @@ __all__ = [
     "run_contamination_check",
     "run_baseline_evaluation",
     "run_domain_generation",
+    "run_general_evaluation",
+    "run_m6_general_pass",
     "run_m5_reasoning_evaluation",
     "run_m5_r2_length_replay",
     "run_m5_thinking_budget_evaluation",

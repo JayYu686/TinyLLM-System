@@ -623,6 +623,32 @@ class M6GeneralResult(StrictSchema):
         return self
 
 
+class M6GeneralPassSummary(StrictSchema):
+    """One full Candidate general-regression pass with execution lineage."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["succeeded"]
+    evaluation_id: str = Field(min_length=1, max_length=180)
+    protocol_version: Literal["m6-release-v1"]
+    config_sha256: str = Field(pattern=SHA256_PATTERN)
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    git_dirty: Literal[False]
+    model: M6ModelIdentity
+    general: M6GeneralResult
+    physical_gpu_index: int = Field(ge=0)
+    gpu_name: str = Field(min_length=1, max_length=128)
+    duration_seconds: float = Field(gt=0.0)
+    environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    hardware_sha256: str = Field(pattern=SHA256_PATTERN)
+    raw_results_sha256: str = Field(pattern=SHA256_PATTERN)
+
+    @model_validator(mode="after")
+    def validate_pass(self) -> M6GeneralPassSummary:
+        if self.model.role != "candidate":
+            raise ValueError("M6 general pass must evaluate the frozen Candidate")
+        return self
+
+
 class M6EvaluationResult(StrictSchema):
     """Complete private M6 evaluation for one Base or Candidate."""
 

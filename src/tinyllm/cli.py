@@ -52,6 +52,7 @@ from tinyllm.evaluation import (
     M6ContractError,
     M6DomainError,
     M6DomainPassSummary,
+    M6GeneralError,
     M6ModelIdentity,
     M6PromotionError,
     compare_m6_evaluations,
@@ -69,6 +70,7 @@ from tinyllm.evaluation import (
     run_baseline_evaluation,
     run_contamination_check,
     run_m6_domain_pass,
+    run_m6_general_pass,
     write_m6_comparison,
 )
 from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
@@ -974,6 +976,89 @@ def eval_m6_candidate_domain(
         json_output=json_output,
     )
     _render_m6_domain_result(result, json_output=json_output)
+
+
+@eval_app.command("m6-candidate-general")
+def eval_m6_candidate_general(
+    ctx: typer.Context,
+    candidate_import: Annotated[
+        Path,
+        typer.Option("--candidate-import", help="Verified M6 Candidate-import JSON."),
+    ],
+    model_dir: Annotated[
+        Path,
+        typer.Option("--model-dir", help="Absolute frozen M5 10M model export."),
+    ],
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private TinyLLM Artifact Root."),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", help="Absolute absent private output directory."),
+    ],
+    gpu_index: Annotated[
+        int,
+        typer.Option("--gpu-index", help="Physical GPU selected after busy/heat preflight."),
+    ],
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Frozen M6 release-policy YAML."),
+    ] = Path("configs/eval/m6_release.yaml"),
+    project_root: Annotated[
+        Path,
+        typer.Option("--project-root", help="Clean Git project containing Task Adapters."),
+    ] = Path("."),
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable path-free machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Run the complete frozen M6 Candidate general-regression suite."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not all(
+        path.is_absolute() for path in (candidate_import, model_dir, artifact_root, output_dir)
+    ):
+        _output_error("M6 general artifact paths must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    previous_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    try:
+        imported = load_m6_candidate_import(candidate_import)
+        preflight_baseline_gpu(gpu_index)
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_index)
+        result = run_m6_general_pass(
+            release_config_path=config,
+            artifact_root=artifact_root,
+            model_dir=model_dir,
+            output_dir=output_dir,
+            project_root=project_root,
+            physical_gpu_index=gpu_index,
+            model_identity=imported.model,
+            expected_config_sha256=imported.config_sha256,
+        )
+    except (M6CandidateImportError, M6ContractError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except BaselinePreflightError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_PREFLIGHT_FAILED")
+        raise typer.Exit(code=3) from exc
+    except (M6GeneralError, BaselineRuntimeError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_GENERAL_FAILED")
+        raise typer.Exit(code=6) from exc
+    finally:
+        if previous_visible is None:
+            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"succeeded: {result.evaluation_id} "
+            f"acc_norm={result.general.aggregate_basis_points / 100:.2f}%"
+        )
 
 
 @eval_app.command("m6-domain-review")

@@ -101,6 +101,7 @@ def run_m6_general_pass(
     release_config_path: Path,
     artifact_root: Path,
     model_dir: Path,
+    tokenizer_dir: Path,
     output_dir: Path,
     project_root: Path,
     physical_gpu_index: int,
@@ -126,6 +127,8 @@ def run_m6_general_pass(
         or model_export_sha256(model_dir) != model_identity.model_artifact_sha256
     ):
         raise M6GeneralError("M6 general model differs from the imported Candidate")
+    if not tokenizer_dir.is_absolute() or not tokenizer_dir.is_dir():
+        raise M6GeneralError("M6 general tokenizer must be an absolute existing directory")
     baseline_config = load_baseline_config(project_root / "configs/eval/m2_baseline.yaml")
     started = time.monotonic()
     general_summary = run_general_evaluation(
@@ -133,6 +136,7 @@ def run_m6_general_pass(
         project_root=project_root,
         artifact_root=artifact_root,
         model_path=model_dir,
+        tokenizer_path=tokenizer_dir,
         output_path=output_dir,
         device="cuda",
         offline=True,

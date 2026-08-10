@@ -97,10 +97,13 @@ def test_m6_general_pass_writes_complete_lineage(
     artifact_root = (tmp_path / "artifacts").resolve()
     model_dir = (tmp_path / "model").resolve()
     model_dir.mkdir()
+    tokenizer_dir = (tmp_path / "tokenizer").resolve()
+    tokenizer_dir.mkdir()
 
     def run_general(*_args: object, **kwargs: object) -> GeneralBaselineSummary:
         output_path = kwargs["output_path"]
         assert isinstance(output_path, Path)
+        assert kwargs["tokenizer_path"] == tokenizer_dir
         raw = output_path / "raw/model"
         raw.mkdir(parents=True)
         (raw / "results.json").write_text("{}\n", encoding="utf-8")
@@ -136,6 +139,7 @@ def test_m6_general_pass_writes_complete_lineage(
         release_config_path=Path("configs/eval/m6_release.yaml"),
         artifact_root=artifact_root,
         model_dir=model_dir,
+        tokenizer_dir=tokenizer_dir,
         output_dir=output,
         project_root=Path.cwd(),
         physical_gpu_index=3,
@@ -202,7 +206,7 @@ def test_m6_general_cli_runs_preflight_and_emits_json(
     monkeypatch.setattr(cli_module, "run_m6_general_pass", lambda **_: result)
     paths = [
         str((tmp_path / name).resolve())
-        for name in ("candidate.json", "model", "artifacts", "general")
+        for name in ("candidate.json", "model", "tokenizer", "artifacts", "general")
     ]
 
     assert (
@@ -215,10 +219,12 @@ def test_m6_general_cli_runs_preflight_and_emits_json(
                 paths[0],
                 "--model-dir",
                 paths[1],
-                "--artifact-root",
+                "--tokenizer-dir",
                 paths[2],
-                "--output-dir",
+                "--artifact-root",
                 paths[3],
+                "--output-dir",
+                paths[4],
                 "--gpu-index",
                 "3",
             ]
@@ -237,6 +243,7 @@ def test_m6_general_pass_rejects_preflight_and_lineage_drift(
         "release_config_path": Path("configs/eval/m6_release.yaml"),
         "artifact_root": (tmp_path / "artifacts").resolve(),
         "model_dir": (tmp_path / "model").resolve(),
+        "tokenizer_dir": (tmp_path / "tokenizer").resolve(),
         "output_dir": output,
         "project_root": Path.cwd(),
         "physical_gpu_index": 3,
@@ -307,7 +314,7 @@ def test_m6_general_cli_maps_failures(
             )
     paths = [
         str((tmp_path / name).resolve())
-        for name in ("candidate.json", "model", "artifacts", "general")
+        for name in ("candidate.json", "model", "tokenizer", "artifacts", "general")
     ]
     assert (
         main(
@@ -318,10 +325,12 @@ def test_m6_general_cli_maps_failures(
                 paths[0],
                 "--model-dir",
                 paths[1],
-                "--artifact-root",
+                "--tokenizer-dir",
                 paths[2],
-                "--output-dir",
+                "--artifact-root",
                 paths[3],
+                "--output-dir",
+                paths[4],
                 "--gpu-index",
                 "3",
             ]

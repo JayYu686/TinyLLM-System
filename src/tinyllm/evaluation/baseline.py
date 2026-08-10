@@ -233,24 +233,32 @@ def build_lm_eval_command(
     *,
     project_root: Path,
     model_path: Path,
+    tokenizer_path: Path | None = None,
     output_path: Path,
     device: str,
 ) -> tuple[str, ...]:
     """Build the reviewable lm-eval v0.4.12 invocation without executing it."""
 
-    if not model_path.is_absolute() or not output_path.is_absolute():
-        raise BaselineContractError("model and lm-eval output paths must be absolute")
+    if (
+        not model_path.is_absolute()
+        or not output_path.is_absolute()
+        or (tokenizer_path is not None and not tokenizer_path.is_absolute())
+    ):
+        raise BaselineContractError("model, tokenizer, and lm-eval output paths must be absolute")
     if device not in {"cpu", "cuda", "cuda:0"}:
         raise BaselineContractError("Baseline device must be cpu, cuda, or cuda:0")
-    model_args = ",".join(
+    model_arguments = [f"pretrained={model_path}"]
+    if tokenizer_path is not None:
+        model_arguments.append(f"tokenizer={tokenizer_path}")
+    model_arguments.extend(
         (
-            f"pretrained={model_path}",
             f"dtype={config.model.dtype}",
             f"attn_implementation={config.model.attention_implementation}",
             f"enable_thinking={str(config.general.enable_thinking)}",
             f"max_length={config.general.max_length}",
         )
     )
+    model_args = ",".join(model_arguments)
     command = [
         sys.executable,
         "-m",

@@ -997,7 +997,11 @@ def eval_m6_candidate_general(
     ],
     model_dir: Annotated[
         Path,
-        typer.Option("--model-dir", help="Absolute frozen M5 10M model export."),
+        typer.Option("--model-dir", help="Absolute frozen Candidate model export."),
+    ],
+    tokenizer_dir: Annotated[
+        Path,
+        typer.Option("--tokenizer-dir", help="Absolute pinned Base tokenizer snapshot."),
     ],
     artifact_root: Annotated[
         Path,
@@ -1029,7 +1033,8 @@ def eval_m6_candidate_general(
     state = cast(CLIState, ctx.obj)
     json_output = state.json_output or command_json
     if not all(
-        path.is_absolute() for path in (candidate_import, model_dir, artifact_root, output_dir)
+        path.is_absolute()
+        for path in (candidate_import, model_dir, tokenizer_dir, artifact_root, output_dir)
     ):
         _output_error("M6 general artifact paths must be absolute", json_output=json_output)
         raise typer.Exit(code=2)
@@ -1042,6 +1047,7 @@ def eval_m6_candidate_general(
             release_config_path=config,
             artifact_root=artifact_root,
             model_dir=model_dir,
+            tokenizer_dir=tokenizer_dir,
             output_dir=output_dir,
             project_root=project_root,
             physical_gpu_index=gpu_index,

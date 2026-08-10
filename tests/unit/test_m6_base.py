@@ -230,6 +230,7 @@ def test_m6_import_reuses_only_verified_compatible_base_evidence(
     )
 
     assert result.status == "succeeded"
+    assert result.nonthinking is not None
     assert result.nonthinking.correct_items == 300
     assert result.nonthinking.json_valid_items == 80
     assert result.nonthinking.visible_reasoning_leakage_items == 0

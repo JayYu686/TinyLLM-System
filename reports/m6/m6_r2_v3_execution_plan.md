@@ -34,6 +34,7 @@ JSON Valid 为 78/80（97.50%）；两者均未达到 98% 的门槛。因此 R2 
 - Protocol：`m6-release-v3`；
 - Suite：`tinyllm-domain-holdout-v1-2b167ce6`；
 - Base 与 Seed 42 Candidate 均执行 Thinking/Non-thinking 领域评测；
+- Base 只复用协议未变化且经过哈希校验的 M2 通用结果，禁止复用 v1 领域结果；
 - Candidate 执行完整 ARC-Easy、HellaSwag、PIQA 通用回归；
 - 四个领域 Pass 分别完成 40 条人工 Rubric；
 - 继续使用原 11 项门禁、10,000 次 Paired Cluster Bootstrap 和既有阈值；

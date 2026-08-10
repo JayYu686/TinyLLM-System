@@ -142,18 +142,19 @@ def _validate_protocol_equivalence(
     release: M6ReleaseConfig,
     source: Any,
 ) -> None:
-    domain = source.domain
-    nonthinking = release.domain_execution.nonthinking
-    if (
-        domain.suite_version != release.suite_version
-        or domain.content_sha256 != release.suite_content_sha256
-        or domain.expected_items != release.expected_domain_items
-        or domain.max_sequence_length != release.domain_execution.max_sequence_length
-        or domain.max_new_tokens != nonthinking.max_new_tokens
-        or domain.do_sample != nonthinking.do_sample
-        or source.generation_template.template_sha256 != nonthinking.template_sha256
-    ):
-        raise M6BaseImportError("M2 domain protocol is incompatible with M6 Non-thinking")
+    if release.protocol_version == "m6-release-v1":
+        domain = source.domain
+        nonthinking = release.domain_execution.nonthinking
+        if (
+            domain.suite_version != release.suite_version
+            or domain.content_sha256 != release.suite_content_sha256
+            or domain.expected_items != release.expected_domain_items
+            or domain.max_sequence_length != release.domain_execution.max_sequence_length
+            or domain.max_new_tokens != nonthinking.max_new_tokens
+            or domain.do_sample != nonthinking.do_sample
+            or source.generation_template.template_sha256 != nonthinking.template_sha256
+        ):
+            raise M6BaseImportError("M2 domain protocol is incompatible with M6 Non-thinking")
     general = source.general
     expected_tasks = release.general_execution.tasks
     actual_tasks = tuple(
@@ -282,7 +283,7 @@ def import_m2_base_evidence(
     project_root: Path,
     output_path: Path | None = None,
 ) -> M6BaseImportResult:
-    """Validate and convert the formal M2 Base evidence without rerunning inference."""
+    """Import Base identity and only evidence compatible with the release protocol."""
 
     if not source_run.is_absolute() or not source_run.is_dir() or source_run.is_symlink():
         raise M6BaseImportError("M6 source Run must be an existing absolute directory")
@@ -314,13 +315,20 @@ def import_m2_base_evidence(
         or summary.model_revision != source_config.model.revision
     ):
         raise M6BaseImportError("M2 Base Run lineage is incomplete or inconsistent")
-    items = load_evaluation_items(project_root / "evals/domain/v1/items.jsonl")
-    if len(items) != 300:
-        raise M6BaseImportError("M6 frozen domain suite must contain exactly 300 items")
     domain_path = source_run / "evaluations/domain/results.jsonl"
     review_path = source_run / "evaluations/domain/human_review/judgments.jsonl"
-    results = cast(tuple[DomainItemResult, ...], _load_jsonl(domain_path, DomainItemResult))
-    judgments = load_human_rubric_judgments(review_path)
+    domain_sha: str | None = None
+    review_sha: str | None = None
+    nonthinking: M6DomainModeResult | None = None
+    if release.protocol_version == "m6-release-v1":
+        items = load_evaluation_items(project_root / "evals/domain/v1/items.jsonl")
+        if len(items) != 300:
+            raise M6BaseImportError("M6 frozen domain suite must contain exactly 300 items")
+        results = cast(tuple[DomainItemResult, ...], _load_jsonl(domain_path, DomainItemResult))
+        judgments = load_human_rubric_judgments(review_path)
+        domain_sha = sha256_file(domain_path)
+        review_sha = sha256_file(review_path)
+        nonthinking = _nonthinking_mode(items, results, judgments)
     model_sha = model_artifact_sha256(model_dir, source_config.model.files)
     imported = M6BaseImportResult(
         status="succeeded",
@@ -330,8 +338,8 @@ def import_m2_base_evidence(
         source_config_sha256=source_config_sha,
         source_git_commit=summary.git_commit,
         source_evaluation_sha256=sha256_file(source_run / "evaluations/summary.json"),
-        source_domain_results_sha256=sha256_file(domain_path),
-        source_human_review_sha256=sha256_file(review_path),
+        source_domain_results_sha256=domain_sha,
+        source_human_review_sha256=review_sha,
         source_general_tree_sha256=sha256_tree(source_run / "evaluations/general/raw"),
         source_environment_sha256=sha256_file(source_run / "environment.json"),
         source_hardware_sha256=sha256_file(source_run / "hardware.json"),
@@ -344,7 +352,7 @@ def import_m2_base_evidence(
             model_artifact_sha256=model_sha,
             model_parameters=summary.general.model_parameters,
         ),
-        nonthinking=_nonthinking_mode(items, results, judgments),
+        nonthinking=nonthinking,
         general=_general_result(summary),
     )
     if output_path is not None:

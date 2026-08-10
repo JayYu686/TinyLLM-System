@@ -480,7 +480,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "Verified reuse of the pre-training Base Non-thinking and general evidence.",
+  "description": "Verified Base identity plus protocol-compatible reusable evidence.",
   "properties": {
     "config_sha256": {
       "pattern": "^[a-f0-9]{64}$",
@@ -494,7 +494,15 @@
       "$ref": "#/$defs/M6ModelIdentity"
     },
     "nonthinking": {
-      "$ref": "#/$defs/M6DomainModeResult"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M6DomainModeResult"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "protocol_version": {
       "enum": [
@@ -517,9 +525,17 @@
       "type": "string"
     },
     "source_domain_results_sha256": {
-      "pattern": "^[a-f0-9]{64}$",
-      "title": "Source Domain Results Sha256",
-      "type": "string"
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Domain Results Sha256"
     },
     "source_environment_sha256": {
       "pattern": "^[a-f0-9]{64}$",
@@ -547,9 +563,17 @@
       "type": "string"
     },
     "source_human_review_sha256": {
-      "pattern": "^[a-f0-9]{64}$",
-      "title": "Source Human Review Sha256",
-      "type": "string"
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Human Review Sha256"
     },
     "source_run_id": {
       "maxLength": 180,
@@ -571,13 +595,10 @@
     "source_config_sha256",
     "source_git_commit",
     "source_evaluation_sha256",
-    "source_domain_results_sha256",
-    "source_human_review_sha256",
     "source_general_tree_sha256",
     "source_environment_sha256",
     "source_hardware_sha256",
     "model",
-    "nonthinking",
     "general"
   ],
   "title": "M6BaseImportResult",

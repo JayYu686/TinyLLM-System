@@ -251,6 +251,31 @@ def test_m6_import_reuses_only_verified_compatible_base_evidence(
         )
 
 
+@pytest.mark.parametrize(
+    "release_config",
+    ("configs/eval/m6_release_v2.yaml", "configs/eval/m6_release_v3.yaml"),
+)
+def test_m6_holdout_import_reuses_general_but_requires_fresh_domain_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    release_config: str,
+) -> None:
+    source_run, model_dir = _synthetic_source_run(tmp_path)
+    monkeypatch.setattr(m6_base_module, "model_artifact_sha256", lambda *_args: "b" * 64)
+
+    result = import_m2_base_evidence(
+        release_config_path=Path(release_config),
+        source_run=source_run,
+        model_dir=model_dir,
+        project_root=Path("."),
+    )
+
+    assert result.source_domain_results_sha256 is None
+    assert result.source_human_review_sha256 is None
+    assert result.nonthinking is None
+    assert result.general.aggregate_basis_points == 5000
+
+
 def test_m6_base_import_cli_rejects_relative_artifact_paths(
     capsys: pytest.CaptureFixture[str],
 ) -> None:

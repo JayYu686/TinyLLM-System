@@ -709,10 +709,12 @@ def eval_m6_import_base(
     if json_output:
         typer.echo(result.model_dump_json(indent=2))
     else:
-        typer.echo(
-            f"succeeded: source={result.source_run_id} "
+        domain_evidence = (
             f"nonthinking={result.nonthinking.correct_items}/300"
+            if result.nonthinking is not None
+            else "domain=replay-required"
         )
+        typer.echo(f"succeeded: source={result.source_run_id} {domain_evidence}")
 
 
 @eval_app.command("m6-import-candidate")

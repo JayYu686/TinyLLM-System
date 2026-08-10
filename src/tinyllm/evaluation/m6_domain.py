@@ -31,6 +31,7 @@ from tinyllm.evaluation.m6_base import (
     model_artifact_sha256,
     sha256_file,
 )
+from tinyllm.evaluation.m6_candidate import model_export_sha256
 from tinyllm.evaluation.m6_schema import (
     M6DomainItemScore,
     M6DomainModeResult,
@@ -385,15 +386,24 @@ def run_m6_domain_pass(
     release = load_m6_release_config(release_config_path)
     if canonical_config_hash(release) != expected_config_sha256:
         raise M6DomainError("M6 Base import and Release config identities differ")
-    if model_identity.role != "base" or model_identity.adaptation != "base":
-        raise M6DomainError("M6.1 domain command requires the imported Base identity")
     source_config = load_baseline_config(project_root / "configs/eval/m2_baseline.yaml")
-    if (
-        model_dir.resolve() != tokenizer_dir.resolve()
-        or model_artifact_sha256(model_dir, source_config.model.files)
-        != model_identity.model_artifact_sha256
+    base_artifact_sha256 = model_artifact_sha256(tokenizer_dir, source_config.model.files)
+    if model_identity.role == "base":
+        if (
+            model_identity.adaptation != "base"
+            or model_dir.resolve() != tokenizer_dir.resolve()
+            or base_artifact_sha256 != model_identity.model_artifact_sha256
+        ):
+            raise M6DomainError(
+                "M6 Base model or Tokenizer identity differs from imported evidence"
+            )
+    elif (
+        model_identity.adaptation != "full_sft"
+        or model_identity.repository != "Qwen/Qwen3-0.6B"
+        or model_identity.base_revision != source_config.model.revision
+        or model_export_sha256(model_dir) != model_identity.model_artifact_sha256
     ):
-        raise M6DomainError("M6 Base model or Tokenizer identity differs from imported evidence")
+        raise M6DomainError("M6 Candidate model or Tokenizer identity differs from its import")
     items = load_evaluation_items(project_root / "evals/domain/v1/items.jsonl")
     if len(items) != 300:
         raise M6DomainError("M6 domain suite must contain exactly 300 items")

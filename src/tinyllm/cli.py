@@ -47,15 +47,20 @@ from tinyllm.evaluation import (
     BaselineRuntimeError,
     EvaluationContractError,
     M6BaseImportError,
+    M6CandidateImportError,
     M6ComparisonError,
     M6ContractError,
     M6DomainError,
+    M6DomainPassSummary,
+    M6ModelIdentity,
     M6PromotionError,
     compare_m6_evaluations,
     complete_baseline_human_review,
     finalize_m6_domain_pass,
     import_m2_base_evidence,
+    import_m5_candidate_evidence,
     load_m6_base_import,
+    load_m6_candidate_import,
     load_m6_comparison,
     load_m6_evaluation,
     load_m6_release_config,
@@ -703,6 +708,130 @@ def eval_m6_import_base(
         )
 
 
+@eval_app.command("m6-import-candidate")
+def eval_m6_import_candidate(
+    ctx: typer.Context,
+    source_run: Annotated[
+        Path,
+        typer.Option("--source-run", help="Absolute completed M5 formal Full-SFT Run."),
+    ],
+    model_dir: Annotated[
+        Path,
+        typer.Option("--model-dir", help="Absolute frozen M5 10M model export."),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option("--output", help="Absolute atomic M6 Candidate-import JSON."),
+    ],
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Frozen M6 release-policy YAML."),
+    ] = Path("configs/eval/m6_release.yaml"),
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable path-free machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Verify the frozen M5 10M snapshot selected as the M6 Candidate."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not source_run.is_absolute() or not model_dir.is_absolute() or not output.is_absolute():
+        _output_error("M6 Candidate import paths must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    try:
+        result = import_m5_candidate_evidence(
+            release_config_path=config,
+            source_run=source_run,
+            model_dir=model_dir,
+            output_path=output,
+        )
+    except M6ContractError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except M6CandidateImportError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_CANDIDATE_IMPORT_FAILED")
+        raise typer.Exit(code=3) from exc
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"succeeded: source={result.source_run_id} "
+            f"checkpoint={result.model.training_checkpoint_id}"
+        )
+
+
+def _validated_m6_domain_mode_and_paths(
+    *,
+    evidence_import: Path,
+    model_dir: Path,
+    tokenizer_dir: Path,
+    output_dir: Path,
+    mode: str,
+    json_output: bool,
+) -> Literal["thinking", "nonthinking"]:
+    if mode not in {"thinking", "nonthinking"}:
+        _output_error("M6 mode must be thinking or nonthinking", json_output=json_output)
+        raise typer.Exit(code=2)
+    if not all(
+        path.is_absolute() for path in (evidence_import, model_dir, tokenizer_dir, output_dir)
+    ):
+        _output_error("M6 domain artifact paths must be absolute", json_output=json_output)
+        raise typer.Exit(code=2)
+    return cast(Literal["thinking", "nonthinking"], mode)
+
+
+def _run_m6_domain_cli(
+    *,
+    model_identity: M6ModelIdentity,
+    expected_config_sha256: str,
+    config: Path,
+    model_dir: Path,
+    tokenizer_dir: Path,
+    output_dir: Path,
+    project_root: Path,
+    gpu_index: int,
+    mode: Literal["thinking", "nonthinking"],
+    json_output: bool,
+) -> M6DomainPassSummary:
+    previous_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    try:
+        preflight_baseline_gpu(gpu_index)
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_index)
+        return run_m6_domain_pass(
+            release_config_path=config,
+            model_dir=model_dir,
+            tokenizer_dir=tokenizer_dir,
+            output_dir=output_dir,
+            project_root=project_root,
+            physical_gpu_index=gpu_index,
+            model_identity=model_identity,
+            mode=mode,
+            expected_config_sha256=expected_config_sha256,
+        )
+    except BaselinePreflightError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_PREFLIGHT_FAILED")
+        raise typer.Exit(code=3) from exc
+    except M6DomainError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_DOMAIN_FAILED")
+        raise typer.Exit(code=6) from exc
+    finally:
+        if previous_visible is None:
+            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
+
+
+def _render_m6_domain_result(result: M6DomainPassSummary, *, json_output: bool) -> None:
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"{result.status}: {result.evaluation_id} "
+            f"objective_correct={result.objective_correct_items}/260"
+        )
+
+
 @eval_app.command("m6-domain")
 def eval_m6_domain(
     ctx: typer.Context,
@@ -747,54 +876,104 @@ def eval_m6_domain(
 
     state = cast(CLIState, ctx.obj)
     json_output = state.json_output or command_json
-    if mode not in {"thinking", "nonthinking"}:
-        _output_error("M6 mode must be thinking or nonthinking", json_output=json_output)
-        raise typer.Exit(code=2)
-    if (
-        not base_import.is_absolute()
-        or not model_dir.is_absolute()
-        or not tokenizer_dir.is_absolute()
-        or not output_dir.is_absolute()
-    ):
-        _output_error("M6 domain artifact paths must be absolute", json_output=json_output)
-        raise typer.Exit(code=2)
-    previous_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    checked_mode = _validated_m6_domain_mode_and_paths(
+        evidence_import=base_import,
+        model_dir=model_dir,
+        tokenizer_dir=tokenizer_dir,
+        output_dir=output_dir,
+        mode=mode,
+        json_output=json_output,
+    )
     try:
         imported = load_m6_base_import(base_import)
-        preflight_baseline_gpu(gpu_index)
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_index)
-        result = run_m6_domain_pass(
-            release_config_path=config,
-            model_dir=model_dir,
-            tokenizer_dir=tokenizer_dir,
-            output_dir=output_dir,
-            project_root=project_root,
-            physical_gpu_index=gpu_index,
-            model_identity=imported.model,
-            mode=cast(Literal["thinking", "nonthinking"], mode),
-            expected_config_sha256=imported.config_sha256,
-        )
     except (M6BaseImportError, M6ContractError) as exc:
         _output_error(str(exc), json_output=json_output, error_code="M6_CONFIG_ERROR")
         raise typer.Exit(code=2) from exc
-    except BaselinePreflightError as exc:
-        _output_error(str(exc), json_output=json_output, error_code="M6_PREFLIGHT_FAILED")
-        raise typer.Exit(code=3) from exc
-    except M6DomainError as exc:
-        _output_error(str(exc), json_output=json_output, error_code="M6_DOMAIN_FAILED")
-        raise typer.Exit(code=6) from exc
-    finally:
-        if previous_visible is None:
-            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
-    if json_output:
-        typer.echo(result.model_dump_json(indent=2))
-    else:
-        typer.echo(
-            f"{result.status}: {result.evaluation_id} "
-            f"objective_correct={result.objective_correct_items}/260"
-        )
+    result = _run_m6_domain_cli(
+        model_identity=imported.model,
+        expected_config_sha256=imported.config_sha256,
+        config=config,
+        model_dir=model_dir,
+        tokenizer_dir=tokenizer_dir,
+        output_dir=output_dir,
+        project_root=project_root,
+        gpu_index=gpu_index,
+        mode=checked_mode,
+        json_output=json_output,
+    )
+    _render_m6_domain_result(result, json_output=json_output)
+
+
+@eval_app.command("m6-candidate-domain")
+def eval_m6_candidate_domain(
+    ctx: typer.Context,
+    candidate_import: Annotated[
+        Path,
+        typer.Option("--candidate-import", help="Verified M6 Candidate-import JSON."),
+    ],
+    model_dir: Annotated[
+        Path,
+        typer.Option("--model-dir", help="Absolute frozen M5 10M model export."),
+    ],
+    tokenizer_dir: Annotated[
+        Path,
+        typer.Option("--tokenizer-dir", help="Absolute pinned Base tokenizer snapshot."),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", help="Absolute absent private output directory."),
+    ],
+    gpu_index: Annotated[
+        int,
+        typer.Option("--gpu-index", help="Physical GPU selected after busy/heat preflight."),
+    ],
+    mode: Annotated[
+        str,
+        typer.Option("--mode", help="Generation mode: thinking or nonthinking."),
+    ],
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Frozen M6 release-policy YAML."),
+    ] = Path("configs/eval/m6_release.yaml"),
+    project_root: Annotated[
+        Path,
+        typer.Option("--project-root", help="Clean Git project containing the suite."),
+    ] = Path("."),
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable path-free machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Run one M6 Candidate domain mode under the frozen release protocol."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    checked_mode = _validated_m6_domain_mode_and_paths(
+        evidence_import=candidate_import,
+        model_dir=model_dir,
+        tokenizer_dir=tokenizer_dir,
+        output_dir=output_dir,
+        mode=mode,
+        json_output=json_output,
+    )
+    try:
+        imported = load_m6_candidate_import(candidate_import)
+    except (M6CandidateImportError, M6ContractError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="M6_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    result = _run_m6_domain_cli(
+        model_identity=imported.model,
+        expected_config_sha256=imported.config_sha256,
+        config=config,
+        model_dir=model_dir,
+        tokenizer_dir=tokenizer_dir,
+        output_dir=output_dir,
+        project_root=project_root,
+        gpu_index=gpu_index,
+        mode=checked_mode,
+        json_output=json_output,
+    )
+    _render_m6_domain_result(result, json_output=json_output)
 
 
 @eval_app.command("m6-domain-review")

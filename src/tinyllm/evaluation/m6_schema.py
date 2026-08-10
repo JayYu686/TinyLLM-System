@@ -554,6 +554,36 @@ class M6BaseImportResult(StrictSchema):
         return self
 
 
+class M6CandidateImportResult(StrictSchema):
+    """Verified M5 10M Full-SFT snapshot selected as the M6 Candidate."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["succeeded"]
+    protocol_version: Literal["m6-release-v1"]
+    config_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_run_id: str = Field(min_length=1, max_length=180)
+    source_result_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    source_environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_hardware_sha256: str = Field(pattern=SHA256_PATTERN)
+    checkpoint_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    snapshot_sha256: str = Field(pattern=SHA256_PATTERN)
+    model: M6ModelIdentity
+
+    @model_validator(mode="after")
+    def validate_import(self) -> M6CandidateImportResult:
+        if (
+            self.model.role != "candidate"
+            or self.model.adaptation != "full_sft"
+            or self.model.training_checkpoint_id != "checkpoint-tokens-0010000532"
+            or self.model.training_tokens != 10_000_532
+            or self.model.model_artifact_sha256
+            != "b894b6ea081bd174ef0132182c231afea491ced2e4593c61cf1ef103447e3c5c"
+        ):
+            raise ValueError("M6 Candidate import differs from the frozen M5 10M snapshot")
+        return self
+
+
 class M6GeneralTaskResult(StrictSchema):
     """One full pinned lm-eval aggregate used for M6 regression checks."""
 

@@ -19,6 +19,9 @@ from tinyllm.evaluation import (
 CONFIG = Path("configs/eval/m2_domain_v1.yaml")
 ITEMS = Path("evals/domain/v1/items.jsonl")
 MANIFEST = Path("evals/domain/v1/manifest.json")
+V2_CONFIG = Path("configs/eval/m6_domain_v2.yaml")
+V2_ITEMS = Path("evals/domain/v2/items.jsonl")
+V2_MANIFEST = Path("evals/domain/v2/manifest.json")
 
 
 def test_frozen_domain_artifacts_are_reproducible_and_internally_consistent() -> None:
@@ -90,6 +93,40 @@ def test_committed_item_order_matches_canonical_id_order() -> None:
 def test_domain_generator_check_mode_accepts_committed_outputs() -> None:
     result = subprocess.run(
         [sys.executable, "scripts/build_m2_domain_eval.py", "--check"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_m6_v2_holdout_is_reproducible_and_prompt_independent() -> None:
+    config = load_evaluation_build_config(V2_CONFIG)
+    items = load_evaluation_items(V2_ITEMS)
+    committed = EvaluationSetManifest.model_validate_json(V2_MANIFEST.read_text(encoding="utf-8"))
+    v1_prompts = {tuple(item.prompt_messages) for item in load_evaluation_items(ITEMS)}
+
+    assert build_evaluation_manifest(items, config=config) == committed
+    assert committed.suite_version == "tinyllm-domain-holdout-v1-c0c948cc"
+    assert len(items) == 300
+    assert len({tuple(item.prompt_messages) for item in items}) == 300
+    assert not v1_prompts.intersection(tuple(item.prompt_messages) for item in items)
+    assert Counter(item.scorer.kind for item in items) == {
+        "exact_match": 135,
+        "human_rubric": 40,
+        "json_object": 80,
+        "multiple_choice": 45,
+    }
+    assert all("v2 templates" in item.provenance.source_note for item in items)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_m2_domain_eval.py",
+            "--suite-version",
+            "v2",
+            "--check",
+        ],
         check=False,
         capture_output=True,
         text=True,

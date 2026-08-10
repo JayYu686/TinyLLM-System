@@ -143,3 +143,9 @@ Candidate 保持 `Development`。
 
 修复模型不能在已经用于诊断的 v1 发布集上反复选优。后续晋级使用新的 M6 v2 内容与配置
 身份，继续沿用第 5 节的量化阈值、双模式分别报告、完整人工审查、通用回归和血缘要求。
+
+M6 v2 已在修复模型 Proxy 结果产生前冻结为
+`tinyllm-domain-holdout-v1-c0c948cc`，完整内容 SHA256 为
+`c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842`。v2 保持 300 条、
+英文 210/中文 90、七类任务、80 条 JSON、40 条人工 Rubric 和 90 个双语 Cluster；与 v1
+的精确 Prompt 交集为 0。生成与重建方法见 [v2 评测集说明](../evals/domain/v2/README.md)。

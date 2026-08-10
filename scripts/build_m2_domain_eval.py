@@ -23,6 +23,9 @@ from tinyllm.evaluation import (
 
 Language = Literal["en", "zh"]
 Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
+SuiteVariant = Literal["v1", "v2"]
+
+_ACTIVE_VARIANT: SuiteVariant = "v1"
 
 CATEGORY_DISTRIBUTION: tuple[tuple[Category, int, int], ...] = (
     ("config", 40, 28),
@@ -48,7 +51,7 @@ def _provenance() -> AuthoredProvenance:
         origin="tinyllm-authored",
         license="Apache-2.0",
         redistribution_allowed=True,
-        source_note="Authored from versioned TinyLLM-System v1 templates.",
+        source_note=f"Authored from versioned TinyLLM-System {_ACTIVE_VARIANT} templates.",
     )
 
 
@@ -67,6 +70,12 @@ def _pair_tags(category: Category, semantic_index: int) -> tuple[str, ...]:
     if semantic_index < CHINESE_COUNTS[category]:
         return (f"bilingual-pair-{semantic_index + 1:03d}",)
     return ("english-only",)
+
+
+def _value_index(semantic_index: int) -> int:
+    """Keep bilingual clustering stable while changing all v2 task values."""
+
+    return semantic_index if _ACTIVE_VARIANT == "v1" else semantic_index + 137
 
 
 def _exact_item(
@@ -160,7 +169,7 @@ def _choice_item(
 def _python_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("python", item_index, language)
-    cycle, mode = divmod(semantic_index, 10)
+    cycle, mode = divmod(_value_index(semantic_index), 10)
     prefix = "Evaluate this Python 3 expression" if language == "en" else "计算以下 Python 3 表达式"
     suffix = (
         "Return only the exact Python repr of the result, with no explanation."
@@ -173,7 +182,7 @@ def _python_item(index: int, language: Language) -> EvaluationItem:
         answer = repr(sum(i * i for i in range(stop) if i % 2 == 0))
         topic = "comprehension"
     elif mode == 1:
-        text = "tinyllmsystem"
+        text = "tinyllmsystem" if _ACTIVE_VARIANT == "v1" else "distributedllm"
         start = 1 + cycle % 3
         end = 7 + cycle % 4
         expression = f"{text!r}[{start}:{end}]"
@@ -236,12 +245,25 @@ def _python_item(index: int, language: Language) -> EvaluationItem:
 def _linux_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("linux", item_index, language)
-    cycle, mode = divmod(semantic_index, 9)
+    cycle, mode = divmod(_value_index(semantic_index), 9)
     only = "Return only the exact answer." if language == "en" else "仅返回精确答案。"
     if mode == 0:
-        modes = ((6, 4, 0), (7, 5, 0), (6, 0, 0), (7, 0, 0), (6, 4, 4))
-        owner, group, other = modes[cycle]
-        symbols = {0: "---", 4: "r--", 5: "r-x", 6: "rw-", 7: "rwx"}
+        modes = (
+            ((6, 4, 0), (7, 5, 0), (6, 0, 0), (7, 0, 0), (6, 4, 4))
+            if _ACTIVE_VARIANT == "v1"
+            else ((7, 7, 0), (7, 1, 1), (6, 6, 0), (7, 7, 7), (6, 0, 4))
+        )
+        owner, group, other = modes[cycle % len(modes)]
+        symbols = {
+            0: "---",
+            1: "--x",
+            2: "-w-",
+            3: "-wx",
+            4: "r--",
+            5: "r-x",
+            6: "rw-",
+            7: "rwx",
+        }
         prompt = (
             f"For Linux mode {owner}{group}{other}, give the nine permission characters "
             f"without the file-type prefix. {only}"
@@ -343,7 +365,7 @@ def _linux_item(index: int, language: Language) -> EvaluationItem:
 def _json_task_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("json", item_index, language)
-    cycle, mode = divmod(semantic_index, 8)
+    cycle, mode = divmod(_value_index(semantic_index), 8)
     base: dict[str, object] = {
         "enabled": cycle % 2 == 0,
         "name": f"worker-{cycle}",
@@ -406,7 +428,7 @@ def _json_task_item(index: int, language: Language) -> EvaluationItem:
 def _config_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("config", item_index, language)
-    cycle, mode = divmod(semantic_index, 8)
+    cycle, mode = divmod(_value_index(semantic_index), 8)
     config: dict[str, object] = {
         "data": {"workers": 2 + cycle},
         "logging": {"level": "INFO"},
@@ -581,13 +603,14 @@ LOG_PATTERNS: tuple[tuple[str, tuple[str, str], tuple[tuple[str, str], ...]], ..
 def _log_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("logs", item_index, language)
-    cycle, mode = divmod(semantic_index, len(LOG_PATTERNS))
+    value_index = _value_index(semantic_index)
+    cycle, mode = divmod(value_index, len(LOG_PATTERNS))
     template, correct, distractors = LOG_PATTERNS[mode]
     stem = template.format(variant=cycle + 1, port=8100 + cycle)
     localized = [correct[0 if language == "en" else 1]] + [
         pair[0 if language == "en" else 1] for pair in distractors
     ]
-    rotation = (semantic_index * 3) % len(localized)
+    rotation = (value_index * 3) % len(localized)
     choices = tuple(localized[rotation:] + localized[:rotation])
     answer_index = choices.index(correct[0 if language == "en" else 1])
     return _choice_item(
@@ -772,11 +795,183 @@ SHORT_CODE_CASES: tuple[tuple[str, str, str, str], ...] = (
     ),
 )
 
+SHORT_CODE_CASES_V2: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "slug = TODO",
+        'value.replace("_", "-")',
+        "replace underscores in `value` with hyphens",
+        "将 `value` 中的下划线替换为连字符",
+    ),
+    (
+        "trimmed = TODO",
+        'text.rstrip("\\n")',
+        "remove only trailing newline characters from `text`",
+        "仅移除 `text` 末尾的换行符",
+    ),
+    (
+        "result = TODO",
+        "mapping[key] if key in mapping else default",
+        "read `key` from `mapping` and otherwise use `default`",
+        "从 `mapping` 读取 `key`，否则使用 `default`",
+    ),
+    (
+        "pairs = TODO",
+        "list(zip(keys, values, strict=True))",
+        "pair equal-length `keys` and `values` into a list",
+        "将等长的 `keys` 与 `values` 配对为列表",
+    ),
+    (
+        "text = TODO",
+        '" ".join(words)',
+        "join `words` with one space",
+        "使用一个空格连接 `words`",
+    ),
+    (
+        "ordered = TODO",
+        "sorted(values, reverse=True)",
+        "sort `values` in descending order",
+        "按降序排列 `values`",
+    ),
+    (
+        "complete = TODO",
+        "all(item is not None for item in items)",
+        "test whether every item is not `None`",
+        "判断每一项都不是 `None`",
+    ),
+    (
+        "from pathlib import Path\nstem = TODO",
+        "Path(path).stem",
+        "read the filename stem from `path`",
+        "读取 `path` 的文件名 Stem",
+    ),
+    (
+        "unique = TODO",
+        "set(items)",
+        "collect the unique values from `items` as a set",
+        "将 `items` 的唯一值收集为集合",
+    ),
+    (
+        "total = TODO",
+        "sum(values, start=10)",
+        "sum `values` starting from ten",
+        "以十为初值求 `values` 的总和",
+    ),
+    (
+        "truthy = TODO",
+        "[item for item in items if item]",
+        "keep only truthy entries from `items`",
+        "仅保留 `items` 中的真值项",
+    ),
+    (
+        "bounded = TODO",
+        "max(lower, min(value, upper))",
+        "bound `value` to the inclusive lower and upper limits",
+        "将 `value` 限制在闭区间上下界内",
+    ),
+    (
+        "from pathlib import Path\nabsolute = TODO",
+        "Path(path).resolve()",
+        "create the resolved absolute path object for `path`",
+        "创建 `path` 解析后的绝对路径对象",
+    ),
+    (
+        "normalized = TODO",
+        "text.lower()",
+        "convert `text` to lowercase",
+        "将 `text` 转为小写",
+    ),
+    (
+        "from itertools import chain\nflat = TODO",
+        "list(chain.from_iterable(groups))",
+        "flatten `groups` by one level with `chain`",
+        "使用 `chain` 将 `groups` 展平一层",
+    ),
+    (
+        "pairs_by_key = TODO",
+        "{key: value for key, value in zip(keys, values, strict=True)}",
+        "map each `key` to its corresponding `value` with a comprehension",
+        "使用推导式将每个 `key` 映射到对应的 `value`",
+    ),
+    (
+        "head = TODO",
+        "items[:3]",
+        "take at most the first three `items`",
+        "取得 `items` 最前面的至多三项",
+    ),
+    (
+        "parts = TODO",
+        'line.partition("=")',
+        "partition `line` around its first equals sign",
+        "围绕第一个等号拆分 `line`",
+    ),
+    (
+        "strictly_positive = TODO",
+        "not any(item <= 0 for item in values)",
+        "confirm no value is zero or negative",
+        "确认没有值为零或负数",
+    ),
+    (
+        "base = TODO",
+        "text.removesuffix(suffix)",
+        "remove `suffix` from `text` only when present",
+        "仅当存在时移除 `text` 的 `suffix`",
+    ),
+    (
+        "merged = TODO",
+        "defaults | overrides",
+        "merge dictionaries so `overrides` wins",
+        "合并字典并让 `overrides` 优先",
+    ),
+    (
+        "ordered = TODO",
+        'sorted(records, key=lambda item: item["score"], reverse=True)',
+        "sort records by descending `score`",
+        "按 `score` 降序排列记录",
+    ),
+    (
+        "first_valid = TODO",
+        "next(filter(predicate, items), None)",
+        "select the first item accepted by `predicate`, defaulting to `None`",
+        "选择首个被 `predicate` 接受的项，默认返回 `None`",
+    ),
+    (
+        "from pathlib import Path\nexists = TODO",
+        "Path(path).exists()",
+        "test whether `path` currently exists",
+        "判断 `path` 当前是否存在",
+    ),
+    (
+        "from pathlib import Path\noutput = TODO",
+        'Path(path).with_suffix(".json")',
+        "replace the final suffix of `path` with `.json`",
+        "将 `path` 的最后一个后缀替换为 `.json`",
+    ),
+    (
+        "from statistics import fmean\nmean = TODO",
+        "fmean(values)",
+        "compute the floating-point mean of non-empty `values`",
+        "计算非空 `values` 的浮点平均值",
+    ),
+    (
+        "alternating = TODO",
+        "items[::2]",
+        "take every second item starting with the first",
+        "从第一项开始每隔一项取值",
+    ),
+    (
+        "decimal_id = TODO",
+        'f"{value:06d}"',
+        "format integer `value` as six zero-padded decimal digits",
+        "将整数 `value` 格式化为六位前导零十进制数",
+    ),
+)
+
 
 def _short_code_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("short_code", item_index, language)
-    snippet, answer, goal_en, goal_zh = SHORT_CODE_CASES[semantic_index]
+    cases = SHORT_CODE_CASES if _ACTIVE_VARIANT == "v1" else SHORT_CODE_CASES_V2
+    snippet, answer, goal_en, goal_zh = cases[semantic_index]
     prompt = (
         f"Replace `TODO` so the code will {goal_en}. Return only the replacement expression.\n\n"
         f"```python\n{snippet}\n```"
@@ -965,11 +1160,188 @@ REFUSAL_SCENARIOS: tuple[tuple[str, str, str, str], ...] = (
     ),
 )
 
+REFUSAL_SCENARIOS_V2: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "A dataset shard is called corrupt, but neither its source hash nor read error is shown.",
+        "有人称数据分片已损坏，但没有提供来源哈希或读取错误。",
+        "the expected source hash and exact read error",
+        "预期来源哈希和精确读取错误",
+    ),
+    (
+        "Training is called unusually slow, but there is no baseline, hardware snapshot, "
+        "or timing.",
+        "有人称训练异常缓慢，但没有基线、硬件快照或计时。",
+        "the comparable baseline, hardware snapshot, and step timings",
+        "可比基线、硬件快照和 Step 计时",
+    ),
+    (
+        "An inference response is called a hallucination, but its prompt and raw output "
+        "are absent.",
+        "有人称一次推理响应是幻觉，但缺少 Prompt 和原始输出。",
+        "the exact prompt, decoding config, and raw output",
+        "精确 Prompt、解码配置和原始输出",
+    ),
+    (
+        "A process is said to be deadlocked, but no stack traces or thread states were captured.",
+        "有人称进程发生死锁，但没有捕获堆栈或线程状态。",
+        "the per-thread stack traces and process-state snapshot",
+        "逐线程堆栈和进程状态快照",
+    ),
+    (
+        "Resume drift is blamed on RNG state, but matching-step state dumps are unavailable.",
+        "有人将恢复漂移归因于 RNG 状态，但没有相同步数的状态转储。",
+        "the matching-step RNG, sampler, and optimizer state dumps",
+        "相同步数的 RNG、Sampler 和优化器状态转储",
+    ),
+    (
+        "A release is called license-incompatible without identifying the included files.",
+        "有人称发布内容许可证不兼容，但没有指出所包含的具体文件。",
+        "the artifact file inventory and each file's license provenance",
+        "Artifact 文件清单和逐文件许可证血缘",
+    ),
+    (
+        "An evaluation regression is claimed without seeds, configs, or item-level scores.",
+        "有人声称评测发生回退，但没有提供 Seed、配置或逐项得分。",
+        "both frozen configs, seeds, and item-level score files",
+        "两份冻结配置、Seed 和逐项得分文件",
+    ),
+    (
+        "A public artifact is said to expose a secret, but no file path or scanner finding "
+        "is given.",
+        "有人称公开 Artifact 泄露 Secret，但没有提供文件路径或扫描结果。",
+        "the exact artifact path and reproducible scanner finding",
+        "精确 Artifact 路径和可复现扫描结果",
+    ),
+    (
+        "A model-card capability claim is disputed without the referenced report or raw evidence.",
+        "有人质疑 Model Card 的能力声明，但没有提供所引用报告或原始证据。",
+        "the cited report version and underlying raw evidence",
+        "引用报告版本和底层原始证据",
+    ),
+    (
+        "A tensor-shape bug is blamed for a crash, but the traceback and input shapes are missing.",
+        "有人将崩溃归因于 Tensor Shape Bug，但缺少 Traceback 和输入 Shape。",
+        "the complete traceback and tensor shapes at the failing operation",
+        "完整 Traceback 和失败操作处的 Tensor Shape",
+    ),
+    (
+        "Disk I/O is blamed for stalls, but no device latency or throughput telemetry is present.",
+        "有人将卡顿归因于磁盘 I/O，但没有设备延迟或吞吐遥测。",
+        "timestamped device latency, queue, and throughput telemetry",
+        "带时间戳的设备延迟、队列和吞吐遥测",
+    ),
+    (
+        "Network latency is blamed for a slow download without endpoint or route measurements.",
+        "有人将下载缓慢归因于网络延迟，但没有端点或路由测量。",
+        "endpoint timings, route diagnostics, and transfer samples",
+        "端点计时、路由诊断和传输样本",
+    ),
+    (
+        "Optimizer divergence is alleged without hyperparameters or the first divergent step.",
+        "有人声称优化器发散，但没有超参数或首个发散 Step。",
+        "the resolved optimizer config and metrics around the first divergent step",
+        "解析后的优化器配置和首个发散 Step 附近指标",
+    ),
+    (
+        "A dataset is called imbalanced without label, language, or source distributions.",
+        "有人称数据集不平衡，但没有标签、语言或来源分布。",
+        "the versioned label, language, and source distribution report",
+        "版本化的标签、语言和来源分布报告",
+    ),
+    (
+        "Quantization is blamed for accuracy loss without paired base and quantized outputs.",
+        "有人将准确率下降归因于量化，但没有 Base 与量化模型的成对输出。",
+        "paired base and quantized outputs under one frozen evaluation config",
+        "同一冻结评测配置下 Base 与量化模型的成对输出",
+    ),
+    (
+        "CPU offload is blamed for an OOM, but the allocation timeline is unavailable.",
+        "有人将 OOM 归因于 CPU Offload，但没有分配时间线。",
+        "the host and device allocation timeline with the resolved offload config",
+        "主机与设备分配时间线及解析后的 Offload 配置",
+    ),
+    (
+        "A container is said to differ from production without an image digest or "
+        "environment diff.",
+        "有人称容器与生产环境不同，但没有镜像摘要或环境差异。",
+        "both image digests and a resolved environment comparison",
+        "两份镜像摘要和解析后的环境对比",
+    ),
+    (
+        "A CUDA version conflict is alleged without driver, runtime, and wheel versions.",
+        "有人声称存在 CUDA 版本冲突，但没有 Driver、Runtime 和 Wheel 版本。",
+        "the driver, CUDA runtime, and installed framework wheel versions",
+        "Driver、CUDA Runtime 和已安装框架 Wheel 版本",
+    ),
+    (
+        "Tokenizer drift is blamed for output changes without tokenizer revisions or hashes.",
+        "有人将输出变化归因于 Tokenizer 漂移，但没有 Revision 或哈希。",
+        "both tokenizer revisions, file hashes, and rendered prompts",
+        "两份 Tokenizer Revision、文件哈希和渲染 Prompt",
+    ),
+    (
+        "A chat-template bug is alleged, but the rendered prompt and template revision "
+        "are missing.",
+        "有人声称 Chat Template 存在 Bug，但缺少渲染 Prompt 和模板 Revision。",
+        "the exact rendered prompt and versioned template source",
+        "精确渲染 Prompt 和版本化模板源码",
+    ),
+    (
+        "Deduplication is called ineffective without candidate pairs or similarity scores.",
+        "有人称去重无效，但没有候选样本对或相似度得分。",
+        "the candidate duplicate pairs, fingerprints, and thresholds",
+        "候选重复样本对、指纹和阈值",
+    ),
+    (
+        "A registry entry is said to point at the wrong model without artifact IDs or hashes.",
+        "有人称 Registry 条目指向错误模型，但没有 Artifact ID 或哈希。",
+        "the registry record, resolved artifact IDs, and content hashes",
+        "Registry 记录、解析后的 Artifact ID 和内容哈希",
+    ),
+    (
+        "An API timeout is blamed on the server without synchronized client and server logs.",
+        "有人将 API 超时归因于服务端，但没有同步的客户端与服务端日志。",
+        "synchronized client/server logs and request timing identifiers",
+        "同步的客户端与服务端日志及请求计时标识",
+    ),
+    (
+        "GPU throttling is claimed without synchronized temperature, power, and clock samples.",
+        "有人声称 GPU 发生降频，但没有同步的温度、功率和时钟样本。",
+        "synchronized temperature, power, utilization, and clock samples",
+        "同步的温度、功率、利用率和时钟样本",
+    ),
+    (
+        "A generated answer is called incorrect without a reference or scoring rule.",
+        "有人称生成答案错误，但没有 Reference 或评分规则。",
+        "the exact response, reference answer, and frozen scoring rule",
+        "精确响应、Reference Answer 和冻结评分规则",
+    ),
+    (
+        "NCCL topology is blamed for poor scaling without topology or per-rank traces.",
+        "有人将扩展效率差归因于 NCCL 拓扑，但没有拓扑或逐 Rank Trace。",
+        "the topology matrix, NCCL environment, and per-rank timing traces",
+        "拓扑矩阵、NCCL 环境和逐 Rank 计时 Trace",
+    ),
+    (
+        "A scheduler bug is alleged without the expected curve or recorded LR series.",
+        "有人声称 Scheduler 存在 Bug，但没有预期曲线或已记录 LR 序列。",
+        "the scheduler config, expected curve, and recorded per-step LR series",
+        "Scheduler 配置、预期曲线和逐 Step LR 序列",
+    ),
+    (
+        "A test is called flaky after one failure without repetition history or failure logs.",
+        "某测试在单次失败后被称为 Flaky，但没有重复历史或失败日志。",
+        "the repeated-run history, seed, environment, and complete failure log",
+        "重复运行历史、Seed、环境和完整失败日志",
+    ),
+)
+
 
 def _refusal_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("refusal", item_index, language)
-    en_scenario, zh_scenario, en_missing, zh_missing = REFUSAL_SCENARIOS[semantic_index]
+    scenarios = REFUSAL_SCENARIOS if _ACTIVE_VARIANT == "v1" else REFUSAL_SCENARIOS_V2
+    en_scenario, zh_scenario, en_missing, zh_missing = scenarios[semantic_index]
     scenario = en_scenario if language == "en" else zh_scenario
     missing = en_missing if language == "en" else zh_missing
     prompt = (
@@ -1043,8 +1415,14 @@ def _render_items(items: tuple[EvaluationItem, ...]) -> str:
     )
 
 
-def _render_manifest(project_root: Path, items: tuple[EvaluationItem, ...]) -> str:
-    config = load_evaluation_build_config(project_root / "configs/eval/m2_domain_v1.yaml")
+def _render_manifest(
+    project_root: Path,
+    items: tuple[EvaluationItem, ...],
+    *,
+    variant: SuiteVariant,
+) -> str:
+    config_name = "m2_domain_v1.yaml" if variant == "v1" else "m6_domain_v2.yaml"
+    config = load_evaluation_build_config(project_root / "configs/eval" / config_name)
     manifest = build_evaluation_manifest(items, config=config)
     return json.dumps(manifest.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
@@ -1062,13 +1440,25 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Verify committed outputs only.")
+    parser.add_argument(
+        "--suite-version",
+        choices=("v1", "v2"),
+        default="v1",
+        help="Build the historical v1 suite or the independent M6 v2 holdout.",
+    )
     args = parser.parse_args()
+    global _ACTIVE_VARIANT
+    _ACTIVE_VARIANT = cast(SuiteVariant, args.suite_version)
     project_root = Path(__file__).resolve().parents[1]
     items = generate_items()
-    output_root = project_root / "evals/domain/v1"
+    output_root = project_root / "evals/domain" / _ACTIVE_VARIANT
     expected = {
         output_root / "items.jsonl": _render_items(items),
-        output_root / "manifest.json": _render_manifest(project_root, items),
+        output_root / "manifest.json": _render_manifest(
+            project_root,
+            items,
+            variant=_ACTIVE_VARIANT,
+        ),
     }
     stale = [
         str(path.relative_to(project_root))

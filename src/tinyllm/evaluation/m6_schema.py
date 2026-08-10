@@ -12,10 +12,11 @@ from tinyllm.schemas.base import StrictSchema
 from tinyllm.schemas.run import SHA256_PATTERN
 
 M6Mode = Literal["thinking", "nonthinking"]
-M6ProtocolVersion = Literal["m6-release-v1", "m6-release-v2"]
+M6ProtocolVersion = Literal["m6-release-v1", "m6-release-v2", "m6-release-v3"]
 M6SuiteVersion = Literal[
     "tinyllm-domain-v1-83bdd8ef",
     "tinyllm-domain-holdout-v1-c0c948cc",
+    "tinyllm-domain-holdout-v1-2b167ce6",
 ]
 M6Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
 M6ScorerKind = Literal[
@@ -45,7 +46,7 @@ def _freeze(value: object) -> object:
 class M6BootstrapConfig(StrictSchema):
     """Paired cluster-bootstrap policy fixed before release-set evaluation."""
 
-    seed: Literal[20260809, 20260810]
+    seed: Literal[20260809, 20260810, 20260811]
     replicates: Literal[10000]
     confidence_basis_points: Literal[9500]
     resampling_unit: Literal["bilingual-pair-or-english-singleton"]
@@ -80,7 +81,7 @@ class M6ThinkingGenerationConfig(StrictSchema):
     top_p: float = Field(gt=0.0, le=1.0)
     top_k: Literal[20]
     repetition_penalty: float = Field(ge=1.0, le=2.0)
-    seed: Literal[20260809, 20260810]
+    seed: Literal[20260809, 20260810, 20260811]
     early_stopping_text: Literal[
         "\n\n Considering the limited time by the user, I have to give the solution "
         "based on the thinking directly now.\n</think>\n\n"
@@ -182,6 +183,7 @@ class M6ReleaseConfig(StrictSchema):
     suite_content_sha256: Literal[
         "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
         "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
+        "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2",
     ]
     expected_domain_items: Literal[300]
     expected_languages: Literal["en-210_zh-90"]
@@ -214,6 +216,11 @@ class M6ReleaseConfig(StrictSchema):
                 "tinyllm-domain-holdout-v1-c0c948cc",
                 "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
                 20260810,
+            ),
+            "m6-release-v3": (
+                "tinyllm-domain-holdout-v1-2b167ce6",
+                "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2",
+                20260811,
             ),
         }
         suite, content, seed = releases[self.protocol_version]
@@ -585,7 +592,11 @@ class M6CandidateImportResult(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
-    source_kind: Literal["m5-formal-snapshot", "m6-dual-mode-correction"] = "m5-formal-snapshot"
+    source_kind: Literal[
+        "m5-formal-snapshot",
+        "m6-dual-mode-correction",
+        "m6-gate-repair",
+    ] = "m5-formal-snapshot"
     protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     source_run_id: str = Field(min_length=1, max_length=180)
@@ -616,6 +627,14 @@ class M6CandidateImportResult(StrictSchema):
             != "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
         ):
             raise ValueError("M6 Candidate import differs from the dual-mode correction contract")
+        if self.source_kind == "m6-gate-repair" and (
+            self.model.training_checkpoint_id != "checkpoint-tokens-0001000000"
+            or self.model.training_tokens != 1_000_000
+            or self.model.dataset_version != "m6-gate-repair-mixture-v1-be2aa7fa"
+            or self.model.dataset_manifest_sha256
+            != "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
+        ):
+            raise ValueError("M6 Candidate import differs from the gate-repair contract")
         return self
 
 

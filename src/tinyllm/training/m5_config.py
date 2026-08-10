@@ -95,8 +95,8 @@ class M5DataConfig(StrictSchema):
 
     dataset_version: str = Field(
         pattern=(
-            r"^m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture|"
-            r"dual-mode-correction-mixture)"
+            r"^(?:m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture|"
+            r"dual-mode-correction-mixture)|m6-gate-repair-mixture)"
             r"-v[0-9]+-[a-f0-9]{8}$"
         )
     )
@@ -249,6 +249,7 @@ class M5SFTConfig(StrictSchema):
                     "m5-format-repair-mixture-",
                     "m5-r3-mixture-",
                     "m5-dual-mode-correction-mixture-",
+                    "m6-gate-repair-mixture-",
                 )
             ):
                 raise ValueError(
@@ -261,6 +262,7 @@ class M5SFTConfig(StrictSchema):
                         "m5-format-repair-mixture-",
                         "m5-r3-mixture-",
                         "m5-dual-mode-correction-mixture-",
+                        "m6-gate-repair-mixture-",
                     )
                 )
                 and self.data.thinking_token_fraction != 0.3

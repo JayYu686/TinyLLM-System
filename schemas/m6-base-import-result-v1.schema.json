@@ -499,7 +499,8 @@
     "protocol_version": {
       "enum": [
         "m6-release-v1",
-        "m6-release-v2"
+        "m6-release-v2",
+        "m6-release-v3"
       ],
       "title": "Protocol Version",
       "type": "string"

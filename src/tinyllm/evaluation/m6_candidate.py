@@ -7,6 +7,7 @@ import json
 import os
 import uuid
 from pathlib import Path
+from typing import Literal
 
 from pydantic import ValidationError
 
@@ -40,7 +41,7 @@ def _import_correction_candidate(
     model_dir: Path,
     output_path: Path | None,
 ) -> M6CandidateImportResult:
-    """Import one completed, preregistered dual-mode template correction Run."""
+    """Import one completed, preregistered 1M-token M6 remediation Run."""
 
     expected_model_dir = source_run / "exports" / "model"
     if model_dir.resolve() != expected_model_dir.resolve():
@@ -57,6 +58,17 @@ def _import_correction_candidate(
     except (OSError, ValueError, ValidationError) as exc:
         raise M6CandidateImportError("M6 correction source metadata is invalid") from exc
     release = load_m6_release_config(release_config_path)
+    source_kind: Literal["m6-dual-mode-correction", "m6-gate-repair"]
+    if release.protocol_version == "m6-release-v2":
+        source_kind = "m6-dual-mode-correction"
+        expected_mixture = "m5-dual-mode-correction-mixture-v1-4bc342d4"
+        expected_manifest = "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+    elif release.protocol_version == "m6-release-v3":
+        source_kind = "m6-gate-repair"
+        expected_mixture = "m6-gate-repair-mixture-v1-be2aa7fa"
+        expected_manifest = "13826d120bdbfc3db38ba035f243ddd4e9e85e8f49aec25e8e7ff20f451c7fc1"
+    else:
+        raise M6CandidateImportError("M6 remediation requires a holdout release protocol")
     export_sha256 = model_export_sha256(model_dir)
     config_sha256 = canonical_config_hash(config)
     hardware_sha256 = hashlib.sha256(
@@ -72,16 +84,14 @@ def _import_correction_candidate(
         ).encode()
     ).hexdigest()
     if (
-        release.protocol_version != "m6-release-v2"
-        or result.status != "succeeded"
+        result.status != "succeeded"
         or result.run_id != source_run.name
         or result.git_dirty
         or result.config_sha256 != config_sha256
         or result.supervised_tokens != 1_000_000
         or result.latest_checkpoint != "checkpoint-tokens-0001000000"
-        or result.mixture_version != "m5-dual-mode-correction-mixture-v1-4bc342d4"
-        or result.mixture_manifest_sha256
-        != "db66ce847fac4bd2966666d125f1bb4e21dd0fd3bb608a1a384806c206f8945c"
+        or result.mixture_version != expected_mixture
+        or result.mixture_manifest_sha256 != expected_manifest
         or result.export_sha256 != export_sha256
         or config.data.dataset_version != result.mixture_version
         or config.data.mix_manifest_sha256 != result.mixture_manifest_sha256
@@ -100,7 +110,7 @@ def _import_correction_candidate(
         raise M6CandidateImportError("M6 correction lineage is incomplete or inconsistent")
     imported = M6CandidateImportResult(
         status="succeeded",
-        source_kind="m6-dual-mode-correction",
+        source_kind=source_kind,
         protocol_version=release.protocol_version,
         config_sha256=canonical_config_hash(release),
         source_run_id=result.run_id,

@@ -54,6 +54,7 @@ def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path
     relative = {
         "tinyllm-domain-v1-83bdd8ef": Path("evals/domain/v1/items.jsonl"),
         "tinyllm-domain-holdout-v1-c0c948cc": Path("evals/domain/v2/items.jsonl"),
+        "tinyllm-domain-holdout-v1-2b167ce6": Path("evals/domain/v3/items.jsonl"),
     }[suite_version]
     return project_root / relative
 

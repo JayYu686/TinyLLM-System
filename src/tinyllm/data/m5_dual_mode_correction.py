@@ -231,6 +231,12 @@ def _general_nonthinking_sources(*, artifact_root: Path) -> tuple[M5MixtureSeque
     return tuple(sources)
 
 
+def general_nonthinking_correction_sources(*, artifact_root: Path) -> tuple[M5MixtureSequence, ...]:
+    """Expose verified Qwen3-aligned M2 retention sources to later repairs."""
+
+    return _general_nonthinking_sources(artifact_root=artifact_root)
+
+
 def _domain_source_pairs(
     *, source_root: Path
 ) -> tuple[tuple[M5MixtureSequence, ...], tuple[M5MixtureSequence, ...]]:

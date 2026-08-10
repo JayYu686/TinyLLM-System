@@ -23,7 +23,7 @@ from tinyllm.evaluation import (
 
 Language = Literal["en", "zh"]
 Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
-SuiteVariant = Literal["v1", "v2"]
+SuiteVariant = Literal["v1", "v2", "v3"]
 
 _ACTIVE_VARIANT: SuiteVariant = "v1"
 
@@ -72,10 +72,24 @@ def _pair_tags(category: Category, semantic_index: int) -> tuple[str, ...]:
     return ("english-only",)
 
 
-def _value_index(semantic_index: int) -> int:
-    """Keep bilingual clustering stable while changing all v2 task values."""
+def _holdout_prompt(prompt: str, language: Language) -> str:
+    """Give v3 an explicit independent-batch instruction without changing the task."""
 
-    return semantic_index if _ACTIVE_VARIANT == "v1" else semantic_index + 137
+    if _ACTIVE_VARIANT != "v3":
+        return prompt
+    prefix = (
+        "Answer this independent holdout item.\n\n"
+        if language == "en"
+        else "请独立回答以下留出题。\n\n"
+    )
+    return prefix + prompt
+
+
+def _value_index(semantic_index: int) -> int:
+    """Keep bilingual clustering stable while changing each holdout's task values."""
+
+    offsets = {"v1": 0, "v2": 137, "v3": 293}
+    return semantic_index + offsets[_ACTIVE_VARIANT]
 
 
 def _exact_item(
@@ -91,7 +105,9 @@ def _exact_item(
         id=_item_id(category, index),
         language=language,
         category=category,
-        prompt_messages=(EvaluationPromptMessage(role="user", content=prompt),),
+        prompt_messages=(
+            EvaluationPromptMessage(role="user", content=_holdout_prompt(prompt, language)),
+        ),
         reference_answer=answer,
         scorer=ExactMatchScorer(
             kind="exact_match",
@@ -118,7 +134,9 @@ def _json_item(
         id=_item_id(category, index),
         language=language,
         category=category,
-        prompt_messages=(EvaluationPromptMessage(role="user", content=prompt),),
+        prompt_messages=(
+            EvaluationPromptMessage(role="user", content=_holdout_prompt(prompt, language)),
+        ),
         reference_answer=answer,
         scorer=JsonObjectScorer(
             kind="json_object",
@@ -154,7 +172,9 @@ def _choice_item(
         id=_item_id(category, index),
         language=language,
         category=category,
-        prompt_messages=(EvaluationPromptMessage(role="user", content=prompt),),
+        prompt_messages=(
+            EvaluationPromptMessage(role="user", content=_holdout_prompt(prompt, language)),
+        ),
         reference_answer=answer,
         scorer=MultipleChoiceScorer(
             kind="multiple_choice",
@@ -1336,11 +1356,187 @@ REFUSAL_SCENARIOS_V2: tuple[tuple[str, str, str, str], ...] = (
     ),
 )
 
+REFUSAL_SCENARIOS_V3: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "A stale cache is blamed for inconsistent reads, but no cache key history or TTL trace "
+        "is attached.",
+        "有人将读取不一致归因于缓存过期，但没有缓存键历史或 TTL Trace。",
+        "the cache key history, TTL configuration, and timestamped read trace",
+        "缓存键历史、TTL 配置和带时间戳的读取 Trace",
+    ),
+    (
+        "A data split is accused of leakage without fingerprints or group assignments.",
+        "有人声称数据切分发生泄漏，但没有指纹或分组分配记录。",
+        "the split assignments, content fingerprints, and duplicate-match evidence",
+        "切分分配、内容指纹和重复匹配证据",
+    ),
+    (
+        "Queue starvation is cited for a delayed job without scheduler events or queue snapshots.",
+        "有人将作业延迟归因于队列饥饿，但没有调度事件或队列快照。",
+        "the scheduler events, queue snapshots, and job priority history",
+        "调度事件、队列快照和作业优先级历史",
+    ),
+    (
+        "Checkpoint storage is blamed for a pause without file sizes or storage timings.",
+        "有人将暂停归因于 Checkpoint 存储，但没有文件大小或存储计时。",
+        "the checkpoint inventory, file sizes, and storage operation timings",
+        "Checkpoint 清单、文件大小和存储操作计时",
+    ),
+    (
+        "GPU memory fragmentation is claimed without allocator snapshots or allocation history.",
+        "有人声称 GPU 显存碎片化，但没有分配器快照或分配历史。",
+        "the allocator snapshots, allocation history, and GPU memory inventory",
+        "分配器快照、分配历史和 GPU 显存清单",
+    ),
+    (
+        "A model promotion is called unsafe without the evaluated artifact or gate report.",
+        "有人称模型晋级不安全，但没有已评测 Artifact 或门禁报告。",
+        "the evaluated artifact identity, comparison report, and promotion decision record",
+        "已评测 Artifact 身份、对比报告和晋级决策记录",
+    ),
+    (
+        "A metric discrepancy is attributed to the scorer without raw counts or scorer version.",
+        "有人将指标差异归因于评分器，但没有原始计数或评分器版本。",
+        "the raw item counts, scorer version, and item-level scoring output",
+        "原始逐项计数、评分器版本和逐项评分输出",
+    ),
+    (
+        "A credential leak is alleged without a scanner record or affected artifact identity.",
+        "有人声称凭据泄漏，但没有扫描记录或受影响 Artifact 身份。",
+        "the reproducible scanner record and exact affected artifact identity",
+        "可复现扫描记录和受影响 Artifact 的精确身份",
+    ),
+    (
+        "Traffic load is blamed for HTTP 5xx responses without request logs or load samples.",
+        "有人将 HTTP 5xx 归因于流量负载，但没有请求日志或负载样本。",
+        "the request-correlated logs, traffic samples, and server resource timeline",
+        "请求关联日志、流量样本和服务端资源时间线",
+    ),
+    (
+        "A training NaN is blamed on one operator without the first failing step or tensor stats.",
+        "有人将训练 NaN 归因于某个算子，但没有首个失败 Step 或 Tensor 统计。",
+        "the first non-finite step, operator trace, and input/output tensor statistics",
+        "首个非有限值 Step、算子 Trace 和输入输出 Tensor 统计",
+    ),
+    (
+        "A disk controller is blamed for corrupted files without SMART data or checksum history.",
+        "有人将文件损坏归因于磁盘控制器，但没有 SMART 数据或校验历史。",
+        "the SMART report, controller errors, and expected-versus-observed checksums",
+        "SMART 报告、控制器错误和预期与实际校验和",
+    ),
+    (
+        "An NCCL collective is called hung without per-rank progress or communicator logs.",
+        "有人称 NCCL Collective 卡死，但没有逐 Rank 进度或通信器日志。",
+        "the per-rank progress, communicator logs, and launch topology",
+        "逐 Rank 进度、通信器日志和启动拓扑",
+    ),
+    (
+        "Sampling bias is asserted without versioned class counts or source proportions.",
+        "有人声称采样存在偏差，但没有版本化类别计数或来源比例。",
+        "the versioned class counts, source proportions, and sampling configuration",
+        "版本化类别计数、来源比例和采样配置",
+    ),
+    (
+        "A tokenizer change is blamed for a score shift without token IDs or rendered inputs.",
+        "有人将得分变化归因于 Tokenizer 变更，但没有 Token ID 或渲染输入。",
+        "both tokenizer identities, token ID sequences, and rendered model inputs",
+        "两份 Tokenizer 身份、Token ID 序列和渲染后的模型输入",
+    ),
+    (
+        "A compressed model is blamed for answer drift without paired generations.",
+        "有人将答案漂移归因于模型压缩，但没有成对生成结果。",
+        "paired original and compressed-model generations under one frozen config",
+        "同一冻结配置下原模型与压缩模型的成对生成结果",
+    ),
+    (
+        "A custom kernel is blamed for a crash without a backtrace or build identity.",
+        "有人将崩溃归因于自定义 Kernel，但没有 Backtrace 或构建身份。",
+        "the complete backtrace, kernel build identity, and failing tensor metadata",
+        "完整 Backtrace、Kernel 构建身份和失败 Tensor 元数据",
+    ),
+    (
+        "A mirror is blamed for a damaged download without mirror identity or checksums.",
+        "有人将下载损坏归因于镜像源，但没有镜像身份或校验和。",
+        "the mirror identity, transfer log, and expected and observed checksums",
+        "镜像身份、传输日志以及预期和实际校验和",
+    ),
+    (
+        "A resumed run differs from its control, but matching state snapshots are absent.",
+        "恢复运行与对照运行不同，但缺少相同步数的状态快照。",
+        "the matching-step model, optimizer, sampler, and RNG state hashes",
+        "相同步数的模型、优化器、Sampler 和 RNG 状态哈希",
+    ),
+    (
+        "An endpoint is called slower without request lengths, concurrency, or percentile data.",
+        "有人称端点变慢，但没有请求长度、并发或分位数数据。",
+        "the request lengths, concurrency, and raw latency percentile samples",
+        "请求长度、并发和原始延迟分位数样本",
+    ),
+    (
+        "Overfitting is claimed without comparable train and validation curves.",
+        "有人声称模型过拟合，但没有可比的训练与验证曲线。",
+        "the aligned train and validation curves, dataset versions, and evaluation steps",
+        "对齐的训练与验证曲线、数据版本和评测 Step",
+    ),
+    (
+        "A lock-order deadlock is alleged without thread dumps or lock ownership records.",
+        "有人声称发生锁顺序死锁，但没有线程 Dump 或锁持有记录。",
+        "the thread dumps, lock ownership records, and process-state timeline",
+        "线程 Dump、锁持有记录和进程状态时间线",
+    ),
+    (
+        "A package incompatibility is blamed for startup failure without a resolved environment.",
+        "有人将启动失败归因于包不兼容，但没有解析后的环境。",
+        "the lockfile, installed package inventory, and complete startup traceback",
+        "Lockfile、已安装包清单和完整启动 Traceback",
+    ),
+    (
+        "Prompt grounding is blamed for a false statement without the prompt or response.",
+        "有人将错误陈述归因于 Prompt Grounding，但没有 Prompt 或响应。",
+        "the exact prompt, retrieved context, decoding config, and raw response",
+        "精确 Prompt、检索上下文、解码配置和原始响应",
+    ),
+    (
+        "A benchmark result is rejected without its methodology or raw measurements.",
+        "有人否定某 Benchmark 结果，但没有方法说明或原始测量。",
+        "the benchmark methodology, environment snapshot, and raw measurements",
+        "Benchmark 方法、环境快照和原始测量",
+    ),
+    (
+        "A distribution is called legally incompatible without a file and license inventory.",
+        "有人称发布包法律上不兼容，但没有文件与许可证清单。",
+        "the distributed file inventory and each file's license and provenance",
+        "发布文件清单及逐文件许可证和来源血缘",
+    ),
+    (
+        "Deployment drift is attributed to a container without image or environment identities.",
+        "有人将部署漂移归因于容器，但没有镜像或环境身份。",
+        "the image digests, resolved environment manifests, and startup arguments",
+        "镜像摘要、解析后的环境 Manifest 和启动参数",
+    ),
+    (
+        "A sampler is accused of skew without emitted indices or its deterministic seed.",
+        "有人声称 Sampler 产生偏斜，但没有输出索引或确定性 Seed。",
+        "the ordered emitted indices, sampler configuration, and deterministic seed",
+        "有序输出索引、Sampler 配置和确定性 Seed",
+    ),
+    (
+        "A test is labelled flaky without repeated executions under a fixed environment.",
+        "有人称某测试为 Flaky，但没有固定环境下的重复执行记录。",
+        "the fixed environment, repeated-run history, seeds, and complete failure outputs",
+        "固定环境、重复运行历史、Seed 和完整失败输出",
+    ),
+)
+
 
 def _refusal_item(index: int, language: Language) -> EvaluationItem:
     item_index = index
     semantic_index = _semantic_index("refusal", item_index, language)
-    scenarios = REFUSAL_SCENARIOS if _ACTIVE_VARIANT == "v1" else REFUSAL_SCENARIOS_V2
+    scenarios = {
+        "v1": REFUSAL_SCENARIOS,
+        "v2": REFUSAL_SCENARIOS_V2,
+        "v3": REFUSAL_SCENARIOS_V3,
+    }[_ACTIVE_VARIANT]
     en_scenario, zh_scenario, en_missing, zh_missing = scenarios[semantic_index]
     scenario = en_scenario if language == "en" else zh_scenario
     missing = en_missing if language == "en" else zh_missing
@@ -1372,7 +1568,9 @@ def _refusal_item(index: int, language: Language) -> EvaluationItem:
         id=_item_id("refusal", item_index),
         language=language,
         category="refusal",
-        prompt_messages=(EvaluationPromptMessage(role="user", content=prompt),),
+        prompt_messages=(
+            EvaluationPromptMessage(role="user", content=_holdout_prompt(prompt, language)),
+        ),
         reference_answer=answer,
         scorer=HumanRubricScorer(
             kind="human_rubric",
@@ -1421,7 +1619,11 @@ def _render_manifest(
     *,
     variant: SuiteVariant,
 ) -> str:
-    config_name = "m2_domain_v1.yaml" if variant == "v1" else "m6_domain_v2.yaml"
+    config_name = {
+        "v1": "m2_domain_v1.yaml",
+        "v2": "m6_domain_v2.yaml",
+        "v3": "m6_domain_v3.yaml",
+    }[variant]
     config = load_evaluation_build_config(project_root / "configs/eval" / config_name)
     manifest = build_evaluation_manifest(items, config=config)
     return json.dumps(manifest.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
@@ -1442,9 +1644,9 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="Verify committed outputs only.")
     parser.add_argument(
         "--suite-version",
-        choices=("v1", "v2"),
+        choices=("v1", "v2", "v3"),
         default="v1",
-        help="Build the historical v1 suite or the independent M6 v2 holdout.",
+        help="Build the historical v1 suite or an independent M6 holdout.",
     )
     args = parser.parse_args()
     global _ACTIVE_VARIANT

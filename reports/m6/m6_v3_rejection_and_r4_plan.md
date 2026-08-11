@@ -205,3 +205,24 @@ Non-thinking 使用同一约束；Thinking 私有思考首段不受约束。
 实现依据：[XGrammar 官方 Quick Start](https://xgrammar.mlc-ai/docs/start/quick_start) 与
 [XGrammar 源码仓库](https://github.com/mlc-ai/xgrammar)。LM Format Enforcer 的通用对象
 诊断同样为 `8/9`，因此不进入正式依赖和 v5 协议。
+
+## 11. v5 拒绝与 v6 输出边界
+
+v5 Candidate Non-thinking 首路正式运行证明 JSON 机制达到 `80/80` 约束覆盖和 `80/80`
+有效对象，但仍被机械拒绝：一条 Python 答案先输出正确标量，随后继续生成 `</think>` 和重复
+对象，造成格式 `299/300`、可见推理泄漏 `1/300`；泄漏门禁固定为 0。发现该结果后停止 v5
+其余三路，避免在已确定拒绝时消耗 GPU。v5 目录保持不可变。
+
+该失败属于输出停止边界，而非训练或评分错误。v6 在实现修复前冻结为
+`tinyllm-domain-output-boundary-audit-v1-c34f63a8`，内容 SHA256 为
+`c34f63a87c05910f421db19c71eede7368328028f81bbf08870070bb2fba6002`，与 v1–v5 的完整
+Prompt 交集为 0。模型权重、JSON 约束、门禁和通用任务均保持不变。
+
+`truncate-before-first-thinking-tag-v1` 在 Non-thinking 生成中注册 `<think>` 与 `</think>`
+停止串。若命中，私有 Transcript 保留包含停止标签的原始解码文本、`stop_string` 终止原因和
+截断动作；对外 Final Answer 只包含首个标签前的文本。标签出现在首位时会得到空答案并继续
+计为失败，控制器不会生成、补全或改写答案内容。Thinking 路径不应用该策略。
+
+使用 v5 失败项的相同 Prompt、Batch 与 Seed 做只读重放时，原始输出在
+`3.1758620689664\n\n</think>` 处停止，对外答案为 `3.1758620689664`，可见泄漏为 0；
+同批其余三条输出不变。该重放只验证机制，不属于 v6 门禁成绩。

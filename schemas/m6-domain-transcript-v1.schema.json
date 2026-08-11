@@ -56,7 +56,8 @@
     "finish_reason": {
       "enum": [
         "eos",
-        "length"
+        "length",
+        "stop_string"
       ],
       "title": "Finish Reason",
       "type": "string"
@@ -144,6 +145,11 @@
     },
     "natural_thinking_closed": {
       "title": "Natural Thinking Closed",
+      "type": "boolean"
+    },
+    "nonthinking_tag_truncated": {
+      "default": false,
+      "title": "Nonthinking Tag Truncated",
       "type": "boolean"
     },
     "output_repair_action": {

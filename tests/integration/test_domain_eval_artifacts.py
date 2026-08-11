@@ -31,6 +31,9 @@ V4_MANIFEST = Path("evals/domain/v4/manifest.json")
 V5_CONFIG = Path("configs/eval/m6_domain_v5.yaml")
 V5_ITEMS = Path("evals/domain/v5/items.jsonl")
 V5_MANIFEST = Path("evals/domain/v5/manifest.json")
+V6_CONFIG = Path("configs/eval/m6_domain_v6.yaml")
+V6_ITEMS = Path("evals/domain/v6/items.jsonl")
+V6_MANIFEST = Path("evals/domain/v6/manifest.json")
 
 
 def test_frozen_domain_artifacts_are_reproducible_and_internally_consistent() -> None:
@@ -230,6 +233,38 @@ def test_m6_v5_json_decoding_audit_is_reproducible_and_prompt_independent() -> N
             "scripts/build_m2_domain_eval.py",
             "--suite-version",
             "v5",
+            "--check",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_m6_v6_output_boundary_audit_is_reproducible_and_prompt_independent() -> None:
+    config = load_evaluation_build_config(V6_CONFIG)
+    items = load_evaluation_items(V6_ITEMS)
+    committed = EvaluationSetManifest.model_validate_json(V6_MANIFEST.read_bytes())
+    earlier_prompts = {
+        tuple(item.prompt_messages)
+        for path in (ITEMS, V2_ITEMS, V3_ITEMS, V4_ITEMS, V5_ITEMS)
+        for item in load_evaluation_items(path)
+    }
+
+    assert build_evaluation_manifest(items, config=config) == committed
+    assert committed.suite_version == "tinyllm-domain-output-boundary-audit-v1-c34f63a8"
+    assert len(items) == 300
+    assert len({tuple(item.prompt_messages) for item in items}) == 300
+    assert not earlier_prompts.intersection(tuple(item.prompt_messages) for item in items)
+    assert all("v6 templates" in item.provenance.source_note for item in items)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_m2_domain_eval.py",
+            "--suite-version",
+            "v6",
             "--check",
         ],
         check=False,

@@ -272,6 +272,29 @@ def test_m6_v5_release_keeps_gate_and_binds_structured_json_audit() -> None:
         type(config).model_validate(unconstrained)
 
 
+def test_m6_v6_release_binds_output_boundary_without_changing_gate() -> None:
+    config = load_m6_release_config(Path("configs/eval/m6_release_v6.yaml"))
+
+    assert config.protocol_version == "m6-release-v6"
+    assert config.suite_version == "tinyllm-domain-output-boundary-audit-v1-c34f63a8"
+    assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260814
+    assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
+    assert config.domain_execution.output_control is not None
+    assert (
+        config.domain_execution.output_control.nonthinking_stop_policy
+        == "truncate-before-first-thinking-tag-v1"
+    )
+    assert config.domain_execution.output_control.nonthinking_stop_strings == (
+        "<think>",
+        "</think>",
+    )
+
+    incomplete = config.to_dict()
+    incomplete["domain_execution"]["output_control"].pop("nonthinking_stop_strings")
+    with pytest.raises(ValidationError, match="stop-control identity is incomplete"):
+        type(config).model_validate(incomplete)
+
+
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:
     config = load_m6_release_config(Path("configs/eval/m6_release.yaml"))
     result = compare_m6_evaluations(

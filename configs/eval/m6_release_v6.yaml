@@ -1,0 +1,91 @@
+schema_version: "1.0"
+protocol_version: m6-release-v6
+suite_version: tinyllm-domain-output-boundary-audit-v1-c34f63a8
+suite_content_sha256: c34f63a87c05910f421db19c71eede7368328028f81bbf08870070bb2fba6002
+expected_domain_items: 300
+expected_languages: en-210_zh-90
+compare_modes_separately: true
+general_metric: acc_norm
+general_aggregation: equal-task-mean
+general_tasks:
+  - tinyllm_arc_easy
+  - tinyllm_hellaswag
+  - tinyllm_piqa
+domain_execution:
+  batch_size: 4
+  max_sequence_length: 1024
+  scorer_policy: tinyllm-domain-scorer-v1
+  thinking:
+    template_id: qwen3-chatml-thinking-generation-v1
+    template_sha256: 7c37a1ab66f274f52208e50167e6cafbf00b6f5319207beca572e4b8cb1f8451
+    add_generation_prompt: true
+    thinking_budget_tokens: 1536
+    final_answer_max_new_tokens: 512
+    do_sample: true
+    final_answer_do_sample: false
+    final_answer_batch_size: 4
+    temperature: 0.6
+    top_p: 0.95
+    top_k: 20
+    repetition_penalty: 1.0
+    seed: 20260814
+    early_stopping_text: "\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n</think>\n\n"
+  nonthinking:
+    template_id: qwen3-chatml-nonthinking-generation-v1
+    template_sha256: b9a510e2f016a112860e47056f770b04e5c93131cc4a8ecd47fcc950cfdb6273
+    add_generation_prompt: true
+    max_new_tokens: 512
+    do_sample: false
+  output_control:
+    json_repair_policy: json-syntax-only-v3
+    evidence_system_prompt_id: evidence-grounding-bilingual-v1
+    evidence_system_prompt_sha256: dff97b5e4f251f422c7b4b745ec1be6bf242b9e73020c403d05960f207f84618
+    thinking_final_separator_id: qwen3-thinking-final-separator-v1
+    thinking_final_separator_sha256: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+    thinking_continuation_context_id: qwen3-visible-text-retokenize-v1
+    json_decoder_id: xgrammar-json-shape-v1
+    json_decoder_version: "0.2.4"
+    json_schema_policy: expected-json-shape-no-values-v1
+    nonthinking_stop_policy: truncate-before-first-thinking-tag-v1
+    nonthinking_stop_strings:
+      - <think>
+      - </think>
+general_execution:
+  harness_version: "0.4.12"
+  tokenizer_chat_template_sha256: a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8
+  apply_chat_template: true
+  enable_thinking: false
+  num_fewshot: 0
+  batch_size: 8
+  max_length: 1024
+  log_samples: true
+  tasks:
+    - task: tinyllm_arc_easy
+      adapter_sha256: e292c7593040de3e0997b0f9854f2feb9531aec13d16dddf017eb62a035bba69
+      dataset_revision: 210d026faf9955653af8916fad021475a3f00453
+      expected_samples: 2376
+    - task: tinyllm_hellaswag
+      adapter_sha256: 9e325da13e9028d2d2a4fa0bd9e0ff46b6a1a7d4849e3d005be17a3265415971
+      dataset_revision: 218ec52e09a7e7462a5400043bb9a69a41d06b76
+      expected_samples: 10042
+    - task: tinyllm_piqa
+      adapter_sha256: 56f8c1f15f5cb66d58a5c5c48a46a946b9ad55c8a8c1a608d996511946f3ac50
+      dataset_revision: 142f6d7367fd9877f0fb3b5734ea6a545f54cdd1
+      expected_samples: 1838
+bootstrap:
+  seed: 20260814
+  replicates: 10000
+  confidence_basis_points: 9500
+  resampling_unit: bilingual-pair-or-english-singleton
+  percentile_method: nearest-rank-v1
+gate:
+  domain_min_delta_basis_points: 300
+  domain_ci_lower_min_exclusive_basis_points: 0
+  general_max_drop_basis_points: 200
+  json_valid_min_basis_points: 9800
+  thinking_format_min_basis_points: 9900
+  thinking_forced_close_max_basis_points: 1000
+  nonthinking_leakage_max_basis_points: 0
+  require_both_domain_modes: true
+  require_complete_lineage: true
+  production_gate_enabled: false

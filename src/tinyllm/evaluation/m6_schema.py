@@ -123,7 +123,11 @@ class M6NonthinkingGenerationConfig(StrictSchema):
 class M6OutputControlConfig(StrictSchema):
     """Auditable output repair, evidence grounding, and Thinking continuation policy."""
 
-    json_repair_policy: Literal["json-syntax-only-v1", "json-syntax-only-v2"]
+    json_repair_policy: Literal[
+        "json-syntax-only-v1",
+        "json-syntax-only-v2",
+        "json-syntax-only-v3",
+    ]
     evidence_system_prompt_id: Literal["evidence-grounding-bilingual-v1"]
     evidence_system_prompt_sha256: Literal[
         "dff97b5e4f251f422c7b4b745ec1be6bf242b9e73020c403d05960f207f84618"
@@ -273,7 +277,7 @@ class M6ReleaseConfig(StrictSchema):
             raise ValueError("M6 protocol, suite identity, and deterministic seeds differ")
         if self.protocol_version == "m6-release-v4" and (
             self.domain_execution.output_control is None
-            or self.domain_execution.output_control.json_repair_policy != "json-syntax-only-v2"
+            or self.domain_execution.output_control.json_repair_policy != "json-syntax-only-v3"
             or self.domain_execution.thinking.final_answer_do_sample
             or self.domain_execution.thinking.final_answer_batch_size
             != self.domain_execution.batch_size
@@ -517,6 +521,7 @@ class M6DomainTranscript(StrictSchema):
         "arrow_single_key",
         "wrap_bareword_single_key",
         "promote_required_keys",
+        "close_object_promote_required_keys",
     ] = Field(default="none", exclude_if=lambda value: value == "none")
     prompt_tokens: int = Field(gt=0)
     first_pass_tokens: int = Field(ge=0, le=1536)

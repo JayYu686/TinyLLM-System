@@ -37,7 +37,7 @@ domain_execution:
     max_new_tokens: 512
     do_sample: false
   output_control:
-    json_repair_policy: json-syntax-only-v2
+    json_repair_policy: json-syntax-only-v3
     evidence_system_prompt_id: evidence-grounding-bilingual-v1
     evidence_system_prompt_sha256: dff97b5e4f251f422c7b4b745ec1be6bf242b9e73020c403d05960f207f84618
     thinking_final_separator_id: qwen3-thinking-final-separator-v1

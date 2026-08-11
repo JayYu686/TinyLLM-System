@@ -12,6 +12,32 @@
       "title": "Evidence System Prompt Sha256",
       "type": "string"
     },
+    "json_decoder_id": {
+      "anyOf": [
+        {
+          "const": "xgrammar-json-shape-v1",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Json Decoder Id"
+    },
+    "json_decoder_version": {
+      "anyOf": [
+        {
+          "const": "0.2.4",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Json Decoder Version"
+    },
     "json_repair_policy": {
       "enum": [
         "json-syntax-only-v1",
@@ -20,6 +46,19 @@
       ],
       "title": "Json Repair Policy",
       "type": "string"
+    },
+    "json_schema_policy": {
+      "anyOf": [
+        {
+          "const": "expected-json-shape-no-values-v1",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Json Schema Policy"
     },
     "thinking_continuation_context_id": {
       "const": "qwen3-visible-text-retokenize-v1",

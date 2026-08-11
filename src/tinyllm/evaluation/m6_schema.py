@@ -17,12 +17,14 @@ M6ProtocolVersion = Literal[
     "m6-release-v2",
     "m6-release-v3",
     "m6-release-v4",
+    "m6-release-v5",
 ]
 M6SuiteVersion = Literal[
     "tinyllm-domain-v1-83bdd8ef",
     "tinyllm-domain-holdout-v1-c0c948cc",
     "tinyllm-domain-holdout-v1-2b167ce6",
     "tinyllm-domain-final-audit-v1-bac25144",
+    "tinyllm-domain-json-audit-v1-3e5fffd7",
 ]
 M6Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
 M6ScorerKind = Literal[
@@ -52,7 +54,7 @@ def _freeze(value: object) -> object:
 class M6BootstrapConfig(StrictSchema):
     """Paired cluster-bootstrap policy fixed before release-set evaluation."""
 
-    seed: Literal[20260809, 20260810, 20260811, 20260812]
+    seed: Literal[20260809, 20260810, 20260811, 20260812, 20260813]
     replicates: Literal[10000]
     confidence_basis_points: Literal[9500]
     resampling_unit: Literal["bilingual-pair-or-english-singleton"]
@@ -97,7 +99,7 @@ class M6ThinkingGenerationConfig(StrictSchema):
     top_p: float = Field(gt=0.0, le=1.0)
     top_k: Literal[20]
     repetition_penalty: float = Field(ge=1.0, le=2.0)
-    seed: Literal[20260809, 20260810, 20260811, 20260812]
+    seed: Literal[20260809, 20260810, 20260811, 20260812, 20260813]
     early_stopping_text: Literal[
         "\n\n Considering the limited time by the user, I have to give the solution "
         "based on the thinking directly now.\n</think>\n\n"
@@ -137,6 +139,29 @@ class M6OutputControlConfig(StrictSchema):
         "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070"
     ]
     thinking_continuation_context_id: Literal["qwen3-visible-text-retokenize-v1"]
+    json_decoder_id: Literal["xgrammar-json-shape-v1"] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    json_decoder_version: Literal["0.2.4"] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    json_schema_policy: Literal["expected-json-shape-no-values-v1"] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+
+    @model_validator(mode="after")
+    def validate_json_decoder(self) -> M6OutputControlConfig:
+        decoder = (
+            self.json_decoder_id,
+            self.json_decoder_version,
+            self.json_schema_policy,
+        )
+        if any(value is not None for value in decoder) and any(value is None for value in decoder):
+            raise ValueError("M6 structured JSON decoder identity is incomplete")
+        return self
 
 
 class M6DomainExecutionConfig(StrictSchema):
@@ -223,6 +248,7 @@ class M6ReleaseConfig(StrictSchema):
         "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
         "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2",
         "bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a",
+        "3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe",
     ]
     expected_domain_items: Literal[300]
     expected_languages: Literal["en-210_zh-90"]
@@ -266,6 +292,11 @@ class M6ReleaseConfig(StrictSchema):
                 "bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a",
                 20260812,
             ),
+            "m6-release-v5": (
+                "tinyllm-domain-json-audit-v1-3e5fffd7",
+                "3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe",
+                20260813,
+            ),
         }
         suite, content, seed = releases[self.protocol_version]
         if (
@@ -283,6 +314,18 @@ class M6ReleaseConfig(StrictSchema):
             != self.domain_execution.batch_size
         ):
             raise ValueError("M6 release v4 requires frozen deterministic output controls")
+        if self.protocol_version == "m6-release-v5" and (
+            self.domain_execution.output_control is None
+            or self.domain_execution.output_control.json_repair_policy != "json-syntax-only-v3"
+            or self.domain_execution.output_control.json_decoder_id != "xgrammar-json-shape-v1"
+            or self.domain_execution.output_control.json_decoder_version != "0.2.4"
+            or self.domain_execution.output_control.json_schema_policy
+            != "expected-json-shape-no-values-v1"
+            or self.domain_execution.thinking.final_answer_do_sample
+            or self.domain_execution.thinking.final_answer_batch_size
+            != self.domain_execution.batch_size
+        ):
+            raise ValueError("M6 release v5 requires frozen structured JSON controls")
         if self.protocol_version in {"m6-release-v1", "m6-release-v2"} and (
             self.domain_execution.output_control is not None
         ):
@@ -523,6 +566,15 @@ class M6DomainTranscript(StrictSchema):
         "promote_required_keys",
         "close_object_promote_required_keys",
     ] = Field(default="none", exclude_if=lambda value: value == "none")
+    json_constraint_id: Literal["xgrammar-json-shape-v1"] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    json_constraint_schema_sha256: str | None = Field(
+        default=None,
+        pattern=SHA256_PATTERN,
+        exclude_if=lambda value: value is None,
+    )
     prompt_tokens: int = Field(gt=0)
     first_pass_tokens: int = Field(ge=0, le=1536)
     continuation_tokens: int = Field(ge=0, le=512)
@@ -556,6 +608,11 @@ class M6DomainTranscript(StrictSchema):
             or self.scorer_kind != "json_object"
         ):
             raise ValueError("M6 output repair evidence differs from the repaired answer")
+        constrained = self.json_constraint_id is not None
+        if constrained != (self.json_constraint_schema_sha256 is not None) or (
+            constrained and self.scorer_kind != "json_object"
+        ):
+            raise ValueError("M6 JSON constraint evidence is incomplete or inapplicable")
         if self.generated_tokens != self.first_pass_tokens + self.continuation_tokens:
             raise ValueError("M6 generated Token accounting differs")
         is_human = self.scorer_kind == "human_rubric"
@@ -623,6 +680,12 @@ class M6DomainPassSummary(StrictSchema):
     json_items: Literal[80]
     json_valid_items: int = Field(ge=0, le=80)
     json_repaired_items: int = Field(default=0, ge=0, le=80, exclude_if=lambda value: value == 0)
+    json_constrained_items: int = Field(
+        default=0,
+        ge=0,
+        le=80,
+        exclude_if=lambda value: value == 0,
+    )
     format_valid_items: int = Field(ge=0, le=300)
     visible_reasoning_leakage_items: int = Field(ge=0, le=300)
     natural_thinking_closed_items: int = Field(ge=0, le=300)
@@ -643,6 +706,10 @@ class M6DomainPassSummary(StrictSchema):
     def validate_pass(self) -> M6DomainPassSummary:
         if self.json_repaired_items > self.json_valid_items:
             raise ValueError("M6 repaired JSON count exceeds valid JSON results")
+        if self.protocol_version == "m6-release-v5" and self.json_constrained_items != 80:
+            raise ValueError("M6 release v5 must constrain all 80 JSON-object results")
+        if self.protocol_version != "m6-release-v5" and self.json_constrained_items:
+            raise ValueError("Historical M6 releases cannot claim structured JSON decoding")
         if self.human_review_pending + self.human_reviewed != 40:
             raise ValueError("M6 domain pass must account for all 40 human-rubric items")
         expected = "awaiting_human_review" if self.human_review_pending else "succeeded"

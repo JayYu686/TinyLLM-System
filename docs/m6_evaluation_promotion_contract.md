@@ -219,3 +219,14 @@ Non-thinking `123/260`、格式 `300/300`、泄漏 `0/300`。Base 对应客观�
 SHA256 为 `3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe`。
 v5 与 v1–v4 的完整 Prompt 交集为 0，模型权重保持不变，只验证版本化 JSON 约束解码是否跨
 独立内容泛化。v4 失败输出只能用于推理解码器诊断，不能进入训练数据或 v5 内容。
+
+v5 的 80 条 JSON-object 任务固定使用 `xgrammar-json-shape-v1` 与 XGrammar 0.2.4。每题
+Schema 只保留冻结评分契约中的字段名、对象/数组层级和 JSON 类型，删除所有 Reference 叶子值，
+且不限制数组长度。Grammar 只约束 Token 级输出结构，不改变模型权重、Prompt、采样种子、
+评分答案或门禁阈值。Thinking 只约束 `</think>` 后的 Final Answer，私有思考首段继续使用
+冻结采样策略；Non-thinking 直接约束最终输出。
+
+Base 与 Candidate 必须使用完全相同的逐题 Schema。配置记录解码器 ID、版本和 Schema Policy；
+私有 Transcript 记录逐题 Schema SHA256，Summary 必须证明 80 条 JSON 全部经过约束。依赖
+缺失、版本漂移、不同 Scorer 混批或 JSON 任务绕过约束时，评测失败关闭。v5 仍只允许一次
+完整正式审计；v4 的 9 条失败重放仅用于选择解码机制，不得作为 v5 成绩。

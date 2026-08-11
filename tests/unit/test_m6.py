@@ -237,6 +237,10 @@ def test_m6_v4_release_keeps_gate_and_binds_sealed_final_audit() -> None:
         config.domain_execution.output_control.thinking_final_separator_id
         == "qwen3-thinking-final-separator-v1"
     )
+    assert (
+        config.domain_execution.output_control.thinking_continuation_context_id
+        == "qwen3-visible-text-retokenize-v1"
+    )
 
 
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:

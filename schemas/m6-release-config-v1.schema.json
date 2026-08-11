@@ -338,6 +338,11 @@
           "title": "Json Repair Policy",
           "type": "string"
         },
+        "thinking_continuation_context_id": {
+          "const": "qwen3-visible-text-retokenize-v1",
+          "title": "Thinking Continuation Context Id",
+          "type": "string"
+        },
         "thinking_final_separator_id": {
           "const": "qwen3-thinking-final-separator-v1",
           "title": "Thinking Final Separator Id",
@@ -354,7 +359,8 @@
         "evidence_system_prompt_id",
         "evidence_system_prompt_sha256",
         "thinking_final_separator_id",
-        "thinking_final_separator_sha256"
+        "thinking_final_separator_sha256",
+        "thinking_continuation_context_id"
       ],
       "title": "M6OutputControlConfig",
       "type": "object"

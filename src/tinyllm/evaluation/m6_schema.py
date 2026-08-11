@@ -132,6 +132,7 @@ class M6OutputControlConfig(StrictSchema):
     thinking_final_separator_sha256: Literal[
         "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070"
     ]
+    thinking_continuation_context_id: Literal["qwen3-visible-text-retokenize-v1"]
 
 
 class M6DomainExecutionConfig(StrictSchema):

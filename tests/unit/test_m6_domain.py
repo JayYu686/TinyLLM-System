@@ -162,7 +162,9 @@ def test_m6_json_repair_v2_handles_only_generalized_shell_failures() -> None:
         )
         assert action == expected_action
         decoded = json.loads(repaired)
-        assert set(items[item_id].scorer.required_keys).issubset(decoded)
+        scorer = items[item_id].scorer
+        assert scorer.kind == "json_object"
+        assert set(scorer.required_keys).issubset(decoded)
 
     unchanged, action = repair_m6_json_answer(
         items["domain-json-012"],

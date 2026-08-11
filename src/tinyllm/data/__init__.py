@@ -61,6 +61,7 @@ from tinyllm.data.m5_mixture_schema import (
     M5FormatRepairMixtureManifest,
     M5MixtureArtifactFile,
     M5MixtureManifest,
+    M6DomainGeneralizationMixtureManifest,
     M6GateRepairMixtureManifest,
     M6GateReplayMixtureManifest,
 )
@@ -478,6 +479,7 @@ __all__ = [
     "M5TeacherPilotResult",
     "M5TeacherSmokeResult",
     "M5ThinkingCandidate",
+    "M6DomainGeneralizationMixtureManifest",
     "M6GateRepairMixtureManifest",
     "M6GateRepairTask",
     "M6GateReplayMixtureManifest",

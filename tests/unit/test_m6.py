@@ -222,6 +222,15 @@ def test_m6_v3_release_keeps_gate_and_binds_second_holdout() -> None:
     assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
 
 
+def test_m6_v4_release_keeps_gate_and_binds_sealed_final_audit() -> None:
+    config = load_m6_release_config(Path("configs/eval/m6_release_v4.yaml"))
+
+    assert config.protocol_version == "m6-release-v4"
+    assert config.suite_version == "tinyllm-domain-final-audit-v1-bac25144"
+    assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260812
+    assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
+
+
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:
     config = load_m6_release_config(Path("configs/eval/m6_release.yaml"))
     result = compare_m6_evaluations(

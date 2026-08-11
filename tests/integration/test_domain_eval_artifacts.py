@@ -25,6 +25,9 @@ V2_MANIFEST = Path("evals/domain/v2/manifest.json")
 V3_CONFIG = Path("configs/eval/m6_domain_v3.yaml")
 V3_ITEMS = Path("evals/domain/v3/items.jsonl")
 V3_MANIFEST = Path("evals/domain/v3/manifest.json")
+V4_CONFIG = Path("configs/eval/m6_domain_v4.yaml")
+V4_ITEMS = Path("evals/domain/v4/items.jsonl")
+V4_MANIFEST = Path("evals/domain/v4/manifest.json")
 
 
 def test_frozen_domain_artifacts_are_reproducible_and_internally_consistent() -> None:
@@ -160,6 +163,38 @@ def test_m6_v3_holdout_is_frozen_before_r2_and_independent() -> None:
             "scripts/build_m2_domain_eval.py",
             "--suite-version",
             "v3",
+            "--check",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_m6_v4_final_audit_is_reproducible_and_prompt_independent() -> None:
+    config = load_evaluation_build_config(V4_CONFIG)
+    items = load_evaluation_items(V4_ITEMS)
+    committed = EvaluationSetManifest.model_validate_json(V4_MANIFEST.read_bytes())
+    earlier_prompts = {
+        tuple(item.prompt_messages)
+        for path in (ITEMS, V2_ITEMS, V3_ITEMS)
+        for item in load_evaluation_items(path)
+    }
+
+    assert build_evaluation_manifest(items, config=config) == committed
+    assert committed.suite_version == "tinyllm-domain-final-audit-v1-bac25144"
+    assert len(items) == 300
+    assert len({tuple(item.prompt_messages) for item in items}) == 300
+    assert not earlier_prompts.intersection(tuple(item.prompt_messages) for item in items)
+    assert all("v4 templates" in item.provenance.source_note for item in items)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_m2_domain_eval.py",
+            "--suite-version",
+            "v4",
             "--check",
         ],
         check=False,

@@ -42,7 +42,7 @@
           "type": "boolean"
         },
         "dataset_version": {
-          "pattern": "^(?:m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture|dual-mode-correction-mixture)|m6-(?:gate-repair|gate-replay)-mixture)-v[0-9]+-[a-f0-9]{8}$",
+          "pattern": "^(?:m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture|dual-mode-correction-mixture)|m6-(?:gate-repair|gate-replay|domain-generalization)-mixture)-v[0-9]+-[a-f0-9]{8}$",
           "title": "Dataset Version",
           "type": "string"
         },
@@ -190,6 +190,55 @@
           ],
           "default": null,
           "title": "Bf16 Lora Oom Evidence Run Id"
+        },
+        "initial_checkpoint_id": {
+          "anyOf": [
+            {
+              "pattern": "^checkpoint-tokens-[0-9]{10}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initial Checkpoint Id"
+        },
+        "initial_model_artifact_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initial Model Artifact Sha256"
+        },
+        "initial_training_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initial Training Run Id"
+        },
+        "initialization": {
+          "default": "base_revision",
+          "enum": [
+            "base_revision",
+            "m5_formal_snapshot"
+          ],
+          "title": "Initialization",
+          "type": "string"
         },
         "license": {
           "const": "Apache-2.0",

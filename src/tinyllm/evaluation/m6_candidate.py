@@ -58,7 +58,12 @@ def _import_correction_candidate(
     except (OSError, ValueError, ValidationError) as exc:
         raise M6CandidateImportError("M6 correction source metadata is invalid") from exc
     release = load_m6_release_config(release_config_path)
-    source_kind: Literal["m6-dual-mode-correction", "m6-gate-repair", "m6-gate-replay"]
+    source_kind: Literal[
+        "m6-dual-mode-correction",
+        "m6-gate-repair",
+        "m6-gate-replay",
+        "m6-domain-generalization",
+    ]
     if release.protocol_version == "m6-release-v2":
         source_kind = "m6-dual-mode-correction"
         expected_mixture = "m5-dual-mode-correction-mixture-v1-4bc342d4"
@@ -67,6 +72,10 @@ def _import_correction_candidate(
         source_kind = "m6-gate-replay"
         expected_mixture = "m6-gate-replay-mixture-v1-6c169970"
         expected_manifest = "c5ceb1e5597a8e253d7c370484f9aa06d22b0a26dbfe597043d9302d8e580fa9"
+    elif release.protocol_version == "m6-release-v4":
+        source_kind = "m6-domain-generalization"
+        expected_mixture = "m6-domain-generalization-mixture-v1-6c2f59e6"
+        expected_manifest = "40c7a85edb392b165e2a05f50dbe998cc62ffe96115af27896bf8d5d15401eb9"
     else:
         raise M6CandidateImportError("M6 remediation requires a holdout release protocol")
     export_sha256 = model_export_sha256(model_dir)
@@ -96,6 +105,20 @@ def _import_correction_candidate(
         or config.data.dataset_version != result.mixture_version
         or config.data.mix_manifest_sha256 != result.mixture_manifest_sha256
         or config.evaluation.consume_m6_frozen_results
+        or (
+            release.protocol_version == "m6-release-v4"
+            and (
+                result.initialization != "m5_formal_snapshot"
+                or result.initial_model_artifact_sha256 != FROZEN_EXPORT_SHA256
+                or result.initial_training_run_id != FROZEN_RUN_ID
+                or result.initial_checkpoint_id != FROZEN_CHECKPOINT_ID
+                or config.model.initialization != result.initialization
+                or config.model.initial_model_artifact_sha256
+                != result.initial_model_artifact_sha256
+                or config.model.initial_training_run_id != result.initial_training_run_id
+                or config.model.initial_checkpoint_id != result.initial_checkpoint_id
+            )
+        )
         or manifest.run_id != result.run_id
         or manifest.checkpoint_id != result.latest_checkpoint
         or manifest.supervised_tokens != result.supervised_tokens
@@ -103,6 +126,15 @@ def _import_correction_candidate(
         or manifest.mixture_version != result.mixture_version
         or manifest.mixture_manifest_sha256 != result.mixture_manifest_sha256
         or manifest.git_commit != result.git_commit
+        or (
+            release.protocol_version == "m6-release-v4"
+            and (
+                manifest.initialization != result.initialization
+                or manifest.initial_model_artifact_sha256 != result.initial_model_artifact_sha256
+                or manifest.initial_training_run_id != result.initial_training_run_id
+                or manifest.initial_checkpoint_id != result.initial_checkpoint_id
+            )
+        )
         or not manifest.pinned
         or manifest.pin_reason != "final"
         or sha256_file(checkpoint_path / manifest.file.path) != manifest.file.sha256

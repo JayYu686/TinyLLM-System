@@ -62,6 +62,20 @@ class M5ModelConfig(StrictSchema):
     attention_architecture: Literal["gqa"]
     adaptation: Literal["full_sft", "lora", "qlora"]
     trust_remote_code: Literal[False] = False
+    initialization: Literal["base_revision", "m5_formal_snapshot"] = Field(
+        default="base_revision", exclude_if=lambda value: value == "base_revision"
+    )
+    initial_model_artifact_sha256: str | None = Field(
+        default=None, pattern=r"^[a-f0-9]{64}$", exclude_if=lambda value: value is None
+    )
+    initial_training_run_id: str | None = Field(
+        default=None, min_length=1, max_length=160, exclude_if=lambda value: value is None
+    )
+    initial_checkpoint_id: str | None = Field(
+        default=None,
+        pattern=r"^checkpoint-tokens-[0-9]{10}$",
+        exclude_if=lambda value: value is None,
+    )
     lora: M5LoRAConfig | None = None
     bf16_lora_oom_evidence_run_id: str | None = Field(default=None, min_length=1)
 
@@ -75,6 +89,16 @@ class M5ModelConfig(StrictSchema):
         }[self.repository]
         if self.revision != expected_revision:
             raise ValueError("model revision does not match the pinned repository")
+        initialization_values = (
+            self.initial_model_artifact_sha256,
+            self.initial_training_run_id,
+            self.initial_checkpoint_id,
+        )
+        if self.initialization == "base_revision":
+            if any(value is not None for value in initialization_values):
+                raise ValueError("base-revision initialization cannot name a training snapshot")
+        elif any(value is None for value in initialization_values):
+            raise ValueError("M5 snapshot initialization requires complete source lineage")
         if self.adaptation == "full_sft":
             if self.repository != QWEN3_0_6B_REPOSITORY:
                 raise ValueError("M5 Full SFT is restricted to Qwen3-0.6B")
@@ -96,7 +120,8 @@ class M5DataConfig(StrictSchema):
     dataset_version: str = Field(
         pattern=(
             r"^(?:m5-(reasoning-pilot|dual-sft|format-repair-mixture|r3-mixture|"
-            r"dual-mode-correction-mixture)|m6-(?:gate-repair|gate-replay)-mixture)"
+            r"dual-mode-correction-mixture)|m6-(?:gate-repair|gate-replay|"
+            r"domain-generalization)-mixture)"
             r"-v[0-9]+-[a-f0-9]{8}$"
         )
     )
@@ -251,6 +276,7 @@ class M5SFTConfig(StrictSchema):
                     "m5-dual-mode-correction-mixture-",
                     "m6-gate-repair-mixture-",
                     "m6-gate-replay-mixture-",
+                    "m6-domain-generalization-mixture-",
                 )
             ):
                 raise ValueError(
@@ -265,6 +291,7 @@ class M5SFTConfig(StrictSchema):
                         "m5-dual-mode-correction-mixture-",
                         "m6-gate-repair-mixture-",
                         "m6-gate-replay-mixture-",
+                        "m6-domain-generalization-mixture-",
                     )
                 )
                 and self.data.thinking_token_fraction != 0.3

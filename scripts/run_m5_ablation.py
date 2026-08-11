@@ -14,7 +14,11 @@ from pathlib import Path
 from tinyllm.data import m5_mixture_config_dataset_version, open_m5_ablation_mixture
 from tinyllm.evaluation import acquire_baseline_model, load_baseline_config
 from tinyllm.lineage import read_git_identity
-from tinyllm.training.m5_ablation import M5AblationError, run_m5_ablation
+from tinyllm.training.m5_ablation import (
+    M5AblationError,
+    run_m5_ablation,
+    validate_m5_initial_model,
+)
 from tinyllm.training.m5_config import load_m5_sft_config
 from tinyllm.training.smoke_preflight import inspect_gpus, validate_gpu_preflight
 
@@ -47,14 +51,16 @@ def _supervise(args: argparse.Namespace) -> int:
         or config.data.mix_manifest_sha256 != mixture_sha256
     ):
         raise M5AblationError("M5 config does not name the verified private mixture")
-    baseline_config = load_baseline_config(args.baseline_config)
-    verified_model_dir = acquire_baseline_model(
-        baseline_config,
-        cache_root=args.artifact_root / "cache",
-        offline=True,
-    )
-    if verified_model_dir.resolve() != args.model_dir.resolve():
-        raise M5AblationError("M5 model path differs from the verified pinned snapshot")
+    if config.model.initialization == "base_revision":
+        baseline_config = load_baseline_config(args.baseline_config)
+        verified_model_dir = acquire_baseline_model(
+            baseline_config,
+            cache_root=args.artifact_root / "cache",
+            offline=True,
+        )
+        if verified_model_dir.resolve() != args.model_dir.resolve():
+            raise M5AblationError("M5 model path differs from the verified pinned snapshot")
+    validate_m5_initial_model(config, args.model_dir)
     environment = os.environ.copy()
     environment["CUDA_VISIBLE_DEVICES"] = str(args.gpu_index)
     command = [

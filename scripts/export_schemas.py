@@ -72,6 +72,7 @@ from tinyllm.data import (
     M5ReasoningDatasetManifest,
     M5TeacherPilotResult,
     M5TeacherSmokeResult,
+    M6DomainGeneralizationMixtureManifest,
     M6GateRepairMixtureManifest,
     M6GateReplayMixtureManifest,
     OASST1ImportConfig,
@@ -274,6 +275,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m5-format-repair-mixture-manifest-v1.schema.json": M5FormatRepairMixtureManifest,
     "m6-gate-repair-mixture-manifest-v1.schema.json": M6GateRepairMixtureManifest,
     "m6-gate-replay-mixture-manifest-v1.schema.json": M6GateReplayMixtureManifest,
+    "m6-domain-generalization-mixture-manifest-v1.schema.json": (
+        M6DomainGeneralizationMixtureManifest
+    ),
     "m5-r3-formal-contamination-report-v1.schema.json": M5R3FormalContaminationReport,
     "m5-r3-formal-cpu-smoke-v1.schema.json": M5R3FormalCPUSmoke,
     "m5-r3-formal-shard-artifact-v1.schema.json": M5R3FormalShardArtifact,

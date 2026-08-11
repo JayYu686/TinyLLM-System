@@ -554,7 +554,8 @@
       "enum": [
         "m6-release-v1",
         "m6-release-v2",
-        "m6-release-v3"
+        "m6-release-v3",
+        "m6-release-v4"
       ],
       "title": "Protocol Version",
       "type": "string"
@@ -589,7 +590,8 @@
       "enum": [
         "tinyllm-domain-v1-83bdd8ef",
         "tinyllm-domain-holdout-v1-c0c948cc",
-        "tinyllm-domain-holdout-v1-2b167ce6"
+        "tinyllm-domain-holdout-v1-2b167ce6",
+        "tinyllm-domain-final-audit-v1-bac25144"
       ],
       "title": "Suite Version",
       "type": "string"

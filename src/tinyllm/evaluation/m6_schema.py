@@ -12,11 +12,17 @@ from tinyllm.schemas.base import StrictSchema
 from tinyllm.schemas.run import SHA256_PATTERN
 
 M6Mode = Literal["thinking", "nonthinking"]
-M6ProtocolVersion = Literal["m6-release-v1", "m6-release-v2", "m6-release-v3"]
+M6ProtocolVersion = Literal[
+    "m6-release-v1",
+    "m6-release-v2",
+    "m6-release-v3",
+    "m6-release-v4",
+]
 M6SuiteVersion = Literal[
     "tinyllm-domain-v1-83bdd8ef",
     "tinyllm-domain-holdout-v1-c0c948cc",
     "tinyllm-domain-holdout-v1-2b167ce6",
+    "tinyllm-domain-final-audit-v1-bac25144",
 ]
 M6Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
 M6ScorerKind = Literal[
@@ -46,7 +52,7 @@ def _freeze(value: object) -> object:
 class M6BootstrapConfig(StrictSchema):
     """Paired cluster-bootstrap policy fixed before release-set evaluation."""
 
-    seed: Literal[20260809, 20260810, 20260811]
+    seed: Literal[20260809, 20260810, 20260811, 20260812]
     replicates: Literal[10000]
     confidence_basis_points: Literal[9500]
     resampling_unit: Literal["bilingual-pair-or-english-singleton"]
@@ -81,7 +87,7 @@ class M6ThinkingGenerationConfig(StrictSchema):
     top_p: float = Field(gt=0.0, le=1.0)
     top_k: Literal[20]
     repetition_penalty: float = Field(ge=1.0, le=2.0)
-    seed: Literal[20260809, 20260810, 20260811]
+    seed: Literal[20260809, 20260810, 20260811, 20260812]
     early_stopping_text: Literal[
         "\n\n Considering the limited time by the user, I have to give the solution "
         "based on the thinking directly now.\n</think>\n\n"
@@ -184,6 +190,7 @@ class M6ReleaseConfig(StrictSchema):
         "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
         "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
         "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2",
+        "bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a",
     ]
     expected_domain_items: Literal[300]
     expected_languages: Literal["en-210_zh-90"]
@@ -221,6 +228,11 @@ class M6ReleaseConfig(StrictSchema):
                 "tinyllm-domain-holdout-v1-2b167ce6",
                 "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2",
                 20260811,
+            ),
+            "m6-release-v4": (
+                "tinyllm-domain-final-audit-v1-bac25144",
+                "bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a",
+                20260812,
             ),
         }
         suite, content, seed = releases[self.protocol_version]
@@ -609,6 +621,7 @@ class M6CandidateImportResult(StrictSchema):
         "m6-dual-mode-correction",
         "m6-gate-repair",
         "m6-gate-replay",
+        "m6-domain-generalization",
     ] = "m5-formal-snapshot"
     protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -656,6 +669,14 @@ class M6CandidateImportResult(StrictSchema):
             != "c5ceb1e5597a8e253d7c370484f9aa06d22b0a26dbfe597043d9302d8e580fa9"
         ):
             raise ValueError("M6 Candidate import differs from the gate-replay contract")
+        if self.source_kind == "m6-domain-generalization" and (
+            self.model.training_checkpoint_id != "checkpoint-tokens-0001000000"
+            or self.model.training_tokens != 1_000_000
+            or self.model.dataset_version != "m6-domain-generalization-mixture-v1-6c2f59e6"
+            or self.model.dataset_manifest_sha256
+            != "40c7a85edb392b165e2a05f50dbe998cc62ffe96115af27896bf8d5d15401eb9"
+        ):
+            raise ValueError("M6 Candidate import differs from the domain-generalization contract")
         return self
 
 

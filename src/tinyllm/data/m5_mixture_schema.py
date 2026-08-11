@@ -350,16 +350,19 @@ class M6DomainGeneralizationMixtureManifest(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     dataset_name: Literal["m6-domain-generalization-mixture"] = "m6-domain-generalization-mixture"
-    mixture_version: str = Field(pattern=r"^m6-domain-generalization-mixture-v1-[0-9a-f]{8}$")
+    mixture_version: str = Field(pattern=r"^m6-domain-generalization-mixture-v[12]-[0-9a-f]{8}$")
     parent_dataset_version: Literal["m2-sft-v1-f82ff32e"]
     parent_content_sha256: str = Field(pattern=SHA256_PATTERN)
     diagnostic_protocol_version: Literal["m6-release-v3"]
     source_consumed_evaluation_content: Literal[False]
     evaluation_prompt_overlap_count: Literal[0]
     authored_source_sha256: str = Field(pattern=SHA256_PATTERN)
-    authored_source_tasks: Literal[900]
+    authored_source_tasks: Literal[900, 1500]
     authored_source_category_counts: dict[str, int]
     training_value_offsets: tuple[Literal[401], Literal[449], Literal[497]]
+    refinement: Literal["json-object-and-evidence-refusal"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     tokenizer_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     nonthinking_template_id: Literal["qwen3-chatml-nonthinking-sft-v2"]
     nonthinking_template_sha256: Literal[
@@ -382,7 +385,7 @@ class M6DomainGeneralizationMixtureManifest(StrictSchema):
     nonthinking_sequence_count: int = Field(gt=0)
     thinking_sequence_count: int = Field(gt=0)
     general_nonthinking_source_sequences: int = Field(gt=0)
-    domain_source_pairs: Literal[900]
+    domain_source_pairs: Literal[900, 1500]
     general_nonthinking_reuse_count: int = Field(ge=0)
     domain_nonthinking_reuse_count: int = Field(ge=0)
     domain_thinking_reuse_count: int = Field(ge=0)
@@ -394,18 +397,37 @@ class M6DomainGeneralizationMixtureManifest(StrictSchema):
 
     @model_validator(mode="after")
     def validate_counts_and_identity(self) -> M6DomainGeneralizationMixtureManifest:
-        expected_version = f"m6-domain-generalization-mixture-v1-{self.content_sha256[:8]}"
+        version = 1 if self.refinement is None else 2
+        expected_version = f"m6-domain-generalization-mixture-v{version}-{self.content_sha256[:8]}"
         if self.mixture_version != expected_version:
             raise ValueError("M6 domain-generalization version does not match content hash")
-        expected_categories = {
-            "config": 120,
-            "json": 120,
-            "linux": 135,
-            "logs": 135,
-            "python": 150,
-            "refusal": 120,
-            "short_code": 120,
-        }
+        expected_categories = (
+            {
+                "config": 120,
+                "json": 120,
+                "linux": 135,
+                "logs": 135,
+                "python": 150,
+                "refusal": 120,
+                "short_code": 120,
+            }
+            if self.refinement is None
+            else {
+                "config": 120,
+                "json": 360,
+                "linux": 135,
+                "logs": 135,
+                "python": 150,
+                "refusal": 480,
+                "short_code": 120,
+            }
+        )
+        expected_tasks = 900 if self.refinement is None else 1500
+        if (
+            self.authored_source_tasks != expected_tasks
+            or self.domain_source_pairs != expected_tasks
+        ):
+            raise ValueError("M6 domain-generalization source task count differs")
         if self.authored_source_category_counts != expected_categories:
             raise ValueError("M6 domain-generalization source categories differ")
         if (

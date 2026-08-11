@@ -71,3 +71,30 @@ content_sha256: bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a
 R4 必须依次完成：暖启动血缘检查、1M Token 训练、v3 开发验证、v4 Base/Candidate 双模式
 评测、40 条人工判断、完整通用评测、Bootstrap 对比与 Candidate Promotion。任何失败结果均
 保留原始 Artifact，不调整门禁阈值，也不把 v4 重新用作训练反馈。
+
+## 6. R4 v3 开发验证与 R4.1
+
+R4 在 clean `b257a33` 上完成 1M Token 训练，v3 仅作为退役开发集执行自动项：
+
+| 模式 | Base 自动正确 | R4 自动正确 | R4 JSON Valid | R4 格式有效 | R4 强制收束 |
+| -- | --: | --: | --: | --: | --: |
+| Thinking | 87/260 | 135/260 | 72/80 | 296/300 | 2/300 |
+| Non-thinking | 45/260 | 147/260 | 75/80 | 300/300 | 0/300 |
+
+七类任务泛化已大幅改善，强制收束也通过阈值；剩余失败集中为数组/标量结果遗漏最外层 JSON
+对象，以及证据拒答把被怀疑组件复述为根因。另有 4 条 Thinking 在自然关闭后继续生成第二个
+`</think>`，属于控制器停止条件缺失，而非长度预算问题。
+
+R4.1 保留 R4 全部 900 条任务，新增 240 条完整 JSON 对象契约和 360 条证据拒答契约；仍从
+M5 10M 正式快照暖启动，仍为 1M Token、70/30 双模式、v1–v4 Prompt 零重合。Thinking
+控制器在首个 `</think>` 停止首段，再生成 Final Answer。R4.1 数据身份：
+
+```text
+mixture_version: m6-domain-generalization-mixture-v2-f2e029e4
+content_sha256: f2e029e430ccf68753beeb09a9ba875b441246284c546c77fbb96422e0e0503d
+manifest_sha256: 288b0c88c91c49b466e9aeee07f9087a69c0f6618f19462621730390831289aa
+authored_source_tasks: 1500
+evaluation_prompt_overlap_count: 0
+```
+
+R4 及其 v3 开发输出保留为诊断证据；只有 R4.1 可以进入 v4 密封终审。

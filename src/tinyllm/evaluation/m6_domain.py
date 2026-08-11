@@ -234,8 +234,12 @@ def _generate(
     temperature: float | None,
     top_p: float | None,
     top_k: int | None,
+    stop_strings: tuple[str, ...] | None = None,
 ) -> list[list[int]]:
     _set_seed(seed)
+    stopping: dict[str, object] = {}
+    if stop_strings is not None:
+        stopping = {"stop_strings": stop_strings, "tokenizer": tokenizer}
     with torch.inference_mode():
         generated = model.generate(
             **model_inputs,
@@ -248,6 +252,7 @@ def _generate(
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=sorted(eos_ids),
             use_cache=True,
+            **stopping,
         )
     return cast(list[list[int]], generated[:, input_width:].detach().cpu().tolist())
 
@@ -487,6 +492,7 @@ def run_m6_domain_pass(
             temperature=generation.thinking.temperature if mode == "thinking" else None,
             top_p=generation.thinking.top_p if mode == "thinking" else None,
             top_k=generation.thinking.top_k if mode == "thinking" else None,
+            stop_strings=("</think>",) if mode == "thinking" else None,
         )
         for item_index, (item, prompt, prompt_tokens, raw_ids) in enumerate(
             zip(batch_items, prompts, prompt_lengths, first_rows, strict=True)

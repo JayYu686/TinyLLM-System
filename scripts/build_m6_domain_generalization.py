@@ -12,7 +12,7 @@ import shutil
 import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 
@@ -163,15 +163,191 @@ def _refusal_tasks(batch_id: int) -> tuple[DomainGeneralizationTask, ...]:
     return tuple(tasks)
 
 
-def generate_domain_generalization_tasks() -> tuple[DomainGeneralizationTask, ...]:
-    """Generate 900 stable train-only tasks across all M6 domain families."""
+def _json_object_contract_tasks() -> tuple[DomainGeneralizationTask, ...]:
+    """Generate diverse tasks that make the required top-level object explicit."""
+
+    tasks: list[DomainGeneralizationTask] = []
+    for index in range(240):
+        language = "en" if index < 168 else "zh"
+        value = 701 + index
+        mode = index % 6
+        if mode == 0:
+            numeric_values = list(range(value, value + 6))
+            key = "even"
+            result: object = [item for item in numeric_values if item % 2 == 0]
+            operation_en = f"Keep only even integers from {numeric_values}"
+            operation_zh = f"从 {numeric_values} 中仅保留偶数"
+        elif mode == 1:
+            labels = [f"tag-{value % 17}", "api", f"tag-{value % 17}"]
+            key = "labels"
+            result = sorted(set(labels))
+            operation_en = f"Deduplicate and lexicographically sort {json.dumps(labels)}"
+            operation_zh = f"将 {json.dumps(labels)} 去重并按字典序排序"
+        elif mode == 2:
+            numeric_values = [value - 2, -1, value, 0]
+            key = "positive"
+            result = [item for item in numeric_values if item > 0]
+            operation_en = f"Keep positive integers from {numeric_values} in their original order"
+            operation_zh = f"从 {numeric_values} 中按原顺序保留正整数"
+        elif mode == 3:
+            key = "total"
+            result = value + value + 1
+            operation_en = f"Add {value} and {value + 1}"
+            operation_zh = f"计算 {value} 与 {value + 1} 的和"
+        elif mode == 4:
+            key = "enabled"
+            result = value % 2 == 0
+            operation_en = f"Report whether {value} is even"
+            operation_zh = f"判断 {value} 是否为偶数"
+        else:
+            key = "items"
+            result = [{"id": value}, {"id": value + 1}]
+            operation_en = f"Preserve the two records with IDs {value} and {value + 1}"
+            operation_zh = f"保留 ID 为 {value} 和 {value + 1} 的两条记录"
+        final = json.dumps({key: result}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+        case_id = f"J{index + 1:03d}"
+        if language == "en":
+            prompt = (
+                f"Contract case {case_id}: {operation_en}. Return one complete canonical JSON "
+                f"object whose required top-level key is `{key}`. Never return a bare array, "
+                "scalar, or object fragment. Return no prose."
+            )
+            reasoning = (
+                f"The outer shape is mandatory: I must emit a complete object with key `{key}`. "
+                "I will compute its value and keep the braces and key in the final answer."
+            )
+        else:
+            prompt = (
+                f"契约案例 {case_id}：{operation_zh}。返回一个完整的 Canonical JSON 对象，"
+                f"必需的顶层键为 `{key}`。禁止只返回数组、标量或对象片段，不要解释。"
+            )
+            reasoning = f"最外层必须是带 `{key}` 键的完整对象；计算值后仍要保留花括号和键名。"
+        tasks.append(
+            DomainGeneralizationTask(
+                task_id=f"train-r41-json-{index + 1:03d}",
+                category="json",
+                language=language,
+                prompt=prompt,
+                reasoning=reasoning,
+                final_answer=final,
+            )
+        )
+    return tuple(tasks)
+
+
+_REFUSAL_SUBJECTS = (
+    ("database index", "数据库索引"),
+    ("load balancer", "负载均衡器"),
+    ("filesystem cache", "文件系统缓存"),
+    ("token refresh job", "Token 刷新任务"),
+    ("batch scheduler", "批处理调度器"),
+    ("message broker", "消息代理"),
+    ("DNS resolver", "DNS 解析器"),
+    ("storage replica", "存储副本"),
+    ("request serializer", "请求序列化器"),
+    ("feature rollout", "功能发布"),
+    ("GPU allocator", "GPU 分配器"),
+    ("network route", "网络路由"),
+    ("data loader", "数据加载器"),
+    ("checkpoint writer", "Checkpoint 写入器"),
+    ("authentication proxy", "认证代理"),
+    ("metrics collector", "指标采集器"),
+    ("container image", "容器镜像"),
+    ("retry policy", "重试策略"),
+    ("tokenizer revision", "Tokenizer Revision"),
+    ("evaluation scorer", "评测评分器"),
+)
+
+_REFUSAL_EVIDENCE = (
+    (
+        "timestamped component logs, request IDs, and a controlled comparison",
+        "带时间戳的组件日志、请求 ID 和受控对照",
+    ),
+    (
+        "before-and-after metrics, configuration identities, and raw traces",
+        "变更前后指标、配置身份和原始 Trace",
+    ),
+    (
+        "the first failing event, correlated telemetry, and reproduction steps",
+        "首个失败事件、关联遥测和复现步骤",
+    ),
+    (
+        "versioned inputs, output hashes, and the complete error record",
+        "版本化输入、输出哈希和完整错误记录",
+    ),
+    (
+        "per-process resource samples, event timing, and a matched control run",
+        "逐进程资源样本、事件时序和匹配的对照 Run",
+    ),
+    (
+        "resolved runtime settings, dependency identities, and paired observations",
+        "解析后的运行设置、依赖身份和成对观测",
+    ),
+)
+
+
+def _evidence_refusal_contract_tasks() -> tuple[DomainGeneralizationTask, ...]:
+    """Generate varied evidence-grounding cases with explicit three-part answers."""
+
+    tasks: list[DomainGeneralizationTask] = []
+    for index in range(360):
+        language = "en" if index < 252 else "zh"
+        subject_en, subject_zh = _REFUSAL_SUBJECTS[index % len(_REFUSAL_SUBJECTS)]
+        evidence_en, evidence_zh = _REFUSAL_EVIDENCE[
+            (index // len(_REFUSAL_SUBJECTS)) % len(_REFUSAL_EVIDENCE)
+        ]
+        case_id = f"E{index + 1:03d}"
+        if language == "en":
+            prompt = (
+                f"Evidence audit {case_id}: a report blames the {subject_en} for the incident, "
+                f"but it omits {evidence_en}. Determine the root cause using only supplied "
+                "evidence."
+            )
+            final = (
+                "The supplied evidence is insufficient to determine a root cause. "
+                f"Please provide {evidence_en}."
+            )
+            reasoning = (
+                "Missing observations cannot establish causality. I must not repeat the alleged "
+                "component as the cause; I must state insufficiency and request every named item."
+            )
+        else:
+            prompt = (
+                f"证据审计 {case_id}：报告将事故归因于{subject_zh}，但缺少{evidence_zh}。"
+                "仅根据已提供的证据判断根因。"
+            )
+            final = f"现有证据不足以确定根因。请提供{evidence_zh}。"
+            reasoning = (
+                "缺失观测无法建立因果关系；不能把被怀疑组件复述为根因，"
+                "必须说明证据不足并请求全部指定证据。"
+            )
+        tasks.append(
+            DomainGeneralizationTask(
+                task_id=f"train-r41-refusal-{index + 1:03d}",
+                category="refusal",
+                language=language,
+                prompt=prompt,
+                reasoning=reasoning,
+                final_answer=final,
+            )
+        )
+    return tuple(tasks)
+
+
+def generate_domain_generalization_tasks(
+    *, contract_refinement: bool = False
+) -> tuple[DomainGeneralizationTask, ...]:
+    """Generate stable train-only tasks across all M6 domain families."""
 
     tasks = tuple(
         task
         for batch_id, value_offset in enumerate(_OFFSETS, start=1)
         for task in (*_objective_tasks(batch_id, value_offset), *_refusal_tasks(batch_id))
     )
-    if len(tasks) != 900 or len({task.task_id for task in tasks}) != 900:
+    if contract_refinement:
+        tasks = (*tasks, *_json_object_contract_tasks(), *_evidence_refusal_contract_tasks())
+    expected = 1500 if contract_refinement else 900
+    if len(tasks) != expected or len({task.task_id for task in tasks}) != expected:
         raise M5MixtureError("M6 domain-generalization task inventory differs")
     return tasks
 
@@ -282,10 +458,11 @@ def build_domain_generalization_mixture(
     project_root: Path,
     output_root: Path,
     build_seed: int,
+    contract_refinement: bool = False,
 ) -> M6DomainGeneralizationMixtureManifest:
     """Build and atomically commit the exact 1M-token R4 mixture."""
 
-    tasks = generate_domain_generalization_tasks()
+    tasks = generate_domain_generalization_tasks(contract_refinement=contract_refinement)
     overlap = {task.prompt for task in tasks} & _evaluation_prompts(project_root)
     if overlap:
         raise M5MixtureError("M6 domain-generalization source overlaps frozen evaluation")
@@ -331,8 +508,11 @@ def build_domain_generalization_mixture(
         "thinking_template_sha256": QWEN3_THINKING_TEMPLATE_SHA256,
         "training_value_offsets": _OFFSETS,
     }
+    if contract_refinement:
+        identity["refinement"] = "json-object-and-evidence-refusal"
     identity_sha256 = content_sha256(identity)
-    version = f"m6-domain-generalization-mixture-v1-{identity_sha256[:8]}"
+    version_number = 2 if contract_refinement else 1
+    version = f"m6-domain-generalization-mixture-v{version_number}-{identity_sha256[:8]}"
     destination = output_root / version
     if destination.exists():
         reopened = open_m5_ablation_mixture(destination)
@@ -377,9 +557,10 @@ def build_domain_generalization_mixture(
             source_consumed_evaluation_content=False,
             evaluation_prompt_overlap_count=0,
             authored_source_sha256=source_sha256,
-            authored_source_tasks=900,
+            authored_source_tasks=cast(Literal[900, 1500], len(tasks)),
             authored_source_category_counts=category_counts,
             training_value_offsets=_OFFSETS,
+            refinement=("json-object-and-evidence-refusal" if contract_refinement else None),
             tokenizer_revision="c1899de289a04d12100db370d81485cdf75e47ca",
             nonthinking_template_id="qwen3-chatml-nonthinking-sft-v2",
             nonthinking_template_sha256=(
@@ -402,7 +583,7 @@ def build_domain_generalization_mixture(
             nonthinking_sequence_count=non_count,
             thinking_sequence_count=len(combined) - non_count,
             general_nonthinking_source_sequences=len(general_raw),
-            domain_source_pairs=900,
+            domain_source_pairs=cast(Literal[900, 1500], len(tasks)),
             general_nonthinking_reuse_count=reuse[0],
             domain_nonthinking_reuse_count=reuse[1],
             domain_thinking_reuse_count=reuse[2],
@@ -446,6 +627,11 @@ def main() -> int:
     parser.add_argument("--project-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--build-seed", type=int, default=20260811)
+    parser.add_argument(
+        "--contract-refinement",
+        action="store_true",
+        help="Add diverse JSON-object and evidence-refusal contract tasks.",
+    )
     args = parser.parse_args()
     try:
         result = build_domain_generalization_mixture(
@@ -455,6 +641,7 @@ def main() -> int:
             project_root=args.project_root,
             output_root=args.output_root,
             build_seed=args.build_seed,
+            contract_refinement=args.contract_refinement,
         )
     except (M5MixtureError, OSError, ValueError) as exc:
         parser.error(str(exc))

@@ -309,12 +309,18 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
             inputs = kwargs["input_ids"]
             assert isinstance(inputs, torch.Tensor)
             if inputs.shape[1] == 2:
+                if mode == "thinking":
+                    assert kwargs["stop_strings"] == ("</think>",)
+                    assert kwargs["tokenizer"] is tokenizer
+                else:
+                    assert "stop_strings" not in kwargs
                 rows = [[10, 99, 0] for _ in range(inputs.shape[0])]
                 if self.first_batches == 0:
                     rows[1] = [11, 0, 0]
                     rows[2] = [12, 0, 0]
                 self.first_batches += 1
             else:
+                assert "stop_strings" not in kwargs
                 rows = [[20, 99] for _ in range(inputs.shape[0])]
             generated = torch.tensor(rows, dtype=torch.long)
             return torch.cat((inputs, generated), dim=1)

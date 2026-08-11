@@ -63,6 +63,7 @@ def _import_correction_candidate(
         "m6-gate-repair",
         "m6-gate-replay",
         "m6-domain-generalization",
+        "m6-domain-contract-refinement",
     ]
     if release.protocol_version == "m6-release-v2":
         source_kind = "m6-dual-mode-correction"
@@ -73,9 +74,9 @@ def _import_correction_candidate(
         expected_mixture = "m6-gate-replay-mixture-v1-6c169970"
         expected_manifest = "c5ceb1e5597a8e253d7c370484f9aa06d22b0a26dbfe597043d9302d8e580fa9"
     elif release.protocol_version == "m6-release-v4":
-        source_kind = "m6-domain-generalization"
-        expected_mixture = "m6-domain-generalization-mixture-v1-6c2f59e6"
-        expected_manifest = "40c7a85edb392b165e2a05f50dbe998cc62ffe96115af27896bf8d5d15401eb9"
+        source_kind = "m6-domain-contract-refinement"
+        expected_mixture = "m6-domain-generalization-mixture-v2-f2e029e4"
+        expected_manifest = "288b0c88c91c49b466e9aeee07f9087a69c0f6618f19462621730390831289aa"
     else:
         raise M6CandidateImportError("M6 remediation requires a holdout release protocol")
     export_sha256 = model_export_sha256(model_dir)

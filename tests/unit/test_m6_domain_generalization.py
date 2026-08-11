@@ -27,3 +27,30 @@ def test_r4_training_inventory_covers_all_families_without_frozen_prompt_overlap
     }
     assert not {task.prompt for task in tasks}.intersection(frozen_prompts)
     assert all(task.reasoning and task.final_answer for task in tasks)
+
+
+def test_r41_adds_diverse_object_and_evidence_contracts_without_eval_overlap() -> None:
+    tasks = generate_domain_generalization_tasks(contract_refinement=True)
+    frozen_prompts = {
+        str(json.loads(line)["prompt_messages"][0]["content"])
+        for path in sorted(Path("evals/domain").glob("v*/items.jsonl"))
+        for line in path.read_text(encoding="utf-8").splitlines()
+    }
+
+    assert len(tasks) == len({task.task_id for task in tasks}) == 1500
+    assert Counter(task.category for task in tasks) == {
+        "config": 120,
+        "json": 360,
+        "linux": 135,
+        "logs": 135,
+        "python": 150,
+        "refusal": 480,
+        "short_code": 120,
+    }
+    assert not {task.prompt for task in tasks}.intersection(frozen_prompts)
+    contract_tasks = [task for task in tasks if task.task_id.startswith("train-r41-json-")]
+    assert len(contract_tasks) == 240
+    assert all(
+        task.final_answer.startswith("{") and task.final_answer.endswith("}")
+        for task in contract_tasks
+    )

@@ -622,6 +622,7 @@ class M6CandidateImportResult(StrictSchema):
         "m6-gate-repair",
         "m6-gate-replay",
         "m6-domain-generalization",
+        "m6-domain-contract-refinement",
     ] = "m5-formal-snapshot"
     protocol_version: M6ProtocolVersion
     config_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -677,6 +678,14 @@ class M6CandidateImportResult(StrictSchema):
             != "40c7a85edb392b165e2a05f50dbe998cc62ffe96115af27896bf8d5d15401eb9"
         ):
             raise ValueError("M6 Candidate import differs from the domain-generalization contract")
+        if self.source_kind == "m6-domain-contract-refinement" and (
+            self.model.training_checkpoint_id != "checkpoint-tokens-0001000000"
+            or self.model.training_tokens != 1_000_000
+            or self.model.dataset_version != "m6-domain-generalization-mixture-v2-f2e029e4"
+            or self.model.dataset_manifest_sha256
+            != "288b0c88c91c49b466e9aeee07f9087a69c0f6618f19462621730390831289aa"
+        ):
+            raise ValueError("M6 Candidate import differs from the domain-contract refinement")
         return self
 
 

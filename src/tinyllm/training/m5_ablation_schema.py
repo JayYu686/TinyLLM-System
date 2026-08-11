@@ -35,7 +35,7 @@ class M5CheckpointManifest(StrictSchema):
         pattern=(
             r"^(?:m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2|"
             r"dual-mode-correction-mixture-v1)|m6-(?:gate-(?:repair|replay)|"
-            r"domain-generalization)-mixture-v1)-[0-9a-f]{8}$"
+            r"domain-generalization)-mixture-v[12])-[0-9a-f]{8}$"
         )
     )
     mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -110,7 +110,7 @@ class M5AblationRunResult(StrictSchema):
         pattern=(
             r"^(?:m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2|"
             r"dual-mode-correction-mixture-v1)|m6-(?:gate-(?:repair|replay)|"
-            r"domain-generalization)-mixture-v1)-[0-9a-f]{8}$"
+            r"domain-generalization)-mixture-v[12])-[0-9a-f]{8}$"
         )
     )
     mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)

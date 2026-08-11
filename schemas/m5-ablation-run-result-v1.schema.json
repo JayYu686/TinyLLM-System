@@ -56,10 +56,59 @@
       "title": "Gpu Name",
       "type": "string"
     },
+    "initial_checkpoint_id": {
+      "anyOf": [
+        {
+          "pattern": "^checkpoint-tokens-[0-9]{10}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Initial Checkpoint Id"
+    },
     "initial_loss": {
       "exclusiveMinimum": 0.0,
       "title": "Initial Loss",
       "type": "number"
+    },
+    "initial_model_artifact_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Initial Model Artifact Sha256"
+    },
+    "initial_training_run_id": {
+      "anyOf": [
+        {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Initial Training Run Id"
+    },
+    "initialization": {
+      "default": "base_revision",
+      "enum": [
+        "base_revision",
+        "m5_formal_snapshot"
+      ],
+      "title": "Initialization",
+      "type": "string"
     },
     "latest_checkpoint": {
       "pattern": "^checkpoint-tokens-[0-9]{10}$",
@@ -72,7 +121,7 @@
       "type": "string"
     },
     "mixture_version": {
-      "pattern": "^(?:m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2|dual-mode-correction-mixture-v1)|m6-gate-(?:repair|replay)-mixture-v1)-[0-9a-f]{8}$",
+      "pattern": "^(?:m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2|dual-mode-correction-mixture-v1)|m6-(?:gate-(?:repair|replay)|domain-generalization)-mixture-v1)-[0-9a-f]{8}$",
       "title": "Mixture Version",
       "type": "string"
     },

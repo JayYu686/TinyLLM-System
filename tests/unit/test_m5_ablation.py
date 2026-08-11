@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -10,9 +11,12 @@ from tinyllm.training.m5_ablation import (
     _record_attempt_result,
     _restore_rng,
     group_loss_scale,
+    model_export_sha256,
     token_learning_rate,
+    validate_m5_initial_model,
 )
 from tinyllm.training.m5_ablation_schema import M5AblationRunResult
+from tinyllm.training.m5_config import M5SFTConfig, load_m5_sft_config
 
 
 def _result_mapping() -> dict[str, object]:
@@ -75,6 +79,39 @@ def test_accumulation_loss_scale_is_token_weighted() -> None:
     assert group_loss_scale(25, 100) == 0.25
     with pytest.raises(ValueError, match="invalid"):
         group_loss_scale(0, 100)
+
+
+def test_warm_start_requires_the_configured_model_export_identity(tmp_path: Path) -> None:
+    model_dir = tmp_path / "model"
+    model_dir.mkdir()
+    (model_dir / "config.json").write_text(
+        json.dumps(
+            {
+                "model_type": "qwen3",
+                "num_attention_heads": 16,
+                "num_key_value_heads": 8,
+                "dtype": "bfloat16",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (model_dir / "model.safetensors").write_bytes(b"warm-start")
+    identity = model_export_sha256(model_dir)
+    raw = load_m5_sft_config(Path("configs/sft/m6_gate_replay_r3_seed42.yaml")).to_dict()
+    raw["model"].update(
+        {
+            "initialization": "m5_formal_snapshot",
+            "initial_model_artifact_sha256": identity,
+            "initial_training_run_id": "formal-run",
+            "initial_checkpoint_id": "checkpoint-tokens-0010000532",
+        }
+    )
+    config = M5SFTConfig.model_validate(raw)
+
+    assert validate_m5_initial_model(config, model_dir) == identity
+    (model_dir / "model.safetensors").write_bytes(b"tampered")
+    with pytest.raises(RuntimeError, match="differs from the configured snapshot"):
+        validate_m5_initial_model(config, model_dir)
 
 
 def test_rng_restore_returns_default_generator_state_to_cpu() -> None:

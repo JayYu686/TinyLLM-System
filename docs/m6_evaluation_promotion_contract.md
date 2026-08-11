@@ -170,3 +170,16 @@ R2 的开发代理评测显示长度问题已改善，但 Thinking/Non-thinking 
 [v3 评测集说明](../evals/domain/v3/README.md)，执行预注册见
 [M6 R2/v3 计划](../reports/m6/m6_r2_v3_execution_plan.md)。R3 只有先通过开发代理检查，才可使用
 该冻结 v3 执行一次正式复判。
+
+## 10. v3 拒绝与 v4 密封终审
+
+v3 自动评分确认 R3 的 Thinking 能力相对 Base 回退，且两种模式 JSON Valid Rate 分别只有
+86.25% 和 83.75%，因此无需等待人工评分即可确定拒绝。根因是修复集覆盖面过窄并从 Base
+重新训练，模型学到局部模板而没有形成七类任务的泛化能力。完整数据见
+[v3 拒绝与 R4 计划](../reports/m6/m6_v3_rejection_and_r4_plan.md)。
+
+R4 从已冻结的 M5 10M 正式快照暖启动，使用不读取任何评测答案或模型输出的 900 条七类任务
+做 1M Token 低学习率训练。最终门禁使用 R4 训练前冻结的
+`tinyllm-domain-final-audit-v1-bac25144`，内容 SHA256 为
+`bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a`。v4 与 v1–v3 的
+完整 Prompt 交集为 0，并继续沿用第 5 节的全部阈值；v4 一旦用于结果诊断，不再回流训练。

@@ -208,6 +208,10 @@ class M5CheckpointStore:
                 mixture_version=mixture_version,
                 mixture_manifest_sha256=mixture_manifest_sha256,
                 model_revision="c1899de289a04d12100db370d81485cdf75e47ca",
+                initialization=config.model.initialization,
+                initial_model_artifact_sha256=config.model.initial_model_artifact_sha256,
+                initial_training_run_id=config.model.initial_training_run_id,
+                initial_checkpoint_id=config.model.initial_checkpoint_id,
                 git_commit=git_commit,
                 file=file,
                 pinned=pin_reason is not None,
@@ -359,8 +363,19 @@ def _export_model(model: nn.Module, export_root: Path) -> str:
     if not callable(save_pretrained):
         raise M5AblationError("Qwen model does not expose save_pretrained")
     save_pretrained(export_root, safe_serialization=True)
+    return model_export_sha256(export_root)
+
+
+def model_export_sha256(export_root: Path) -> str:
+    """Return the stable immediate-file identity used by M5 model exports."""
+
+    if not export_root.is_dir() or export_root.is_symlink():
+        raise M5AblationError("M5 initial model export is missing or unsafe")
     digest = hashlib.sha256()
-    for path in sorted(export_root.iterdir(), key=lambda item: item.name):
+    files = sorted(export_root.iterdir(), key=lambda item: item.name)
+    if not files:
+        raise M5AblationError("M5 initial model export is empty")
+    for path in files:
         if not path.is_file() or path.is_symlink():
             raise M5AblationError("M5 export contains a non-regular file")
         digest.update(path.name.encode())
@@ -369,7 +384,9 @@ def _export_model(model: nn.Module, export_root: Path) -> str:
     return digest.hexdigest()
 
 
-def _validate_runtime_identity(config: M5SFTConfig, model_dir: Path) -> None:
+def validate_m5_initial_model(config: M5SFTConfig, model_dir: Path) -> str:
+    """Validate Base or warm-start snapshot identity without loading model weights."""
+
     try:
         decoded = cast(
             dict[str, object],
@@ -381,13 +398,19 @@ def _validate_runtime_identity(config: M5SFTConfig, model_dir: Path) -> None:
         "model_type": "qwen3",
         "num_attention_heads": 16,
         "num_key_value_heads": 8,
-        "torch_dtype": "bfloat16",
     }
-    if (
-        model_dir.name != config.model.revision
-        or {key: decoded.get(key) for key in expected} != expected
-    ):
+    if {key: decoded.get(key) for key in expected} != expected or (
+        decoded.get("torch_dtype") or decoded.get("dtype")
+    ) != "bfloat16":
         raise M5AblationError("local Qwen3-0.6B GQA identity differs from M5 config")
+    if config.model.initialization == "base_revision":
+        if model_dir.name != config.model.revision:
+            raise M5AblationError("local Qwen3-0.6B Base path differs from M5 config")
+        return config.model.revision
+    model_sha256 = model_export_sha256(model_dir)
+    if model_sha256 != config.model.initial_model_artifact_sha256:
+        raise M5AblationError("M5 warm-start model differs from the configured snapshot")
+    return model_sha256
 
 
 def run_m5_ablation(
@@ -415,7 +438,7 @@ def run_m5_ablation(
     git_commit, git_dirty = read_git_identity(project_root)
     if git_dirty:
         raise M5AblationError("formal M5.2 training requires a clean Git worktree")
-    _validate_runtime_identity(config, model_dir)
+    initial_model_sha256 = validate_m5_initial_model(config, model_dir)
     opened = open_m5_ablation_mixture(mixture_root)
     manifest_bytes = (mixture_root / "manifest.json").read_bytes()
     manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
@@ -467,6 +490,8 @@ def run_m5_ablation(
                 "cuda_runtime": torch.version.cuda,
                 "physical_gpu_index": physical_gpu_index,
                 "gpu_name": torch.cuda.get_device_name(device),
+                "initialization": config.model.initialization,
+                "initial_model_artifact_sha256": initial_model_sha256,
             },
         )
         progress = M5Progress(0, 0, 0, None, None)
@@ -510,6 +535,10 @@ def run_m5_ablation(
             "mixture_version": opened.manifest.mixture_version,
             "mixture_manifest_sha256": manifest_sha256,
             "physical_gpu_index": physical_gpu_index,
+            "initialization": config.model.initialization,
+            "initial_model_artifact_sha256": initial_model_sha256,
+            "initial_training_run_id": config.model.initial_training_run_id,
+            "initial_checkpoint_id": config.model.initial_checkpoint_id,
         },
     )
     started = time.monotonic()
@@ -624,6 +653,10 @@ def run_m5_ablation(
         git_dirty=False,
         model_revision="c1899de289a04d12100db370d81485cdf75e47ca",
         attention_architecture=config.model.attention_architecture,
+        initialization=config.model.initialization,
+        initial_model_artifact_sha256=config.model.initial_model_artifact_sha256,
+        initial_training_run_id=config.model.initial_training_run_id,
+        initial_checkpoint_id=config.model.initial_checkpoint_id,
         mixture_version=opened.manifest.mixture_version,
         mixture_manifest_sha256=manifest_sha256,
         thinking_fraction_basis_points=opened.manifest.thinking_fraction_basis_points,
@@ -657,6 +690,10 @@ def run_m5_ablation(
             "physical_gpu_index": physical_gpu_index,
             "supervised_tokens": progress.supervised_tokens,
             "latest_checkpoint": latest_checkpoint,
+            "initialization": config.model.initialization,
+            "initial_model_artifact_sha256": initial_model_sha256,
+            "initial_training_run_id": config.model.initial_training_run_id,
+            "initial_checkpoint_id": config.model.initial_checkpoint_id,
         },
     )
     return result

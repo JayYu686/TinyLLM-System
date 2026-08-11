@@ -343,3 +343,79 @@ class M6GateReplayMixtureManifest(StrictSchema):
         if self.nonthinking_sequence_count + self.thinking_sequence_count != self.sequence_count:
             raise ValueError("M6 gate-replay sequence counts differ")
         return self
+
+
+class M6DomainGeneralizationMixtureManifest(StrictSchema):
+    """Broad seven-family remediation built without frozen evaluation content."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    dataset_name: Literal["m6-domain-generalization-mixture"] = "m6-domain-generalization-mixture"
+    mixture_version: str = Field(pattern=r"^m6-domain-generalization-mixture-v1-[0-9a-f]{8}$")
+    parent_dataset_version: Literal["m2-sft-v1-f82ff32e"]
+    parent_content_sha256: str = Field(pattern=SHA256_PATTERN)
+    diagnostic_protocol_version: Literal["m6-release-v3"]
+    source_consumed_evaluation_content: Literal[False]
+    evaluation_prompt_overlap_count: Literal[0]
+    authored_source_sha256: str = Field(pattern=SHA256_PATTERN)
+    authored_source_tasks: Literal[900]
+    authored_source_category_counts: dict[str, int]
+    training_value_offsets: tuple[Literal[401], Literal[449], Literal[497]]
+    tokenizer_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
+    nonthinking_template_id: Literal["qwen3-chatml-nonthinking-sft-v2"]
+    nonthinking_template_sha256: Literal[
+        "fba6724bd16200356794105a2273bbd42e777c8311ef1760059c6f0766171ca2"
+    ]
+    thinking_template_id: Literal["qwen3-chatml-thinking-v1"]
+    thinking_template_sha256: Literal[
+        "4786143dbb7adb72a922d5efdcbe6596f2d65dcdc35d7bbf1b22830b795c2af9"
+    ]
+    sequence_length: Literal[1024]
+    pad_token_id: Literal[151643]
+    target_supervised_tokens: Literal[1_000_000]
+    thinking_fraction_basis_points: Literal[3000]
+    nonthinking_supervised_tokens: Literal[700_000]
+    thinking_supervised_tokens: Literal[300_000]
+    general_nonthinking_supervised_tokens: Literal[250_000]
+    domain_nonthinking_supervised_tokens: Literal[450_000]
+    domain_thinking_supervised_tokens: Literal[300_000]
+    sequence_count: int = Field(gt=0)
+    nonthinking_sequence_count: int = Field(gt=0)
+    thinking_sequence_count: int = Field(gt=0)
+    general_nonthinking_source_sequences: int = Field(gt=0)
+    domain_source_pairs: Literal[900]
+    general_nonthinking_reuse_count: int = Field(ge=0)
+    domain_nonthinking_reuse_count: int = Field(ge=0)
+    domain_thinking_reuse_count: int = Field(ge=0)
+    partially_masked_sequences: int = Field(ge=0, le=3)
+    compact_reasoning_max_supervised_tokens: int = Field(gt=0, le=256)
+    build_seed: int = Field(ge=0, le=2**32 - 1)
+    content_sha256: str = Field(pattern=SHA256_PATTERN)
+    artifact: M5MixtureArtifactFile
+
+    @model_validator(mode="after")
+    def validate_counts_and_identity(self) -> M6DomainGeneralizationMixtureManifest:
+        expected_version = f"m6-domain-generalization-mixture-v1-{self.content_sha256[:8]}"
+        if self.mixture_version != expected_version:
+            raise ValueError("M6 domain-generalization version does not match content hash")
+        expected_categories = {
+            "config": 120,
+            "json": 120,
+            "linux": 135,
+            "logs": 135,
+            "python": 150,
+            "refusal": 120,
+            "short_code": 120,
+        }
+        if self.authored_source_category_counts != expected_categories:
+            raise ValueError("M6 domain-generalization source categories differ")
+        if (
+            self.general_nonthinking_supervised_tokens + self.domain_nonthinking_supervised_tokens
+            != self.nonthinking_supervised_tokens
+            or self.domain_thinking_supervised_tokens != self.thinking_supervised_tokens
+            or self.nonthinking_supervised_tokens + self.thinking_supervised_tokens
+            != self.target_supervised_tokens
+        ):
+            raise ValueError("M6 domain-generalization supervised-token strata differ")
+        if self.nonthinking_sequence_count + self.thinking_sequence_count != self.sequence_count:
+            raise ValueError("M6 domain-generalization sequence counts differ")
+        return self

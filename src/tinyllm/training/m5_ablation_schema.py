@@ -34,11 +34,26 @@ class M5CheckpointManifest(StrictSchema):
     mixture_version: str = Field(
         pattern=(
             r"^(?:m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2|"
-            r"dual-mode-correction-mixture-v1)|m6-gate-(?:repair|replay)-mixture-v1)-[0-9a-f]{8}$"
+            r"dual-mode-correction-mixture-v1)|m6-(?:gate-(?:repair|replay)|"
+            r"domain-generalization)-mixture-v1)-[0-9a-f]{8}$"
         )
     )
     mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
+    initialization: Literal["base_revision", "m5_formal_snapshot"] = Field(
+        default="base_revision", exclude_if=lambda value: value == "base_revision"
+    )
+    initial_model_artifact_sha256: str | None = Field(
+        default=None, pattern=SHA256_PATTERN, exclude_if=lambda value: value is None
+    )
+    initial_training_run_id: str | None = Field(
+        default=None, min_length=1, max_length=160, exclude_if=lambda value: value is None
+    )
+    initial_checkpoint_id: str | None = Field(
+        default=None,
+        pattern=r"^checkpoint-tokens-[0-9]{10}$",
+        exclude_if=lambda value: value is None,
+    )
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     file: M5CheckpointFile
     pinned: bool
@@ -53,6 +68,15 @@ class M5CheckpointManifest(StrictSchema):
         expected = f"checkpoint-tokens-{self.supervised_tokens:010d}"
         if self.checkpoint_id != expected:
             raise ValueError("M5 Checkpoint ID does not match supervised-token progress")
+        lineage = (
+            self.initial_model_artifact_sha256,
+            self.initial_training_run_id,
+            self.initial_checkpoint_id,
+        )
+        if self.initialization == "base_revision" and any(value is not None for value in lineage):
+            raise ValueError("base initialization cannot claim snapshot lineage")
+        if self.initialization == "m5_formal_snapshot" and any(value is None for value in lineage):
+            raise ValueError("snapshot initialization lineage is incomplete")
         return self
 
 
@@ -68,10 +92,25 @@ class M5AblationRunResult(StrictSchema):
     git_dirty: Literal[False]
     model_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     attention_architecture: Literal["gqa"]
+    initialization: Literal["base_revision", "m5_formal_snapshot"] = Field(
+        default="base_revision", exclude_if=lambda value: value == "base_revision"
+    )
+    initial_model_artifact_sha256: str | None = Field(
+        default=None, pattern=SHA256_PATTERN, exclude_if=lambda value: value is None
+    )
+    initial_training_run_id: str | None = Field(
+        default=None, min_length=1, max_length=160, exclude_if=lambda value: value is None
+    )
+    initial_checkpoint_id: str | None = Field(
+        default=None,
+        pattern=r"^checkpoint-tokens-[0-9]{10}$",
+        exclude_if=lambda value: value is None,
+    )
     mixture_version: str = Field(
         pattern=(
             r"^(?:m5-(?:(?:ablation|format-repair)-mixture-v1|r3-mixture-v2|"
-            r"dual-mode-correction-mixture-v1)|m6-gate-(?:repair|replay)-mixture-v1)-[0-9a-f]{8}$"
+            r"dual-mode-correction-mixture-v1)|m6-(?:gate-(?:repair|replay)|"
+            r"domain-generalization)-mixture-v1)-[0-9a-f]{8}$"
         )
     )
     mixture_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -106,4 +145,13 @@ class M5AblationRunResult(StrictSchema):
             raise ValueError("fresh M5.2 run cannot claim resumed progress")
         if self.mode == "exact_resume" and self.resumed_from_tokens is None:
             raise ValueError("Exact Resume must record its source token count")
+        lineage = (
+            self.initial_model_artifact_sha256,
+            self.initial_training_run_id,
+            self.initial_checkpoint_id,
+        )
+        if self.initialization == "base_revision" and any(value is not None for value in lineage):
+            raise ValueError("base initialization cannot claim snapshot lineage")
+        if self.initialization == "m5_formal_snapshot" and any(value is None for value in lineage):
+            raise ValueError("snapshot initialization lineage is incomplete")
         return self

@@ -124,6 +124,36 @@ def test_m6_candidate_import_accepts_only_preregistered_gate_replay() -> None:
         )
 
 
+def test_m6_candidate_import_accepts_only_warm_started_domain_generalization() -> None:
+    model = _candidate_import().model.model_copy(
+        update={
+            "model_artifact_sha256": "4" * 64,
+            "training_run_id": "20260812T000000Z-m6-domain-generalization-r4-seed42-a1b2c3d4-cafe",
+            "training_checkpoint_id": "checkpoint-tokens-0001000000",
+            "training_tokens": 1_000_000,
+            "training_config_sha256": "5" * 64,
+            "dataset_version": "m6-domain-generalization-mixture-v1-6c2f59e6",
+            "dataset_manifest_sha256": (
+                "40c7a85edb392b165e2a05f50dbe998cc62ffe96115af27896bf8d5d15401eb9"
+            ),
+        }
+    )
+    imported = _candidate_import().model_copy(
+        update={
+            "source_kind": "m6-domain-generalization",
+            "protocol_version": "m6-release-v4",
+            "model": model,
+        }
+    )
+
+    assert imported.model.dataset_version == "m6-domain-generalization-mixture-v1-6c2f59e6"
+    with pytest.raises(ValidationError, match="domain-generalization contract"):
+        M6CandidateImportResult.model_validate(
+            imported.to_dict()
+            | {"model": imported.model.to_dict() | {"dataset_manifest_sha256": "0" * 64}}
+        )
+
+
 def test_m6_correction_import_binds_run_checkpoint_and_export(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

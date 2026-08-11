@@ -28,7 +28,8 @@
           "enum": [
             20260809,
             20260810,
-            20260811
+            20260811,
+            20260812
           ],
           "title": "Seed",
           "type": "integer"
@@ -338,7 +339,8 @@
           "enum": [
             20260809,
             20260810,
-            20260811
+            20260811,
+            20260812
           ],
           "title": "Seed",
           "type": "integer"
@@ -470,7 +472,8 @@
       "enum": [
         "m6-release-v1",
         "m6-release-v2",
-        "m6-release-v3"
+        "m6-release-v3",
+        "m6-release-v4"
       ],
       "title": "Protocol Version",
       "type": "string"
@@ -485,7 +488,8 @@
       "enum": [
         "83bdd8ef24dfa2bae0a997570594e7243f81ec3891a420458dd29b10f5e7af27",
         "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
-        "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2"
+        "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2",
+        "bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a"
       ],
       "title": "Suite Content Sha256",
       "type": "string"
@@ -494,7 +498,8 @@
       "enum": [
         "tinyllm-domain-v1-83bdd8ef",
         "tinyllm-domain-holdout-v1-c0c948cc",
-        "tinyllm-domain-holdout-v1-2b167ce6"
+        "tinyllm-domain-holdout-v1-2b167ce6",
+        "tinyllm-domain-final-audit-v1-bac25144"
       ],
       "title": "Suite Version",
       "type": "string"

@@ -180,7 +180,8 @@
       "enum": [
         "m6-release-v1",
         "m6-release-v2",
-        "m6-release-v3"
+        "m6-release-v3",
+        "m6-release-v4"
       ],
       "title": "Protocol Version",
       "type": "string"
@@ -217,7 +218,8 @@
         "m5-formal-snapshot",
         "m6-dual-mode-correction",
         "m6-gate-repair",
-        "m6-gate-replay"
+        "m6-gate-replay",
+        "m6-domain-generalization"
       ],
       "title": "Source Kind",
       "type": "string"

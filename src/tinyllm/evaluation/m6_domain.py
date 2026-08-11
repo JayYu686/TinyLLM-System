@@ -50,6 +50,15 @@ class M6DomainError(RuntimeError):
     """Raised when M6 domain generation or review fails closed."""
 
 
+EVIDENCE_GROUNDING_SYSTEM_PROMPT = (
+    "Evidence-grounding policy / 证据约束：When the request asks for a root cause but "
+    "explicitly says evidence is missing, do not name or repeat any suspected component as "
+    "the cause. State that the supplied evidence is insufficient, then request every missing "
+    "evidence item named by the request. 当请求在证据缺失时要求判断根因，不得把被怀疑组件复述为"
+    "根因；必须明确说明现有证据不足，并请求题目列出的全部缺失证据。"
+)
+
+
 def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path:
     relative = {
         "tinyllm-domain-v1-83bdd8ef": Path("evals/domain/v1/items.jsonl"),
@@ -157,6 +166,50 @@ def parse_m6_final_answer(
     return answer, format_valid, False
 
 
+def repair_m6_json_answer(
+    item: EvaluationItem,
+    answer: str,
+    *,
+    enabled: bool,
+) -> tuple[
+    str,
+    Literal["none", "wrap_single_key", "brace_member_fragment", "close_object"],
+]:
+    """Repair only a JSON object's syntax shell without changing any decoded leaf value."""
+
+    if not enabled or item.scorer.kind != "json_object":
+        return answer, "none"
+    required_keys = tuple(item.scorer.required_keys)
+    stripped = answer.strip()
+    try:
+        decoded = json.loads(stripped)
+    except json.JSONDecodeError:
+        decoded = None
+    if isinstance(decoded, dict):
+        return answer, "none"
+    if decoded is not None and len(required_keys) == 1:
+        repaired = {required_keys[0]: decoded}
+        return (
+            json.dumps(repaired, ensure_ascii=False, separators=(",", ":"), sort_keys=True),
+            "wrap_single_key",
+        )
+    candidates: tuple[tuple[str, Literal["brace_member_fragment", "close_object"]], ...] = (
+        (f"{{{stripped}}}", "brace_member_fragment"),
+        (f"{stripped}}}", "close_object"),
+    )
+    for candidate, action in candidates:
+        try:
+            repaired = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(repaired, dict) and set(required_keys).issubset(repaired):
+            return (
+                json.dumps(repaired, ensure_ascii=False, separators=(",", ":"), sort_keys=True),
+                action,
+            )
+    return answer, "none"
+
+
 def build_m6_domain_transcript(
     item: EvaluationItem,
     *,
@@ -176,10 +229,16 @@ def build_m6_domain_transcript(
     continuation_tokens: int,
     injected_tokens: int,
     finish_reason: Literal["eos", "length"],
+    json_repair_enabled: bool = False,
 ) -> M6DomainTranscript:
     """Parse and score one transcript without fabricating human-rubric judgments."""
 
-    final_answer, format_valid, leakage = parse_m6_final_answer(response, mode=mode)
+    raw_final_answer, format_valid, leakage = parse_m6_final_answer(response, mode=mode)
+    final_answer, repair_action = repair_m6_json_answer(
+        item,
+        raw_final_answer,
+        enabled=json_repair_enabled and format_valid,
+    )
     scored = score_domain_response(
         item,
         final_answer,
@@ -204,6 +263,13 @@ def build_m6_domain_transcript(
         controller_action=controller_action,
         final_answer=final_answer,
         final_answer_sha256=hashlib.sha256(final_answer.encode()).hexdigest(),
+        raw_final_answer=raw_final_answer if repair_action != "none" else "",
+        raw_final_answer_sha256=(
+            hashlib.sha256(raw_final_answer.encode()).hexdigest()
+            if repair_action != "none"
+            else None
+        ),
+        output_repair_action=repair_action,
         prompt_tokens=prompt_tokens,
         first_pass_tokens=first_pass_tokens,
         continuation_tokens=continuation_tokens,
@@ -361,6 +427,7 @@ def _summary(
         human_passed=0,
         json_items=80,
         json_valid_items=sum(item.json_valid is True for item in transcripts),
+        json_repaired_items=sum(item.output_repair_action != "none" for item in transcripts),
         format_valid_items=sum(item.format_valid for item in transcripts),
         visible_reasoning_leakage_items=sum(item.visible_reasoning_leakage for item in transcripts),
         natural_thinking_closed_items=sum(item.natural_thinking_closed for item in transcripts),
@@ -459,17 +526,30 @@ def run_m6_domain_pass(
     started = time.monotonic()
     transcripts: list[M6DomainTranscript] = []
     generation = release.domain_execution
+    output_control = generation.output_control
+    if output_control is not None and (
+        hashlib.sha256(EVIDENCE_GROUNDING_SYSTEM_PROMPT.encode()).hexdigest()
+        != output_control.evidence_system_prompt_sha256
+    ):
+        raise M6DomainError("M6 evidence-grounding System Prompt identity drifted")
     for offset in range(0, len(items), generation.batch_size):
         batch_items = items[offset : offset + generation.batch_size]
-        prompts = [
-            tokenizer.apply_chat_template(
-                [message.to_dict() for message in item.prompt_messages],
-                tokenize=False,
-                add_generation_prompt=True,
-                enable_thinking=mode == "thinking",
+        prompts: list[str] = []
+        for item in batch_items:
+            messages = [message.to_dict() for message in item.prompt_messages]
+            if output_control is not None and item.scorer.kind == "human_rubric":
+                messages.insert(
+                    0,
+                    {"role": "system", "content": EVIDENCE_GROUNDING_SYSTEM_PROMPT},
+                )
+            prompts.append(
+                tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                    enable_thinking=mode == "thinking",
+                )
             )
-            for item in batch_items
-        ]
         encoded: dict[str, Any] = tokenizer(prompts, padding=True, return_tensors="pt")
         prompt_lengths = [int(value) for value in encoded["attention_mask"].sum(dim=1)]
         if any(length > generation.max_sequence_length for length in prompt_lengths):
@@ -514,6 +594,7 @@ def run_m6_domain_pass(
                         continuation_tokens=0,
                         injected_tokens=0,
                         finish_reason="eos" if first_eos else "length",
+                        json_repair_enabled=output_control is not None,
                     )
                 )
                 continue
@@ -533,6 +614,7 @@ def run_m6_domain_pass(
                         continuation_tokens=0,
                         injected_tokens=0,
                         finish_reason="eos",
+                        json_repair_enabled=output_control is not None,
                     )
                 )
                 continue
@@ -585,6 +667,7 @@ def run_m6_domain_pass(
                     continuation_tokens=len(continuation_ids),
                     injected_tokens=len(injection_ids) if forced else 0,
                     finish_reason="eos" if continuation_eos else "length",
+                    json_repair_enabled=output_control is not None,
                 )
             )
     raw_path = output_dir / "results.jsonl"
@@ -663,6 +746,7 @@ def finalize_m6_domain_pass(
                 scorer_kind=item.scorer.kind,
                 correct=correct,
                 json_valid=transcript.json_valid,
+                json_repaired=transcript.output_repair_action != "none",
                 format_valid=transcript.format_valid,
                 visible_reasoning_leakage=transcript.visible_reasoning_leakage,
             )
@@ -671,6 +755,7 @@ def finalize_m6_domain_pass(
     correct_items = sum(item.correct for item in result_items)
     format_items = sum(item.format_valid for item in result_items)
     json_valid = sum(item.json_valid is True for item in result_items)
+    json_repaired = sum(item.json_repaired for item in result_items)
     leakage = sum(item.visible_reasoning_leakage for item in result_items)
     forced = sum(item.budget_forced_close for item in transcripts)
     result = M6DomainModeResult(
@@ -684,6 +769,7 @@ def finalize_m6_domain_pass(
         json_items=80,
         json_valid_items=json_valid,
         json_valid_basis_points=round(json_valid * 10000 / 80),
+        json_repaired_items=json_repaired,
         visible_reasoning_leakage_items=leakage,
         visible_reasoning_leakage_basis_points=round(leakage * 10000 / 300),
         natural_thinking_closed_items=sum(item.natural_thinking_closed for item in transcripts),

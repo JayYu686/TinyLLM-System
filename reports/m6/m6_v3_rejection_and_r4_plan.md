@@ -98,3 +98,17 @@ evaluation_prompt_overlap_count: 0
 ```
 
 R4 及其 v3 开发输出保留为诊断证据；只有 R4.1 可以进入 v4 密封终审。
+
+## 7. v4 输出控制边界
+
+R4.1 的 v3 Non-thinking 开发结果仍有 7 条 JSON 输出只缺语法外壳，继续增加同类 SFT 数据
+未带来改善。v4 因此冻结两项对 Base/Candidate 完全相同的推理控制：
+
+- JSON Syntax-only Repair 只允许把可解析的裸值放入 Prompt 已声明的唯一顶层键、给成员片段
+  补外层花括号，或补一个缺失的右花括号；禁止读取 Reference，禁止改写任何已解码叶子值；
+- Evidence-grounding System Policy 要求在题目明确缺少证据时不复述可疑组件为根因，明确说明
+  证据不足，并请求题目列出的全部证据。
+
+每条 JSON 修复同时保存原始答案、原始哈希、修复动作和最终答案。最终报告必须同时给出
+Raw 与 Post-control 数量；v4 Base 和 Candidate 使用相同配置与代码路径。该控制器是部署输出
+契约的一部分，不改变领域提升、Bootstrap、通用回退或人工 Rubric 阈值。

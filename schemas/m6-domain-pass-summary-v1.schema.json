@@ -276,6 +276,13 @@
       "title": "Json Items",
       "type": "integer"
     },
+    "json_repaired_items": {
+      "default": 0,
+      "maximum": 80,
+      "minimum": 0,
+      "title": "Json Repaired Items",
+      "type": "integer"
+    },
     "json_valid_items": {
       "maximum": 80,
       "minimum": 0,

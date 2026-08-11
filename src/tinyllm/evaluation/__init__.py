@@ -152,10 +152,12 @@ from tinyllm.evaluation.m6_candidate import (
     model_export_sha256,
 )
 from tinyllm.evaluation.m6_domain import (
+    EVIDENCE_GROUNDING_SYSTEM_PROMPT,
     M6DomainError,
     build_m6_domain_transcript,
     finalize_m6_domain_pass,
     parse_m6_final_answer,
+    repair_m6_json_answer,
     run_m6_domain_pass,
 )
 from tinyllm.evaluation.m6_general import M6GeneralError, run_m6_general_pass
@@ -182,6 +184,7 @@ from tinyllm.evaluation.m6_schema import (
     M6ModeComparison,
     M6ModelIdentity,
     M6NonthinkingGenerationConfig,
+    M6OutputControlConfig,
     M6PromotionRecord,
     M6ReleaseConfig,
     M6ThinkingGenerationConfig,
@@ -227,6 +230,7 @@ __all__ = [
     "EvaluationItem",
     "EvaluationPromptMessage",
     "EvaluationSetManifest",
+    "EVIDENCE_GROUNDING_SYSTEM_PROMPT",
     "ExactMatchScorer",
     "HumanRubricScorer",
     "HumanRubricJudgment",
@@ -280,6 +284,7 @@ __all__ = [
     "M6ModeComparison",
     "M6ModelIdentity",
     "M6NonthinkingGenerationConfig",
+    "M6OutputControlConfig",
     "M6PromotionError",
     "M6PromotionRecord",
     "M6ReleaseConfig",
@@ -344,6 +349,7 @@ __all__ = [
     "model_artifact_sha256",
     "model_export_sha256",
     "parse_m6_final_answer",
+    "repair_m6_json_answer",
     "run_m6_domain_pass",
     "sha256_file",
     "sha256_tree",

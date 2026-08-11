@@ -1,7 +1,7 @@
 schema_version: "1.0"
-protocol_version: m6-release-v4
-suite_version: tinyllm-domain-final-audit-v1-bac25144
-suite_content_sha256: bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a
+protocol_version: m6-release-v3
+suite_version: tinyllm-domain-holdout-v1-2b167ce6
+suite_content_sha256: 2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2
 expected_domain_items: 300
 expected_languages: en-210_zh-90
 compare_modes_separately: true
@@ -26,7 +26,7 @@ domain_execution:
     top_p: 0.95
     top_k: 20
     repetition_penalty: 1.0
-    seed: 20260812
+    seed: 20260811
     early_stopping_text: "\n\n Considering the limited time by the user, I have to give the solution based on the thinking directly now.\n</think>\n\n"
   nonthinking:
     template_id: qwen3-chatml-nonthinking-generation-v1
@@ -61,7 +61,7 @@ general_execution:
       dataset_revision: 142f6d7367fd9877f0fb3b5734ea6a545f54cdd1
       expected_samples: 1838
 bootstrap:
-  seed: 20260812
+  seed: 20260811
   replicates: 10000
   confidence_basis_points: 9500
   resampling_unit: bilingual-pair-or-english-singleton

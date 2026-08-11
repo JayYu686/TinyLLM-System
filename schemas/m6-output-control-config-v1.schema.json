@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "Auditable syntax-only JSON repair and evidence-grounding policy.",
+  "properties": {
+    "evidence_system_prompt_id": {
+      "const": "evidence-grounding-bilingual-v1",
+      "title": "Evidence System Prompt Id",
+      "type": "string"
+    },
+    "evidence_system_prompt_sha256": {
+      "const": "dff97b5e4f251f422c7b4b745ec1be6bf242b9e73020c403d05960f207f84618",
+      "title": "Evidence System Prompt Sha256",
+      "type": "string"
+    },
+    "json_repair_policy": {
+      "const": "json-syntax-only-v1",
+      "title": "Json Repair Policy",
+      "type": "string"
+    }
+  },
+  "required": [
+    "json_repair_policy",
+    "evidence_system_prompt_id",
+    "evidence_system_prompt_sha256"
+  ],
+  "title": "M6OutputControlConfig",
+  "type": "object"
+}

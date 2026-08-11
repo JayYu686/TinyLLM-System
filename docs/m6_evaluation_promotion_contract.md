@@ -193,3 +193,8 @@ v4 的推理协议固定启用可审计输出控制。JSON 控制器只修复语
 读取 Reference 或修改叶子值；证据拒答使用固定双语 System Policy。Base 与 Candidate 必须
 使用同一控制配置，比较报告同时保留修复计数。控制器不能替代 3pp + Bootstrap CI、人工
 Rubric、通用回退和完整血缘等门禁。
+
+Thinking 首段在首个 `</think>` 自然停止后，控制器必须注入 Qwen3 模板定义的 `\n\n`
+Final-Answer 分隔符再续写。分隔符的 ID、SHA256、原文与 Token 数均进入配置或私有 Transcript；
+强制闭合路径继续记录完整注入文本。该规则只修复 Chat Template 边界，不读取 Reference、
+不生成答案内容，也不改变采样参数和评分阈值。

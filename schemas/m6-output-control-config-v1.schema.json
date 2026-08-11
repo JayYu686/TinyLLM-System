@@ -13,7 +13,10 @@
       "type": "string"
     },
     "json_repair_policy": {
-      "const": "json-syntax-only-v1",
+      "enum": [
+        "json-syntax-only-v1",
+        "json-syntax-only-v2"
+      ],
       "title": "Json Repair Policy",
       "type": "string"
     },

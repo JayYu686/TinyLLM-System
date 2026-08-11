@@ -92,25 +92,28 @@ def test_m6_transcript_scores_only_final_answer() -> None:
 def test_m6_json_repair_changes_only_the_syntax_shell_and_retains_raw_answer() -> None:
     items = {item.id: item for item in load_evaluation_items(Path("evals/domain/v3/items.jsonl"))}
     wrapped, wrap_action = repair_m6_json_answer(
-        items["domain-json-001"], "[36,38,40]", enabled=True
+        items["domain-json-001"], "[36,38,40]", policy="json-syntax-only-v1"
     )
     fragment, fragment_action = repair_m6_json_answer(
-        items["domain-json-012"], '"id":38,"ok":true', enabled=True
+        items["domain-json-012"],
+        '"id":38,"ok":true',
+        policy="json-syntax-only-v1",
     )
     closed, close_action = repair_m6_json_answer(
         items["domain-json-034"],
         '{"enabled":false,"name":"worker-37","retries":38,"tags":[]',
-        enabled=True,
+        policy="json-syntax-only-v1",
     )
 
     assert (wrapped, wrap_action) == ('{"even":[36,38,40]}', "wrap_single_key")
     assert (fragment, fragment_action) == ('{"id":38,"ok":true}', "brace_member_fragment")
     assert close_action == "close_object"
     assert json.loads(closed)["name"] == "worker-37"
-    assert repair_m6_json_answer(items["domain-json-001"], '{"even":[1]}', enabled=True) == (
+    assert repair_m6_json_answer(
+        items["domain-json-001"],
         '{"even":[1]}',
-        "none",
-    )
+        policy="json-syntax-only-v1",
+    ) == ('{"even":[1]}', "none")
 
     transcript = build_m6_domain_transcript(
         items["domain-json-001"],
@@ -125,13 +128,50 @@ def test_m6_json_repair_changes_only_the_syntax_shell_and_retains_raw_answer() -
         continuation_tokens=0,
         injected_tokens=0,
         finish_reason="eos",
-        json_repair_enabled=True,
+        json_repair_policy="json-syntax-only-v1",
     )
     assert transcript.final_answer == '{"even":[36,38,40]}'
     assert transcript.raw_final_answer == "[36,38,40]"
     assert transcript.output_repair_action == "wrap_single_key"
     assert transcript.json_valid is True
     assert transcript.automatic_correct is True
+
+
+def test_m6_json_repair_v2_handles_only_generalized_shell_failures() -> None:
+    items = {item.id: item for item in load_evaluation_items(Path("evals/domain/v3/items.jsonl"))}
+    cases = (
+        (
+            "domain-config-003",
+            '```json\n{"data":{},"logging":{},"model":{},"training":{}}\n```',
+            "unwrap_json_fence",
+        ),
+        (
+            "domain-config-008",
+            '{"data":{"workers":39,"model":{},"training":{}}}',
+            "promote_required_keys",
+        ),
+        ("domain-json-008", "enabled", "wrap_bareword_single_key"),
+        ("domain-json-012", "{id:38,ok:true}", "quote_bare_keys"),
+        ("domain-json-037", '["even"]=>[38,40,42]', "arrow_single_key"),
+    )
+    for item_id, answer, expected_action in cases:
+        repaired, action = repair_m6_json_answer(
+            items[item_id],
+            answer,
+            policy="json-syntax-only-v2",
+        )
+        assert action == expected_action
+        decoded = json.loads(repaired)
+        scorer = items[item_id].scorer
+        assert scorer.kind == "json_object"
+        assert set(scorer.required_keys).issubset(decoded)
+
+    unchanged, action = repair_m6_json_answer(
+        items["domain-json-012"],
+        '{"id":38,"ok":false}',
+        policy="json-syntax-only-v2",
+    )
+    assert (unchanged, action) == ('{"id":38,"ok":false}', "none")
 
 
 def test_m6_domain_review_finalizes_all_300_content_free_scores(tmp_path: Path) -> None:
@@ -374,6 +414,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
                 self.first_batches += 1
             else:
                 assert "stop_strings" not in kwargs
+                assert kwargs["do_sample"] is False
                 self.continuation_tail_ids.append(int(inputs[0, -1]))
                 rows = [[20, 99] for _ in range(inputs.shape[0])]
             generated = torch.tensor(rows, dtype=torch.long)

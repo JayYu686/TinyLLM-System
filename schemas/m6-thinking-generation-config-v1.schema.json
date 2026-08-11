@@ -17,6 +17,11 @@
       "title": "Early Stopping Text",
       "type": "string"
     },
+    "final_answer_do_sample": {
+      "default": true,
+      "title": "Final Answer Do Sample",
+      "type": "boolean"
+    },
     "final_answer_max_new_tokens": {
       "const": 512,
       "title": "Final Answer Max New Tokens",

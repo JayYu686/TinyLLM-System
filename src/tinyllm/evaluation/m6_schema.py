@@ -83,6 +83,10 @@ class M6ThinkingGenerationConfig(StrictSchema):
     thinking_budget_tokens: Literal[1536]
     final_answer_max_new_tokens: Literal[512]
     do_sample: Literal[True]
+    final_answer_do_sample: bool = Field(
+        default=True,
+        exclude_if=lambda value: value is True,
+    )
     temperature: float = Field(gt=0.0, le=2.0)
     top_p: float = Field(gt=0.0, le=1.0)
     top_k: Literal[20]
@@ -113,7 +117,7 @@ class M6NonthinkingGenerationConfig(StrictSchema):
 class M6OutputControlConfig(StrictSchema):
     """Auditable output repair, evidence grounding, and Thinking continuation policy."""
 
-    json_repair_policy: Literal["json-syntax-only-v1"]
+    json_repair_policy: Literal["json-syntax-only-v1", "json-syntax-only-v2"]
     evidence_system_prompt_id: Literal["evidence-grounding-bilingual-v1"]
     evidence_system_prompt_sha256: Literal[
         "dff97b5e4f251f422c7b4b745ec1be6bf242b9e73020c403d05960f207f84618"
@@ -260,11 +264,12 @@ class M6ReleaseConfig(StrictSchema):
             or self.domain_execution.thinking.seed != seed
         ):
             raise ValueError("M6 protocol, suite identity, and deterministic seeds differ")
-        if (
-            self.protocol_version == "m6-release-v4"
-            and self.domain_execution.output_control is None
+        if self.protocol_version == "m6-release-v4" and (
+            self.domain_execution.output_control is None
+            or self.domain_execution.output_control.json_repair_policy != "json-syntax-only-v2"
+            or self.domain_execution.thinking.final_answer_do_sample
         ):
-            raise ValueError("M6 release v4 requires the frozen output controls")
+            raise ValueError("M6 release v4 requires frozen deterministic output controls")
         if self.protocol_version in {"m6-release-v1", "m6-release-v2"} and (
             self.domain_execution.output_control is not None
         ):
@@ -498,6 +503,11 @@ class M6DomainTranscript(StrictSchema):
         "wrap_single_key",
         "brace_member_fragment",
         "close_object",
+        "unwrap_json_fence",
+        "quote_bare_keys",
+        "arrow_single_key",
+        "wrap_bareword_single_key",
+        "promote_required_keys",
     ] = Field(default="none", exclude_if=lambda value: value == "none")
     prompt_tokens: int = Field(gt=0)
     first_pass_tokens: int = Field(ge=0, le=1536)

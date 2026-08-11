@@ -87,6 +87,12 @@ class M6ThinkingGenerationConfig(StrictSchema):
         default=True,
         exclude_if=lambda value: value is True,
     )
+    final_answer_batch_size: int = Field(
+        default=1,
+        ge=1,
+        le=4,
+        exclude_if=lambda value: value == 1,
+    )
     temperature: float = Field(gt=0.0, le=2.0)
     top_p: float = Field(gt=0.0, le=1.0)
     top_k: Literal[20]
@@ -268,6 +274,8 @@ class M6ReleaseConfig(StrictSchema):
             self.domain_execution.output_control is None
             or self.domain_execution.output_control.json_repair_policy != "json-syntax-only-v2"
             or self.domain_execution.thinking.final_answer_do_sample
+            or self.domain_execution.thinking.final_answer_batch_size
+            != self.domain_execution.batch_size
         ):
             raise ValueError("M6 release v4 requires frozen deterministic output controls")
         if self.protocol_version in {"m6-release-v1", "m6-release-v2"} and (

@@ -243,6 +243,35 @@ def test_m6_v4_release_keeps_gate_and_binds_sealed_final_audit() -> None:
     )
 
 
+def test_m6_v5_release_keeps_gate_and_binds_structured_json_audit() -> None:
+    config = load_m6_release_config(Path("configs/eval/m6_release_v5.yaml"))
+
+    assert config.protocol_version == "m6-release-v5"
+    assert config.suite_version == "tinyllm-domain-json-audit-v1-3e5fffd7"
+    assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260813
+    assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
+    assert config.domain_execution.output_control is not None
+    assert config.domain_execution.output_control.json_decoder_id == "xgrammar-json-shape-v1"
+    assert config.domain_execution.output_control.json_decoder_version == "0.2.4"
+    assert (
+        config.domain_execution.output_control.json_schema_policy
+        == "expected-json-shape-no-values-v1"
+    )
+
+    incomplete = config.to_dict()
+    incomplete["domain_execution"]["output_control"].pop("json_decoder_version")
+    with pytest.raises(ValidationError, match="decoder identity is incomplete"):
+        type(config).model_validate(incomplete)
+
+    unconstrained = config.to_dict()
+    control = unconstrained["domain_execution"]["output_control"]
+    control.pop("json_decoder_id")
+    control.pop("json_decoder_version")
+    control.pop("json_schema_policy")
+    with pytest.raises(ValidationError, match="release v5 requires"):
+        type(config).model_validate(unconstrained)
+
+
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:
     config = load_m6_release_config(Path("configs/eval/m6_release.yaml"))
     result = compare_m6_evaluations(

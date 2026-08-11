@@ -97,6 +97,32 @@
       "title": "Item Id",
       "type": "string"
     },
+    "json_constraint_id": {
+      "anyOf": [
+        {
+          "const": "xgrammar-json-shape-v1",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Json Constraint Id"
+    },
+    "json_constraint_schema_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Json Constraint Schema Sha256"
+    },
     "json_valid": {
       "anyOf": [
         {

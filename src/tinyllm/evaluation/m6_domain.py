@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
+import importlib.metadata
 import json
 import os
 import platform
@@ -40,6 +42,7 @@ from tinyllm.evaluation.m6_schema import (
     M6DomainPassSummary,
     M6DomainTranscript,
     M6ModelIdentity,
+    M6OutputControlConfig,
     M6ProtocolVersion,
     M6SuiteVersion,
 )
@@ -78,12 +81,111 @@ class _PendingContinuation:
     input_text: str
 
 
+@dataclass(frozen=True)
+class _JsonConstraintRuntime:
+    """Loaded XGrammar compiler and its pinned auditable identity."""
+
+    xgrammar: Any
+    compiler: Any
+    decoder_id: Literal["xgrammar-json-shape-v1"]
+    decoder_version: Literal["0.2.4"]
+
+
+def _json_shape_schema(value: Any) -> dict[str, Any]:
+    """Retain only JSON field/container/type shape, never reference leaf values."""
+
+    if isinstance(value, dict):
+        return {
+            "type": "object",
+            "properties": {key: _json_shape_schema(child) for key, child in value.items()},
+            "required": list(value),
+            "additionalProperties": False,
+        }
+    if isinstance(value, list):
+        unique: list[dict[str, Any]] = []
+        for child in value:
+            child_schema = _json_shape_schema(child)
+            if child_schema not in unique:
+                unique.append(child_schema)
+        schema: dict[str, Any] = {"type": "array"}
+        if len(unique) == 1:
+            schema["items"] = unique[0]
+        elif unique:
+            schema["items"] = {"anyOf": unique}
+        return schema
+    if value is None:
+        return {"type": "null"}
+    if isinstance(value, bool):
+        return {"type": "boolean"}
+    if isinstance(value, int):
+        return {"type": "integer"}
+    if isinstance(value, float):
+        return {"type": "number"}
+    if isinstance(value, str):
+        return {"type": "string"}
+    raise M6DomainError("M6 JSON reference contains an unsupported value type")
+
+
+def _item_json_shape_schema(item: EvaluationItem) -> tuple[dict[str, Any], str]:
+    if item.scorer.kind != "json_object":
+        raise M6DomainError("M6 JSON constraint received a non-JSON scorer")
+    decoded: Any = json.loads(item.scorer.expected_json)
+    schema = _json_shape_schema(decoded)
+    canonical = json.dumps(schema, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    return schema, hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def _load_json_constraint_runtime(
+    tokenizer: Any,
+    model: Any,
+    output_control: M6OutputControlConfig | None,
+) -> _JsonConstraintRuntime | None:
+    if output_control is None or output_control.json_decoder_id is None:
+        return None
+    expected_version = output_control.json_decoder_version
+    try:
+        actual_version = importlib.metadata.version("xgrammar")
+        xgrammar: Any = importlib.import_module("xgrammar")
+    except (importlib.metadata.PackageNotFoundError, ImportError) as exc:
+        raise M6DomainError("M6 structured JSON decoding requires pinned XGrammar") from exc
+    if actual_version != expected_version:
+        raise M6DomainError(
+            f"M6 XGrammar version differs: expected {expected_version}, got {actual_version}"
+        )
+    tokenizer_info = xgrammar.TokenizerInfo.from_huggingface(
+        tokenizer,
+        vocab_size=int(model.config.vocab_size),
+    )
+    return _JsonConstraintRuntime(
+        xgrammar=xgrammar,
+        compiler=xgrammar.GrammarCompiler(tokenizer_info),
+        decoder_id=output_control.json_decoder_id,
+        decoder_version=expected_version,
+    )
+
+
+def _json_constraint_processor(
+    runtime: _JsonConstraintRuntime,
+    items: Sequence[EvaluationItem],
+) -> tuple[Any, tuple[str, ...]]:
+    grammars: list[Any] = []
+    schema_hashes: list[str] = []
+    for item in items:
+        schema, schema_sha256 = _item_json_shape_schema(item)
+        grammars.append(runtime.compiler.compile_json_schema(schema, strict_mode=True))
+        schema_hashes.append(schema_sha256)
+    compiled: Any = grammars[0] if len(grammars) == 1 else grammars
+    processor = runtime.xgrammar.contrib.hf.LogitsProcessor(compiled)
+    return processor, tuple(schema_hashes)
+
+
 def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path:
     relative = {
         "tinyllm-domain-v1-83bdd8ef": Path("evals/domain/v1/items.jsonl"),
         "tinyllm-domain-holdout-v1-c0c948cc": Path("evals/domain/v2/items.jsonl"),
         "tinyllm-domain-holdout-v1-2b167ce6": Path("evals/domain/v3/items.jsonl"),
         "tinyllm-domain-final-audit-v1-bac25144": Path("evals/domain/v4/items.jsonl"),
+        "tinyllm-domain-json-audit-v1-3e5fffd7": Path("evals/domain/v5/items.jsonl"),
     }[suite_version]
     return project_root / relative
 
@@ -391,6 +493,8 @@ def build_m6_domain_transcript(
         "json-syntax-only-v3",
     ]
     | None = None,
+    json_constraint_id: Literal["xgrammar-json-shape-v1"] | None = None,
+    json_constraint_schema_sha256: str | None = None,
 ) -> M6DomainTranscript:
     """Parse and score one transcript without fabricating human-rubric judgments."""
 
@@ -436,6 +540,8 @@ def build_m6_domain_transcript(
             else None
         ),
         output_repair_action=repair_action,
+        json_constraint_id=json_constraint_id,
+        json_constraint_schema_sha256=json_constraint_schema_sha256,
         prompt_tokens=prompt_tokens,
         first_pass_tokens=first_pass_tokens,
         continuation_tokens=continuation_tokens,
@@ -467,11 +573,15 @@ def _generate(
     top_p: float | None,
     top_k: int | None,
     stop_strings: tuple[str, ...] | None = None,
+    logits_processor: Sequence[Any] | None = None,
 ) -> list[list[int]]:
     _set_seed(seed)
     stopping: dict[str, object] = {}
     if stop_strings is not None:
         stopping = {"stop_strings": stop_strings, "tokenizer": tokenizer}
+    constrained: dict[str, object] = {}
+    if logits_processor is not None:
+        constrained = {"logits_processor": list(logits_processor)}
     with torch.inference_mode():
         generated = model.generate(
             **model_inputs,
@@ -485,6 +595,7 @@ def _generate(
             eos_token_id=sorted(eos_ids),
             use_cache=True,
             **stopping,
+            **constrained,
         )
     return cast(list[list[int]], generated[:, input_width:].detach().cpu().tolist())
 
@@ -530,10 +641,12 @@ def _validate_runtime(model_dir: Path, tokenizer: Any, model: M6ModelIdentity) -
         raise M6DomainError("M6 evaluated model is not the frozen Qwen3 GQA route")
 
 
-def _environment_payload() -> dict[str, object]:
+def _environment_payload(
+    json_constraint_runtime: _JsonConstraintRuntime | None = None,
+) -> dict[str, object]:
     import transformers  # type: ignore[import-not-found]
 
-    return {
+    payload: dict[str, object] = {
         "schema_version": "1.0",
         "python": platform.python_version(),
         "platform": platform.platform(),
@@ -541,6 +654,9 @@ def _environment_payload() -> dict[str, object]:
         "transformers": transformers.__version__,
         "cuda_runtime": torch.version.cuda,
     }
+    if json_constraint_runtime is not None:
+        payload["xgrammar"] = json_constraint_runtime.decoder_version
+    return payload
 
 
 def _hardware_payload(device: torch.device, physical_gpu_index: int) -> dict[str, object]:
@@ -594,6 +710,7 @@ def _summary(
         json_items=80,
         json_valid_items=sum(item.json_valid is True for item in transcripts),
         json_repaired_items=sum(item.output_repair_action != "none" for item in transcripts),
+        json_constrained_items=sum(item.json_constraint_id is not None for item in transcripts),
         format_valid_items=sum(item.format_valid for item in transcripts),
         visible_reasoning_leakage_items=sum(item.visible_reasoning_leakage for item in transcripts),
         natural_thinking_closed_items=sum(item.natural_thinking_closed for item in transcripts),
@@ -679,6 +796,9 @@ def run_m6_domain_pass(
         low_cpu_mem_usage=True,
     ).to(device)
     model.eval()
+    generation = release.domain_execution
+    output_control = generation.output_control
+    json_constraint_runtime = _load_json_constraint_runtime(tokenizer, model, output_control)
     eos_ids = _eos_ids(tokenizer)
     injection_ids = list(tokenizer.encode(EARLY_STOPPING_TEXT, add_special_tokens=False))
     if not injection_ids or _decode(tokenizer, injection_ids) != EARLY_STOPPING_TEXT:
@@ -697,13 +817,11 @@ def run_m6_domain_pass(
     config_sha256 = canonical_config_hash(release)
     environment_path = output_dir / "environment.json"
     hardware_path = output_dir / "hardware.json"
-    _atomic_json(environment_path, _environment_payload())
+    _atomic_json(environment_path, _environment_payload(json_constraint_runtime))
     _atomic_json(hardware_path, _hardware_payload(device, physical_gpu_index))
     torch.cuda.reset_peak_memory_stats(device)
     started = time.monotonic()
     transcripts: list[M6DomainTranscript] = []
-    generation = release.domain_execution
-    output_control = generation.output_control
     if output_control is not None and (
         hashlib.sha256(EVIDENCE_GROUNDING_SYSTEM_PROMPT.encode()).hexdigest()
         != output_control.evidence_system_prompt_sha256
@@ -733,6 +851,17 @@ def run_m6_domain_pass(
             raise M6DomainError("M6 domain prompt exceeds maximum sequence length")
         model_inputs = {key: value.to(device) for key, value in encoded.items()}
         input_width = int(model_inputs["input_ids"].shape[1])
+        first_logits_processor: Any | None = None
+        first_schema_hashes: tuple[str | None, ...] = (None,) * len(batch_items)
+        json_flags = tuple(item.scorer.kind == "json_object" for item in batch_items)
+        if mode == "nonthinking" and json_constraint_runtime is not None and any(json_flags):
+            if not all(json_flags):
+                raise M6DomainError("M6 structured JSON batch mixes scorer kinds")
+            first_logits_processor, constrained_hashes = _json_constraint_processor(
+                json_constraint_runtime,
+                batch_items,
+            )
+            first_schema_hashes = tuple(constrained_hashes)
         first_rows = _generate(
             model,
             model_inputs=model_inputs,
@@ -750,14 +879,24 @@ def run_m6_domain_pass(
             top_p=generation.thinking.top_p if mode == "thinking" else None,
             top_k=generation.thinking.top_k if mode == "thinking" else None,
             stop_strings=("</think>",) if mode == "thinking" else None,
+            logits_processor=(
+                (first_logits_processor,) if first_logits_processor is not None else None
+            ),
         )
         batch_transcripts: list[M6DomainTranscript | None] = [None] * len(batch_items)
         pending: list[_PendingContinuation] = []
         json_repair_policy = (
             output_control.json_repair_policy if output_control is not None else None
         )
-        for item_index, (item, prompt, prompt_tokens, raw_ids) in enumerate(
-            zip(batch_items, prompts, prompt_lengths, first_rows, strict=True)
+        for item_index, (item, prompt, prompt_tokens, raw_ids, schema_sha256) in enumerate(
+            zip(
+                batch_items,
+                prompts,
+                prompt_lengths,
+                first_rows,
+                first_schema_hashes,
+                strict=True,
+            )
         ):
             first_ids, first_eos = _trim_at_eos(raw_ids, eos_ids, include_eos=True)
             first_response = _decode(tokenizer, first_ids)
@@ -776,10 +915,20 @@ def run_m6_domain_pass(
                     injected_tokens=0,
                     finish_reason="eos" if first_eos else "length",
                     json_repair_policy=json_repair_policy,
+                    json_constraint_id=(
+                        json_constraint_runtime.decoder_id
+                        if schema_sha256 is not None and json_constraint_runtime is not None
+                        else None
+                    ),
+                    json_constraint_schema_sha256=schema_sha256,
                 )
                 continue
             natural_close = "</think>" in first_response
             if natural_close and first_eos:
+                if json_constraint_runtime is not None and item.scorer.kind == "json_object":
+                    raise M6DomainError(
+                        "M6 Thinking JSON answer bypassed the constrained continuation stage"
+                    )
                 batch_transcripts[item_index] = build_m6_domain_transcript(
                     item,
                     mode=mode,
@@ -826,6 +975,19 @@ def run_m6_domain_pass(
                 key: value.to(device) for key, value in continuation_encoded.items()
             }
             continuation_width = int(continuation_inputs["input_ids"].shape[1])
+            continuation_logits_processor: Any | None = None
+            continuation_schema_hashes: tuple[str | None, ...] = (None,) * len(pending_batch)
+            continuation_json_flags = tuple(
+                row.item.scorer.kind == "json_object" for row in pending_batch
+            )
+            if json_constraint_runtime is not None and any(continuation_json_flags):
+                if not all(continuation_json_flags):
+                    raise M6DomainError("M6 structured JSON continuation mixes scorer kinds")
+                continuation_logits_processor, constrained_hashes = _json_constraint_processor(
+                    json_constraint_runtime,
+                    tuple(row.item for row in pending_batch),
+                )
+                continuation_schema_hashes = tuple(constrained_hashes)
             continuation_rows = _generate(
                 model,
                 model_inputs=continuation_inputs,
@@ -850,8 +1012,18 @@ def run_m6_domain_pass(
                     if generation.thinking.final_answer_do_sample
                     else None
                 ),
+                logits_processor=(
+                    (continuation_logits_processor,)
+                    if continuation_logits_processor is not None
+                    else None
+                ),
             )
-            for row, raw_continuation in zip(pending_batch, continuation_rows, strict=True):
+            for row, raw_continuation, schema_sha256 in zip(
+                pending_batch,
+                continuation_rows,
+                continuation_schema_hashes,
+                strict=True,
+            ):
                 continuation_ids, continuation_eos = _trim_at_eos(
                     raw_continuation,
                     eos_ids,
@@ -875,6 +1047,12 @@ def run_m6_domain_pass(
                     injected_tokens=row.injected_tokens,
                     finish_reason="eos" if continuation_eos else "length",
                     json_repair_policy=json_repair_policy,
+                    json_constraint_id=(
+                        json_constraint_runtime.decoder_id
+                        if schema_sha256 is not None and json_constraint_runtime is not None
+                        else None
+                    ),
+                    json_constraint_schema_sha256=schema_sha256,
                 )
         if any(item is None for item in batch_transcripts):
             raise M6DomainError("M6 domain batch did not produce every transcript")

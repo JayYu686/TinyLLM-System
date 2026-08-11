@@ -181,7 +181,8 @@
         "m6-release-v1",
         "m6-release-v2",
         "m6-release-v3",
-        "m6-release-v4"
+        "m6-release-v4",
+        "m6-release-v5"
       ],
       "title": "Protocol Version",
       "type": "string"

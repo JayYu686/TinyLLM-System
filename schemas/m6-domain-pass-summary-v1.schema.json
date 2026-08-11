@@ -271,6 +271,13 @@
       "title": "Injected Tokens",
       "type": "integer"
     },
+    "json_constrained_items": {
+      "default": 0,
+      "maximum": 80,
+      "minimum": 0,
+      "title": "Json Constrained Items",
+      "type": "integer"
+    },
     "json_items": {
       "const": 80,
       "title": "Json Items",
@@ -345,7 +352,8 @@
         "m6-release-v1",
         "m6-release-v2",
         "m6-release-v3",
-        "m6-release-v4"
+        "m6-release-v4",
+        "m6-release-v5"
       ],
       "title": "Protocol Version",
       "type": "string"
@@ -374,7 +382,8 @@
         "tinyllm-domain-v1-83bdd8ef",
         "tinyllm-domain-holdout-v1-c0c948cc",
         "tinyllm-domain-holdout-v1-2b167ce6",
-        "tinyllm-domain-final-audit-v1-bac25144"
+        "tinyllm-domain-final-audit-v1-bac25144",
+        "tinyllm-domain-json-audit-v1-3e5fffd7"
       ],
       "title": "Suite Version",
       "type": "string"

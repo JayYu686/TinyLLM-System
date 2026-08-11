@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib
+import importlib.metadata
 import json
 import sys
 from pathlib import Path
@@ -200,6 +202,217 @@ def test_m6_json_repair_v3_composes_close_and_key_promotion_without_leaf_changes
         "model": {"name": "tiny-37", "precision": "bf16"},
         "training": {"batch_size": 4, "epochs": 2},
     }
+
+
+def test_m6_json_shape_schema_retains_structure_without_reference_values() -> None:
+    items = {item.id: item for item in load_evaluation_items(Path("evals/domain/v5/items.jsonl"))}
+    schema, schema_sha256 = m6_domain_module._item_json_shape_schema(items["domain-config-001"])
+
+    assert schema == {
+        "type": "object",
+        "properties": {
+            "data": {
+                "type": "object",
+                "properties": {"workers": {"type": "integer"}},
+                "required": ["workers"],
+                "additionalProperties": False,
+            },
+            "logging": {
+                "type": "object",
+                "properties": {"level": {"type": "string"}},
+                "required": ["level"],
+                "additionalProperties": False,
+            },
+            "model": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "precision": {"type": "string"},
+                },
+                "required": ["name", "precision"],
+                "additionalProperties": False,
+            },
+            "training": {
+                "type": "object",
+                "properties": {
+                    "batch_size": {"type": "integer"},
+                    "epochs": {"type": "integer"},
+                },
+                "required": ["batch_size", "epochs"],
+                "additionalProperties": False,
+            },
+        },
+        "required": ["data", "logging", "model", "training"],
+        "additionalProperties": False,
+    }
+    encoded = json.dumps(schema, sort_keys=True)
+    assert "fp32" not in encoded
+    assert "tiny-113" not in encoded
+    assert "115" not in encoded
+    assert len(schema_sha256) == 64
+
+    item = items["domain-config-001"]
+    transcript = build_m6_domain_transcript(
+        item,
+        mode="nonthinking",
+        prompt="prompt",
+        response=item.reference_answer,
+        first_pass_response=item.reference_answer,
+        continuation_response="",
+        controller_action="not_applicable",
+        prompt_tokens=10,
+        first_pass_tokens=20,
+        continuation_tokens=0,
+        injected_tokens=0,
+        finish_reason="eos",
+        json_constraint_id="xgrammar-json-shape-v1",
+        json_constraint_schema_sha256=schema_sha256,
+    )
+    assert transcript.json_constraint_id == "xgrammar-json-shape-v1"
+    assert transcript.json_constraint_schema_sha256 == schema_sha256
+
+    with pytest.raises(ValueError, match="constraint evidence"):
+        type(transcript).model_validate(
+            transcript.to_dict() | {"json_constraint_schema_sha256": None}
+        )
+
+
+def test_m6_json_shape_schema_covers_json_types_and_rejects_non_json() -> None:
+    assert m6_domain_module._json_shape_schema([]) == {"type": "array"}
+    assert m6_domain_module._json_shape_schema([1, 2]) == {
+        "type": "array",
+        "items": {"type": "integer"},
+    }
+    mixed = m6_domain_module._json_shape_schema([1, 1.5, True, None, "value"])
+    assert mixed["items"] == {
+        "anyOf": [
+            {"type": "integer"},
+            {"type": "number"},
+            {"type": "boolean"},
+            {"type": "null"},
+            {"type": "string"},
+        ]
+    }
+    with pytest.raises(M6DomainError, match="unsupported value type"):
+        m6_domain_module._json_shape_schema({1, 2})
+
+    non_json_item = load_evaluation_items(Path("evals/domain/v5/items.jsonl"))[80]
+    assert non_json_item.scorer.kind != "json_object"
+    with pytest.raises(M6DomainError, match="non-JSON scorer"):
+        m6_domain_module._item_json_shape_schema(non_json_item)
+
+
+def test_m6_xgrammar_runtime_is_versioned_and_builds_batched_processors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeCompiler:
+        def __init__(self, tokenizer_info: object) -> None:
+            assert tokenizer_info == ("tokenizer-info", 151936)
+
+        def compile_json_schema(
+            self,
+            schema: dict[str, Any],
+            *,
+            strict_mode: bool,
+        ) -> dict[str, Any]:
+            assert strict_mode
+            return {"compiled": schema}
+
+    seen: dict[str, object] = {}
+
+    def logits_processor(compiled: object) -> tuple[str, object]:
+        seen["compiled"] = compiled
+        return ("processor", compiled)
+
+    fake_xgrammar = SimpleNamespace(
+        TokenizerInfo=SimpleNamespace(
+            from_huggingface=lambda _tokenizer, *, vocab_size: ("tokenizer-info", vocab_size)
+        ),
+        GrammarCompiler=FakeCompiler,
+        contrib=SimpleNamespace(hf=SimpleNamespace(LogitsProcessor=logits_processor)),
+    )
+    monkeypatch.setattr(importlib.metadata, "version", lambda _name: "0.2.4")
+    monkeypatch.setattr(
+        importlib,
+        "import_module",
+        lambda _name: fake_xgrammar,
+    )
+    control = load_m6_release_config(
+        Path("configs/eval/m6_release_v5.yaml")
+    ).domain_execution.output_control
+    runtime = m6_domain_module._load_json_constraint_runtime(
+        object(),
+        SimpleNamespace(config=SimpleNamespace(vocab_size=151936)),
+        control,
+    )
+    assert runtime is not None
+    items = tuple(
+        item
+        for item in load_evaluation_items(Path("evals/domain/v5/items.jsonl"))
+        if item.scorer.kind == "json_object"
+    )[:2]
+    processor, hashes = m6_domain_module._json_constraint_processor(runtime, items)
+    assert processor[0] == "processor"
+    assert len(hashes) == 2
+    assert isinstance(seen["compiled"], list)
+    single_processor, single_hash = m6_domain_module._json_constraint_processor(runtime, items[:1])
+    assert single_processor[0] == "processor"
+    assert len(single_hash) == 1
+    assert isinstance(seen["compiled"], dict)
+    monkeypatch.setitem(sys.modules, "transformers", SimpleNamespace(__version__="4.57.6"))
+    assert m6_domain_module._environment_payload(runtime)["xgrammar"] == "0.2.4"
+
+    assert m6_domain_module._load_json_constraint_runtime(object(), object(), None) is None
+    monkeypatch.setattr(importlib.metadata, "version", lambda _name: "0.2.3")
+    with pytest.raises(M6DomainError, match="version differs"):
+        m6_domain_module._load_json_constraint_runtime(
+            object(),
+            SimpleNamespace(config=SimpleNamespace(vocab_size=151936)),
+            control,
+        )
+
+    def missing_package(_name: str) -> str:
+        raise importlib.metadata.PackageNotFoundError
+
+    monkeypatch.setattr(importlib.metadata, "version", missing_package)
+    with pytest.raises(M6DomainError, match="requires pinned XGrammar"):
+        m6_domain_module._load_json_constraint_runtime(
+            object(),
+            SimpleNamespace(config=SimpleNamespace(vocab_size=151936)),
+            control,
+        )
+
+
+def test_m6_generate_forwards_structured_logits_processor() -> None:
+    seen: dict[str, object] = {}
+
+    class FakeGenerateModel:
+        def generate(self, **kwargs: Any) -> torch.Tensor:
+            seen.update(kwargs)
+            inputs = kwargs["input_ids"]
+            assert isinstance(inputs, torch.Tensor)
+            suffix = torch.tensor([[8, 9]], dtype=torch.long)
+            return torch.cat((inputs, suffix), dim=1)
+
+    rows = m6_domain_module._generate(
+        FakeGenerateModel(),
+        model_inputs={"input_ids": torch.tensor([[1, 2]], dtype=torch.long)},
+        input_width=2,
+        tokenizer=SimpleNamespace(pad_token_id=0),
+        eos_ids={99},
+        seed=7,
+        max_new_tokens=2,
+        do_sample=False,
+        temperature=None,
+        top_p=None,
+        top_k=None,
+        stop_strings=("stop",),
+        logits_processor=("processor",),
+    )
+
+    assert rows == [[8, 9]]
+    assert seen["logits_processor"] == ["processor"]
+    assert seen["stop_strings"] == ("stop",)
 
 
 def test_m6_domain_review_finalizes_all_300_content_free_scores(tmp_path: Path) -> None:

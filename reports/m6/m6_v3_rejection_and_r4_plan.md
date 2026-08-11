@@ -177,3 +177,31 @@ Candidate Non-thinking 为客观正确 `123/260`、JSON Valid `77/80`、格式 `
 `tinyllm-domain-json-audit-v1-3e5fffd7`，内容 SHA256 为
 `3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe`。后续仅允许从 v4
 诊断通用解码失败机制，并在权重不变的 v5 上一次性验证版本化 JSON 约束解码。
+
+## 10. v4 JSON 失败诊断与 v5 解码契约
+
+v5 冻结并合并后才读取 v4 的 9 条 Candidate JSON 失败正文。失败机制如下：
+
+| 模式 | 失败数 | 主要机制 |
+| -- | --: | -- |
+| Non-thinking | 3 | 数组右括号误写为 `)`；顶层对象退化为裸数组 |
+| Thinking | 6 | 重复 JSON 对象；多次 `</think>`；数组括号错误；键值串替代 JSON |
+
+通用顶层对象 Grammar 在这 9 条上只能达到 `8/9`。唯一未恢复项把弯引号当作 JSON 字符串
+内容，并持续生成到 512 Token 上限；这说明 Grammar 能保证已完成序列符合语法，却不能保证
+宽松 Grammar 下的贪心序列一定在预算内闭合。
+
+v5 改用 `xgrammar-json-shape-v1`。每条 JSON 任务从冻结评分契约提取字段、对象/数组层级和
+JSON 数据类型，递归删除所有字符串、数字、布尔值和空值等叶子答案；Schema 不固定数组长度，
+也不包含任何 Reference 叶子值。XGrammar 0.2.4 在 Token 采样阶段应用该 Schema，只用于 80 条
+`json_object` 任务，其他 220 条保持原生成路径。Base 与 Candidate、Thinking Final Answer 与
+Non-thinking 使用同一约束；Thinking 私有思考首段不受约束。
+
+同一 9 条 v4 失败的只读重放结果为 `9/9` 有效顶层对象。该结果只是机制验证，不属于 v5
+门禁成绩。正式证据必须来自 clean Git、固定依赖、独立 v5 的四路完整运行。每条 Transcript
+保存解码器 ID 和无值 Schema SHA256，Summary 必须记录 `80/80` 约束覆盖；缺少 XGrammar、
+版本漂移、混合 Scorer Batch 或任一 JSON 绕过约束时均失败关闭。
+
+实现依据：[XGrammar 官方 Quick Start](https://xgrammar.mlc-ai/docs/start/quick_start) 与
+[XGrammar 源码仓库](https://github.com/mlc-ai/xgrammar)。LM Format Enforcer 的通用对象
+诊断同样为 `8/9`，因此不进入正式依赖和 v5 协议。

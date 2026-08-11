@@ -231,6 +231,10 @@ def test_m6_v4_release_keeps_gate_and_binds_sealed_final_audit() -> None:
     assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
     assert config.domain_execution.output_control is not None
     assert config.domain_execution.output_control.json_repair_policy == "json-syntax-only-v1"
+    assert (
+        config.domain_execution.output_control.thinking_final_separator_id
+        == "qwen3-thinking-final-separator-v1"
+    )
 
 
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:

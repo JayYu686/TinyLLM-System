@@ -57,6 +57,7 @@ EVIDENCE_GROUNDING_SYSTEM_PROMPT = (
     "evidence item named by the request. 当请求在证据缺失时要求判断根因，不得把被怀疑组件复述为"
     "根因；必须明确说明现有证据不足，并请求题目列出的全部缺失证据。"
 )
+THINKING_FINAL_SEPARATOR = "\n\n"
 
 
 def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path:
@@ -251,6 +252,11 @@ def build_m6_domain_transcript(
         automatic_correct = automatic_correct and format_valid
     forced = controller_action == "forced_close_continue"
     natural = mode == "thinking" and not forced
+    controller_injected_text = ""
+    if forced:
+        controller_injected_text = EARLY_STOPPING_TEXT
+    elif controller_action == "natural_close_continue" and injected_tokens:
+        controller_injected_text = THINKING_FINAL_SEPARATOR
     return M6DomainTranscript(
         item_id=item.id,
         mode=mode,
@@ -259,7 +265,7 @@ def build_m6_domain_transcript(
         response_sha256=hashlib.sha256(response.encode()).hexdigest(),
         first_pass_response=first_pass_response,
         continuation_response=continuation_response,
-        controller_injected_text=EARLY_STOPPING_TEXT if forced else "",
+        controller_injected_text=controller_injected_text,
         controller_action=controller_action,
         final_answer=final_answer,
         final_answer_sha256=hashlib.sha256(final_answer.encode()).hexdigest(),
@@ -517,6 +523,17 @@ def run_m6_domain_pass(
     injection_ids = list(tokenizer.encode(EARLY_STOPPING_TEXT, add_special_tokens=False))
     if not injection_ids or _decode(tokenizer, injection_ids) != EARLY_STOPPING_TEXT:
         raise M6DomainError("M6 controller injection does not round-trip")
+    separator_ids: list[int] = []
+    if release.domain_execution.output_control is not None:
+        separator = release.domain_execution.output_control
+        if (
+            hashlib.sha256(THINKING_FINAL_SEPARATOR.encode()).hexdigest()
+            != separator.thinking_final_separator_sha256
+        ):
+            raise M6DomainError("M6 Thinking final separator identity drifted")
+        separator_ids = list(tokenizer.encode(THINKING_FINAL_SEPARATOR, add_special_tokens=False))
+        if not separator_ids or _decode(tokenizer, separator_ids) != THINKING_FINAL_SEPARATOR:
+            raise M6DomainError("M6 Thinking final separator does not round-trip")
     config_sha256 = canonical_config_hash(release)
     environment_path = output_dir / "environment.json"
     hardware_path = output_dir / "hardware.json"
@@ -623,7 +640,8 @@ def run_m6_domain_pass(
             unpadded_prompt = prompt_row[mask_row].detach().cpu().tolist()
             first_for_continue, _ = _trim_at_eos(first_ids, eos_ids, include_eos=False)
             forced = not natural_close
-            controlled_ids = first_for_continue + (injection_ids if forced else [])
+            controller_ids = injection_ids if forced else separator_ids
+            controlled_ids = first_for_continue + controller_ids
             continuation_input = torch.tensor(
                 [unpadded_prompt + controlled_ids],
                 dtype=torch.long,
@@ -665,7 +683,7 @@ def run_m6_domain_pass(
                     prompt_tokens=prompt_tokens,
                     first_pass_tokens=len(first_ids),
                     continuation_tokens=len(continuation_ids),
-                    injected_tokens=len(injection_ids) if forced else 0,
+                    injected_tokens=len(controller_ids),
                     finish_reason="eos" if continuation_eos else "length",
                     json_repair_enabled=output_control is not None,
                 )

@@ -111,12 +111,16 @@ class M6NonthinkingGenerationConfig(StrictSchema):
 
 
 class M6OutputControlConfig(StrictSchema):
-    """Auditable syntax-only JSON repair and evidence-grounding policy."""
+    """Auditable output repair, evidence grounding, and Thinking continuation policy."""
 
     json_repair_policy: Literal["json-syntax-only-v1"]
     evidence_system_prompt_id: Literal["evidence-grounding-bilingual-v1"]
     evidence_system_prompt_sha256: Literal[
         "dff97b5e4f251f422c7b4b745ec1be6bf242b9e73020c403d05960f207f84618"
+    ]
+    thinking_final_separator_id: Literal["qwen3-thinking-final-separator-v1"]
+    thinking_final_separator_sha256: Literal[
+        "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070"
     ]
 
 
@@ -554,6 +558,15 @@ class M6DomainTranscript(StrictSchema):
                 or not self.injected_tokens
             ):
                 raise ValueError("M6 forced-close transcript requires disclosed injection")
+        elif self.controller_action == "natural_close_continue":
+            legacy = not self.controller_injected_text and not self.injected_tokens
+            controlled = self.controller_injected_text == "\n\n" and self.injected_tokens > 0
+            if (
+                self.budget_forced_close
+                or not self.natural_thinking_closed
+                or not (legacy or controlled)
+            ):
+                raise ValueError("M6 natural-close continuation has invalid separator evidence")
         elif (
             self.budget_forced_close
             or self.controller_injected_text

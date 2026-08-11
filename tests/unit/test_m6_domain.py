@@ -28,6 +28,7 @@ from tinyllm.evaluation import (
     sha256_file,
 )
 from tinyllm.evaluation.m5_thinking_budget_schema import EARLY_STOPPING_TEXT
+from tinyllm.evaluation.m6_domain import THINKING_FINAL_SEPARATOR
 from tinyllm.schemas import canonical_config_hash
 
 
@@ -318,7 +319,11 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
 
         def encode(self, text: str, *, add_special_tokens: bool) -> list[int]:
             assert not add_special_tokens
-            return [31] if text == EARLY_STOPPING_TEXT else []
+            if text == EARLY_STOPPING_TEXT:
+                return [31]
+            if text == THINKING_FINAL_SEPARATOR:
+                return [32]
+            return []
 
         def decode(
             self,
@@ -336,6 +341,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
                 12: "private trace",
                 20: "\n\nfinal",
                 31: EARLY_STOPPING_TEXT,
+                32: THINKING_FINAL_SEPARATOR,
                 99: "",
             }
             return "".join(pieces[token_id] for token_id in token_ids)
@@ -343,6 +349,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
     class FakeModel:
         def __init__(self) -> None:
             self.first_batches = 0
+            self.continuation_tail_ids: list[int] = []
 
         def to(self, device: torch.device) -> FakeModel:
             assert device.type == "cpu"
@@ -367,6 +374,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
                 self.first_batches += 1
             else:
                 assert "stop_strings" not in kwargs
+                self.continuation_tail_ids.append(int(inputs[0, -1]))
                 rows = [[20, 99] for _ in range(inputs.shape[0])]
             generated = torch.tensor(rows, dtype=torch.long)
             return torch.cat((inputs, generated), dim=1)
@@ -420,11 +428,12 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
         ),
         encoding="utf-8",
     )
-    release = load_m6_release_config(Path("configs/eval/m6_release.yaml"))
+    release_path = Path("configs/eval/m6_development_v3_controlled.yaml")
+    release = load_m6_release_config(release_path)
     output = (tmp_path / f"m6-{mode}").resolve()
 
     result = run_m6_domain_pass(
-        release_config_path=Path("configs/eval/m6_release.yaml"),
+        release_config_path=release_path,
         model_dir=model_dir,
         tokenizer_dir=model_dir,
         output_dir=output,
@@ -442,6 +451,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
     assert result.peak_allocated_bytes == 123
     assert result.physical_gpu_index == 5
     assert model.first_batches == 75
+    assert model.continuation_tail_ids == ([32, 31] if mode == "thinking" else [])
     assert (output / "environment.json").is_file()
     assert (output / "hardware.json").is_file()
     assert (output / "results.jsonl").is_file()

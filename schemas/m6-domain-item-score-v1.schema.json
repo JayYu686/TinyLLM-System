@@ -33,6 +33,11 @@
       "title": "Item Id",
       "type": "string"
     },
+    "json_repaired": {
+      "default": false,
+      "title": "Json Repaired",
+      "type": "boolean"
+    },
     "json_valid": {
       "anyOf": [
         {

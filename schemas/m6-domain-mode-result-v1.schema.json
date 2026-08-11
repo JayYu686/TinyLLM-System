@@ -35,6 +35,11 @@
           "title": "Item Id",
           "type": "string"
         },
+        "json_repaired": {
+          "default": false,
+          "title": "Json Repaired",
+          "type": "boolean"
+        },
         "json_valid": {
           "anyOf": [
             {
@@ -143,6 +148,13 @@
     "json_items": {
       "const": 80,
       "title": "Json Items",
+      "type": "integer"
+    },
+    "json_repaired_items": {
+      "default": 0,
+      "maximum": 80,
+      "minimum": 0,
+      "title": "Json Repaired Items",
       "type": "integer"
     },
     "json_valid_basis_points": {

@@ -229,6 +229,8 @@ def test_m6_v4_release_keeps_gate_and_binds_sealed_final_audit() -> None:
     assert config.suite_version == "tinyllm-domain-final-audit-v1-bac25144"
     assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260812
     assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
+    assert config.domain_execution.output_control is not None
+    assert config.domain_execution.output_control.json_repair_policy == "json-syntax-only-v1"
 
 
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:

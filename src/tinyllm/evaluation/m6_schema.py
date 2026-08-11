@@ -110,6 +110,16 @@ class M6NonthinkingGenerationConfig(StrictSchema):
     do_sample: Literal[False]
 
 
+class M6OutputControlConfig(StrictSchema):
+    """Auditable syntax-only JSON repair and evidence-grounding policy."""
+
+    json_repair_policy: Literal["json-syntax-only-v1"]
+    evidence_system_prompt_id: Literal["evidence-grounding-bilingual-v1"]
+    evidence_system_prompt_sha256: Literal[
+        "dff97b5e4f251f422c7b4b745ec1be6bf242b9e73020c403d05960f207f84618"
+    ]
+
+
 class M6DomainExecutionConfig(StrictSchema):
     """Complete generation/scoring policy for the frozen domain suite."""
 
@@ -118,6 +128,9 @@ class M6DomainExecutionConfig(StrictSchema):
     scorer_policy: Literal["tinyllm-domain-scorer-v1"]
     thinking: M6ThinkingGenerationConfig
     nonthinking: M6NonthinkingGenerationConfig
+    output_control: M6OutputControlConfig | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class M6GeneralTaskConfig(StrictSchema):
@@ -243,6 +256,15 @@ class M6ReleaseConfig(StrictSchema):
             or self.domain_execution.thinking.seed != seed
         ):
             raise ValueError("M6 protocol, suite identity, and deterministic seeds differ")
+        if (
+            self.protocol_version == "m6-release-v4"
+            and self.domain_execution.output_control is None
+        ):
+            raise ValueError("M6 release v4 requires the frozen output controls")
+        if self.protocol_version in {"m6-release-v1", "m6-release-v2"} and (
+            self.domain_execution.output_control is not None
+        ):
+            raise ValueError("historical M6 protocols cannot claim output controls")
         return self
 
 
@@ -316,6 +338,7 @@ class M6DomainItemScore(StrictSchema):
     scorer_kind: M6ScorerKind
     correct: bool
     json_valid: bool | None
+    json_repaired: bool = Field(default=False, exclude_if=lambda value: not value)
     format_valid: bool
     visible_reasoning_leakage: bool
 
@@ -325,6 +348,10 @@ class M6DomainItemScore(StrictSchema):
             raise ValueError("M6 item ID and category differ")
         if (self.scorer_kind == "json_object") != (self.json_valid is not None):
             raise ValueError("M6 JSON validity must exist exactly for JSON-object scorers")
+        if self.json_repaired and (
+            self.scorer_kind != "json_object" or self.json_valid is not True
+        ):
+            raise ValueError("M6 JSON repair requires one valid JSON-object result")
         if self.correct and not self.format_valid:
             raise ValueError("M6 correct items require a valid output format")
         if self.cluster_id.startswith("pair:"):
@@ -349,6 +376,7 @@ class M6DomainModeResult(StrictSchema):
     json_items: Literal[80]
     json_valid_items: int = Field(ge=0, le=80)
     json_valid_basis_points: int = Field(ge=0, le=10000)
+    json_repaired_items: int = Field(default=0, ge=0, le=80, exclude_if=lambda value: value == 0)
     visible_reasoning_leakage_items: int = Field(ge=0, le=300)
     visible_reasoning_leakage_basis_points: int = Field(ge=0, le=10000)
     natural_thinking_closed_items: int = Field(ge=0, le=300)
@@ -404,6 +432,7 @@ class M6DomainModeResult(StrictSchema):
         format_valid = sum(item.format_valid for item in self.items)
         json_items = [item for item in self.items if item.scorer_kind == "json_object"]
         json_valid = sum(item.json_valid is True for item in json_items)
+        json_repaired = sum(item.json_repaired for item in json_items)
         leakage = sum(item.visible_reasoning_leakage for item in self.items)
         if (
             self.correct_items != correct
@@ -413,6 +442,7 @@ class M6DomainModeResult(StrictSchema):
             or len(json_items) != self.json_items
             or self.json_valid_items != json_valid
             or self.json_valid_basis_points != round(json_valid * 10000 / 80)
+            or self.json_repaired_items != json_repaired
             or self.visible_reasoning_leakage_items != leakage
             or self.visible_reasoning_leakage_basis_points != round(leakage * 10000 / 300)
             or self.forced_close_basis_points != round(self.budget_forced_close_items * 10000 / 300)
@@ -453,6 +483,18 @@ class M6DomainTranscript(StrictSchema):
     ]
     final_answer: str = Field(max_length=131_072)
     final_answer_sha256: str = Field(pattern=SHA256_PATTERN)
+    raw_final_answer: str = Field(
+        default="", max_length=131_072, exclude_if=lambda value: not value
+    )
+    raw_final_answer_sha256: str | None = Field(
+        default=None, pattern=SHA256_PATTERN, exclude_if=lambda value: value is None
+    )
+    output_repair_action: Literal[
+        "none",
+        "wrap_single_key",
+        "brace_member_fragment",
+        "close_object",
+    ] = Field(default="none", exclude_if=lambda value: value == "none")
     prompt_tokens: int = Field(gt=0)
     first_pass_tokens: int = Field(ge=0, le=1536)
     continuation_tokens: int = Field(ge=0, le=512)
@@ -474,6 +516,18 @@ class M6DomainTranscript(StrictSchema):
             raise ValueError("M6 response hash differs from private response text")
         if hashlib.sha256(self.final_answer.encode()).hexdigest() != self.final_answer_sha256:
             raise ValueError("M6 final-answer hash differs from private answer text")
+        repaired = self.output_repair_action != "none"
+        if repaired != bool(self.raw_final_answer) or repaired != (
+            self.raw_final_answer_sha256 is not None
+        ):
+            raise ValueError("M6 output repair evidence is incomplete")
+        if repaired and (
+            hashlib.sha256(self.raw_final_answer.encode()).hexdigest()
+            != self.raw_final_answer_sha256
+            or self.raw_final_answer == self.final_answer
+            or self.scorer_kind != "json_object"
+        ):
+            raise ValueError("M6 output repair evidence differs from the repaired answer")
         if self.generated_tokens != self.first_pass_tokens + self.continuation_tokens:
             raise ValueError("M6 generated Token accounting differs")
         is_human = self.scorer_kind == "human_rubric"
@@ -531,6 +585,7 @@ class M6DomainPassSummary(StrictSchema):
     human_passed: int = Field(ge=0, le=40)
     json_items: Literal[80]
     json_valid_items: int = Field(ge=0, le=80)
+    json_repaired_items: int = Field(default=0, ge=0, le=80, exclude_if=lambda value: value == 0)
     format_valid_items: int = Field(ge=0, le=300)
     visible_reasoning_leakage_items: int = Field(ge=0, le=300)
     natural_thinking_closed_items: int = Field(ge=0, le=300)
@@ -549,6 +604,8 @@ class M6DomainPassSummary(StrictSchema):
 
     @model_validator(mode="after")
     def validate_pass(self) -> M6DomainPassSummary:
+        if self.json_repaired_items > self.json_valid_items:
+            raise ValueError("M6 repaired JSON count exceeds valid JSON results")
         if self.human_review_pending + self.human_reviewed != 40:
             raise ValueError("M6 domain pass must account for all 40 human-rubric items")
         expected = "awaiting_human_review" if self.human_review_pending else "succeeded"

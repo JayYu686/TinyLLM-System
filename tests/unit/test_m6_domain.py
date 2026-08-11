@@ -67,6 +67,15 @@ def test_m6_final_answer_parser_separates_modes_and_rejects_leakage() -> None:
     )
     assert parse_m6_final_answer("unfinished", mode="thinking") == ("", False, False)
     assert parse_m6_final_answer(
+        "trace</think>answer</think>duplicate",
+        mode="thinking",
+    ) == ("", False, False)
+    assert parse_m6_final_answer(
+        "trace</think></think>duplicate",
+        mode="thinking",
+        thinking_final_stop_policy="truncate-before-next-thinking-tag-v1",
+    ) == ("", False, False)
+    assert parse_m6_final_answer(
         "answer\n\n</think>\n\nprivate continuation",
         mode="nonthinking",
         nonthinking_stop_policy="truncate-before-first-thinking-tag-v1",
@@ -122,6 +131,40 @@ def test_m6_nonthinking_stop_boundary_retains_raw_evidence_and_scores_prefix() -
     assert result.format_valid is True
     assert result.visible_reasoning_leakage is False
     assert result.nonthinking_tag_truncated is True
+
+    with pytest.raises(ValueError, match="truncation evidence is invalid"):
+        type(result).model_validate(result.to_dict() | {"finish_reason": "eos"})
+
+
+def test_m6_thinking_final_stop_boundary_retains_raw_evidence_and_scores_prefix() -> None:
+    item = load_evaluation_items(Path("evals/domain/v7/items.jsonl"))[80]
+    assert item.scorer.kind == "exact_match"
+    response = (
+        "<think>private trace</think>\n\n"
+        f"{item.reference_answer}\n</think>\n\n{item.reference_answer}"
+    )
+    result = build_m6_domain_transcript(
+        item,
+        mode="thinking",
+        prompt="prompt",
+        response=response,
+        first_pass_response="<think>private trace</think>",
+        continuation_response=f"{item.reference_answer}\n</think>\n\n{item.reference_answer}",
+        controller_action="natural_close_continue",
+        prompt_tokens=10,
+        first_pass_tokens=20,
+        continuation_tokens=10,
+        injected_tokens=1,
+        finish_reason="stop_string",
+        thinking_final_stop_policy="truncate-before-next-thinking-tag-v1",
+    )
+
+    assert result.response == response
+    assert result.final_answer == item.reference_answer
+    assert result.automatic_correct is True
+    assert result.format_valid is True
+    assert result.visible_reasoning_leakage is False
+    assert result.thinking_final_tag_truncated is True
 
     with pytest.raises(ValueError, match="truncation evidence is invalid"):
         type(result).model_validate(result.to_dict() | {"finish_reason": "eos"})
@@ -511,6 +554,44 @@ def test_m6_domain_review_finalizes_all_300_content_free_scores(tmp_path: Path) 
         hardware_sha256="e" * 64,
         raw_results_sha256=sha256_file(raw_path),
     )
+    base_summary = summary.to_dict()
+    invalid_summaries = (
+        (
+            base_summary | {"json_repaired_items": 1, "json_valid_items": 0},
+            "repaired JSON count",
+        ),
+        (
+            base_summary
+            | {
+                "protocol_version": "m6-release-v5",
+                "suite_version": "tinyllm-domain-json-audit-v1-3e5fffd7",
+            },
+            "must constrain all 80",
+        ),
+        (base_summary | {"json_constrained_items": 1}, "cannot claim structured JSON"),
+        (
+            base_summary | {"nonthinking_truncated_items": 1},
+            "Thinking summary cannot claim Non-thinking",
+        ),
+        (
+            base_summary
+            | {
+                "protocol_version": "m6-release-v7",
+                "suite_version": "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1",
+                "mode": "nonthinking",
+                "json_constrained_items": 80,
+                "thinking_final_truncated_items": 1,
+            },
+            "Non-thinking summary cannot claim Thinking final",
+        ),
+        (
+            base_summary | {"thinking_final_truncated_items": 1},
+            "Historical M6 releases cannot claim Thinking final",
+        ),
+    )
+    for payload, message in invalid_summaries:
+        with pytest.raises(ValueError, match=message):
+            M6DomainPassSummary.model_validate(payload)
     (pass_dir / "summary.json").write_text(
         summary.model_dump_json(indent=2),
         encoding="utf-8",

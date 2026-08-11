@@ -19,6 +19,7 @@ M6ProtocolVersion = Literal[
     "m6-release-v4",
     "m6-release-v5",
     "m6-release-v6",
+    "m6-release-v7",
 ]
 M6SuiteVersion = Literal[
     "tinyllm-domain-v1-83bdd8ef",
@@ -27,6 +28,7 @@ M6SuiteVersion = Literal[
     "tinyllm-domain-final-audit-v1-bac25144",
     "tinyllm-domain-json-audit-v1-3e5fffd7",
     "tinyllm-domain-output-boundary-audit-v1-c34f63a8",
+    "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1",
 ]
 M6Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
 M6ScorerKind = Literal[
@@ -56,7 +58,7 @@ def _freeze(value: object) -> object:
 class M6BootstrapConfig(StrictSchema):
     """Paired cluster-bootstrap policy fixed before release-set evaluation."""
 
-    seed: Literal[20260809, 20260810, 20260811, 20260812, 20260813, 20260814]
+    seed: Literal[20260809, 20260810, 20260811, 20260812, 20260813, 20260814, 20260815]
     replicates: Literal[10000]
     confidence_basis_points: Literal[9500]
     resampling_unit: Literal["bilingual-pair-or-english-singleton"]
@@ -101,7 +103,7 @@ class M6ThinkingGenerationConfig(StrictSchema):
     top_p: float = Field(gt=0.0, le=1.0)
     top_k: Literal[20]
     repetition_penalty: float = Field(ge=1.0, le=2.0)
-    seed: Literal[20260809, 20260810, 20260811, 20260812, 20260813, 20260814]
+    seed: Literal[20260809, 20260810, 20260811, 20260812, 20260813, 20260814, 20260815]
     early_stopping_text: Literal[
         "\n\n Considering the limited time by the user, I have to give the solution "
         "based on the thinking directly now.\n</think>\n\n"
@@ -161,10 +163,18 @@ class M6OutputControlConfig(StrictSchema):
         default=None,
         exclude_if=lambda value: value is None,
     )
+    thinking_final_stop_policy: Literal["truncate-before-next-thinking-tag-v1"] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    thinking_final_stop_strings: tuple[Literal["<think>"], Literal["</think>"]] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
 
-    @field_validator("nonthinking_stop_strings", mode="before")
+    @field_validator("nonthinking_stop_strings", "thinking_final_stop_strings", mode="before")
     @classmethod
-    def freeze_nonthinking_stop_strings(cls, value: object) -> object:
+    def freeze_stop_strings(cls, value: object) -> object:
         return _freeze(value)
 
     @model_validator(mode="after")
@@ -181,6 +191,14 @@ class M6OutputControlConfig(StrictSchema):
             value is None for value in stop_control
         ):
             raise ValueError("M6 Non-thinking stop-control identity is incomplete")
+        thinking_final_control = (
+            self.thinking_final_stop_policy,
+            self.thinking_final_stop_strings,
+        )
+        if any(value is not None for value in thinking_final_control) and any(
+            value is None for value in thinking_final_control
+        ):
+            raise ValueError("M6 Thinking final stop-control identity is incomplete")
         return self
 
 
@@ -270,6 +288,7 @@ class M6ReleaseConfig(StrictSchema):
         "bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a",
         "3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe",
         "c34f63a87c05910f421db19c71eede7368328028f81bbf08870070bb2fba6002",
+        "b82cbca1821cadbaf4872636e89c61cef730ebe09413f9c63f34993302b6f955",
     ]
     expected_domain_items: Literal[300]
     expected_languages: Literal["en-210_zh-90"]
@@ -323,6 +342,11 @@ class M6ReleaseConfig(StrictSchema):
                 "c34f63a87c05910f421db19c71eede7368328028f81bbf08870070bb2fba6002",
                 20260814,
             ),
+            "m6-release-v7": (
+                "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1",
+                "b82cbca1821cadbaf4872636e89c61cef730ebe09413f9c63f34993302b6f955",
+                20260815,
+            ),
         }
         suite, content, seed = releases[self.protocol_version]
         if (
@@ -368,6 +392,26 @@ class M6ReleaseConfig(StrictSchema):
             != self.domain_execution.batch_size
         ):
             raise ValueError("M6 release v6 requires frozen output-boundary controls")
+        if self.protocol_version == "m6-release-v7" and (
+            self.domain_execution.output_control is None
+            or self.domain_execution.output_control.json_repair_policy != "json-syntax-only-v3"
+            or self.domain_execution.output_control.json_decoder_id != "xgrammar-json-shape-v1"
+            or self.domain_execution.output_control.json_decoder_version != "0.2.4"
+            or self.domain_execution.output_control.json_schema_policy
+            != "expected-json-shape-no-values-v1"
+            or self.domain_execution.output_control.nonthinking_stop_policy
+            != "truncate-before-first-thinking-tag-v1"
+            or self.domain_execution.output_control.nonthinking_stop_strings
+            != ("<think>", "</think>")
+            or self.domain_execution.output_control.thinking_final_stop_policy
+            != "truncate-before-next-thinking-tag-v1"
+            or self.domain_execution.output_control.thinking_final_stop_strings
+            != ("<think>", "</think>")
+            or self.domain_execution.thinking.final_answer_do_sample
+            or self.domain_execution.thinking.final_answer_batch_size
+            != self.domain_execution.batch_size
+        ):
+            raise ValueError("M6 release v7 requires frozen Thinking-boundary controls")
         if self.protocol_version in {"m6-release-v1", "m6-release-v2"} and (
             self.domain_execution.output_control is not None
         ):
@@ -621,6 +665,10 @@ class M6DomainTranscript(StrictSchema):
         default=False,
         exclude_if=lambda value: not value,
     )
+    thinking_final_tag_truncated: bool = Field(
+        default=False,
+        exclude_if=lambda value: not value,
+    )
     prompt_tokens: int = Field(gt=0)
     first_pass_tokens: int = Field(ge=0, le=1536)
     continuation_tokens: int = Field(ge=0, le=512)
@@ -667,7 +715,20 @@ class M6DomainTranscript(StrictSchema):
             or self.finish_reason != "stop_string"
         ):
             raise ValueError("M6 Non-thinking tag truncation evidence is invalid")
-        if (self.finish_reason == "stop_string") != self.nonthinking_tag_truncated:
+        thinking_suffix = (
+            self.response.split("</think>", 1)[1] if "</think>" in self.response else ""
+        )
+        if self.thinking_final_tag_truncated and (
+            self.mode != "thinking"
+            or not any(tag in thinking_suffix for tag in ("<think>", "</think>"))
+            or any(tag in self.final_answer for tag in ("<think>", "</think>"))
+            or self.visible_reasoning_leakage
+            or self.finish_reason != "stop_string"
+            or self.controller_action not in {"natural_close_continue", "forced_close_continue"}
+        ):
+            raise ValueError("M6 Thinking final tag truncation evidence is invalid")
+        tag_truncated = self.nonthinking_tag_truncated or self.thinking_final_tag_truncated
+        if (self.finish_reason == "stop_string") != tag_truncated:
             raise ValueError("M6 stop-string termination differs from truncation evidence")
         if self.generated_tokens != self.first_pass_tokens + self.continuation_tokens:
             raise ValueError("M6 generated Token accounting differs")
@@ -748,6 +809,12 @@ class M6DomainPassSummary(StrictSchema):
         le=300,
         exclude_if=lambda value: value == 0,
     )
+    thinking_final_truncated_items: int = Field(
+        default=0,
+        ge=0,
+        le=300,
+        exclude_if=lambda value: value == 0,
+    )
     format_valid_items: int = Field(ge=0, le=300)
     visible_reasoning_leakage_items: int = Field(ge=0, le=300)
     natural_thinking_closed_items: int = Field(ge=0, le=300)
@@ -768,18 +835,24 @@ class M6DomainPassSummary(StrictSchema):
     def validate_pass(self) -> M6DomainPassSummary:
         if self.json_repaired_items > self.json_valid_items:
             raise ValueError("M6 repaired JSON count exceeds valid JSON results")
-        if self.protocol_version in {"m6-release-v5", "m6-release-v6"} and (
+        if self.protocol_version in {"m6-release-v5", "m6-release-v6", "m6-release-v7"} and (
             self.json_constrained_items != 80
         ):
             raise ValueError("M6 release v5+ must constrain all 80 JSON-object results")
-        if self.protocol_version not in {"m6-release-v5", "m6-release-v6"} and (
+        if self.protocol_version not in {"m6-release-v5", "m6-release-v6", "m6-release-v7"} and (
             self.json_constrained_items
         ):
             raise ValueError("Historical M6 releases cannot claim structured JSON decoding")
         if self.mode == "thinking" and self.nonthinking_truncated_items:
             raise ValueError("M6 Thinking summary cannot claim Non-thinking truncation")
-        if self.protocol_version != "m6-release-v6" and self.nonthinking_truncated_items:
+        if self.mode == "nonthinking" and self.thinking_final_truncated_items:
+            raise ValueError("M6 Non-thinking summary cannot claim Thinking final truncation")
+        if self.protocol_version not in {"m6-release-v6", "m6-release-v7"} and (
+            self.nonthinking_truncated_items
+        ):
             raise ValueError("Historical M6 releases cannot claim Non-thinking truncation")
+        if self.protocol_version != "m6-release-v7" and self.thinking_final_truncated_items:
+            raise ValueError("Historical M6 releases cannot claim Thinking final truncation")
         if self.human_review_pending + self.human_reviewed != 40:
             raise ValueError("M6 domain pass must account for all 40 human-rubric items")
         expected = "awaiting_human_review" if self.human_review_pending else "succeeded"

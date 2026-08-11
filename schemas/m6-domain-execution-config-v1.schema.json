@@ -153,6 +153,43 @@
           "const": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
           "title": "Thinking Final Separator Sha256",
           "type": "string"
+        },
+        "thinking_final_stop_policy": {
+          "anyOf": [
+            {
+              "const": "truncate-before-next-thinking-tag-v1",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thinking Final Stop Policy"
+        },
+        "thinking_final_stop_strings": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "const": "<think>",
+                  "type": "string"
+                },
+                {
+                  "const": "</think>",
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thinking Final Stop Strings"
         }
       },
       "required": [
@@ -215,7 +252,8 @@
             20260811,
             20260812,
             20260813,
-            20260814
+            20260814,
+            20260815
           ],
           "title": "Seed",
           "type": "integer"

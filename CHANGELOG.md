@@ -5,6 +5,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- froze an independent 300-item M6 v7 audit after v6 Candidate Thinking missed the fixed format
+  gate by one item, then added an auditable Thinking final-answer stop boundary that preserves raw
+  responses while preventing repeated Thinking tags from invalidating an already emitted answer;
 - added the M6.1 Base-evidence bridge and independent domain runner: the formal M2
   Non-thinking/general evidence is reused only after full protocol, model, file, human-review,
   environment, and raw-tree verification; Base Thinking remains a separate clean-main GPU run

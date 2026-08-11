@@ -225,6 +225,11 @@
       "title": "Scorer Kind",
       "type": "string"
     },
+    "thinking_final_tag_truncated": {
+      "default": false,
+      "title": "Thinking Final Tag Truncated",
+      "type": "boolean"
+    },
     "visible_reasoning_leakage": {
       "title": "Visible Reasoning Leakage",
       "type": "boolean"

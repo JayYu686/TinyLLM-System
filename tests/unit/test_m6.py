@@ -295,6 +295,35 @@ def test_m6_v6_release_binds_output_boundary_without_changing_gate() -> None:
         type(config).model_validate(incomplete)
 
 
+def test_m6_v7_release_binds_thinking_boundary_without_changing_gate() -> None:
+    config = load_m6_release_config(Path("configs/eval/m6_release_v7.yaml"))
+
+    assert config.protocol_version == "m6-release-v7"
+    assert config.suite_version == "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1"
+    assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260815
+    assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
+    assert config.domain_execution.output_control is not None
+    assert (
+        config.domain_execution.output_control.thinking_final_stop_policy
+        == "truncate-before-next-thinking-tag-v1"
+    )
+    assert config.domain_execution.output_control.thinking_final_stop_strings == (
+        "<think>",
+        "</think>",
+    )
+
+    incomplete = config.to_dict()
+    incomplete["domain_execution"]["output_control"].pop("thinking_final_stop_strings")
+    with pytest.raises(ValidationError, match="Thinking final stop-control identity is incomplete"):
+        type(config).model_validate(incomplete)
+
+    uncontrolled = config.to_dict()
+    uncontrolled["domain_execution"]["output_control"].pop("thinking_final_stop_policy")
+    uncontrolled["domain_execution"]["output_control"].pop("thinking_final_stop_strings")
+    with pytest.raises(ValidationError, match="release v7 requires"):
+        type(config).model_validate(uncontrolled)
+
+
 def test_m6_comparison_accepts_only_the_complete_and_gate() -> None:
     config = load_m6_release_config(Path("configs/eval/m6_release.yaml"))
     result = compare_m6_evaluations(

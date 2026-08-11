@@ -23,7 +23,7 @@ from tinyllm.evaluation import (
 
 Language = Literal["en", "zh"]
 Category = Literal["config", "json", "linux", "logs", "python", "refusal", "short_code"]
-SuiteVariant = Literal["v1", "v2", "v3", "v4", "v5", "v6"]
+SuiteVariant = Literal["v1", "v2", "v3", "v4", "v5", "v6", "v7"]
 
 _ACTIVE_VARIANT: SuiteVariant = "v1"
 _VALUE_OFFSET_OVERRIDE: int | None = None
@@ -76,7 +76,7 @@ def _pair_tags(category: Category, semantic_index: int) -> tuple[str, ...]:
 def _holdout_prompt(prompt: str, language: Language) -> str:
     """Give later holdouts independent-batch instructions without changing the task."""
 
-    if _ACTIVE_VARIANT not in {"v3", "v4", "v5", "v6"}:
+    if _ACTIVE_VARIANT not in {"v3", "v4", "v5", "v6", "v7"}:
         return prompt
     prefixes = {
         "v3": (
@@ -95,6 +95,10 @@ def _holdout_prompt(prompt: str, language: Language) -> str:
             "Complete this independently sealed output-boundary audit item.\n\n",
             "请独立完成以下密封输出边界审计题。\n\n",
         ),
+        "v7": (
+            "Complete this independently sealed thinking-boundary audit item.\n\n",
+            "请独立完成以下密封思考边界审计题。\n\n",
+        ),
     }
     en_prefix, zh_prefix = prefixes[_ACTIVE_VARIANT]
     prefix = en_prefix if language == "en" else zh_prefix
@@ -106,7 +110,15 @@ def _value_index(semantic_index: int) -> int:
 
     if _VALUE_OFFSET_OVERRIDE is not None:
         return semantic_index + _VALUE_OFFSET_OVERRIDE
-    offsets = {"v1": 0, "v2": 137, "v3": 293, "v4": 607, "v5": 911, "v6": 1217}
+    offsets = {
+        "v1": 0,
+        "v2": 137,
+        "v3": 293,
+        "v4": 607,
+        "v5": 911,
+        "v6": 1217,
+        "v7": 1519,
+    }
     return semantic_index + offsets[_ACTIVE_VARIANT]
 
 
@@ -1563,6 +1575,7 @@ def _refusal_item(index: int, language: Language) -> EvaluationItem:
         # prefix makes every complete prompt distinct from v1-v4.
         "v5": REFUSAL_SCENARIOS_V2,
         "v6": REFUSAL_SCENARIOS_V2,
+        "v7": REFUSAL_SCENARIOS_V2,
     }[_ACTIVE_VARIANT]
     en_scenario, zh_scenario, en_missing, zh_missing = scenarios[semantic_index]
     scenario = en_scenario if language == "en" else zh_scenario
@@ -1681,6 +1694,7 @@ def _render_manifest(
         "v4": "m6_domain_v4.yaml",
         "v5": "m6_domain_v5.yaml",
         "v6": "m6_domain_v6.yaml",
+        "v7": "m6_domain_v7.yaml",
     }[variant]
     config = load_evaluation_build_config(project_root / "configs/eval" / config_name)
     manifest = build_evaluation_manifest(items, config=config)
@@ -1702,7 +1716,7 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="Verify committed outputs only.")
     parser.add_argument(
         "--suite-version",
-        choices=("v1", "v2", "v3", "v4", "v5", "v6"),
+        choices=("v1", "v2", "v3", "v4", "v5", "v6", "v7"),
         default="v1",
         help="Build the historical v1 suite or an independent M6 holdout.",
     )

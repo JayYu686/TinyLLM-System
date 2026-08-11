@@ -226,3 +226,23 @@ Prompt 交集为 0。模型权重、JSON 约束、门禁和通用任务均保持
 使用 v5 失败项的相同 Prompt、Batch 与 Seed 做只读重放时，原始输出在
 `3.1758620689664\n\n</think>` 处停止，对外答案为 `3.1758620689664`，可见泄漏为 0；
 同批其余三条输出不变。该重放只验证机制，不属于 v6 门禁成绩。
+
+## 12. v6 拒绝与 v7 Thinking 最终答案边界
+
+v6 Candidate Non-thinking 的机械指标全部通过：客观题 `129/260`、JSON `80/80`、格式
+`300/300`、可见推理泄漏 `0/300`。Candidate Thinking 的客观题为 `128/260`、JSON
+`80/80`、强制闭合 `9/300`、可见推理泄漏 `0/300`，但格式只有 `296/300`，比固定的
+`297/300` 门槛少 1 条。因此 v6 保持拒绝状态，不执行 Base、人工评分和通用评测。
+
+4 条失败为 `domain-linux-003`、`domain-linux-006`、`domain-linux-024` 和
+`domain-linux-025`。它们的第一阶段均正常产生唯一 `</think>`；第二阶段先产生非空命令，
+随后再次产生 `</think>` 和重复命令，旧解析器因关闭标签总数为 2 而判空。只读回放确认新边界
+可将四条全部恢复为格式有效，但其答案与 Reference 均不一致，因此客观正确数不会被边界策略
+虚增。
+
+v7 在实现前冻结为 `tinyllm-domain-thinking-boundary-audit-v1-b82cbca1`，内容 SHA256 为
+`b82cbca1821cadbaf4872636e89c61cef730ebe09413f9c63f34993302b6f955`，与 v1–v6 完整
+Prompt 交集为 0。`truncate-before-next-thinking-tag-v1` 只作用于 Thinking Final Answer
+续写：生成命中下一 `<think>` 或 `</think>` 时停止，原始响应仍写入私有证据，评分答案只取
+停止标签前的非空前缀。逐条 `thinking_final_tag_truncated`、`stop_string` 原因和 Summary
+计数用于审计。门禁、权重、评分器、采样参数与 JSON 结构化解码均保持不变。

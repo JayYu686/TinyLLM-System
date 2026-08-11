@@ -240,3 +240,17 @@ Prompt 交集为 0。v6 固定增加 `truncate-before-first-thinking-tag-v1`：N
 生成 `<think>` 或 `</think>` 时停止，只发布标签前文本。私有 Transcript 必须保留原始文本、
 停止原因和截断动作；空前缀或错误前缀仍按原评分器失败。该策略不用于 Thinking，不修改模型
 权重、答案正文、JSON Schema 或门禁阈值。
+
+v6 Candidate Non-thinking 达到 JSON `80/80`、格式 `300/300`、泄漏 `0/300`；Candidate
+Thinking 达到 JSON `80/80`、强制闭合 `9/300`、泄漏 `0/300`，但格式为 `296/300`，低于
+`297/300` 门槛，因此 v6 在 Candidate 机械检查后拒绝，未执行 Base、人工评分和通用评测。
+4 条格式失败均为 Final Answer 续写先生成非空答案，随后再次生成 `</think>` 与重复答案。
+
+在实现 Thinking Final Answer 停止策略前，项目冻结 v7
+`tinyllm-domain-thinking-boundary-audit-v1-b82cbca1`，内容 SHA256 为
+`b82cbca1821cadbaf4872636e89c61cef730ebe09413f9c63f34993302b6f955`；与 v1–v6 完整
+Prompt 交集为 0。v7 增加 `truncate-before-next-thinking-tag-v1`：只在 Thinking 的 Final
+Answer 续写阶段注册 `<think>` 与 `</think>` 停止串，并只评分首次 Thinking 关闭标签之后、
+下一 Thinking 标签之前的非空答案。私有 Transcript 保留包含停止标签的原始响应、停止原因和
+逐条截断证据，Summary 记录截断条数。空前缀、错误答案和任何首次关闭前的失败仍按原规则计分。
+该策略不改变模型权重、Prompt、Reference、JSON Schema、采样策略、评分器或门禁阈值。

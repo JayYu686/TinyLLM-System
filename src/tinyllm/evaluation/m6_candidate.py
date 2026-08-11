@@ -73,7 +73,12 @@ def _import_correction_candidate(
         source_kind = "m6-gate-replay"
         expected_mixture = "m6-gate-replay-mixture-v1-6c169970"
         expected_manifest = "c5ceb1e5597a8e253d7c370484f9aa06d22b0a26dbfe597043d9302d8e580fa9"
-    elif release.protocol_version in {"m6-release-v4", "m6-release-v5", "m6-release-v6"}:
+    elif release.protocol_version in {
+        "m6-release-v4",
+        "m6-release-v5",
+        "m6-release-v6",
+        "m6-release-v7",
+    }:
         source_kind = "m6-domain-contract-refinement"
         expected_mixture = "m6-domain-generalization-mixture-v2-f2e029e4"
         expected_manifest = "288b0c88c91c49b466e9aeee07f9087a69c0f6618f19462621730390831289aa"
@@ -107,7 +112,8 @@ def _import_correction_candidate(
         or config.data.mix_manifest_sha256 != result.mixture_manifest_sha256
         or config.evaluation.consume_m6_frozen_results
         or (
-            release.protocol_version in {"m6-release-v4", "m6-release-v5", "m6-release-v6"}
+            release.protocol_version
+            in {"m6-release-v4", "m6-release-v5", "m6-release-v6", "m6-release-v7"}
             and (
                 result.initialization != "m5_formal_snapshot"
                 or result.initial_model_artifact_sha256 != FROZEN_EXPORT_SHA256
@@ -128,7 +134,8 @@ def _import_correction_candidate(
         or manifest.mixture_manifest_sha256 != result.mixture_manifest_sha256
         or manifest.git_commit != result.git_commit
         or (
-            release.protocol_version in {"m6-release-v4", "m6-release-v5", "m6-release-v6"}
+            release.protocol_version
+            in {"m6-release-v4", "m6-release-v5", "m6-release-v6", "m6-release-v7"}
             and (
                 manifest.initialization != result.initialization
                 or manifest.initial_model_artifact_sha256 != result.initial_model_artifact_sha256

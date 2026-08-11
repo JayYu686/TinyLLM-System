@@ -361,7 +361,8 @@
         "m6-release-v3",
         "m6-release-v4",
         "m6-release-v5",
-        "m6-release-v6"
+        "m6-release-v6",
+        "m6-release-v7"
       ],
       "title": "Protocol Version",
       "type": "string"
@@ -392,10 +393,18 @@
         "tinyllm-domain-holdout-v1-2b167ce6",
         "tinyllm-domain-final-audit-v1-bac25144",
         "tinyllm-domain-json-audit-v1-3e5fffd7",
-        "tinyllm-domain-output-boundary-audit-v1-c34f63a8"
+        "tinyllm-domain-output-boundary-audit-v1-c34f63a8",
+        "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1"
       ],
       "title": "Suite Version",
       "type": "string"
+    },
+    "thinking_final_truncated_items": {
+      "default": 0,
+      "maximum": 300,
+      "minimum": 0,
+      "title": "Thinking Final Truncated Items",
+      "type": "integer"
     },
     "visible_reasoning_leakage_items": {
       "maximum": 300,

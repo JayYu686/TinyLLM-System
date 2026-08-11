@@ -189,7 +189,12 @@ def repair_m6_json_answer(
     item: EvaluationItem,
     answer: str,
     *,
-    policy: Literal["json-syntax-only-v1", "json-syntax-only-v2"] | None,
+    policy: Literal[
+        "json-syntax-only-v1",
+        "json-syntax-only-v2",
+        "json-syntax-only-v3",
+    ]
+    | None,
 ) -> tuple[
     str,
     Literal[
@@ -202,6 +207,7 @@ def repair_m6_json_answer(
         "arrow_single_key",
         "wrap_bareword_single_key",
         "promote_required_keys",
+        "close_object_promote_required_keys",
     ],
 ]:
     """Repair only a JSON object's syntax shell without changing any decoded leaf value."""
@@ -217,7 +223,7 @@ def repair_m6_json_answer(
     if isinstance(decoded, dict):
         if set(required_keys).issubset(decoded):
             return answer, "none"
-        if policy == "json-syntax-only-v2":
+        if policy in {"json-syntax-only-v2", "json-syntax-only-v3"}:
             missing = tuple(key for key in required_keys if key not in decoded)
             containers = tuple(
                 (key, value)
@@ -247,7 +253,7 @@ def repair_m6_json_answer(
             json.dumps(repaired, ensure_ascii=False, separators=(",", ":"), sort_keys=True),
             "wrap_single_key",
         )
-    if policy == "json-syntax-only-v2":
+    if policy in {"json-syntax-only-v2", "json-syntax-only-v3"}:
         fenced = re.fullmatch(
             r"```(?:json)?\s*\n?(.*?)\n?```\s*",
             stripped,
@@ -330,6 +336,33 @@ def repair_m6_json_answer(
                 json.dumps(repaired, ensure_ascii=False, separators=(",", ":"), sort_keys=True),
                 action,
             )
+        if (
+            policy == "json-syntax-only-v3"
+            and action == "close_object"
+            and isinstance(repaired, dict)
+        ):
+            missing = tuple(key for key in required_keys if key not in repaired)
+            containers = tuple(
+                (key, value)
+                for key, value in repaired.items()
+                if isinstance(value, dict) and set(missing).issubset(value)
+            )
+            if missing and len(containers) == 1:
+                container_key, container = containers[0]
+                promoted = dict(repaired)
+                retained = dict(container)
+                for key in missing:
+                    promoted[key] = retained.pop(key)
+                promoted[container_key] = retained
+                return (
+                    json.dumps(
+                        promoted,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ),
+                    "close_object_promote_required_keys",
+                )
     return answer, "none"
 
 
@@ -352,7 +385,12 @@ def build_m6_domain_transcript(
     continuation_tokens: int,
     injected_tokens: int,
     finish_reason: Literal["eos", "length"],
-    json_repair_policy: Literal["json-syntax-only-v1", "json-syntax-only-v2"] | None = None,
+    json_repair_policy: Literal[
+        "json-syntax-only-v1",
+        "json-syntax-only-v2",
+        "json-syntax-only-v3",
+    ]
+    | None = None,
 ) -> M6DomainTranscript:
     """Parse and score one transcript without fabricating human-rubric judgments."""
 

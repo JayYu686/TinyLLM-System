@@ -174,6 +174,34 @@ def test_m6_json_repair_v2_handles_only_generalized_shell_failures() -> None:
     assert (unchanged, action) == ('{"id":38,"ok":false}', "none")
 
 
+def test_m6_json_repair_v3_composes_close_and_key_promotion_without_leaf_changes() -> None:
+    items = {item.id: item for item in load_evaluation_items(Path("evals/domain/v3/items.jsonl"))}
+    answer = (
+        '{"data":{"workers":39,"logging":{"level":"INFO"},'
+        '"model":{"name":"tiny-37","precision":"bf16"},'
+        '"training":{"batch_size":4,"epochs":2}}'
+    )
+
+    unchanged, v2_action = repair_m6_json_answer(
+        items["domain-config-008"],
+        answer,
+        policy="json-syntax-only-v2",
+    )
+    repaired, v3_action = repair_m6_json_answer(
+        items["domain-config-008"],
+        answer,
+        policy="json-syntax-only-v3",
+    )
+
+    assert (unchanged, v2_action) == (answer, "none")
+    assert v3_action == "close_object_promote_required_keys"
+    assert json.loads(repaired) == {
+        "data": {"logging": {"level": "INFO"}, "workers": 39},
+        "model": {"name": "tiny-37", "precision": "bf16"},
+        "training": {"batch_size": 4, "epochs": 2},
+    }
+
+
 def test_m6_domain_review_finalizes_all_300_content_free_scores(tmp_path: Path) -> None:
     items = load_evaluation_items(Path("evals/domain/v1/items.jsonl"))
     transcripts = tuple(

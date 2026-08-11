@@ -131,7 +131,8 @@
         "quote_bare_keys",
         "arrow_single_key",
         "wrap_bareword_single_key",
-        "promote_required_keys"
+        "promote_required_keys",
+        "close_object_promote_required_keys"
       ],
       "title": "Output Repair Action",
       "type": "string"

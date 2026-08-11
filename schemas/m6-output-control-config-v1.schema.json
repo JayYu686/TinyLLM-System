@@ -15,7 +15,8 @@
     "json_repair_policy": {
       "enum": [
         "json-syntax-only-v1",
-        "json-syntax-only-v2"
+        "json-syntax-only-v2",
+        "json-syntax-only-v3"
       ],
       "title": "Json Repair Policy",
       "type": "string"

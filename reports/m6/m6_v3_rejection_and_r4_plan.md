@@ -163,3 +163,17 @@ Thinking 相比隐藏 Pad 路径的 `59/260` 已恢复，剩余机械缺口仅�
 串联。`json-syntax-only-v3` 仅增加 `close_object_promote_required_keys` 组合动作：补齐对象
 外壳后移动完整子树，保留全部叶子值，不读取 Reference。该变化使用新的策略版本，避免静默
 改变 v2 语义；v4 尚未执行，因此最终审计仍保持密封。
+
+## 9. v4 正式拒绝与 v5 冻结
+
+v4 四路 GPU 评测均在 clean `main`、配置 Hash `30328ebc…` 下完成。Candidate Thinking 为
+客观正确 `127/260`、JSON Valid `74/80`、格式 `297/300`、强制闭合 `8/300`、泄漏 `0/300`；
+Candidate Non-thinking 为客观正确 `123/260`、JSON Valid `77/80`、格式 `300/300`、泄漏
+`0/300`。Base 两种模式客观正确分别为 `93/260` 与 `60/260`。Candidate 的领域能力、Thinking
+边界与格式控制均明显改善，但双模式 JSON 同时低于 `79/80`，无需人工评分即可确定拒绝。
+
+该结果表明自由文本生成加事后字符串修复不能稳定满足结构化输出契约。项目不降低 98% 门禁，
+也不覆盖或重跑 v4。读取 v4 JSON 失败正文前，先冻结 v5 独立审计集
+`tinyllm-domain-json-audit-v1-3e5fffd7`，内容 SHA256 为
+`3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe`。后续仅允许从 v4
+诊断通用解码失败机制，并在权重不变的 v5 上一次性验证版本化 JSON 约束解码。

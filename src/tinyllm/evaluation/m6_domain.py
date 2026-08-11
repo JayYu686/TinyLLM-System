@@ -71,10 +71,11 @@ class _PendingContinuation:
     prompt: str
     prompt_tokens: int
     first_ids: list[int]
-    controlled_ids: list[int]
-    controller_ids: list[int]
+    first_response: str
+    controller_text: str
+    injected_tokens: int
     forced: bool
-    input_ids: list[int]
+    input_text: str
 
 
 def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path:
@@ -757,13 +758,9 @@ def run_m6_domain_pass(
                     json_repair_policy=json_repair_policy,
                 )
                 continue
-            prompt_row = model_inputs["input_ids"][item_index]
-            mask_row = model_inputs["attention_mask"][item_index].bool()
-            unpadded_prompt = prompt_row[mask_row].detach().cpu().tolist()
-            first_for_continue, _ = _trim_at_eos(first_ids, eos_ids, include_eos=False)
             forced = not natural_close
             controller_ids = injection_ids if forced else separator_ids
-            controlled_ids = first_for_continue + controller_ids
+            controller_text = EARLY_STOPPING_TEXT if forced else THINKING_FINAL_SEPARATOR
             pending.append(
                 _PendingContinuation(
                     item_index=item_index,
@@ -771,34 +768,29 @@ def run_m6_domain_pass(
                     prompt=prompt,
                     prompt_tokens=prompt_tokens,
                     first_ids=first_ids,
-                    controlled_ids=controlled_ids,
-                    controller_ids=controller_ids,
+                    first_response=first_response,
+                    controller_text=controller_text,
+                    injected_tokens=len(controller_ids),
                     forced=forced,
-                    input_ids=unpadded_prompt + controlled_ids,
+                    input_text=prompt + first_response + controller_text,
                 )
             )
 
         final_batch_size = generation.thinking.final_answer_batch_size
         for pending_offset in range(0, len(pending), final_batch_size):
             pending_batch = pending[pending_offset : pending_offset + final_batch_size]
-            continuation_width = max(len(row.input_ids) for row in pending_batch)
-            continuation_input = torch.full(
-                (len(pending_batch), continuation_width),
-                fill_value=int(tokenizer.pad_token_id),
-                dtype=torch.long,
-                device=device,
+            continuation_encoded: dict[str, Any] = tokenizer(
+                [row.input_text for row in pending_batch],
+                padding=True,
+                return_tensors="pt",
             )
-            continuation_mask = torch.zeros_like(continuation_input)
-            for row_index, row in enumerate(pending_batch):
-                row_input = torch.tensor(row.input_ids, dtype=torch.long, device=device)
-                continuation_input[row_index, -len(row.input_ids) :] = row_input
-                continuation_mask[row_index, -len(row.input_ids) :] = 1
+            continuation_inputs = {
+                key: value.to(device) for key, value in continuation_encoded.items()
+            }
+            continuation_width = int(continuation_inputs["input_ids"].shape[1])
             continuation_rows = _generate(
                 model,
-                model_inputs={
-                    "input_ids": continuation_input,
-                    "attention_mask": continuation_mask,
-                },
+                model_inputs=continuation_inputs,
                 input_width=continuation_width,
                 tokenizer=tokenizer,
                 eos_ids=eos_ids,
@@ -827,24 +819,22 @@ def run_m6_domain_pass(
                     eos_ids,
                     include_eos=True,
                 )
-                response = _decode(
-                    tokenizer,
-                    row.controlled_ids + continuation_ids,
-                )
+                continuation_response = _decode(tokenizer, continuation_ids)
+                response = row.first_response + row.controller_text + continuation_response
                 batch_transcripts[row.item_index] = build_m6_domain_transcript(
                     row.item,
                     mode=mode,
                     prompt=row.prompt,
                     response=response,
-                    first_pass_response=_decode(tokenizer, row.first_ids),
-                    continuation_response=_decode(tokenizer, continuation_ids),
+                    first_pass_response=row.first_response,
+                    continuation_response=continuation_response,
                     controller_action=(
                         "forced_close_continue" if row.forced else "natural_close_continue"
                     ),
                     prompt_tokens=row.prompt_tokens,
                     first_pass_tokens=len(row.first_ids),
                     continuation_tokens=len(continuation_ids),
-                    injected_tokens=len(row.controller_ids),
+                    injected_tokens=row.injected_tokens,
                     finish_reason="eos" if continuation_eos else "length",
                     json_repair_policy=json_repair_policy,
                 )

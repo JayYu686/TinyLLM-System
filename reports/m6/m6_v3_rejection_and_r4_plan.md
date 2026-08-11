@@ -146,3 +146,9 @@ Valid。两者使用相同首段、相同权重和 Greedy，差异来自 BF16 �
 Logit 的确定性选择。部署协议因此进一步固定 Final Answer Batch Size 为 4，与首段 Batch 一致；
 它同时把 300 次续写降为 75 次。Batch Size 进入配置 Hash，禁止在报告中把单样本和批量结果
 混为一组。
+
+Batch 4 正式复验仍只有 `59/260` 和 `30/80`。首段可见文本哈希与离线对照完全一致，进一步
+检查发现 `stop_strings` 会为提前结束的 Batch Row 补不可见 Pad Token；旧路径直接拼接原始
+Token，把这些 Pad 带入续写上下文。离线对照先把可见首段解码后与 Prompt、控制符整体重新
+Tokenize，因此没有隐藏 Pad。最终协议固定为 `qwen3-visible-text-retokenize-v1`：只使用公开
+Prompt、可见首段和已记录控制文本重建续写 Batch，不复制生成张量中的 Pad。

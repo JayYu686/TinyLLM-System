@@ -351,10 +351,22 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
         ) -> dict[str, torch.Tensor]:
             assert padding
             assert return_tensors == "pt"
-            assert all(prompt == "frozen prompt" for prompt in prompts)
+            if all(prompt == "frozen prompt" for prompt in prompts):
+                return {
+                    "input_ids": torch.tensor([[1, 2]] * len(prompts), dtype=torch.long),
+                    "attention_mask": torch.ones((len(prompts), 2), dtype=torch.long),
+                }
+            continuation_rows: list[list[int]] = []
+            for prompt in prompts:
+                if prompt.endswith(EARLY_STOPPING_TEXT):
+                    continuation_rows.append([1, 2, 12, 31])
+                elif prompt.endswith(THINKING_FINAL_SEPARATOR):
+                    continuation_rows.append([1, 2, 11, 32])
+                else:
+                    raise AssertionError("unexpected continuation context")
             return {
-                "input_ids": torch.tensor([[1, 2]] * len(prompts), dtype=torch.long),
-                "attention_mask": torch.ones((len(prompts), 2), dtype=torch.long),
+                "input_ids": torch.tensor(continuation_rows, dtype=torch.long),
+                "attention_mask": torch.ones((len(continuation_rows), 4), dtype=torch.long),
             }
 
         def encode(self, text: str, *, add_special_tokens: bool) -> list[int]:

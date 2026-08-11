@@ -198,3 +198,10 @@ Thinking 首段在首个 `</think>` 自然停止后，控制器必须注入 Qwen
 Final-Answer 分隔符再续写。分隔符的 ID、SHA256、原文与 Token 数均进入配置或私有 Transcript；
 强制闭合路径继续记录完整注入文本。该规则只修复 Chat Template 边界，不读取 Reference、
 不生成答案内容，也不改变采样参数和评分阈值。
+
+Thinking 与 Final Answer 使用分阶段解码：思考首段保留 Qwen3 的 Temperature 0.6、Top-p 0.95、
+Top-k 20 采样；关闭标签后的 Final Answer 固定使用 Greedy，避免重启随机采样造成模板边界
+重复。JSON Syntax-only v2 允许去除包住完整对象的 JSON 代码块、给裸标识符键补引号、规范
+单键箭头/裸词外壳，以及把误缩进一层的必需顶层键提升一级；所有动作只能读取 Prompt 中公开的
+必需键，不能读取 Reference，不能改写任何叶子值。原始答案、原始哈希、动作和规范化结果均须
+保留，语义错误继续计为失败。

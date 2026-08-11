@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import random
+import re
 import time
 import uuid
 from collections.abc import Sequence
@@ -171,14 +172,24 @@ def repair_m6_json_answer(
     item: EvaluationItem,
     answer: str,
     *,
-    enabled: bool,
+    policy: Literal["json-syntax-only-v1", "json-syntax-only-v2"] | None,
 ) -> tuple[
     str,
-    Literal["none", "wrap_single_key", "brace_member_fragment", "close_object"],
+    Literal[
+        "none",
+        "wrap_single_key",
+        "brace_member_fragment",
+        "close_object",
+        "unwrap_json_fence",
+        "quote_bare_keys",
+        "arrow_single_key",
+        "wrap_bareword_single_key",
+        "promote_required_keys",
+    ],
 ]:
     """Repair only a JSON object's syntax shell without changing any decoded leaf value."""
 
-    if not enabled or item.scorer.kind != "json_object":
+    if policy is None or item.scorer.kind != "json_object":
         return answer, "none"
     required_keys = tuple(item.scorer.required_keys)
     stripped = answer.strip()
@@ -187,6 +198,31 @@ def repair_m6_json_answer(
     except json.JSONDecodeError:
         decoded = None
     if isinstance(decoded, dict):
+        if set(required_keys).issubset(decoded):
+            return answer, "none"
+        if policy == "json-syntax-only-v2":
+            missing = tuple(key for key in required_keys if key not in decoded)
+            containers = tuple(
+                (key, value)
+                for key, value in decoded.items()
+                if isinstance(value, dict) and set(missing).issubset(value)
+            )
+            if missing and len(containers) == 1:
+                container_key, container = containers[0]
+                promoted = dict(decoded)
+                retained = dict(container)
+                for key in missing:
+                    promoted[key] = retained.pop(key)
+                promoted[container_key] = retained
+                return (
+                    json.dumps(
+                        promoted,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ),
+                    "promote_required_keys",
+                )
         return answer, "none"
     if decoded is not None and len(required_keys) == 1:
         repaired = {required_keys[0]: decoded}
@@ -194,6 +230,75 @@ def repair_m6_json_answer(
             json.dumps(repaired, ensure_ascii=False, separators=(",", ":"), sort_keys=True),
             "wrap_single_key",
         )
+    if policy == "json-syntax-only-v2":
+        fenced = re.fullmatch(
+            r"```(?:json)?\s*\n?(.*?)\n?```\s*",
+            stripped,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+        if fenced is not None:
+            fenced_value: Any
+            try:
+                fenced_value = json.loads(fenced.group(1).strip())
+            except json.JSONDecodeError:
+                fenced_value = None
+            if isinstance(fenced_value, dict) and set(required_keys).issubset(fenced_value):
+                return (
+                    json.dumps(
+                        fenced_value,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ),
+                    "unwrap_json_fence",
+                )
+        arrow = re.fullmatch(r'\[\s*"([^"\\]+)"\s*\]\s*=>\s*(.+)', stripped, re.DOTALL)
+        if arrow is not None and len(required_keys) == 1 and arrow.group(1) == required_keys[0]:
+            try:
+                value = json.loads(arrow.group(2))
+            except json.JSONDecodeError:
+                value = None
+            if value is not None:
+                return (
+                    json.dumps(
+                        {required_keys[0]: value},
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ),
+                    "arrow_single_key",
+                )
+        if len(required_keys) == 1 and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*", stripped):
+            return (
+                json.dumps(
+                    {required_keys[0]: stripped},
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
+                "wrap_bareword_single_key",
+            )
+        quoted_keys = re.sub(
+            r"(?P<prefix>[{,]\s*)(?P<key>[A-Za-z_][A-Za-z0-9_-]*)(?P<colon>\s*:)",
+            r'\g<prefix>"\g<key>"\g<colon>',
+            stripped,
+        )
+        if quoted_keys != stripped:
+            quoted_value: Any
+            try:
+                quoted_value = json.loads(quoted_keys)
+            except json.JSONDecodeError:
+                quoted_value = None
+            if isinstance(quoted_value, dict) and set(required_keys).issubset(quoted_value):
+                return (
+                    json.dumps(
+                        quoted_value,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ),
+                    "quote_bare_keys",
+                )
     candidates: tuple[tuple[str, Literal["brace_member_fragment", "close_object"]], ...] = (
         (f"{{{stripped}}}", "brace_member_fragment"),
         (f"{stripped}}}", "close_object"),
@@ -230,7 +335,7 @@ def build_m6_domain_transcript(
     continuation_tokens: int,
     injected_tokens: int,
     finish_reason: Literal["eos", "length"],
-    json_repair_enabled: bool = False,
+    json_repair_policy: Literal["json-syntax-only-v1", "json-syntax-only-v2"] | None = None,
 ) -> M6DomainTranscript:
     """Parse and score one transcript without fabricating human-rubric judgments."""
 
@@ -238,7 +343,7 @@ def build_m6_domain_transcript(
     final_answer, repair_action = repair_m6_json_answer(
         item,
         raw_final_answer,
-        enabled=json_repair_enabled and format_valid,
+        policy=json_repair_policy if format_valid else None,
     )
     scored = score_domain_response(
         item,
@@ -611,7 +716,11 @@ def run_m6_domain_pass(
                         continuation_tokens=0,
                         injected_tokens=0,
                         finish_reason="eos" if first_eos else "length",
-                        json_repair_enabled=output_control is not None,
+                        json_repair_policy=(
+                            output_control.json_repair_policy
+                            if output_control is not None
+                            else None
+                        ),
                     )
                 )
                 continue
@@ -631,7 +740,11 @@ def run_m6_domain_pass(
                         continuation_tokens=0,
                         injected_tokens=0,
                         finish_reason="eos",
-                        json_repair_enabled=output_control is not None,
+                        json_repair_policy=(
+                            output_control.json_repair_policy
+                            if output_control is not None
+                            else None
+                        ),
                     )
                 )
                 continue
@@ -658,10 +771,22 @@ def run_m6_domain_pass(
                 eos_ids=eos_ids,
                 seed=generation.thinking.seed + 2_000_000 + offset + item_index,
                 max_new_tokens=generation.thinking.final_answer_max_new_tokens,
-                do_sample=True,
-                temperature=generation.thinking.temperature,
-                top_p=generation.thinking.top_p,
-                top_k=generation.thinking.top_k,
+                do_sample=generation.thinking.final_answer_do_sample,
+                temperature=(
+                    generation.thinking.temperature
+                    if generation.thinking.final_answer_do_sample
+                    else None
+                ),
+                top_p=(
+                    generation.thinking.top_p
+                    if generation.thinking.final_answer_do_sample
+                    else None
+                ),
+                top_k=(
+                    generation.thinking.top_k
+                    if generation.thinking.final_answer_do_sample
+                    else None
+                ),
             )
             continuation_ids, continuation_eos = _trim_at_eos(
                 continuation_rows[0],
@@ -685,7 +810,9 @@ def run_m6_domain_pass(
                     continuation_tokens=len(continuation_ids),
                     injected_tokens=len(controller_ids),
                     finish_reason="eos" if continuation_eos else "length",
-                    json_repair_enabled=output_control is not None,
+                    json_repair_policy=(
+                        output_control.json_repair_policy if output_control is not None else None
+                    ),
                 )
             )
     raw_path = output_dir / "results.jsonl"

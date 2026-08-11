@@ -230,7 +230,8 @@ def test_m6_v4_release_keeps_gate_and_binds_sealed_final_audit() -> None:
     assert config.bootstrap.seed == config.domain_execution.thinking.seed == 20260812
     assert config.gate == load_m6_release_config(Path("configs/eval/m6_release.yaml")).gate
     assert config.domain_execution.output_control is not None
-    assert config.domain_execution.output_control.json_repair_policy == "json-syntax-only-v1"
+    assert config.domain_execution.output_control.json_repair_policy == "json-syntax-only-v2"
+    assert config.domain_execution.thinking.final_answer_do_sample is False
     assert (
         config.domain_execution.output_control.thinking_final_separator_id
         == "qwen3-thinking-final-separator-v1"

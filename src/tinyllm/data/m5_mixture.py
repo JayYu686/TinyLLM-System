@@ -898,27 +898,28 @@ def open_m5_ablation_mixture(root: Path) -> OpenM5Mixture:
                     }
                 )
             elif isinstance(manifest, M6DomainGeneralizationMixtureManifest):
-                expected_content = content_sha256(
-                    {
-                        "arrays_sha256": arrays_hash,
-                        "authored_source_sha256": manifest.authored_source_sha256,
-                        "build_seed": manifest.build_seed,
-                        "diagnostic_protocol_version": manifest.diagnostic_protocol_version,
-                        "domain_nonthinking_supervised_tokens": (
-                            manifest.domain_nonthinking_supervised_tokens
-                        ),
-                        "domain_thinking_supervised_tokens": (
-                            manifest.domain_thinking_supervised_tokens
-                        ),
-                        "general_nonthinking_supervised_tokens": (
-                            manifest.general_nonthinking_supervised_tokens
-                        ),
-                        "nonthinking_template_sha256": manifest.nonthinking_template_sha256,
-                        "parent_content_sha256": manifest.parent_content_sha256,
-                        "thinking_template_sha256": manifest.thinking_template_sha256,
-                        "training_value_offsets": manifest.training_value_offsets,
-                    }
-                )
+                identity: dict[str, object] = {
+                    "arrays_sha256": arrays_hash,
+                    "authored_source_sha256": manifest.authored_source_sha256,
+                    "build_seed": manifest.build_seed,
+                    "diagnostic_protocol_version": manifest.diagnostic_protocol_version,
+                    "domain_nonthinking_supervised_tokens": (
+                        manifest.domain_nonthinking_supervised_tokens
+                    ),
+                    "domain_thinking_supervised_tokens": (
+                        manifest.domain_thinking_supervised_tokens
+                    ),
+                    "general_nonthinking_supervised_tokens": (
+                        manifest.general_nonthinking_supervised_tokens
+                    ),
+                    "nonthinking_template_sha256": manifest.nonthinking_template_sha256,
+                    "parent_content_sha256": manifest.parent_content_sha256,
+                    "thinking_template_sha256": manifest.thinking_template_sha256,
+                    "training_value_offsets": manifest.training_value_offsets,
+                }
+                if manifest.refinement is not None:
+                    identity["refinement"] = manifest.refinement
+                expected_content = content_sha256(identity)
             else:
                 expected_content = content_sha256(
                     {

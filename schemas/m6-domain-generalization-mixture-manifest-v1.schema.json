@@ -48,7 +48,10 @@
       "type": "string"
     },
     "authored_source_tasks": {
-      "const": 900,
+      "enum": [
+        900,
+        1500
+      ],
       "title": "Authored Source Tasks",
       "type": "integer"
     },
@@ -91,7 +94,10 @@
       "type": "integer"
     },
     "domain_source_pairs": {
-      "const": 900,
+      "enum": [
+        900,
+        1500
+      ],
       "title": "Domain Source Pairs",
       "type": "integer"
     },
@@ -126,7 +132,7 @@
       "type": "integer"
     },
     "mixture_version": {
-      "pattern": "^m6-domain-generalization-mixture-v1-[0-9a-f]{8}$",
+      "pattern": "^m6-domain-generalization-mixture-v[12]-[0-9a-f]{8}$",
       "title": "Mixture Version",
       "type": "string"
     },
@@ -170,6 +176,19 @@
       "minimum": 0,
       "title": "Partially Masked Sequences",
       "type": "integer"
+    },
+    "refinement": {
+      "anyOf": [
+        {
+          "const": "json-object-and-evidence-refusal",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Refinement"
     },
     "schema_version": {
       "const": "1.0",

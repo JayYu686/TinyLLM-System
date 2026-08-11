@@ -219,7 +219,8 @@
         "m6-dual-mode-correction",
         "m6-gate-repair",
         "m6-gate-replay",
-        "m6-domain-generalization"
+        "m6-domain-generalization",
+        "m6-domain-contract-refinement"
       ],
       "title": "Source Kind",
       "type": "string"

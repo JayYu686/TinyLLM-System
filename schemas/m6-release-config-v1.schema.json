@@ -30,7 +30,8 @@
             20260810,
             20260811,
             20260812,
-            20260813
+            20260813,
+            20260814
           ],
           "title": "Seed",
           "type": "integer"
@@ -379,6 +380,43 @@
           "default": null,
           "title": "Json Schema Policy"
         },
+        "nonthinking_stop_policy": {
+          "anyOf": [
+            {
+              "const": "truncate-before-first-thinking-tag-v1",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nonthinking Stop Policy"
+        },
+        "nonthinking_stop_strings": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "const": "<think>",
+                  "type": "string"
+                },
+                {
+                  "const": "</think>",
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nonthinking Stop Strings"
+        },
         "thinking_continuation_context_id": {
           "const": "qwen3-visible-text-retokenize-v1",
           "title": "Thinking Continuation Context Id",
@@ -454,7 +492,8 @@
             20260810,
             20260811,
             20260812,
-            20260813
+            20260813,
+            20260814
           ],
           "title": "Seed",
           "type": "integer"
@@ -588,7 +627,8 @@
         "m6-release-v2",
         "m6-release-v3",
         "m6-release-v4",
-        "m6-release-v5"
+        "m6-release-v5",
+        "m6-release-v6"
       ],
       "title": "Protocol Version",
       "type": "string"
@@ -605,7 +645,8 @@
         "c0c948cc5282cfaa15baae689ddf0bf51c0d59ece6e01554df480bc16a6d3842",
         "2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2",
         "bac25144d53d186693514f6a421e3894a820bddb039c75ca29c2484190b7913a",
-        "3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe"
+        "3e5fffd7d408a6d2d237f4da7f5e3ecfb72523bd5f9e42b6e74f24e9199b1bfe",
+        "c34f63a87c05910f421db19c71eede7368328028f81bbf08870070bb2fba6002"
       ],
       "title": "Suite Content Sha256",
       "type": "string"
@@ -616,7 +657,8 @@
         "tinyllm-domain-holdout-v1-c0c948cc",
         "tinyllm-domain-holdout-v1-2b167ce6",
         "tinyllm-domain-final-audit-v1-bac25144",
-        "tinyllm-domain-json-audit-v1-3e5fffd7"
+        "tinyllm-domain-json-audit-v1-3e5fffd7",
+        "tinyllm-domain-output-boundary-audit-v1-c34f63a8"
       ],
       "title": "Suite Version",
       "type": "string"

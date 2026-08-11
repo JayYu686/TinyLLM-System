@@ -186,6 +186,7 @@ def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path
         "tinyllm-domain-holdout-v1-2b167ce6": Path("evals/domain/v3/items.jsonl"),
         "tinyllm-domain-final-audit-v1-bac25144": Path("evals/domain/v4/items.jsonl"),
         "tinyllm-domain-json-audit-v1-3e5fffd7": Path("evals/domain/v5/items.jsonl"),
+        "tinyllm-domain-output-boundary-audit-v1-c34f63a8": Path("evals/domain/v6/items.jsonl"),
     }[suite_version]
     return project_root / relative
 
@@ -258,6 +259,13 @@ def _trim_at_eos(
     return token_ids, False
 
 
+def _trim_trailing_pad(raw_ids: Sequence[int], pad_token_id: int) -> list[int]:
+    token_ids = list(raw_ids)
+    while token_ids and token_ids[-1] == pad_token_id:
+        token_ids.pop()
+    return token_ids
+
+
 def _decode(tokenizer: Any, token_ids: Sequence[int]) -> str:
     return str(
         tokenizer.decode(
@@ -272,10 +280,18 @@ def parse_m6_final_answer(
     response: str,
     *,
     mode: Literal["thinking", "nonthinking"],
+    nonthinking_stop_policy: Literal["truncate-before-first-thinking-tag-v1"] | None = None,
 ) -> tuple[str, bool, bool]:
     """Return final answer, controlled-format state, and visible-reasoning leakage."""
 
     if mode == "nonthinking":
+        if nonthinking_stop_policy is not None:
+            tag_offsets = tuple(
+                offset for tag in ("<think>", "</think>") if (offset := response.find(tag)) >= 0
+            )
+            if tag_offsets:
+                answer = response[: min(tag_offsets)].strip()
+                return answer, bool(answer), False
         answer = response.strip()
         leakage = "<think>" in answer or "</think>" in answer
         return answer, bool(answer) and not leakage, leakage
@@ -486,7 +502,7 @@ def build_m6_domain_transcript(
     first_pass_tokens: int,
     continuation_tokens: int,
     injected_tokens: int,
-    finish_reason: Literal["eos", "length"],
+    finish_reason: Literal["eos", "length", "stop_string"],
     json_repair_policy: Literal[
         "json-syntax-only-v1",
         "json-syntax-only-v2",
@@ -495,21 +511,27 @@ def build_m6_domain_transcript(
     | None = None,
     json_constraint_id: Literal["xgrammar-json-shape-v1"] | None = None,
     json_constraint_schema_sha256: str | None = None,
+    nonthinking_stop_policy: Literal["truncate-before-first-thinking-tag-v1"] | None = None,
 ) -> M6DomainTranscript:
     """Parse and score one transcript without fabricating human-rubric judgments."""
 
-    raw_final_answer, format_valid, leakage = parse_m6_final_answer(response, mode=mode)
+    raw_final_answer, format_valid, leakage = parse_m6_final_answer(
+        response,
+        mode=mode,
+        nonthinking_stop_policy=nonthinking_stop_policy,
+    )
     final_answer, repair_action = repair_m6_json_answer(
         item,
         raw_final_answer,
         policy=json_repair_policy if format_valid else None,
     )
+    score_finish_reason = "eos" if finish_reason == "stop_string" else finish_reason
     scored = score_domain_response(
         item,
         final_answer,
         prompt_tokens=prompt_tokens,
         generated_tokens=first_pass_tokens + continuation_tokens,
-        finish_reason=finish_reason,
+        finish_reason=score_finish_reason,
     )
     automatic_correct = scored.automatic_correct
     if automatic_correct is not None:
@@ -542,6 +564,11 @@ def build_m6_domain_transcript(
         output_repair_action=repair_action,
         json_constraint_id=json_constraint_id,
         json_constraint_schema_sha256=json_constraint_schema_sha256,
+        nonthinking_tag_truncated=(
+            mode == "nonthinking"
+            and nonthinking_stop_policy is not None
+            and any(tag in response for tag in ("<think>", "</think>"))
+        ),
         prompt_tokens=prompt_tokens,
         first_pass_tokens=first_pass_tokens,
         continuation_tokens=continuation_tokens,
@@ -711,6 +738,7 @@ def _summary(
         json_valid_items=sum(item.json_valid is True for item in transcripts),
         json_repaired_items=sum(item.output_repair_action != "none" for item in transcripts),
         json_constrained_items=sum(item.json_constraint_id is not None for item in transcripts),
+        nonthinking_truncated_items=sum(item.nonthinking_tag_truncated for item in transcripts),
         format_valid_items=sum(item.format_valid for item in transcripts),
         visible_reasoning_leakage_items=sum(item.visible_reasoning_leakage for item in transcripts),
         natural_thinking_closed_items=sum(item.natural_thinking_closed for item in transcripts),
@@ -878,7 +906,13 @@ def run_m6_domain_pass(
             temperature=generation.thinking.temperature if mode == "thinking" else None,
             top_p=generation.thinking.top_p if mode == "thinking" else None,
             top_k=generation.thinking.top_k if mode == "thinking" else None,
-            stop_strings=("</think>",) if mode == "thinking" else None,
+            stop_strings=(
+                ("</think>",)
+                if mode == "thinking"
+                else (
+                    output_control.nonthinking_stop_strings if output_control is not None else None
+                )
+            ),
             logits_processor=(
                 (first_logits_processor,) if first_logits_processor is not None else None
             ),
@@ -898,9 +932,21 @@ def run_m6_domain_pass(
                 strict=True,
             )
         ):
-            first_ids, first_eos = _trim_at_eos(raw_ids, eos_ids, include_eos=True)
+            prepared_ids = list(raw_ids)
+            if (
+                mode == "nonthinking"
+                and output_control is not None
+                and output_control.nonthinking_stop_policy is not None
+            ):
+                prepared_ids = _trim_trailing_pad(prepared_ids, tokenizer.pad_token_id)
+            first_ids, first_eos = _trim_at_eos(prepared_ids, eos_ids, include_eos=True)
             first_response = _decode(tokenizer, first_ids)
             if mode == "nonthinking":
+                stopped_at_tag = (
+                    output_control is not None
+                    and output_control.nonthinking_stop_policy is not None
+                    and any(tag in first_response for tag in ("<think>", "</think>"))
+                )
                 batch_transcripts[item_index] = build_m6_domain_transcript(
                     item,
                     mode=mode,
@@ -913,7 +959,9 @@ def run_m6_domain_pass(
                     first_pass_tokens=len(first_ids),
                     continuation_tokens=0,
                     injected_tokens=0,
-                    finish_reason="eos" if first_eos else "length",
+                    finish_reason=(
+                        "stop_string" if stopped_at_tag else ("eos" if first_eos else "length")
+                    ),
                     json_repair_policy=json_repair_policy,
                     json_constraint_id=(
                         json_constraint_runtime.decoder_id
@@ -921,6 +969,11 @@ def run_m6_domain_pass(
                         else None
                     ),
                     json_constraint_schema_sha256=schema_sha256,
+                    nonthinking_stop_policy=(
+                        output_control.nonthinking_stop_policy
+                        if output_control is not None
+                        else None
+                    ),
                 )
                 continue
             natural_close = "</think>" in first_response

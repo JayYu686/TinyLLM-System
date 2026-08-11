@@ -230,3 +230,13 @@ Base 与 Candidate 必须使用完全相同的逐题 Schema。配置记录解码
 私有 Transcript 记录逐题 Schema SHA256，Summary 必须证明 80 条 JSON 全部经过约束。依赖
 缺失、版本漂移、不同 Scorer 混批或 JSON 任务绕过约束时，评测失败关闭。v5 仍只允许一次
 完整正式审计；v4 的 9 条失败重放仅用于选择解码机制，不得作为 v5 成绩。
+
+v5 Candidate Non-thinking 达到 `80/80` JSON，但一条正确标量答案后继续生成 `</think>`，
+造成可见泄漏 `1/300`，因此 v5 在首路后即机械拒绝，其余三路不再执行。v5 原始证据不可修改。
+
+v6 在实现停止策略前冻结为 `tinyllm-domain-output-boundary-audit-v1-c34f63a8`，内容 SHA256
+为 `c34f63a87c05910f421db19c71eede7368328028f81bbf08870070bb2fba6002`；与 v1–v5 完整
+Prompt 交集为 0。v6 固定增加 `truncate-before-first-thinking-tag-v1`：Non-thinking 在首次
+生成 `<think>` 或 `</think>` 时停止，只发布标签前文本。私有 Transcript 必须保留原始文本、
+停止原因和截断动作；空前缀或错误前缀仍按原评分器失败。该策略不用于 Thinking，不修改模型
+权重、答案正文、JSON Schema 或门禁阈值。

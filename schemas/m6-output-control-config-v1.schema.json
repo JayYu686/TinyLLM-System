@@ -60,6 +60,43 @@
       "default": null,
       "title": "Json Schema Policy"
     },
+    "nonthinking_stop_policy": {
+      "anyOf": [
+        {
+          "const": "truncate-before-first-thinking-tag-v1",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Nonthinking Stop Policy"
+    },
+    "nonthinking_stop_strings": {
+      "anyOf": [
+        {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "const": "<think>",
+              "type": "string"
+            },
+            {
+              "const": "</think>",
+              "type": "string"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Nonthinking Stop Strings"
+    },
     "thinking_continuation_context_id": {
       "const": "qwen3-visible-text-retokenize-v1",
       "title": "Thinking Continuation Context Id",

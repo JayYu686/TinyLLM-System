@@ -66,6 +66,11 @@ def test_m6_final_answer_parser_separates_modes_and_rejects_leakage() -> None:
         True,
     )
     assert parse_m6_final_answer("unfinished", mode="thinking") == ("", False, False)
+    assert parse_m6_final_answer(
+        "answer\n\n</think>\n\nprivate continuation",
+        mode="nonthinking",
+        nonthinking_stop_policy="truncate-before-first-thinking-tag-v1",
+    ) == ("answer", True, False)
 
 
 def test_m6_transcript_scores_only_final_answer() -> None:
@@ -89,6 +94,42 @@ def test_m6_transcript_scores_only_final_answer() -> None:
     assert result.final_answer == item.reference_answer
     assert result.automatic_correct is True
     assert result.format_valid is True
+
+
+def test_m6_nonthinking_stop_boundary_retains_raw_evidence_and_scores_prefix() -> None:
+    item = load_evaluation_items(Path("evals/domain/v6/items.jsonl"))[80]
+    assert item.scorer.kind == "exact_match"
+    response = f"{item.reference_answer}\n\n</think>\n\nprivate continuation"
+    result = build_m6_domain_transcript(
+        item,
+        mode="nonthinking",
+        prompt="prompt",
+        response=response,
+        first_pass_response=response,
+        continuation_response="",
+        controller_action="not_applicable",
+        prompt_tokens=10,
+        first_pass_tokens=20,
+        continuation_tokens=0,
+        injected_tokens=0,
+        finish_reason="stop_string",
+        nonthinking_stop_policy="truncate-before-first-thinking-tag-v1",
+    )
+
+    assert result.response == response
+    assert result.final_answer == item.reference_answer
+    assert result.automatic_correct is True
+    assert result.format_valid is True
+    assert result.visible_reasoning_leakage is False
+    assert result.nonthinking_tag_truncated is True
+
+    with pytest.raises(ValueError, match="truncation evidence is invalid"):
+        type(result).model_validate(result.to_dict() | {"finish_reason": "eos"})
+
+
+def test_m6_trailing_stop_padding_is_removed() -> None:
+    assert m6_domain_module._trim_trailing_pad([1, 2, 0, 0], 0) == [1, 2]
+    assert m6_domain_module._trim_trailing_pad([1, 2], 0) == [1, 2]
 
 
 def test_m6_json_repair_changes_only_the_syntax_shell_and_retains_raw_answer() -> None:

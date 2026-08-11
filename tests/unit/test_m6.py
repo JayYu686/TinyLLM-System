@@ -232,6 +232,7 @@ def test_m6_v4_release_keeps_gate_and_binds_sealed_final_audit() -> None:
     assert config.domain_execution.output_control is not None
     assert config.domain_execution.output_control.json_repair_policy == "json-syntax-only-v2"
     assert config.domain_execution.thinking.final_answer_do_sample is False
+    assert config.domain_execution.thinking.final_answer_batch_size == 4
     assert (
         config.domain_execution.output_control.thinking_final_separator_id
         == "qwen3-thinking-final-separator-v1"

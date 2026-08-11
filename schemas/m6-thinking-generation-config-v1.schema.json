@@ -17,6 +17,13 @@
       "title": "Early Stopping Text",
       "type": "string"
     },
+    "final_answer_batch_size": {
+      "default": 1,
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Final Answer Batch Size",
+      "type": "integer"
+    },
     "final_answer_do_sample": {
       "default": true,
       "title": "Final Answer Do Sample",

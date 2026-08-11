@@ -11,6 +11,7 @@ import re
 import time
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -59,6 +60,21 @@ EVIDENCE_GROUNDING_SYSTEM_PROMPT = (
     "根因；必须明确说明现有证据不足，并请求题目列出的全部缺失证据。"
 )
 THINKING_FINAL_SEPARATOR = "\n\n"
+
+
+@dataclass(frozen=True)
+class _PendingContinuation:
+    """One Thinking result awaiting the batched Final-Answer generation stage."""
+
+    item_index: int
+    item: EvaluationItem
+    prompt: str
+    prompt_tokens: int
+    first_ids: list[int]
+    controlled_ids: list[int]
+    controller_ids: list[int]
+    forced: bool
+    input_ids: list[int]
 
 
 def _suite_items_path(project_root: Path, suite_version: M6SuiteVersion) -> Path:
@@ -696,56 +712,49 @@ def run_m6_domain_pass(
             top_k=generation.thinking.top_k if mode == "thinking" else None,
             stop_strings=("</think>",) if mode == "thinking" else None,
         )
+        batch_transcripts: list[M6DomainTranscript | None] = [None] * len(batch_items)
+        pending: list[_PendingContinuation] = []
+        json_repair_policy = (
+            output_control.json_repair_policy if output_control is not None else None
+        )
         for item_index, (item, prompt, prompt_tokens, raw_ids) in enumerate(
             zip(batch_items, prompts, prompt_lengths, first_rows, strict=True)
         ):
             first_ids, first_eos = _trim_at_eos(raw_ids, eos_ids, include_eos=True)
             first_response = _decode(tokenizer, first_ids)
             if mode == "nonthinking":
-                transcripts.append(
-                    build_m6_domain_transcript(
-                        item,
-                        mode=mode,
-                        prompt=prompt,
-                        response=first_response,
-                        first_pass_response=first_response,
-                        continuation_response="",
-                        controller_action="not_applicable",
-                        prompt_tokens=prompt_tokens,
-                        first_pass_tokens=len(first_ids),
-                        continuation_tokens=0,
-                        injected_tokens=0,
-                        finish_reason="eos" if first_eos else "length",
-                        json_repair_policy=(
-                            output_control.json_repair_policy
-                            if output_control is not None
-                            else None
-                        ),
-                    )
+                batch_transcripts[item_index] = build_m6_domain_transcript(
+                    item,
+                    mode=mode,
+                    prompt=prompt,
+                    response=first_response,
+                    first_pass_response=first_response,
+                    continuation_response="",
+                    controller_action="not_applicable",
+                    prompt_tokens=prompt_tokens,
+                    first_pass_tokens=len(first_ids),
+                    continuation_tokens=0,
+                    injected_tokens=0,
+                    finish_reason="eos" if first_eos else "length",
+                    json_repair_policy=json_repair_policy,
                 )
                 continue
             natural_close = "</think>" in first_response
             if natural_close and first_eos:
-                transcripts.append(
-                    build_m6_domain_transcript(
-                        item,
-                        mode=mode,
-                        prompt=prompt,
-                        response=first_response,
-                        first_pass_response=first_response,
-                        continuation_response="",
-                        controller_action="natural_complete",
-                        prompt_tokens=prompt_tokens,
-                        first_pass_tokens=len(first_ids),
-                        continuation_tokens=0,
-                        injected_tokens=0,
-                        finish_reason="eos",
-                        json_repair_policy=(
-                            output_control.json_repair_policy
-                            if output_control is not None
-                            else None
-                        ),
-                    )
+                batch_transcripts[item_index] = build_m6_domain_transcript(
+                    item,
+                    mode=mode,
+                    prompt=prompt,
+                    response=first_response,
+                    first_pass_response=first_response,
+                    continuation_response="",
+                    controller_action="natural_complete",
+                    prompt_tokens=prompt_tokens,
+                    first_pass_tokens=len(first_ids),
+                    continuation_tokens=0,
+                    injected_tokens=0,
+                    finish_reason="eos",
+                    json_repair_policy=json_repair_policy,
                 )
                 continue
             prompt_row = model_inputs["input_ids"][item_index]
@@ -755,21 +764,45 @@ def run_m6_domain_pass(
             forced = not natural_close
             controller_ids = injection_ids if forced else separator_ids
             controlled_ids = first_for_continue + controller_ids
-            continuation_input = torch.tensor(
-                [unpadded_prompt + controlled_ids],
+            pending.append(
+                _PendingContinuation(
+                    item_index=item_index,
+                    item=item,
+                    prompt=prompt,
+                    prompt_tokens=prompt_tokens,
+                    first_ids=first_ids,
+                    controlled_ids=controlled_ids,
+                    controller_ids=controller_ids,
+                    forced=forced,
+                    input_ids=unpadded_prompt + controlled_ids,
+                )
+            )
+
+        final_batch_size = generation.thinking.final_answer_batch_size
+        for pending_offset in range(0, len(pending), final_batch_size):
+            pending_batch = pending[pending_offset : pending_offset + final_batch_size]
+            continuation_width = max(len(row.input_ids) for row in pending_batch)
+            continuation_input = torch.full(
+                (len(pending_batch), continuation_width),
+                fill_value=int(tokenizer.pad_token_id),
                 dtype=torch.long,
                 device=device,
             )
+            continuation_mask = torch.zeros_like(continuation_input)
+            for row_index, row in enumerate(pending_batch):
+                row_input = torch.tensor(row.input_ids, dtype=torch.long, device=device)
+                continuation_input[row_index, -len(row.input_ids) :] = row_input
+                continuation_mask[row_index, -len(row.input_ids) :] = 1
             continuation_rows = _generate(
                 model,
                 model_inputs={
                     "input_ids": continuation_input,
-                    "attention_mask": torch.ones_like(continuation_input),
+                    "attention_mask": continuation_mask,
                 },
-                input_width=int(continuation_input.shape[1]),
+                input_width=continuation_width,
                 tokenizer=tokenizer,
                 eos_ids=eos_ids,
-                seed=generation.thinking.seed + 2_000_000 + offset + item_index,
+                seed=(generation.thinking.seed + 2_000_000 + offset + pending_batch[0].item_index),
                 max_new_tokens=generation.thinking.final_answer_max_new_tokens,
                 do_sample=generation.thinking.final_answer_do_sample,
                 temperature=(
@@ -788,33 +821,36 @@ def run_m6_domain_pass(
                     else None
                 ),
             )
-            continuation_ids, continuation_eos = _trim_at_eos(
-                continuation_rows[0],
-                eos_ids,
-                include_eos=True,
-            )
-            response = _decode(tokenizer, controlled_ids + continuation_ids)
-            transcripts.append(
-                build_m6_domain_transcript(
-                    item,
+            for row, raw_continuation in zip(pending_batch, continuation_rows, strict=True):
+                continuation_ids, continuation_eos = _trim_at_eos(
+                    raw_continuation,
+                    eos_ids,
+                    include_eos=True,
+                )
+                response = _decode(
+                    tokenizer,
+                    row.controlled_ids + continuation_ids,
+                )
+                batch_transcripts[row.item_index] = build_m6_domain_transcript(
+                    row.item,
                     mode=mode,
-                    prompt=prompt,
+                    prompt=row.prompt,
                     response=response,
-                    first_pass_response=first_response,
+                    first_pass_response=_decode(tokenizer, row.first_ids),
                     continuation_response=_decode(tokenizer, continuation_ids),
                     controller_action=(
-                        "forced_close_continue" if forced else "natural_close_continue"
+                        "forced_close_continue" if row.forced else "natural_close_continue"
                     ),
-                    prompt_tokens=prompt_tokens,
-                    first_pass_tokens=len(first_ids),
+                    prompt_tokens=row.prompt_tokens,
+                    first_pass_tokens=len(row.first_ids),
                     continuation_tokens=len(continuation_ids),
-                    injected_tokens=len(controller_ids),
+                    injected_tokens=len(row.controller_ids),
                     finish_reason="eos" if continuation_eos else "length",
-                    json_repair_policy=(
-                        output_control.json_repair_policy if output_control is not None else None
-                    ),
+                    json_repair_policy=json_repair_policy,
                 )
-            )
+        if any(item is None for item in batch_transcripts):
+            raise M6DomainError("M6 domain batch did not produce every transcript")
+        transcripts.extend(cast(M6DomainTranscript, item) for item in batch_transcripts)
     raw_path = output_dir / "results.jsonl"
     ordered = tuple(transcripts)
     if tuple(item.item_id for item in ordered) != tuple(item.id for item in items):

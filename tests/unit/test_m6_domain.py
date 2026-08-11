@@ -389,7 +389,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
     class FakeModel:
         def __init__(self) -> None:
             self.first_batches = 0
-            self.continuation_tail_ids: list[int] = []
+            self.continuation_tail_ids: list[list[int]] = []
 
         def to(self, device: torch.device) -> FakeModel:
             assert device.type == "cpu"
@@ -415,7 +415,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
             else:
                 assert "stop_strings" not in kwargs
                 assert kwargs["do_sample"] is False
-                self.continuation_tail_ids.append(int(inputs[0, -1]))
+                self.continuation_tail_ids.append([int(value) for value in inputs[:, -1].tolist()])
                 rows = [[20, 99] for _ in range(inputs.shape[0])]
             generated = torch.tensor(rows, dtype=torch.long)
             return torch.cat((inputs, generated), dim=1)
@@ -492,7 +492,7 @@ def test_m6_domain_pass_exercises_controller_and_writes_bound_evidence(
     assert result.peak_allocated_bytes == 123
     assert result.physical_gpu_index == 5
     assert model.first_batches == 75
-    assert model.continuation_tail_ids == ([32, 31] if mode == "thinking" else [])
+    assert model.continuation_tail_ids == ([[32, 31]] if mode == "thinking" else [])
     assert (output / "environment.json").is_file()
     assert (output / "hardware.json").is_file()
     assert (output / "results.jsonl").is_file()

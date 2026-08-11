@@ -23,6 +23,7 @@ domain_execution:
     final_answer_max_new_tokens: 512
     do_sample: true
     final_answer_do_sample: false
+    final_answer_batch_size: 4
     temperature: 0.6
     top_p: 0.95
     top_k: 20

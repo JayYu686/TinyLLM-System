@@ -52,8 +52,9 @@ flowchart LR
     subgraph Delivery["质量与交付"]
         E[冻结评测]
         G[Candidate Gate]
+        Q[Candidate 注册]
         I[推理性能门禁]
-        V[模型注册与版本晋级]
+        V[Production 晋级]
     end
 
     D --> P
@@ -69,7 +70,8 @@ flowchart LR
     H --> A
     A --> E
     E --> G
-    G --> I
+    G --> Q
+    Q --> I
     I --> V
 ```
 
@@ -148,7 +150,7 @@ sequenceDiagram
 | M3 DDP | 已完成 | 初始化、Sampler、Loss Reduce、Rank 故障恢复和真实 1/2/4 卡扩展 |
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
 | M5 双模式 SFT | 已完成 | 0.6B 四卡 Full SFT 50M Token 与 8B BF16 LoRA 10M Token；两条路线均完成 Exact Resume、双模式评测和导出 |
-| M6 评测与晋级 | 修复中 | v1 真实门禁有效拒绝首个 0.6B Candidate；已定位双模式 SFT 模板错位并启动独立 v2 修复批次 |
+| M6 评测与晋级 | 已完成 | 独立 v7 双模式评测与 160 条人工审查；11/11 门禁通过；0.6B Full-SFT 注册为 Candidate |
 | M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
 | M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |
 
@@ -191,10 +193,12 @@ sequenceDiagram
   [Qwen3-8B LoRA 正式验收](reports/m5/m5_lora_formal.md)、
   [M5 总验收](reports/m5/m5_acceptance.md)与
   [英文公开摘要](reports/m5/m5_public_summary.en.md)
-- [M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)、
-  [M6.1 Base 证据复用与执行准备](reports/m6/m6_base_evidence.md)、
-  [M6 v1 门禁拒绝分析](reports/m6/m6_gate_rejection_analysis.md)与
-  [双模式模板对齐决策](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md)
+- [M6 总验收](reports/m6/m6_acceptance.md)、
+  [M6 英文公开摘要](reports/m6/m6_public_summary.en.md)、
+  [M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)、
+  [M6 v1 门禁拒绝分析](reports/m6/m6_gate_rejection_analysis.md)、
+  [双模式模板对齐决策](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md)与
+  [10 分钟中文演示](docs/demo_m6.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -280,15 +284,15 @@ tinyllm doctor --distributed --json
 tinyllm doctor
 tinyllm data prepare|inspect
 tinyllm train
-tinyllm run list|show|reproduce
+tinyllm run rebuild|list|show
 tinyllm benchmark train
 tinyllm eval
 tinyllm compare
 tinyllm promote
-tinyllm plan
-tinyllm serve
-tinyllm benchmark inference
 ```
+
+M7/M8 将增加 `tinyllm serve`、`tinyllm benchmark inference`、`tinyllm plan` 和完整的
+`tinyllm run reproduce`。计划接口不会混入当前已交付命令列表。
 
 命令提供稳定 `--json` 输出，便于 Shell、CI 和后续服务集成：
 
@@ -377,7 +381,18 @@ M6 使用 ARC-Easy、HellaSwag、PIQA 和冻结的 300 条领域集比较 Base �
 Python、Linux、JSON/配置、日志诊断和无依据拒答，保存 Prompt Template、Tokenizer
 Revision、解码配置、原始输出、评分依据和 Bootstrap 95% 置信区间。
 
-Candidate Gate 的预注册目标包括：
+最终 v7 Candidate Gate 的真实结果为：
+
+| 指标 | Base | Candidate | 变化或结果 |
+| -- | --: | --: | -- |
+| Thinking 领域分数 | 34.33% | 41.67% | +7.34pp；95% CI `[+0.33, +14.29]pp` |
+| Non-thinking 领域分数 | 22.33% | 40.67% | +18.34pp；95% CI `[+12.46, +24.40]pp` |
+| 通用三任务等权 `acc_norm` | 51.80% | 54.48% | +2.68pp |
+| Candidate 双模式 JSON Valid | — | 100% | 通过 |
+| Thinking 格式/强制闭合 | — | 100% / 1.67% | 通过 |
+| Non-thinking 可见推理泄漏 | — | 0/300 | 通过 |
+
+预注册门禁要求：
 
 - Thinking 与 Non-thinking 分别相对同模式 Base 提升至少 3 个百分点，且各自的 Cluster
   Bootstrap 95% 置信区间下界大于零；
@@ -386,13 +401,14 @@ Candidate Gate 的预注册目标包括：
 - Thinking 格式有效率达到 99% 且强制收束率不超过 10%，Non-thinking 可见推理泄漏为零；
 - 数据、模型、Checkpoint、环境和评测血缘完整。
 
-门禁拒绝的模型保留 Development 状态，并记录回退指标和失败样例。Candidate 通过 M7 的真实
-推理性能门禁后，才具备 Production 晋级条件。
+v1–v6 的拒绝证据保持不可变；v7 完成 160/160 人工复核并通过 11/11 门禁，模型已注册为
+`qwen3-0-6b-m6-d16c2357` Candidate。Candidate 通过 M7 的真实推理性能门禁后，才具备
+Production 晋级条件。
 
 ## 核心边界与后续研究
 
-当前核心版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、模型晋级和推理
-部署。以下方向位于后续研究清单：
+当前核心版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测和 Candidate 模型晋级；
+推理部署与 Production Gate 由 M7 交付。以下方向位于后续研究清单：
 
 - MoE、Pipeline Parallel 和多节点训练；
 - 自研 KV Cache、Tensor Parallel、FlashAttention 与 CUDA Kernel；

@@ -65,9 +65,12 @@
 5. 展示真实 1/2/4 卡 DDP 报告及拓扑边界。
 6. 展示 FSDP2 分片状态和 DCP Resume。
 7. 比较 Base 与 Fine-tuned Candidate。
-8. 执行 Promotion Gate。
-9. 部署通过门禁的模型并执行推理压测。
-10. 根据 Run ID 反向查询数据、配置、Checkpoint 和评测血缘。
+8. 执行 Promotion Gate 并展示 M6 的 11/11 真实门禁结果。
+9. 使用 `tinyllm run rebuild|list|show` 反向查询数据、配置、Checkpoint 和评测血缘。
+10. 在 M7 部署 Candidate 并执行推理压测与 Production Gate。
+
+完整演示流程见 [10 分钟中文演示](demo_m6.md)，M6 质量与晋级结果见
+[M6 验收报告](../reports/m6/m6_acceptance.md)。
 
 ## 4. 对外发布原则
 

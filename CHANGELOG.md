@@ -5,6 +5,19 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+## 0.6.0-rc.1 - 2026-08-12
+
+- completed the independent M6 v7 release evaluation with four 300-item dual-mode passes,
+  160/160 maintainer-reviewed judgments, three full general benchmarks, and complete lineage;
+- passed all 11 Candidate checks: Thinking improved by 7.34pp with a paired-bootstrap 95% CI of
+  `[+0.33, +14.29]pp`, Non-thinking improved by 18.34pp with `[+12.46, +24.40]pp`, and the
+  equal-task general aggregate improved by 2.68pp;
+- atomically registered the 596,049,920-parameter Qwen3-0.6B Full-SFT artifact as Candidate
+  `qwen3-0-6b-m6-d16c2357`, retaining `production_eligible=false` until M7;
+- added `tinyllm run rebuild|list|show` and strict public schemas for an atomic SQLite v1 query
+  index, then successfully rebuilt it from all 57 private Run manifests;
+- published redacted Chinese/English M6 acceptance material and a 10-minute Chinese demo flow.
+
 - froze an independent 300-item M6 v7 audit after v6 Candidate Thinking missed the fixed format
   gate by one item, then added an auditable Thinking final-answer stop boundary that preserves raw
   responses while preventing repeated Thinking tags from invalidating an already emitted answer;

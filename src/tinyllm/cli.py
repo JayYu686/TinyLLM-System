@@ -9,7 +9,7 @@ import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Literal, cast
+from typing import Annotated, Literal, NoReturn, cast
 
 import click
 import typer
@@ -77,6 +77,14 @@ from tinyllm.evaluation import (
     run_m6_general_pass,
     write_m6_comparison,
 )
+from tinyllm.lineage import (
+    DEFAULT_INDEX_RELATIVE_PATH,
+    RunIndexError,
+    RunIndexErrorCode,
+    list_indexed_runs,
+    rebuild_run_index,
+    show_indexed_run,
+)
 from tinyllm.schemas import canonical_config_hash
 from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
 from tinyllm.training import (
@@ -109,9 +117,15 @@ benchmark_app = typer.Typer(
     help="Run evidence-first training performance benchmarks.",
     no_args_is_help=True,
 )
+run_app = typer.Typer(
+    name="run",
+    help="Rebuild and query the local Run lineage index.",
+    no_args_is_help=True,
+)
 app.add_typer(data_app, name="data")
 app.add_typer(eval_app, name="eval")
 app.add_typer(benchmark_app, name="benchmark")
+app.add_typer(run_app, name="run")
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,6 +175,122 @@ def _output_error(
         typer.echo(json.dumps(payload, sort_keys=True), err=True)
     else:
         typer.echo(f"error: {message}", err=True)
+
+
+def _run_index_error(exc: RunIndexError, *, json_output: bool) -> NoReturn:
+    _output_error(str(exc), json_output=json_output, error_code=exc.code.value)
+    usage_errors = {RunIndexErrorCode.INVALID_INPUT}
+    raise typer.Exit(code=2 if exc.code in usage_errors else 3)
+
+
+@run_app.command("rebuild")
+def run_rebuild(
+    ctx: typer.Context,
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", help="Optional absolute SQLite index output."),
+    ] = None,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Atomically rebuild SQLite from every immutable ``runs/**/run.json``."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = rebuild_run_index(artifact_root, output_path=output)
+    except RunIndexError as exc:
+        _run_index_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"succeeded: indexed_runs={result.indexed_runs} "
+            f"source_tree_sha256={result.source_tree_sha256}"
+        )
+
+
+@run_app.command("list")
+def run_list(
+    ctx: typer.Context,
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    index: Annotated[
+        Path | None,
+        typer.Option("--index", help="Optional absolute SQLite index path."),
+    ] = None,
+    status: Annotated[
+        str | None,
+        typer.Option("--status", help="Optional exact Run status filter."),
+    ] = None,
+    limit: Annotated[
+        int,
+        typer.Option("--limit", min=1, max=1000, help="Maximum Runs to return."),
+    ] = 50,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """List the newest Runs from the rebuildable query index."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    index_path = index or artifact_root / DEFAULT_INDEX_RELATIVE_PATH
+    try:
+        result = list_indexed_runs(index_path, status=status, limit=limit)
+    except RunIndexError as exc:
+        _run_index_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        for entry in result.runs:
+            typer.echo(f"{entry.run_id}\t{entry.status}\t{entry.strategy or '-'}")
+
+
+@run_app.command("show")
+def run_show(
+    ctx: typer.Context,
+    run_id: Annotated[str, typer.Argument(help="Exact immutable Run ID.")],
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    index: Annotated[
+        Path | None,
+        typer.Option("--index", help="Optional absolute SQLite index path."),
+    ] = None,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Show one Run projection without opening private raw artifacts."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    index_path = index or artifact_root / DEFAULT_INDEX_RELATIVE_PATH
+    try:
+        result = show_indexed_run(index_path, run_id)
+    except RunIndexError as exc:
+        _run_index_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"{result.run_id}\n"
+            f"status: {result.status}\n"
+            f"created_at: {result.created_at.isoformat()}\n"
+            f"manifest: {result.manifest_relative_path}"
+        )
 
 
 @app.command("compare")

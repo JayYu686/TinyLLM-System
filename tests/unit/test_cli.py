@@ -22,7 +22,7 @@ from tinyllm.evaluation import (
 )
 
 
-def test_help_lists_doctor_train_data_eval_and_benchmark(
+def test_help_lists_doctor_train_data_eval_benchmark_and_run(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     assert main(["--help"]) == 0
@@ -32,6 +32,7 @@ def test_help_lists_doctor_train_data_eval_and_benchmark(
     assert "data" in output
     assert "eval" in output
     assert "benchmark" in output
+    assert "run" in output
 
     assert main(["data", "--help"]) == 0
     data_output = capsys.readouterr().out
@@ -47,6 +48,12 @@ def test_help_lists_doctor_train_data_eval_and_benchmark(
     assert main(["benchmark", "--help"]) == 0
     benchmark_output = capsys.readouterr().out
     assert "train" in benchmark_output
+
+    assert main(["run", "--help"]) == 0
+    run_output = capsys.readouterr().out
+    assert "rebuild" in run_output
+    assert "list" in run_output
+    assert "show" in run_output
 
 
 def test_benchmark_train_uses_preflight_exit_class(
@@ -85,7 +92,7 @@ def test_benchmark_train_uses_preflight_exit_class(
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--version"]) == 0
-    assert capsys.readouterr().out.strip() == "tinyllm 0.3.0b1"
+    assert capsys.readouterr().out.strip() == "tinyllm 0.6.0rc1"
 
 
 def test_missing_project_root_returns_usage_error(

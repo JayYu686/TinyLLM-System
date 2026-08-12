@@ -254,3 +254,18 @@ Answer 续写阶段注册 `<think>` 与 `</think>` 停止串，并只评分首�
 下一 Thinking 标签之前的非空答案。私有 Transcript 保留包含停止标签的原始响应、停止原因和
 逐条截断证据，Summary 记录截断条数。空前缀、错误答案和任何首次关闭前的失败仍按原规则计分。
 该策略不改变模型权重、Prompt、Reference、JSON Schema、采样策略、评分器或门禁阈值。
+
+## 11. v7 最终验收
+
+v7 完成 Base/Candidate × Thinking/Non-thinking 四路 300 题评测、三项完整通用任务和 160 条
+维护者人工判断。Candidate Thinking 从 34.33% 提升至 41.67%，Cluster Bootstrap 95% CI 为
+`[+0.33, +14.29]pp`；Non-thinking 从 22.33% 提升至 40.67%，95% CI 为
+`[+12.46, +24.40]pp`。通用等任务 `acc_norm` 从 51.80% 提升至 54.48%。Candidate 双模式
+JSON Valid 均为 100%，Thinking 格式为 100%、强制闭合为 1.67%，Non-thinking 可见推理
+泄漏为 0。
+
+全部 11 项 Candidate Gate 通过。模型以 `qwen3-0-6b-m6-d16c2357` 原子注册为 Candidate，
+同时从 57 个历史 Run Manifest 真实重建 SQLite v1 查询索引。M5 已冻结的 10M/50M 长程曲线
+作为 M6.4 过拟合对照复用，不替代 v7 独立评测。完整结果见
+[M6 验收报告](../reports/m6/m6_acceptance.md)。M6 状态更新为 `COMPLETE`，Production 门禁继续
+由 M7 负责。

@@ -1,0 +1,87 @@
+{
+  "candidate": {
+    "adaptation": "full_sft",
+    "attention_architecture": "gqa",
+    "base_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "dataset_manifest_sha256": "288b0c88c91c49b466e9aeee07f9087a69c0f6618f19462621730390831289aa",
+    "dataset_version": "m6-domain-generalization-mixture-v2-f2e029e4",
+    "model_artifact_sha256": "63db3b5f6ce0f12224167635fc8d67c53c32d7922caba3d65ac20c950f07dde6",
+    "model_parameters": 596049920,
+    "training_checkpoint_id": "checkpoint-tokens-0001000000",
+    "training_config_sha256": "dce956b0a1cd186660c7c7101e31b48f9d6a8fdae9c53b63ffeeb8c8f4142196",
+    "training_run_id": "20260811T024325Z-m6-domain-contract-r41-seed42-dce956b0-d5b6",
+    "training_tokens": 1000000
+  },
+  "checks": {
+    "passed": 11,
+    "total": 11
+  },
+  "base_evaluation_sha256": "4a8b20a8e744a163583a246c0a1d97a3cc6935531fa1db4b265784306cd02434",
+  "candidate_evaluation_sha256": "7b0066a36b7797a8c6e970fe1ff0a43f0c8d616cf352bc62c4b1f3d1feddf854",
+  "comparison_sha256": "d16c2357dabb1011f56d6d3b5026b7385e2afb6dd4bd2eddcab40f60c37f5432",
+  "config_sha256": "a82c4d5f2aa4b2c3be881641c7d97d568901fd6da3241ac43331a469385ab59d",
+  "general": {
+    "aggregation": "equal-task-mean-acc_norm",
+    "base_basis_points": 5180,
+    "candidate_basis_points": 5448,
+    "delta_basis_points": 268,
+    "tasks": {
+      "arc_easy_basis_points": 5328,
+      "hellaswag_basis_points": 4536,
+      "piqa_basis_points": 6480
+    }
+  },
+  "human_review": {
+    "approved_at": "2026-08-12T08:09:45.303851Z",
+    "approved_judgments": 160,
+    "base_nonthinking_passed": 0,
+    "base_thinking_passed": 2,
+    "candidate_nonthinking_passed": 0,
+    "candidate_thinking_passed": 1,
+    "reviewer_role": "maintainer",
+    "status": "complete"
+  },
+  "lineage_complete": true,
+  "modes": {
+    "nonthinking": {
+      "base_correct_items": 67,
+      "base_score_basis_points": 2233,
+      "bootstrap_95_lower_basis_points": 1246,
+      "bootstrap_95_upper_basis_points": 2440,
+      "candidate_correct_items": 122,
+      "candidate_format_valid_items": 300,
+      "candidate_json_valid_items": 80,
+      "candidate_score_basis_points": 4067,
+      "delta_basis_points": 1834,
+      "evaluated_items": 300,
+      "visible_reasoning_leakage_items": 0
+    },
+    "thinking": {
+      "base_correct_items": 103,
+      "base_score_basis_points": 3433,
+      "bootstrap_95_lower_basis_points": 33,
+      "bootstrap_95_upper_basis_points": 1429,
+      "candidate_correct_items": 125,
+      "candidate_forced_close_items": 5,
+      "candidate_format_valid_items": 300,
+      "candidate_json_valid_items": 80,
+      "candidate_score_basis_points": 4167,
+      "delta_basis_points": 734,
+      "evaluated_items": 300
+    }
+  },
+  "model_version": "qwen3-0-6b-m6-d16c2357",
+  "production_eligible": false,
+  "protocol_version": "m6-release-v7",
+  "registry_record_sha256": "bb9189f4df4ffa8b089fc2892e12d31273875efbe9739eede8ea0f903d95fba9",
+  "run_index": {
+    "index_schema_version": 1,
+    "index_sha256": "2cad0f5a6672ed58af136641d52bcd74bb134d9dd7377ef03ec36f52ab63f075",
+    "indexed_runs": 57,
+    "source_tree_sha256": "42b480f9b73e5eb37180bd1e3d5c02204f724146cc026e57ac327addcb1543ba"
+  },
+  "schema_version": "1.0",
+  "status": "Candidate",
+  "suite_content_sha256": "b82cbca1821cadbaf4872636e89c61cef730ebe09413f9c63f34993302b6f955",
+  "suite_version": "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1"
+}

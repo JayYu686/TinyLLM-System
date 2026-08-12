@@ -1,0 +1,57 @@
+{
+  "additionalProperties": false,
+  "description": "Stable result emitted after an atomic index rebuild.",
+  "properties": {
+    "index_relative_path": {
+      "default": "registry/runs.sqlite3",
+      "title": "Index Relative Path",
+      "type": "string"
+    },
+    "index_schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Index Schema Version",
+      "type": "integer"
+    },
+    "index_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Index Sha256",
+      "type": "string"
+    },
+    "indexed_runs": {
+      "minimum": 0,
+      "title": "Indexed Runs",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_manifests": {
+      "minimum": 0,
+      "title": "Source Manifests",
+      "type": "integer"
+    },
+    "source_tree_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Tree Sha256",
+      "type": "string"
+    },
+    "status": {
+      "const": "succeeded",
+      "default": "succeeded",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "index_sha256",
+    "source_tree_sha256",
+    "source_manifests",
+    "indexed_runs"
+  ],
+  "title": "RunIndexRebuildResult",
+  "type": "object"
+}

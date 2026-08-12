@@ -161,6 +161,7 @@ from tinyllm.evaluation.m5_thinking_budget_schema import (
     M5ThinkingBudgetGateResult,
     M5ThinkingBudgetItemResult,
 )
+from tinyllm.lineage import RunIndexEntry, RunIndexListResult, RunIndexRebuildResult
 from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifest
 from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
@@ -385,6 +386,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "rank-benchmark-metrics-v1.schema.json": RankBenchmarkMetrics,
     "resolved-benchmark-profile-v1.schema.json": ResolvedBenchmarkProfile,
     "run-manifest-v1.schema.json": RunManifest,
+    "run-index-entry-v1.schema.json": RunIndexEntry,
+    "run-index-list-result-v1.schema.json": RunIndexListResult,
+    "run-index-rebuild-result-v1.schema.json": RunIndexRebuildResult,
     "resume-result-v1.schema.json": ResumeResult,
     "sampler-state-v1.schema.json": SamplerState,
     "trainer-state-v1.schema.json": TrainerState,

@@ -61,6 +61,11 @@ as a second, explicit step after the Gateway dependency audit, so dependency res
 silently replace the reviewed training environments or claim CUDA compatibility before a real
 RTX 3090 Smoke Test.
 
+The pinned CUDA 11.8 serving profile has narrowly scoped dependency-audit exceptions documented
+in [m7_security_exceptions.md](m7_security_exceptions.md). GitHub CI ignores only those exact
+advisory identifiers; the M7 Production Gate independently rejects unreviewed Critical or High
+findings.
+
 `make bootstrap-serving-vllm` installs the frozen CUDA 11.8 dependency set and the reviewed
 official Wheel. Set `PIP_CACHE_DIR` to an Artifact Store cache when home-disk pressure matters.
 

@@ -1,0 +1,87 @@
+{
+  "additionalProperties": false,
+  "description": "Frozen Direct/Gateway inference matrix policy.",
+  "properties": {
+    "benchmark_id": {
+      "pattern": "^m7-inference-[a-z0-9-]{1,64}$",
+      "title": "Benchmark Id",
+      "type": "string"
+    },
+    "concurrency": {
+      "items": {
+        "enum": [
+          1,
+          4,
+          8,
+          16,
+          32
+        ],
+        "type": "integer"
+      },
+      "title": "Concurrency",
+      "type": "array"
+    },
+    "input_tokens": {
+      "items": {
+        "enum": [
+          128,
+          512,
+          1024
+        ],
+        "type": "integer"
+      },
+      "title": "Input Tokens",
+      "type": "array"
+    },
+    "measured_requests": {
+      "const": 100,
+      "title": "Measured Requests",
+      "type": "integer"
+    },
+    "output_tokens": {
+      "items": {
+        "enum": [
+          128,
+          256
+        ],
+        "type": "integer"
+      },
+      "title": "Output Tokens",
+      "type": "array"
+    },
+    "repeats": {
+      "const": 3,
+      "title": "Repeats",
+      "type": "integer"
+    },
+    "request_timeout_seconds": {
+      "exclusiveMinimum": 0,
+      "maximum": 600,
+      "title": "Request Timeout Seconds",
+      "type": "number"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "warmup_requests": {
+      "const": 20,
+      "title": "Warmup Requests",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "benchmark_id",
+    "concurrency",
+    "input_tokens",
+    "output_tokens",
+    "warmup_requests",
+    "measured_requests",
+    "repeats",
+    "request_timeout_seconds"
+  ],
+  "title": "InferenceBenchmarkConfig",
+  "type": "object"
+}

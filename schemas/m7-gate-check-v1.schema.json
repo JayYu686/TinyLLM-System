@@ -1,0 +1,51 @@
+{
+  "additionalProperties": false,
+  "description": "One deterministic M7 Production Gate decision.",
+  "properties": {
+    "actual": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Actual",
+      "type": "string"
+    },
+    "name": {
+      "enum": [
+        "api_contract",
+        "success_rate",
+        "runtime_stability",
+        "gateway_throughput",
+        "p95_latency_overhead",
+        "backend_recovery",
+        "deployment_rollback",
+        "m6_evidence",
+        "security_audit"
+      ],
+      "title": "Name",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "requirement": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Requirement",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "passed",
+    "actual",
+    "requirement"
+  ],
+  "title": "M7GateCheck",
+  "type": "object"
+}

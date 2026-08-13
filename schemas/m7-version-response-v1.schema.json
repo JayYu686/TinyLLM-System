@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "description": "Public version and active deployment identity.",
+  "properties": {
+    "candidate_model_version": {
+      "title": "Candidate Model Version",
+      "type": "string"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "service": {
+      "const": "tinyllm-gateway",
+      "default": "tinyllm-gateway",
+      "title": "Service",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "model",
+    "candidate_model_version",
+    "model_artifact_sha256"
+  ],
+  "title": "VersionResponse",
+  "type": "object"
+}

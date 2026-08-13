@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from tinyllm import __version__
 from tinyllm.benchmark.supervisor import BenchmarkPreflightError
 from tinyllm.cli import main
 from tinyllm.data import RegisteredDatasetSummary
@@ -92,7 +93,7 @@ def test_benchmark_train_uses_preflight_exit_class(
 
 def test_version_is_stable(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--version"]) == 0
-    assert capsys.readouterr().out.strip() == "tinyllm 0.6.0rc1"
+    assert capsys.readouterr().out.strip() == f"tinyllm {__version__}"
 
 
 def test_missing_project_root_returns_usage_error(

@@ -46,15 +46,18 @@
 - 结构化可观测性。
 - 自动化测试与真实验收报告。
 
-## 2. 与应用层 Agent 项目的职责边界
+## 2. Agent 应用能力
 
-| 应用层 Agent | TinyLLM-System |
-| -- | -- |
-| 企业业务工作流 | 模型训练与生命周期 |
-| Agent 编排 | 分布式训练策略 |
-| RAG/MCP | Dataset/Checkpoint |
-| 运营控制台 | 评测和模型晋级 |
-| 业务安全 | 数值正确性和实验复现 |
+TinyLLM-System 在 M7–M10 增加一个边界明确的 DevOps 诊断单 Agent：
+
+- OpenAI-compatible Gateway 与稳定 Streaming 契约；
+- LangGraph 状态图与显式审批状态；
+- MCP Client 与参考 DevOps MCP Server；
+- SQLite FTS5/BM25 证据检索；
+- Tool Calling、BFCL Core 和自建 DevOps Agent Evaluation；
+- Agent SFT/LoRA、质量回归和 Production Model Gate。
+
+企业业务工作流、Multi-Agent、复杂前端和通用任意 Shell Agent 继续由应用层系统承担。
 
 ## 3. 端到端演示
 
@@ -70,7 +73,8 @@
 10. 在 M7 部署 Candidate 并执行推理压测与 Production Gate。
 
 完整演示流程见 [10 分钟中文演示](demo_m6.md)，M6 质量与晋级结果见
-[M6 验收报告](../reports/m6/m6_acceptance.md)。
+[M6 验收报告](../reports/m6/m6_acceptance.md)，在线推理和 Production 证据见
+[M7 验收报告](../reports/m7/m7_acceptance.md)。
 
 ## 4. 对外发布原则
 
@@ -88,7 +92,7 @@
 
 ## 5. 项目标题
 
-**TinyLLM-System——面向消费级多 GPU 工作站的硬件感知大语言模型训练、评测与部署平台**
+**TinyLLM-System——面向消费级多 GPU 工作站的大模型后训练、Agent 应用评测与在线推理平台**
 
 ## 6. 能力展示结构
 

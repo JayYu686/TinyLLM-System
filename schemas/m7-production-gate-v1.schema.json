@@ -1,0 +1,279 @@
+{
+  "$defs": {
+    "M7GateCheck": {
+      "additionalProperties": false,
+      "description": "One deterministic M7 Production Gate decision.",
+      "properties": {
+        "actual": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Actual",
+          "type": "string"
+        },
+        "name": {
+          "enum": [
+            "api_contract",
+            "success_rate",
+            "runtime_stability",
+            "gateway_throughput",
+            "p95_latency_overhead",
+            "backend_recovery",
+            "deployment_rollback",
+            "m6_evidence",
+            "security_audit"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "requirement": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Requirement",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "passed",
+        "actual",
+        "requirement"
+      ],
+      "title": "M7GateCheck",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Content-free evidence summary used to decide M7 Production eligibility.",
+  "properties": {
+    "api_contract_passed": {
+      "title": "Api Contract Passed",
+      "type": "boolean"
+    },
+    "auth_contract_passed": {
+      "title": "Auth Contract Passed",
+      "type": "boolean"
+    },
+    "backend_guard_passed": {
+      "title": "Backend Guard Passed",
+      "type": "boolean"
+    },
+    "backend_recovery_milliseconds": {
+      "minimum": 0,
+      "title": "Backend Recovery Milliseconds",
+      "type": "integer"
+    },
+    "benchmark_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Benchmark Report Sha256",
+      "type": "string"
+    },
+    "cancellation_contract_passed": {
+      "title": "Cancellation Contract Passed",
+      "type": "boolean"
+    },
+    "candidate_model_version": {
+      "pattern": "^qwen3-(0-6b|8b)-m6-[0-9a-f]{8}$",
+      "title": "Candidate Model Version",
+      "type": "string"
+    },
+    "candidate_record_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Record Sha256",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/M7GateCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "error_mapping_contract_passed": {
+      "title": "Error Mapping Contract Passed",
+      "type": "boolean"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "gate_id": {
+      "pattern": "^m7-production-gate-[0-9a-f]{8}$",
+      "title": "Gate Id",
+      "type": "string"
+    },
+    "gateway_throughput_ratio_basis_points": {
+      "minimum": 0,
+      "title": "Gateway Throughput Ratio Basis Points",
+      "type": "integer"
+    },
+    "hung_processes": {
+      "minimum": 0,
+      "title": "Hung Processes",
+      "type": "integer"
+    },
+    "lineage_complete": {
+      "title": "Lineage Complete",
+      "type": "boolean"
+    },
+    "m6_quality_complete": {
+      "title": "M6 Quality Complete",
+      "type": "boolean"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "oom_events": {
+      "minimum": 0,
+      "title": "Oom Events",
+      "type": "integer"
+    },
+    "p95_latency_overhead_median_basis_points": {
+      "title": "P95 Latency Overhead Median Basis Points",
+      "type": "integer"
+    },
+    "production_eligible": {
+      "title": "Production Eligible",
+      "type": "boolean"
+    },
+    "readiness_failure_milliseconds": {
+      "minimum": 0,
+      "title": "Readiness Failure Milliseconds",
+      "type": "integer"
+    },
+    "recovery_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Recovery Report Sha256",
+      "type": "string"
+    },
+    "rollback_recovery_milliseconds": {
+      "minimum": 0,
+      "title": "Rollback Recovery Milliseconds",
+      "type": "integer"
+    },
+    "rollback_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Rollback Report Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "security_audit_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Security Audit Sha256",
+      "type": "string"
+    },
+    "serving_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Serving Config Sha256",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "streaming_contract_passed": {
+      "title": "Streaming Contract Passed",
+      "type": "boolean"
+    },
+    "successful_requests": {
+      "minimum": 0,
+      "title": "Successful Requests",
+      "type": "integer"
+    },
+    "thinking_content_hidden": {
+      "title": "Thinking Content Hidden",
+      "type": "boolean"
+    },
+    "tokenizer_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tokenizer Artifact Sha256",
+      "type": "string"
+    },
+    "total_requests": {
+      "minimum": 1,
+      "title": "Total Requests",
+      "type": "integer"
+    },
+    "unexplained_5xx": {
+      "minimum": 0,
+      "title": "Unexplained 5Xx",
+      "type": "integer"
+    },
+    "unmitigated_critical_vulnerabilities": {
+      "minimum": 0,
+      "title": "Unmitigated Critical Vulnerabilities",
+      "type": "integer"
+    },
+    "unmitigated_high_vulnerabilities": {
+      "minimum": 0,
+      "title": "Unmitigated High Vulnerabilities",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "gate_id",
+    "evaluated_at",
+    "candidate_model_version",
+    "candidate_record_sha256",
+    "model_artifact_sha256",
+    "tokenizer_artifact_sha256",
+    "serving_config_sha256",
+    "environment_sha256",
+    "benchmark_report_sha256",
+    "recovery_report_sha256",
+    "rollback_report_sha256",
+    "security_audit_sha256",
+    "total_requests",
+    "successful_requests",
+    "unexplained_5xx",
+    "oom_events",
+    "hung_processes",
+    "gateway_throughput_ratio_basis_points",
+    "p95_latency_overhead_median_basis_points",
+    "readiness_failure_milliseconds",
+    "backend_recovery_milliseconds",
+    "rollback_recovery_milliseconds",
+    "api_contract_passed",
+    "auth_contract_passed",
+    "streaming_contract_passed",
+    "cancellation_contract_passed",
+    "error_mapping_contract_passed",
+    "thinking_content_hidden",
+    "backend_guard_passed",
+    "m6_quality_complete",
+    "lineage_complete",
+    "unmitigated_critical_vulnerabilities",
+    "unmitigated_high_vulnerabilities",
+    "checks",
+    "status",
+    "production_eligible"
+  ],
+  "title": "M7ProductionGate",
+  "type": "object"
+}

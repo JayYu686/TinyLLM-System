@@ -1,0 +1,93 @@
+{
+  "additionalProperties": false,
+  "description": "Last Known Good preservation after a rejected configuration switch.",
+  "properties": {
+    "candidate_model_version": {
+      "pattern": "^qwen3-(0-6b|8b)-m6-[0-9a-f]{8}$",
+      "title": "Candidate Model Version",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "evidence_id": {
+      "pattern": "^m7-rollback-[0-9a-f]{8}$",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "failure_injected": {
+      "enum": [
+        "model-hash-drift",
+        "invalid-model-reference",
+        "invalid-config"
+      ],
+      "title": "Failure Injected",
+      "type": "string"
+    },
+    "last_known_good_identity_preserved": {
+      "title": "Last Known Good Identity Preserved",
+      "type": "boolean"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "post_rejection_request_succeeded": {
+      "title": "Post Rejection Request Succeeded",
+      "type": "boolean"
+    },
+    "ready_after_rejection": {
+      "title": "Ready After Rejection",
+      "type": "boolean"
+    },
+    "rollback_recovery_milliseconds": {
+      "minimum": 0,
+      "title": "Rollback Recovery Milliseconds",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "serving_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Serving Config Sha256",
+      "type": "string"
+    },
+    "switch_rejected_before_activation": {
+      "title": "Switch Rejected Before Activation",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "evidence_id",
+    "evaluated_at",
+    "candidate_model_version",
+    "model_artifact_sha256",
+    "serving_config_sha256",
+    "environment_sha256",
+    "failure_injected",
+    "switch_rejected_before_activation",
+    "last_known_good_identity_preserved",
+    "ready_after_rejection",
+    "post_rejection_request_succeeded",
+    "rollback_recovery_milliseconds",
+    "passed"
+  ],
+  "title": "M7RollbackEvidence",
+  "type": "object"
+}

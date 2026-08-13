@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README.en.md)
 
-> 面向消费级多 GPU 工作站的硬件感知大语言模型训练、评测与部署平台。
+> 面向消费级多 GPU 工作站的大模型后训练、Agent 应用评测与在线推理平台。
 
 [![CI](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml/badge.svg)](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
@@ -10,7 +10,8 @@
 
 TinyLLM-System 将数据处理、训练策略、故障恢复、模型评测和版本晋级组织成一条可复现的
 工程链路。项目以原生 PyTorch 为训练核心，主要运行在一台共享的 10 × RTX 3090 24GB
-工作站上，并针对显存容量、GPU 拓扑和资源可用性选择单卡、DDP 或 FSDP2。
+工作站上，并针对显存容量、GPU 拓扑和资源可用性选择单卡、DDP 或 FSDP2。M6 之后的工程
+主线扩展到在线推理、Tool Calling、MCP、DevOps 单 Agent 及专用 Agent Evaluation。
 
 系统为每次实验建立完整血缘：从固定的数据与模型 Revision、经过 Schema 校验的 YAML，
 一直追踪到 Git Commit、软硬件环境、Checkpoint、评测结果和最终导出。公开结论均对应可复查
@@ -57,6 +58,13 @@ flowchart LR
         V[Production 晋级]
     end
 
+    subgraph Agent["Agent 应用闭环"]
+        O[OpenAI Gateway]
+        L[LangGraph Runtime]
+        X[MCP 工具与证据]
+        J[BFCL / DevOps Agent Eval]
+    end
+
     D --> P
     M --> P
     Y --> P
@@ -73,6 +81,10 @@ flowchart LR
     G --> Q
     Q --> I
     I --> V
+    V --> O
+    O --> L
+    L --> X
+    X --> J
 ```
 
 一条完整链路由以下阶段组成：
@@ -151,8 +163,10 @@ sequenceDiagram
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
 | M5 双模式 SFT | 已完成 | 0.6B 四卡 Full SFT 50M Token 与 8B BF16 LoRA 10M Token；两条路线均完成 Exact Resume、双模式评测和导出 |
 | M6 评测与晋级 | 已完成 | 独立 v7 双模式评测与 160 条人工审查；11/11 门禁通过；0.6B Full-SFT 注册为 Candidate |
-| M7 推理部署 | 计划中 | vLLM 服务、吞吐/延迟 Benchmark 和 Production Gate |
-| M8 训练规划器 | 增强阶段 | 静态显存估算与短程 Probe |
+| M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
+| M8 DevOps Agent | 进行中 | Tool Calling、MCP、LangGraph、审批与证据检索 |
+| M9 Agent 评测 | 计划中 | BFCL Offline Core Profile 与 240 条 DevOps Agent Suite |
+| M10 Agent 后训练 | 计划中 | 0.6B Full SFT、8B LoRA 与 Agent Model Gate |
 
 当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
 详细证据可从以下入口查看：
@@ -199,6 +213,9 @@ sequenceDiagram
   [M6 v1 门禁拒绝分析](reports/m6/m6_gate_rejection_analysis.md)、
   [双模式模板对齐决策](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md)与
   [10 分钟中文演示](docs/demo_m6.md)
+- [M7 在线推理契约](docs/m7_serving_contract.md)与
+  [M7.0/M7.1 基础审查报告](reports/m7/m7_foundation.md)、
+  [M7 总验收](reports/m7/m7_acceptance.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -286,13 +303,16 @@ tinyllm data prepare|inspect
 tinyllm train
 tinyllm run rebuild|list|show
 tinyllm benchmark train
+tinyllm benchmark inference
 tinyllm eval
 tinyllm compare
 tinyllm promote
+tinyllm deploy resolve|show|promote|rollback
+tinyllm serve
 ```
 
-M7/M8 将增加 `tinyllm serve`、`tinyllm benchmark inference`、`tinyllm plan` 和完整的
-`tinyllm run reproduce`。计划接口不会混入当前已交付命令列表。
+M8 将增加 `tinyllm agent run|approve|cancel|eval|index rebuild`。完整的
+`tinyllm run reproduce` 和 Training Planner 放入增强阶段。
 
 命令提供稳定 `--json` 输出，便于 Shell、CI 和后续服务集成：
 
@@ -304,6 +324,8 @@ M7/M8 将增加 `tinyllm serve`、`tinyllm benchmark inference`、`tinyllm plan`
 | 4 | 训练运行失败 |
 | 5 | Checkpoint 或 Resume 完整性失败 |
 | 6 | 评测失败或 Promotion Gate 拒绝 |
+| 7 | Serving、Gateway、部署或模型加载失败 |
+| 8 | Agent Runtime、MCP 或工具执行失败 |
 
 CLI 覆盖范围集中在 GPU、输出位置、Resume 模式和少量运行时字段。实验定义保存在 YAML；
 公共 Schema 均带版本字段、启用 `extra="forbid"`，并导出快照到
@@ -315,11 +337,15 @@ CLI 覆盖范围集中在 GPU、输出位置、Resume 模式和少量运行时�
 
 ```text
 $TINYLLM_ARTIFACT_ROOT/
-├── cache/       # 数据、模型与评测资源缓存
-├── datasets/    # 已注册的不可变数据版本
-├── models/      # 模型输入与部署导出
-├── runs/        # 训练 Run 与 Checkpoint
-└── registry/    # 可重建索引与晋级记录
+├── cache/              # 数据、模型与评测资源缓存
+├── datasets/           # 已注册的不可变数据版本
+├── models/             # 模型输入与部署导出
+├── runs/               # 训练 Run 与 Checkpoint
+├── deployments/        # Serving 配置、环境、日志与 Benchmark
+├── agent-runs/         # Agent Run 与可恢复事件
+├── agent-evaluations/  # Agent Eval 原始证据
+├── agent-sandboxes/    # 经审批的 Agent 专属写入副本
+└── registry/           # Candidate、Production 与原子 Alias
 ```
 
 典型 Run 目录：
@@ -358,7 +384,7 @@ TinyLLM-System/
 
 ## 版本发布路线
 
-项目按依赖顺序推进 M0–M8，每个阶段交付一个可以独立审查的系统能力：
+项目按依赖顺序推进 M0–M10，每个阶段交付一个可以独立审查的系统能力：
 
 | 阶段 | 交付能力 | 版本作用 |
 | -- | -- | -- |
@@ -369,11 +395,13 @@ TinyLLM-System/
 | M4 | Qwen3-8B FSDP2 分片训练与 DCP 恢复 | 建立大模型分片能力 |
 | M5 | Qwen3 双模式 Full SFT 与 LoRA | 建立实际后训练链路 |
 | M6 | Base/Candidate 比较和 Candidate Gate | `v0.6.0-rc.1` 候选版本 |
-| M7 | vLLM 服务和真实推理门禁 | Production 的前置阶段 |
-| M8 | 静态估算与短程 Probe Planner | 资源规划增强 |
+| M7 | vLLM 服务和真实推理门禁 | `v0.7.0` Production 版本 |
+| M8 | Tool Calling、MCP 与 DevOps 单 Agent | `v0.8.0-beta.1` Agent Runtime |
+| M9 | BFCL 与 DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
+| M10 | Agent SFT/LoRA 与统一门禁 | `v1.0.0` 或 `v1.0.0-rc.1` |
 
-M7/M8、ZeRO-3、MLflow、V100 兼容验证和 TinyGPT-350M 按核心链路依赖与资源条件进入后续
-迭代。完整安排见[版本发布路线](docs/release_roadmap.md)。
+Training Planner、ZeRO-3、MLflow、V100 兼容验证和 TinyGPT-350M 按核心链路依赖与资源条件
+进入增强迭代。完整安排见[版本发布路线](docs/release_roadmap.md)。
 
 ## 评测与模型晋级
 
@@ -402,21 +430,25 @@ Revision、解码配置、原始输出、评分依据和 Bootstrap 95% 置信区
 - 数据、模型、Checkpoint、环境和评测血缘完整。
 
 v1–v6 的拒绝证据保持不可变；v7 完成 160/160 人工复核并通过 11/11 门禁，模型已注册为
-`qwen3-0-6b-m6-d16c2357` Candidate。Candidate 通过 M7 的真实推理性能门禁后，才具备
-Production 晋级条件。
+`qwen3-0-6b-m6-d16c2357` Candidate。该 Candidate 后续通过 M7 的 18,000 请求正式推理矩阵、
+恢复、回滚和安全门禁，已作为 `qwen3-0-6b-m7-fa678d92` 晋级 Production；完整指标见
+[M7 总验收](reports/m7/m7_acceptance.md)。
 
 ## 核心边界与后续研究
 
-当前核心版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测和 Candidate 模型晋级；
-推理部署与 Production Gate 由 M7 交付。以下方向位于后续研究清单：
+当前已完成版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、Candidate 晋级、
+在线推理和 Production 门禁。M8–M10 依次交付 DevOps Agent、Agent Evaluation 和 Agent 后训练。
+以下方向位于后续研究清单：
 
 - MoE、Pipeline Parallel 和多节点训练；
 - 自研 KV Cache、Tensor Parallel、FlashAttention 与 CUDA Kernel；
 - 完整 RLHF；
 - Kubernetes、多租户计费和复杂前端管理系统。
+- Multi-Agent、任意 Shell Agent、完整通用 MCP Host 与向量数据库。
 
 M7 直接集成 vLLM 的 OpenAI-compatible API，并在其外层增加血缘感知的启动与 Benchmark
-包装。范围管理依据见 [Future Work](docs/future/) 和 [ADR](docs/adr/)。
+包装；M8 只提供有工具 Allowlist 和显式审批的 DevOps 单 Agent。范围管理依据见
+[Future Work](docs/future/) 和 [ADR](docs/adr/)。
 
 ## 文档入口
 
@@ -427,6 +459,7 @@ M7 直接集成 vLLM 的 OpenAI-compatible API，并在其外层增加血缘感�
 - [版本发布路线](docs/release_roadmap.md)与[能力证据映射](docs/capability_map.md)
 - [系统架构](docs/architecture.md)、[训练设计](docs/training_design.md)与
   [M5 SFT 契约](docs/m5_sft_contract.md)、[M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)
+- [M7 在线推理与 Production 晋级契约](docs/m7_serving_contract.md)
 - [数据契约](docs/dataset_contract.md)、[评测规范](docs/evaluation_spec.md)与
   [实验血缘](docs/experiment_lineage.md)
 - [硬件策略](docs/hardware_strategy.md)与[Benchmark 规范](docs/benchmark_plan.md)

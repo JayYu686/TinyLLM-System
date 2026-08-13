@@ -102,6 +102,17 @@
 - 统一指标。
 - 模型切换。
 
+### Agent Runtime
+
+负责：
+
+- LangGraph 单 Agent 状态机。
+- OpenAI Tool Calling。
+- MCP Client 与工具 Allowlist。
+- 显式审批、超时、重试和幂等。
+- SQLite FTS5/BM25 证据检索。
+- 工具轨迹、证据引用和 Agent Evaluation。
+
 ## 3. 状态机
 
 ### Run 状态
@@ -156,7 +167,8 @@ Raw Dataset
 - Typer；所有命令提供稳定 JSON 输出和统一退出码。
 - Pydantic v2；公共 Schema 带版本、拒绝未知字段并导出 JSON Schema Snapshot。
 - MLflow；仅作为 Artifact Store 的可选投影，不成为训练依赖。
-- FastAPI；仅在 M7 推理服务阶段引入。
+- FastAPI；在 M7 推理服务阶段引入。
+- LangGraph 与 MCP；仅在 M8 DevOps Agent 阶段引入。
 - SQLite 在 M6 作为可从 Run 目录重建的查询索引；PostgreSQL 后置。
 - 私有本地文件系统为事实源，默认根目录 `/data/yujielun/tinyllm/`。
 - Docker Compose 用于后续服务组件，不作为 M0 和训练核心的前置条件。

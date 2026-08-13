@@ -25,8 +25,22 @@ M0–M6 are complete. M5 produced a four-GPU Qwen3-0.6B Full-SFT run over 50M su
 tokens and a single-GPU Qwen3-8B LoRA run over 10M tokens, both with fresh-process Exact
 Resume and real dual-mode evaluation. M6 then evaluated the final 0.6B artifact on an independent
 300-item bilingual suite, completed 160 human judgments, passed all 11 Candidate checks, and
-registered `qwen3-0-6b-m6-d16c2357` as Candidate. Production remains gated on M7 inference
-evidence.
+registered `qwen3-0-6b-m6-d16c2357` as Candidate. M7 subsequently completed its 18,000-request
+formal serving matrix, recovery, rollback, and security gates, promoting
+`qwen3-0-6b-m7-fa678d92` to Production.
+
+## Agent release train
+
+| Window | Milestone | Required outcome | Release |
+| -- | -- | -- | -- |
+| Weeks 1–2 | M7 | vLLM serving, authenticated Gateway, real inference benchmark, recovery/rollback, Production Gate | `v0.7.0` |
+| Week 3 | M8 | Qwen tool calling, MCP client/reference server, LangGraph DevOps agent, approval and evidence retrieval | `v0.8.0-beta.1` |
+| Week 4 | M9 | BFCL v1.3 Offline Core Profile plus frozen public/hidden DevOps Agent Evaluation | `v0.9.0-rc.1` |
+| Weeks 5–6 | M10 | 0.6B Agent Full SFT, 8B Agent LoRA, unified model/serving/agent gate | `v1.0.0` or `v1.0.0-rc.1` |
+
+M7 Production proves model quality, lineage, serving correctness, performance, recovery and
+rollback. M9/M10 add an independent Agent capability gate; an M7 Production model cannot claim
+Agent readiness from serving evidence alone.
 
 ## Frozen experiment targets
 
@@ -51,12 +65,13 @@ remote artifacts have already been downloaded or tested.
 The `v0.6.0-rc.1` core ends at Candidate. Production requires M7 inference performance
 evidence. Buffer work is prioritized as:
 
-1. delayed M1–M6 evidence due to shared GPU availability;
-2. vLLM serving wrapper and inference benchmark;
-3. minimal static estimator plus 10–20-step probe for `tinyllm plan`;
-4. FSDP2-versus-ZeRO-3 short comparison;
-5. optional MLflow projection, GPU container validation, and V100 FP16 smoke;
-6. TinyGPT-350M challenge only after all core outputs are complete.
+1. M7 vLLM serving, Gateway, inference benchmark and Production Gate;
+2. M8 Tool Calling, MCP and DevOps Agent;
+3. M9 BFCL plus DevOps Agent Evaluation;
+4. M10 Agent Full SFT/LoRA and unified model selection;
+5. minimal static estimator plus 10–20-step probe for `tinyllm plan`;
+6. FSDP2-versus-ZeRO-3 short comparison;
+7. optional MLflow projection, GPU container validation, V100 FP16 smoke, and TinyGPT-350M.
 
 MoE, custom KV cache, custom tensor parallel, custom FlashAttention/CUDA kernels,
 multi-node training, pipeline parallelism, full RLHF, Kubernetes, billing, and complex

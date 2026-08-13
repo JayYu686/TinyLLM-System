@@ -1,0 +1,133 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free formal inference benchmark summary.",
+  "properties": {
+    "benchmark_id": {
+      "pattern": "^m7-inference-[a-z0-9-]{1,64}$",
+      "title": "Benchmark Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "gateway_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Gateway Config Sha256",
+      "type": "string"
+    },
+    "gateway_throughput_ratio_basis_points": {
+      "minimum": 0,
+      "title": "Gateway Throughput Ratio Basis Points",
+      "type": "integer"
+    },
+    "hardware_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
+    },
+    "hung_processes": {
+      "minimum": 0,
+      "title": "Hung Processes",
+      "type": "integer"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "model_version": {
+      "pattern": "^qwen3-(0-6b|8b)-m[67]-[0-9a-f]{8}$",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "oom_events": {
+      "minimum": 0,
+      "title": "Oom Events",
+      "type": "integer"
+    },
+    "p95_latency_overhead_median_basis_points": {
+      "title": "P95 Latency Overhead Median Basis Points",
+      "type": "integer"
+    },
+    "request_results_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Results Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "success_rate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Success Rate Basis Points",
+      "type": "integer"
+    },
+    "successful_requests": {
+      "minimum": 0,
+      "title": "Successful Requests",
+      "type": "integer"
+    },
+    "tokenizer_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tokenizer Artifact Sha256",
+      "type": "string"
+    },
+    "total_requests": {
+      "minimum": 1,
+      "title": "Total Requests",
+      "type": "integer"
+    },
+    "unexplained_5xx": {
+      "minimum": 0,
+      "title": "Unexplained 5Xx",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "benchmark_id",
+    "completed_at",
+    "model_version",
+    "model_artifact_sha256",
+    "tokenizer_artifact_sha256",
+    "config_sha256",
+    "gateway_config_sha256",
+    "environment_sha256",
+    "hardware_sha256",
+    "request_results_sha256",
+    "total_requests",
+    "successful_requests",
+    "success_rate_basis_points",
+    "gateway_throughput_ratio_basis_points",
+    "p95_latency_overhead_median_basis_points",
+    "oom_events",
+    "hung_processes",
+    "unexplained_5xx",
+    "status"
+  ],
+  "title": "InferenceBenchmarkSummary",
+  "type": "object"
+}

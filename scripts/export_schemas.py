@@ -16,6 +16,9 @@ from tinyllm.benchmark import (
     DDPBenchmarkConfig,
     DDPBenchmarkMatrixSummary,
     DDPBenchmarkRunResult,
+    InferenceBenchmarkConfig,
+    InferenceBenchmarkSummary,
+    InferenceRequestResult,
     RankBenchmarkMetrics,
     ResolvedBenchmarkProfile,
 )
@@ -93,6 +96,21 @@ from tinyllm.data import (
     TokenizationRejectedRecord,
     TokenizedSample,
 )
+from tinyllm.deployment import (
+    M7ContractEvidence,
+    M7GateCheck,
+    M7PackageVersion,
+    M7ProductionAlias,
+    M7ProductionGate,
+    M7ProductionRecord,
+    M7RecoveryEvidence,
+    M7RollbackEvidence,
+    M7SecurityAudit,
+    M7ServingEnvironment,
+    M7ServingHardware,
+    M7VulnerabilityAssessment,
+    ResolvedModel,
+)
 from tinyllm.evaluation import (
     AuthoredProvenance,
     BaselineEvaluationResult,
@@ -166,6 +184,8 @@ from tinyllm.schemas.checkpoint import CheckpointCommitMarker, CheckpointManifes
 from tinyllm.schemas.resume import ResumeResult
 from tinyllm.schemas.run import RunManifest
 from tinyllm.schemas.training_run import TrainingRunResult
+from tinyllm.serving.config import GatewayConfig
+from tinyllm.serving.schema import ChatCompletionRequest, HealthResponse, ModelList, VersionResponse
 from tinyllm.training.config import M1TrainingConfig
 from tinyllm.training.ddp_recovery_schema import DDPRecoveryResult
 from tinyllm.training.ddp_schema import (
@@ -253,6 +273,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "human-rubric-scorer-v1.schema.json": HumanRubricScorer,
     "human-rubric-judgment-v1.schema.json": HumanRubricJudgment,
     "human-review-commit-v1.schema.json": HumanReviewCommit,
+    "inference-benchmark-config-v1.schema.json": InferenceBenchmarkConfig,
+    "inference-benchmark-summary-v1.schema.json": InferenceBenchmarkSummary,
+    "inference-request-result-v1.schema.json": InferenceRequestResult,
     "imported-sample-v1.schema.json": ImportedSample,
     "json-object-scorer-v1.schema.json": JsonObjectScorer,
     "m2-processing-config-v1.schema.json": M2ProcessingConfig,
@@ -368,6 +391,24 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m6-promotion-record-v1.schema.json": M6PromotionRecord,
     "m6-release-config-v1.schema.json": M6ReleaseConfig,
     "m6-thinking-generation-config-v1.schema.json": M6ThinkingGenerationConfig,
+    "m7-chat-completion-request-v1.schema.json": ChatCompletionRequest,
+    "m7-contract-evidence-v1.schema.json": M7ContractEvidence,
+    "m7-gateway-config-v1.schema.json": GatewayConfig,
+    "m7-gate-check-v1.schema.json": M7GateCheck,
+    "m7-health-response-v1.schema.json": HealthResponse,
+    "m7-model-list-v1.schema.json": ModelList,
+    "m7-package-version-v1.schema.json": M7PackageVersion,
+    "m7-production-alias-v1.schema.json": M7ProductionAlias,
+    "m7-production-gate-v1.schema.json": M7ProductionGate,
+    "m7-production-record-v1.schema.json": M7ProductionRecord,
+    "m7-recovery-evidence-v1.schema.json": M7RecoveryEvidence,
+    "m7-rollback-evidence-v1.schema.json": M7RollbackEvidence,
+    "m7-security-audit-v1.schema.json": M7SecurityAudit,
+    "m7-serving-environment-v1.schema.json": M7ServingEnvironment,
+    "m7-serving-hardware-v1.schema.json": M7ServingHardware,
+    "m7-vulnerability-assessment-v1.schema.json": M7VulnerabilityAssessment,
+    "m7-resolved-model-v1.schema.json": ResolvedModel,
+    "m7-version-response-v1.schema.json": VersionResponse,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,

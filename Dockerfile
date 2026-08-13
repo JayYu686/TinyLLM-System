@@ -12,7 +12,7 @@ RUN python -m pip install --no-cache-dir --upgrade pip \
 COPY LICENSE README.md pyproject.toml ./
 COPY requirements/constraints/runtime.txt requirements/constraints/runtime.txt
 COPY src/ src/
-RUN python -m pip install --no-cache-dir -c requirements/constraints/runtime.txt .
+RUN python -m pip install --no-cache-dir -c requirements/constraints/runtime.txt ".[serving]"
 
 RUN useradd --create-home --uid 10001 tinyllm
 USER tinyllm

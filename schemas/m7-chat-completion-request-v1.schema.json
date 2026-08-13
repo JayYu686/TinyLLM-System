@@ -1,0 +1,419 @@
+{
+  "$defs": {
+    "ChatMessage": {
+      "additionalProperties": false,
+      "description": "Text-only OpenAI-compatible chat message supported by the M7 model.",
+      "properties": {
+        "content": {
+          "anyOf": [
+            {
+              "maxLength": 262144,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "role": {
+          "enum": [
+            "system",
+            "user",
+            "assistant",
+            "tool"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "tool_call_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Call Id"
+        },
+        "tool_calls": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Calls"
+        }
+      },
+      "required": [
+        "role"
+      ],
+      "title": "ChatMessage",
+      "type": "object"
+    },
+    "ChatTool": {
+      "additionalProperties": false,
+      "description": "Function tool definition.",
+      "properties": {
+        "function": {
+          "$ref": "#/$defs/FunctionDefinition"
+        },
+        "type": {
+          "const": "function",
+          "default": "function",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "function"
+      ],
+      "title": "ChatTool",
+      "type": "object"
+    },
+    "FunctionDefinition": {
+      "additionalProperties": false,
+      "description": "OpenAI function definition forwarded to a fixed vLLM parser.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "name": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "parameters"
+      ],
+      "title": "FunctionDefinition",
+      "type": "object"
+    },
+    "NamedFunctionChoice": {
+      "additionalProperties": false,
+      "description": "Request one specific function by name.",
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "NamedFunctionChoice",
+      "type": "object"
+    },
+    "NamedToolChoice": {
+      "additionalProperties": false,
+      "description": "OpenAI named-tool selector.",
+      "properties": {
+        "function": {
+          "$ref": "#/$defs/NamedFunctionChoice"
+        },
+        "type": {
+          "const": "function",
+          "default": "function",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "function"
+      ],
+      "title": "NamedToolChoice",
+      "type": "object"
+    },
+    "ResponseFormat": {
+      "additionalProperties": false,
+      "description": "M7 response-format subset supported by vLLM.",
+      "properties": {
+        "type": {
+          "enum": [
+            "text",
+            "json_object"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ResponseFormat",
+      "type": "object"
+    },
+    "StreamOptions": {
+      "additionalProperties": false,
+      "description": "OpenAI stream options supported by the proxy.",
+      "properties": {
+        "include_usage": {
+          "default": false,
+          "title": "Include Usage",
+          "type": "boolean"
+        }
+      },
+      "title": "StreamOptions",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Bounded OpenAI-compatible Chat Completions request.",
+  "properties": {
+    "max_completion_tokens": {
+      "anyOf": [
+        {
+          "maximum": 8192,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Completion Tokens"
+    },
+    "max_tokens": {
+      "anyOf": [
+        {
+          "maximum": 8192,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Tokens"
+    },
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/ChatMessage"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Messages",
+      "type": "array"
+    },
+    "mode": {
+      "default": "nonthinking",
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "n": {
+      "const": 1,
+      "default": 1,
+      "title": "N",
+      "type": "integer"
+    },
+    "parallel_tool_calls": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parallel Tool Calls"
+    },
+    "response_format": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResponseFormat"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seed"
+    },
+    "stop": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stop"
+    },
+    "stream": {
+      "default": false,
+      "title": "Stream",
+      "type": "boolean"
+    },
+    "stream_options": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StreamOptions"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "temperature": {
+      "anyOf": [
+        {
+          "maximum": 2,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Temperature"
+    },
+    "tool_choice": {
+      "anyOf": [
+        {
+          "enum": [
+            "auto",
+            "required",
+            "none"
+          ],
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/NamedToolChoice"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tool Choice"
+    },
+    "tools": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/ChatTool"
+          },
+          "maxItems": 128,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tools"
+    },
+    "top_p": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Top P"
+    },
+    "user": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "User"
+    }
+  },
+  "required": [
+    "model",
+    "messages"
+  ],
+  "title": "ChatCompletionRequest",
+  "type": "object"
+}

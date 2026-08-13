@@ -1,0 +1,92 @@
+{
+  "additionalProperties": false,
+  "description": "Real API contract checks collected against one running Gateway.",
+  "properties": {
+    "api_contract_passed": {
+      "title": "Api Contract Passed",
+      "type": "boolean"
+    },
+    "auth_contract_passed": {
+      "title": "Auth Contract Passed",
+      "type": "boolean"
+    },
+    "backend_guard_passed": {
+      "title": "Backend Guard Passed",
+      "type": "boolean"
+    },
+    "cancellation_contract_passed": {
+      "title": "Cancellation Contract Passed",
+      "type": "boolean"
+    },
+    "candidate_model_version": {
+      "pattern": "^qwen3-(0-6b|8b)-m6-[0-9a-f]{8}$",
+      "title": "Candidate Model Version",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "error_mapping_contract_passed": {
+      "title": "Error Mapping Contract Passed",
+      "type": "boolean"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "evidence_id": {
+      "pattern": "^m7-contract-[0-9a-f]{8}$",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "serving_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Serving Config Sha256",
+      "type": "string"
+    },
+    "streaming_contract_passed": {
+      "title": "Streaming Contract Passed",
+      "type": "boolean"
+    },
+    "thinking_content_hidden": {
+      "title": "Thinking Content Hidden",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "evidence_id",
+    "evaluated_at",
+    "candidate_model_version",
+    "model_artifact_sha256",
+    "serving_config_sha256",
+    "environment_sha256",
+    "api_contract_passed",
+    "auth_contract_passed",
+    "streaming_contract_passed",
+    "cancellation_contract_passed",
+    "error_mapping_contract_passed",
+    "thinking_content_hidden",
+    "backend_guard_passed",
+    "passed"
+  ],
+  "title": "M7ContractEvidence",
+  "type": "object"
+}

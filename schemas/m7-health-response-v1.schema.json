@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free liveness/readiness response.",
+  "properties": {
+    "backend": {
+      "const": "vllm-http",
+      "default": "vllm-http",
+      "title": "Backend",
+      "type": "string"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model"
+    },
+    "ready": {
+      "title": "Ready",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "unavailable"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "ready"
+  ],
+  "title": "HealthResponse",
+  "type": "object"
+}

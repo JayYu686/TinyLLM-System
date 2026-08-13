@@ -1,0 +1,102 @@
+{
+  "additionalProperties": false,
+  "description": "One selected physical GPU and driver identity without host identifiers.",
+  "properties": {
+    "bf16_supported": {
+      "const": true,
+      "title": "Bf16 Supported",
+      "type": "boolean"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "cpu_affinity": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Cpu Affinity",
+      "type": "string"
+    },
+    "cuda_runtime_version": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Cuda Runtime Version",
+      "type": "string"
+    },
+    "driver_version": {
+      "pattern": "^[0-9.]{3,32}$",
+      "title": "Driver Version",
+      "type": "string"
+    },
+    "gpu_name": {
+      "const": "NVIDIA GeForce RTX 3090",
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "memory_total_mib": {
+      "maximum": 25000,
+      "minimum": 24000,
+      "title": "Memory Total Mib",
+      "type": "integer"
+    },
+    "memory_used_mib_at_preflight": {
+      "maximum": 25000,
+      "minimum": 0,
+      "title": "Memory Used Mib At Preflight",
+      "type": "integer"
+    },
+    "numa_node": {
+      "maximum": 15,
+      "minimum": 0,
+      "title": "Numa Node",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "temperature_c_at_preflight": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Temperature C At Preflight",
+      "type": "integer"
+    },
+    "topology_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Topology Sha256",
+      "type": "string"
+    },
+    "utilization_percent_at_preflight": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Utilization Percent At Preflight",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "captured_at",
+    "physical_gpu_index",
+    "gpu_name",
+    "memory_total_mib",
+    "driver_version",
+    "cuda_runtime_version",
+    "bf16_supported",
+    "numa_node",
+    "cpu_affinity",
+    "topology_sha256",
+    "memory_used_mib_at_preflight",
+    "utilization_percent_at_preflight",
+    "temperature_c_at_preflight"
+  ],
+  "title": "M7ServingHardware",
+  "type": "object"
+}

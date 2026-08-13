@@ -1,0 +1,169 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free request-level inference evidence.",
+  "properties": {
+    "backend": {
+      "enum": [
+        "direct",
+        "gateway"
+      ],
+      "title": "Backend",
+      "type": "string"
+    },
+    "completion_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completion Tokens"
+    },
+    "concurrency": {
+      "enum": [
+        1,
+        4,
+        8,
+        16,
+        32
+      ],
+      "title": "Concurrency",
+      "type": "integer"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "input_tokens_target": {
+      "enum": [
+        128,
+        512,
+        1024
+      ],
+      "title": "Input Tokens Target",
+      "type": "integer"
+    },
+    "latency_milliseconds": {
+      "minimum": 0,
+      "title": "Latency Milliseconds",
+      "type": "number"
+    },
+    "output_tokens_target": {
+      "enum": [
+        128,
+        256
+      ],
+      "title": "Output Tokens Target",
+      "type": "integer"
+    },
+    "prompt_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prompt Tokens"
+    },
+    "queue_milliseconds": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Queue Milliseconds"
+    },
+    "repeat": {
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "title": "Repeat",
+      "type": "integer"
+    },
+    "request_id": {
+      "pattern": "^m7req-[0-9]{6}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status_code": {
+      "maximum": 599,
+      "minimum": 0,
+      "title": "Status Code",
+      "type": "integer"
+    },
+    "success": {
+      "title": "Success",
+      "type": "boolean"
+    },
+    "tpot_milliseconds": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tpot Milliseconds"
+    },
+    "ttft_milliseconds": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ttft Milliseconds"
+    }
+  },
+  "required": [
+    "request_id",
+    "backend",
+    "concurrency",
+    "input_tokens_target",
+    "output_tokens_target",
+    "repeat",
+    "success",
+    "status_code",
+    "latency_milliseconds"
+  ],
+  "title": "InferenceRequestResult",
+  "type": "object"
+}

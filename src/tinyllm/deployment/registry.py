@@ -98,11 +98,13 @@ def _json_bytes(value: object) -> bytes:
 
 
 def _atomic_json(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    path.parent.chmod(0o700)
     temporary = path.with_name(f".{path.name}.tmp-{uuid.uuid4().hex}")
     try:
         with temporary.open("xb") as handle:
             handle.write(_json_bytes(value))
+            os.fchmod(handle.fileno(), 0o600)
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
@@ -415,10 +417,12 @@ def promote_production(
     else:
         temporary = target.with_name(f".{production_version}.tmp-{uuid.uuid4().hex}")
         try:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            temporary.mkdir()
+            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            target.parent.chmod(0o700)
+            temporary.mkdir(mode=0o700)
             _atomic_json(temporary / "model.json", record.to_dict())
             os.replace(temporary, target)
+            target.chmod(0o700)
             record_sha256 = _sha256_file(record_path)
         except OSError as exc:
             if temporary.exists():

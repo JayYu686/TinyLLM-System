@@ -189,6 +189,12 @@ def test_promote_and_rollback_publish_immutable_records(tmp_path: Path) -> None:
 
     first = promote_production(root, first_path, now=NOW)
     assert resolve_model(root, "production", now=NOW).model_version == first.production_version
+    production_dir = root / "registry" / "production" / first.production_version
+    alias_path = root / "registry" / "aliases" / "production.json"
+    assert production_dir.stat().st_mode & 0o777 == 0o700
+    assert (production_dir / "model.json").stat().st_mode & 0o777 == 0o600
+    assert alias_path.parent.stat().st_mode & 0o777 == 0o700
+    assert alias_path.stat().st_mode & 0o777 == 0o600
     assert (root / "registry" / "candidates" / CANDIDATE / "model.json").read_text(
         encoding="utf-8"
     ) == json.dumps(record.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"

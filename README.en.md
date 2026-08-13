@@ -177,8 +177,8 @@ sequenceDiagram
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
 | M5 dual-mode SFT | Complete | 0.6B four-GPU Full SFT over 50M tokens and 8B BF16 LoRA over 10M tokens; both routes completed Exact Resume, dual-mode evaluation, and export |
 | M6 evaluation and promotion | Complete | Independent v7 dual-mode evaluation, 160 human judgments, 11/11 gates passed, and the 0.6B Full-SFT artifact registered as Candidate |
-| M7 inference | In progress | Registry/Resolver, Gateway, mock tests, and benchmark contract complete; real vLLM GPU smoke and Production Gate pending |
-| M8 DevOps agent | Planned | Tool calling, MCP, LangGraph, approval, and evidence retrieval |
+| M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
+| M8 DevOps agent | In progress | Tool calling, MCP, LangGraph, approval, and evidence retrieval |
 | M9 agent evaluation | Planned | BFCL Offline Core Profile and a 240-task DevOps Agent Suite |
 | M10 agent post-training | Planned | 0.6B Full SFT, 8B LoRA, and Agent Model Gate |
 
@@ -221,7 +221,8 @@ failure paths, real reports, and documentation. Evidence entry points:
   [dual-mode template-alignment decision (Chinese)](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md), and
   [10-minute Chinese demo](docs/demo_m6.md)
 - [M7 serving contract (Chinese)](docs/m7_serving_contract.md) and
-  [M7.0/M7.1 foundation review (Chinese)](reports/m7/m7_foundation.md)
+  [M7.0/M7.1 foundation review (Chinese)](reports/m7/m7_foundation.md), and
+  [M7 acceptance report (Chinese)](reports/m7/m7_acceptance.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -407,7 +408,7 @@ system capability:
 | M4 | Qwen3-8B FSDP2 sharded training and DCP resume | Large-model sharding |
 | M5 | Qwen3 dual-mode Full SFT and LoRA | Practical post-training |
 | M6 | Base/Candidate comparison and Candidate Gate | `v0.6.0-rc.1` candidate release |
-| M7 | vLLM serving and measured inference gate | Production prerequisite |
+| M7 | vLLM serving and measured inference gate | `v0.7.0` Production release |
 | M8 | Tool calling, MCP, and a single DevOps agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL and DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
 | M10 | Agent SFT/LoRA and unified gates | `v1.0.0` or `v1.0.0-rc.1` |
@@ -445,14 +446,15 @@ The preregistered requirements were:
 - complete data, model, checkpoint, environment, and evaluation lineage.
 
 The v1–v6 rejection evidence remains immutable. v7 completed all 160 human judgments and passed
-11/11 checks, registering `qwen3-0-6b-m6-d16c2357` as Candidate. It can become eligible for
-Production only after the measured M7 inference performance gate passes.
+11/11 checks, registering `qwen3-0-6b-m6-d16c2357` as Candidate. It later passed M7's formal
+18,000-request inference matrix, recovery, rollback, and security gates, and was promoted as
+`qwen3-0-6b-m7-fa678d92`. See the [M7 acceptance report](reports/m7/m7_acceptance.md).
 
 ## Core boundary and future research
 
 The completed release covers single-host single/multi-GPU training, data versioning,
-checkpointing, automated evaluation, and Candidate promotion. M7–M10 deliver serving and
-Production, a DevOps agent, Agent Evaluation, and Agent post-training. The following directions
+checkpointing, automated evaluation, Candidate promotion, serving, and Production. M8–M10 deliver
+a DevOps agent, Agent Evaluation, and Agent post-training. The following directions
 live in the future research queue:
 
 - MoE, pipeline parallelism, and multi-node training;

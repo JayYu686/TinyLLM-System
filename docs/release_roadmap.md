@@ -25,8 +25,9 @@ M0–M6 are complete. M5 produced a four-GPU Qwen3-0.6B Full-SFT run over 50M su
 tokens and a single-GPU Qwen3-8B LoRA run over 10M tokens, both with fresh-process Exact
 Resume and real dual-mode evaluation. M6 then evaluated the final 0.6B artifact on an independent
 300-item bilingual suite, completed 160 human judgments, passed all 11 Candidate checks, and
-registered `qwen3-0-6b-m6-d16c2357` as Candidate. Production remains gated on M7 inference
-evidence.
+registered `qwen3-0-6b-m6-d16c2357` as Candidate. M7 subsequently completed its 18,000-request
+formal serving matrix, recovery, rollback, and security gates, promoting
+`qwen3-0-6b-m7-fa678d92` to Production.
 
 ## Agent release train
 

@@ -163,8 +163,8 @@ sequenceDiagram
 | M4 FSDP2 | 已完成 | Qwen3-8B 四卡 BF16 FULL_SHARD；Step 25→50 DCP 恢复；Safetensors 独立加载 |
 | M5 双模式 SFT | 已完成 | 0.6B 四卡 Full SFT 50M Token 与 8B BF16 LoRA 10M Token；两条路线均完成 Exact Resume、双模式评测和导出 |
 | M6 评测与晋级 | 已完成 | 独立 v7 双模式评测与 160 条人工审查；11/11 门禁通过；0.6B Full-SFT 注册为 Candidate |
-| M7 推理部署 | 进行中 | Registry/Resolver、Gateway、Mock 测试与 Benchmark 契约已完成；vLLM GPU Smoke 和 Production Gate 待真实运行 |
-| M8 DevOps Agent | 计划中 | Tool Calling、MCP、LangGraph、审批与证据检索 |
+| M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
+| M8 DevOps Agent | 进行中 | Tool Calling、MCP、LangGraph、审批与证据检索 |
 | M9 Agent 评测 | 计划中 | BFCL Offline Core Profile 与 240 条 DevOps Agent Suite |
 | M10 Agent 后训练 | 计划中 | 0.6B Full SFT、8B LoRA 与 Agent Model Gate |
 
@@ -214,7 +214,8 @@ sequenceDiagram
   [双模式模板对齐决策](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md)与
   [10 分钟中文演示](docs/demo_m6.md)
 - [M7 在线推理契约](docs/m7_serving_contract.md)与
-  [M7.0/M7.1 基础审查报告](reports/m7/m7_foundation.md)
+  [M7.0/M7.1 基础审查报告](reports/m7/m7_foundation.md)、
+  [M7 总验收](reports/m7/m7_acceptance.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -394,7 +395,7 @@ TinyLLM-System/
 | M4 | Qwen3-8B FSDP2 分片训练与 DCP 恢复 | 建立大模型分片能力 |
 | M5 | Qwen3 双模式 Full SFT 与 LoRA | 建立实际后训练链路 |
 | M6 | Base/Candidate 比较和 Candidate Gate | `v0.6.0-rc.1` 候选版本 |
-| M7 | vLLM 服务和真实推理门禁 | Production 的前置阶段 |
+| M7 | vLLM 服务和真实推理门禁 | `v0.7.0` Production 版本 |
 | M8 | Tool Calling、MCP 与 DevOps 单 Agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL 与 DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
 | M10 | Agent SFT/LoRA 与统一门禁 | `v1.0.0` 或 `v1.0.0-rc.1` |
@@ -429,13 +430,14 @@ Revision、解码配置、原始输出、评分依据和 Bootstrap 95% 置信区
 - 数据、模型、Checkpoint、环境和评测血缘完整。
 
 v1–v6 的拒绝证据保持不可变；v7 完成 160/160 人工复核并通过 11/11 门禁，模型已注册为
-`qwen3-0-6b-m6-d16c2357` Candidate。Candidate 通过 M7 的真实推理性能门禁后，才具备
-Production 晋级条件。
+`qwen3-0-6b-m6-d16c2357` Candidate。该 Candidate 后续通过 M7 的 18,000 请求正式推理矩阵、
+恢复、回滚和安全门禁，已作为 `qwen3-0-6b-m7-fa678d92` 晋级 Production；完整指标见
+[M7 总验收](reports/m7/m7_acceptance.md)。
 
 ## 核心边界与后续研究
 
-当前已完成版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测和 Candidate 模型
-晋级。M7–M10 依次交付推理与 Production、DevOps Agent、Agent Evaluation 和 Agent 后训练。
+当前已完成版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、Candidate 晋级、
+在线推理和 Production 门禁。M8–M10 依次交付 DevOps Agent、Agent Evaluation 和 Agent 后训练。
 以下方向位于后续研究清单：
 
 - MoE、Pipeline Parallel 和多节点训练；

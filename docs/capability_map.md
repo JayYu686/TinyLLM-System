@@ -73,7 +73,8 @@ TinyLLM-System 在 M7–M10 增加一个边界明确的 DevOps 诊断单 Agent�
 10. 在 M7 部署 Candidate 并执行推理压测与 Production Gate。
 
 完整演示流程见 [10 分钟中文演示](demo_m6.md)，M6 质量与晋级结果见
-[M6 验收报告](../reports/m6/m6_acceptance.md)。
+[M6 验收报告](../reports/m6/m6_acceptance.md)，在线推理和 Production 证据见
+[M7 验收报告](../reports/m7/m7_acceptance.md)。
 
 ## 4. 对外发布原则
 

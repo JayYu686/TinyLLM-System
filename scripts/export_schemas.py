@@ -9,6 +9,21 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from tinyllm.agent import (
+    AgentApprovalDecision,
+    AgentApprovalRequest,
+    AgentConfig,
+    AgentEvent,
+    AgentMessage,
+    AgentModelDecision,
+    AgentRunRecord,
+    AgentRunRequest,
+    AgentToolCall,
+    EvidenceIndexManifest,
+    EvidenceSearchResult,
+    MCPServerConfig,
+    MCPToolPolicy,
+)
 from tinyllm.benchmark import (
     BenchmarkProfileAggregate,
     BenchmarkTimingSummary,
@@ -228,6 +243,19 @@ from tinyllm.training.m5_lora_schema import (
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
+    "m8-agent-approval-decision-v1.schema.json": AgentApprovalDecision,
+    "m8-agent-approval-request-v1.schema.json": AgentApprovalRequest,
+    "m8-agent-config-v1.schema.json": AgentConfig,
+    "m8-agent-event-v1.schema.json": AgentEvent,
+    "m8-agent-message-v1.schema.json": AgentMessage,
+    "m8-agent-model-decision-v1.schema.json": AgentModelDecision,
+    "m8-agent-run-record-v1.schema.json": AgentRunRecord,
+    "m8-agent-run-request-v1.schema.json": AgentRunRequest,
+    "m8-agent-tool-call-v1.schema.json": AgentToolCall,
+    "m8-evidence-index-manifest-v1.schema.json": EvidenceIndexManifest,
+    "m8-evidence-search-result-v1.schema.json": EvidenceSearchResult,
+    "m8-mcp-server-config-v1.schema.json": MCPServerConfig,
+    "m8-mcp-tool-policy-v1.schema.json": MCPToolPolicy,
     "balance-rejected-record-v1.schema.json": BalanceRejectedRecord,
     "baseline-evaluation-result-v1.schema.json": BaselineEvaluationResult,
     "baseline-run-config-v1.schema.json": BaselineRunConfig,

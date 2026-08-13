@@ -1,0 +1,14 @@
+-c runtime.txt
+
+# M8 Agent Runtime, MCP 2025-06-18 compatibility, and durable local checkpointing.
+aiosqlite==0.22.1
+jsonschema==4.26.0
+langchain-core==1.5.4
+langgraph==1.2.11
+langgraph-checkpoint==4.2.0
+langgraph-checkpoint-sqlite==3.1.1
+langgraph-prebuilt==1.1.0
+langgraph-sdk==0.4.2
+mcp==1.29.0
+starlette==0.52.1
+uvicorn==0.40.0

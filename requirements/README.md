@@ -12,6 +12,7 @@ updated.
 | `constraints/m4.txt` | FSDP2/DCP and Qwen3 training dependencies | Isolated M4 CPU/API compatibility Smoke |
 | `constraints/m5.txt` | Qwen3 Full SFT and reviewed PEFT LoRA dependencies | M5 CPU/API and RTX 3090 compatibility gates |
 | `constraints/serving.txt` | FastAPI Gateway and observability dependencies | M7 CPU/Mock contract and RTX 3090 service validation |
+| `constraints/agent.txt` | LangGraph, MCP and SQLite Agent Runtime dependencies | M8 CPU/Mock compatibility gate |
 | `serving-cu118.txt` | vLLM 0.8.5.post1 CUDA 11.8 dependencies | M7 Qwen3 RTX 3090 compatibility Smoke |
 | `torch-cpu.txt` | CPU-only CI and local smoke tests | CPU CI |
 | `torch-cu118.txt` | RTX 3090 CUDA 11.8 profile | M0 hardware smoke |
@@ -73,3 +74,8 @@ The vLLM profile omits Ray's `cgraph` extra because that optional dependency pat
 CUDA 12 CuPy into the resolver while this profile is fixed to CUDA 11.8. M7 uses one CUDA 11.8
 device and does not use Ray pipeline parallelism; the plain Ray dependency still satisfies
 vLLM's local execution import path without mixing CUDA major versions.
+
+M8 uses `.venv-agent`. It pins MCP to the maintained `1.29.x` line with a `<2` upper bound,
+so the frozen MCP 2025-06-18 conformance contract cannot move silently to a new major protocol
+implementation. LangGraph and its SQLite checkpointer stay isolated from both training and
+Serving environments.

@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "description": "Idempotent user decision for one proposed sandbox write.",
+  "properties": {
+    "approval_id": {
+      "pattern": "^approval-[0-9a-f]{12}$",
+      "title": "Approval Id",
+      "type": "string"
+    },
+    "decided_at": {
+      "format": "date-time",
+      "title": "Decided At",
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "approved",
+        "rejected"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "pattern": "^[A-Za-z0-9._:-]{16,128}$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "approval_id",
+    "decision",
+    "idempotency_key",
+    "decided_at"
+  ],
+  "title": "AgentApprovalDecision",
+  "type": "object"
+}

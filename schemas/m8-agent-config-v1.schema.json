@@ -1,0 +1,240 @@
+{
+  "$defs": {
+    "MCPServerConfig": {
+      "additionalProperties": false,
+      "description": "One administrator-controlled MCP Server registration.",
+      "properties": {
+        "args": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Args",
+          "type": "array"
+        },
+        "bearer_token_env": {
+          "anyOf": [
+            {
+              "pattern": "^TINYLLM_[A-Z0-9_]{3,100}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bearer Token Env"
+        },
+        "command": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "server_id": {
+          "pattern": "^[a-z][a-z0-9-]{2,63}$",
+          "title": "Server Id",
+          "type": "string"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/MCPToolPolicy"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Tools",
+          "type": "array"
+        },
+        "transport": {
+          "enum": [
+            "stdio",
+            "streamable_http"
+          ],
+          "title": "Transport",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "server_id",
+        "transport",
+        "tools"
+      ],
+      "title": "MCPServerConfig",
+      "type": "object"
+    },
+    "MCPToolPolicy": {
+      "additionalProperties": false,
+      "description": "Authoritative local policy for one MCP tool.",
+      "properties": {
+        "access": {
+          "enum": [
+            "read",
+            "sandbox_write"
+          ],
+          "title": "Access",
+          "type": "string"
+        },
+        "approval_required": {
+          "title": "Approval Required",
+          "type": "boolean"
+        },
+        "max_attempts": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "default": 10.0,
+          "exclusiveMinimum": 0,
+          "maximum": 30,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "access",
+        "approval_required",
+        "max_attempts"
+      ],
+      "title": "MCPToolPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Frozen Agent Runtime and allowlisted MCP Server configuration.",
+  "properties": {
+    "config_id": {
+      "pattern": "^m8-agent-[a-z0-9-]{3,80}$",
+      "title": "Config Id",
+      "type": "string"
+    },
+    "default_mode": {
+      "default": "nonthinking",
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Default Mode",
+      "type": "string"
+    },
+    "default_model": {
+      "default": "production",
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Default Model",
+      "type": "string"
+    },
+    "evidence_excerpt_characters": {
+      "default": 1200,
+      "maximum": 4000,
+      "minimum": 100,
+      "title": "Evidence Excerpt Characters",
+      "type": "integer"
+    },
+    "evidence_top_k": {
+      "default": 8,
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Evidence Top K",
+      "type": "integer"
+    },
+    "max_steps": {
+      "default": 8,
+      "maximum": 8,
+      "minimum": 1,
+      "title": "Max Steps",
+      "type": "integer"
+    },
+    "max_tool_calls": {
+      "default": 12,
+      "maximum": 12,
+      "minimum": 1,
+      "title": "Max Tool Calls",
+      "type": "integer"
+    },
+    "mcp_servers": {
+      "items": {
+        "$ref": "#/$defs/MCPServerConfig"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Mcp Servers",
+      "type": "array"
+    },
+    "read_retry_delays_ms": {
+      "default": [
+        250,
+        500
+      ],
+      "items": {
+        "enum": [
+          250,
+          500
+        ],
+        "type": "integer"
+      },
+      "title": "Read Retry Delays Ms",
+      "type": "array"
+    },
+    "run_timeout_seconds": {
+      "default": 120.0,
+      "exclusiveMinimum": 0,
+      "maximum": 600,
+      "title": "Run Timeout Seconds",
+      "type": "number"
+    },
+    "same_tool_consecutive_limit": {
+      "const": 2,
+      "default": 2,
+      "title": "Same Tool Consecutive Limit",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool_timeout_seconds": {
+      "default": 10.0,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Tool Timeout Seconds",
+      "type": "number"
+    }
+  },
+  "required": [
+    "config_id",
+    "mcp_servers"
+  ],
+  "title": "AgentConfig",
+  "type": "object"
+}

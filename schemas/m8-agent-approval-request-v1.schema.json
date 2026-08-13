@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "description": "Public approval body; idempotency identity is supplied only by the HTTP header.",
+  "properties": {
+    "decision": {
+      "enum": [
+        "approved",
+        "rejected"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision"
+  ],
+  "title": "AgentApprovalRequest",
+  "type": "object"
+}

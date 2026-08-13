@@ -1,0 +1,66 @@
+{
+  "$defs": {
+    "AgentToolCall": {
+      "additionalProperties": false,
+      "description": "One model-proposed tool call, pending local policy enforcement.",
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "call_id": {
+          "pattern": "^call_[A-Za-z0-9_-]{1,120}$",
+          "title": "Call Id",
+          "type": "string"
+        },
+        "server_id": {
+          "pattern": "^[a-z][a-z0-9-]{2,63}$",
+          "title": "Server Id",
+          "type": "string"
+        },
+        "tool_name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id",
+        "server_id",
+        "tool_name",
+        "arguments"
+      ],
+      "title": "AgentToolCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Parsed model decision: tool proposals or one final answer.",
+  "properties": {
+    "message": {
+      "anyOf": [
+        {
+          "maxLength": 262144,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Message"
+    },
+    "tool_calls": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AgentToolCall"
+      },
+      "maxItems": 8,
+      "title": "Tool Calls",
+      "type": "array"
+    }
+  },
+  "title": "AgentModelDecision",
+  "type": "object"
+}

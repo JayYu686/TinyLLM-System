@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "description": "Authoritative local policy for one MCP tool.",
+  "properties": {
+    "access": {
+      "enum": [
+        "read",
+        "sandbox_write"
+      ],
+      "title": "Access",
+      "type": "string"
+    },
+    "approval_required": {
+      "title": "Approval Required",
+      "type": "boolean"
+    },
+    "max_attempts": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Max Attempts",
+      "type": "integer"
+    },
+    "name": {
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "title": "Name",
+      "type": "string"
+    },
+    "timeout_seconds": {
+      "default": 10.0,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Timeout Seconds",
+      "type": "number"
+    }
+  },
+  "required": [
+    "name",
+    "access",
+    "approval_required",
+    "max_attempts"
+  ],
+  "title": "MCPToolPolicy",
+  "type": "object"
+}

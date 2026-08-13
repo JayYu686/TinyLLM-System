@@ -1,0 +1,59 @@
+{
+  "$defs": {
+    "ModelCard": {
+      "additionalProperties": false,
+      "description": "One OpenAI-compatible model-list entry.",
+      "properties": {
+        "created": {
+          "minimum": 0,
+          "title": "Created",
+          "type": "integer"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "object": {
+          "const": "model",
+          "default": "model",
+          "title": "Object",
+          "type": "string"
+        },
+        "owned_by": {
+          "const": "tinyllm-system",
+          "default": "tinyllm-system",
+          "title": "Owned By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "created"
+      ],
+      "title": "ModelCard",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "OpenAI-compatible model-list response.",
+  "properties": {
+    "data": {
+      "items": {
+        "$ref": "#/$defs/ModelCard"
+      },
+      "title": "Data",
+      "type": "array"
+    },
+    "object": {
+      "const": "list",
+      "default": "list",
+      "title": "Object",
+      "type": "string"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "title": "ModelList",
+  "type": "object"
+}

@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "M7VulnerabilityAssessment": {
+      "additionalProperties": false,
+      "description": "One canonical vulnerability and its reviewed applicability decision.",
+      "properties": {
+        "advisory_id": {
+          "pattern": "^(GHSA|CVE)-[A-Za-z0-9-]{4,64}$",
+          "title": "Advisory Id",
+          "type": "string"
+        },
+        "controls": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Controls",
+          "type": "array"
+        },
+        "disposition": {
+          "enum": [
+            "fixed",
+            "mitigated",
+            "not_affected",
+            "unmitigated"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "installed_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Installed Version",
+          "type": "string"
+        },
+        "package": {
+          "pattern": "^[A-Za-z0-9_.-]{1,64}$",
+          "title": "Package",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 1000,
+          "minLength": 20,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "critical",
+            "high",
+            "moderate",
+            "low",
+            "unknown"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "advisory_id",
+        "package",
+        "installed_version",
+        "severity",
+        "disposition",
+        "rationale"
+      ],
+      "title": "M7VulnerabilityAssessment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Frozen package audit plus VEX-style applicability assessment.",
+  "properties": {
+    "assessments": {
+      "items": {
+        "$ref": "#/$defs/M7VulnerabilityAssessment"
+      },
+      "title": "Assessments",
+      "type": "array"
+    },
+    "audit_id": {
+      "pattern": "^m7-security-[0-9a-f]{8}$",
+      "title": "Audit Id",
+      "type": "string"
+    },
+    "control_evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Control Evidence Sha256",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "observed_advisories": {
+      "minimum": 0,
+      "title": "Observed Advisories",
+      "type": "integer"
+    },
+    "osv_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Osv Snapshot Sha256",
+      "type": "string"
+    },
+    "pip_audit_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Pip Audit Sha256",
+      "type": "string"
+    },
+    "profile": {
+      "const": "loopback-qwen3-text-cu118-v1",
+      "title": "Profile",
+      "type": "string"
+    },
+    "reviewed_critical_high_advisories": {
+      "minimum": 0,
+      "title": "Reviewed Critical High Advisories",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "unmitigated_critical_vulnerabilities": {
+      "minimum": 0,
+      "title": "Unmitigated Critical Vulnerabilities",
+      "type": "integer"
+    },
+    "unmitigated_high_vulnerabilities": {
+      "minimum": 0,
+      "title": "Unmitigated High Vulnerabilities",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "audit_id",
+    "evaluated_at",
+    "profile",
+    "environment_sha256",
+    "pip_audit_sha256",
+    "osv_snapshot_sha256",
+    "control_evidence_sha256",
+    "observed_advisories",
+    "reviewed_critical_high_advisories",
+    "assessments",
+    "unmitigated_critical_vulnerabilities",
+    "unmitigated_high_vulnerabilities",
+    "status"
+  ],
+  "title": "M7SecurityAudit",
+  "type": "object"
+}

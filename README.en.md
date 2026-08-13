@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-> A hardware-aware LLM training, evaluation, and deployment platform for consumer
+> An LLM post-training, agent evaluation, and online inference platform for consumer
 > multi-GPU workstations.
 
 [![CI](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml/badge.svg)](https://github.com/JayYu686/TinyLLM-System/actions/workflows/ci.yml)
@@ -14,6 +14,8 @@ evaluation, and version promotion into one reproducible engineering lifecycle. N
 PyTorch provides the training core. The primary environment is a shared workstation with
 10 × RTX 3090 24GB GPUs, where execution adapts to memory capacity, topology, and available
 resources through single-device training, DDP, or FSDP2.
+After M6, the lifecycle extends into online serving, tool calling, MCP, a single DevOps
+agent, and dedicated agent-readiness evaluation.
 
 Every experiment receives complete lineage, from pinned dataset/model revisions and
 schema-validated YAML to the Git commit, software and hardware environment, checkpoints,
@@ -61,6 +63,13 @@ flowchart LR
         V[Production promotion]
     end
 
+    subgraph Agent["Agent application loop"]
+        O[OpenAI Gateway]
+        L[LangGraph runtime]
+        X[MCP tools and evidence]
+        J[BFCL / DevOps agent eval]
+    end
+
     D --> P
     M --> P
     Y --> P
@@ -77,6 +86,10 @@ flowchart LR
     G --> Q
     Q --> I
     I --> V
+    V --> O
+    O --> L
+    L --> X
+    X --> J
 ```
 
 The complete lifecycle is:
@@ -164,8 +177,10 @@ sequenceDiagram
 | M4 FSDP2 | Complete | Qwen3-8B four-GPU BF16 FULL_SHARD; Step 25→50 DCP resume; independent Safetensors load |
 | M5 dual-mode SFT | Complete | 0.6B four-GPU Full SFT over 50M tokens and 8B BF16 LoRA over 10M tokens; both routes completed Exact Resume, dual-mode evaluation, and export |
 | M6 evaluation and promotion | Complete | Independent v7 dual-mode evaluation, 160 human judgments, 11/11 gates passed, and the 0.6B Full-SFT artifact registered as Candidate |
-| M7 inference | Planned | vLLM serving, throughput/latency benchmark, and Production Gate |
-| M8 planner | Enhancement | Static memory estimation and short probe |
+| M7 inference | In progress | Registry/Resolver, Gateway, mock tests, and benchmark contract complete; real vLLM GPU smoke and Production Gate pending |
+| M8 DevOps agent | Planned | Tool calling, MCP, LangGraph, approval, and evidence retrieval |
+| M9 agent evaluation | Planned | BFCL Offline Core Profile and a 240-task DevOps Agent Suite |
+| M10 agent post-training | Planned | 0.6B Full SFT, 8B LoRA, and Agent Model Gate |
 
 Milestone status represents a combined gate across implementation, tests, smoke runs,
 failure paths, real reports, and documentation. Evidence entry points:
@@ -205,6 +220,8 @@ failure paths, real reports, and documentation. Evidence entry points:
   [M6 v1 Gate rejection analysis (Chinese)](reports/m6/m6_gate_rejection_analysis.md),
   [dual-mode template-alignment decision (Chinese)](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md), and
   [10-minute Chinese demo](docs/demo_m6.md)
+- [M7 serving contract (Chinese)](docs/m7_serving_contract.md) and
+  [M7.0/M7.1 foundation review (Chinese)](reports/m7/m7_foundation.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -296,13 +313,16 @@ tinyllm data prepare|inspect
 tinyllm train
 tinyllm run rebuild|list|show
 tinyllm benchmark train
+tinyllm benchmark inference
 tinyllm eval
 tinyllm compare
 tinyllm promote
+tinyllm deploy resolve|show|promote|rollback
+tinyllm serve
 ```
 
-M7/M8 will add `tinyllm serve`, `tinyllm benchmark inference`, `tinyllm plan`, and full
-`tinyllm run reproduce` support. Planned interfaces are kept separate from delivered commands.
+M8 will add `tinyllm agent run|approve|cancel|eval|index rebuild`. Full
+`tinyllm run reproduce` and the Training Planner are enhancement work.
 
 Commands expose stable `--json` output for shell, CI, and service integration:
 
@@ -314,6 +334,8 @@ Commands expose stable `--json` output for shell, CI, and service integration:
 | 4 | Training run failure |
 | 5 | Checkpoint or resume integrity failure |
 | 6 | Evaluation failure or promotion rejection |
+| 7 | Serving, Gateway, deployment, or model-load failure |
+| 8 | Agent Runtime, MCP, or tool-execution failure |
 
 CLI overrides focus on GPU selection, output location, resume mode, and a small set of
 runtime fields. YAML stores the experiment definition. Public schemas carry version fields,
@@ -325,11 +347,15 @@ The private server-side Artifact Store is configured through `$TINYLLM_ARTIFACT_
 
 ```text
 $TINYLLM_ARTIFACT_ROOT/
-├── cache/       # dataset, model, and evaluation caches
-├── datasets/    # registered immutable dataset versions
-├── models/      # model inputs and deployment exports
-├── runs/        # training runs and checkpoints
-└── registry/    # rebuildable index and promotion records
+├── cache/              # dataset, model, and evaluation caches
+├── datasets/           # registered immutable dataset versions
+├── models/             # model inputs and deployment exports
+├── runs/               # training runs and checkpoints
+├── deployments/        # serving config, environment, logs, and benchmarks
+├── agent-runs/         # agent runs and resumable events
+├── agent-evaluations/  # raw agent-evaluation evidence
+├── agent-sandboxes/    # approved agent-owned write copies
+└── registry/           # candidate, production, and atomic aliases
 ```
 
 A typical run directory:
@@ -369,7 +395,7 @@ TinyLLM-System/
 
 ## Release roadmap
 
-M0–M8 advance in dependency order, and each stage delivers one independently reviewable
+M0–M10 advance in dependency order, and each stage delivers one independently reviewable
 system capability:
 
 | Stage | Delivered capability | Release role |
@@ -382,10 +408,12 @@ system capability:
 | M5 | Qwen3 dual-mode Full SFT and LoRA | Practical post-training |
 | M6 | Base/Candidate comparison and Candidate Gate | `v0.6.0-rc.1` candidate release |
 | M7 | vLLM serving and measured inference gate | Production prerequisite |
-| M8 | Static estimate and short-probe planner | Resource-planning enhancement |
+| M8 | Tool calling, MCP, and a single DevOps agent | `v0.8.0-beta.1` Agent Runtime |
+| M9 | BFCL and DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
+| M10 | Agent SFT/LoRA and unified gates | `v1.0.0` or `v1.0.0-rc.1` |
 
-M7/M8, ZeRO-3, MLflow, V100 compatibility, and TinyGPT-350M enter later iterations
-according to core lifecycle dependencies and resource availability. See the
+The Training Planner, ZeRO-3, MLflow, V100 compatibility, and TinyGPT-350M enter enhancement
+iterations according to lifecycle dependencies and resource availability. See the
 [release roadmap](docs/release_roadmap.md).
 
 ## Evaluation and model promotion
@@ -422,17 +450,20 @@ Production only after the measured M7 inference performance gate passes.
 
 ## Core boundary and future research
 
-The current core covers single-host single/multi-GPU training, data versioning,
-checkpointing, automated evaluation, and Candidate promotion. M7 delivers inference deployment
-and the Production gate. The following directions live in the future research queue:
+The completed release covers single-host single/multi-GPU training, data versioning,
+checkpointing, automated evaluation, and Candidate promotion. M7–M10 deliver serving and
+Production, a DevOps agent, Agent Evaluation, and Agent post-training. The following directions
+live in the future research queue:
 
 - MoE, pipeline parallelism, and multi-node training;
 - custom KV cache, tensor parallelism, FlashAttention, and CUDA kernels;
 - full RLHF;
 - Kubernetes, multi-tenant billing, and complex management frontends.
+- multi-agent systems, arbitrary shell agents, a complete general MCP Host, and vector databases.
 
 M7 integrates vLLM's native OpenAI-compatible API with lineage-aware launch and benchmark
-wrappers. Scope references live under [Future Work](docs/future/) and
+wrappers. M8 provides one DevOps agent with a tool allowlist and explicit approval. Scope
+references live under [Future Work](docs/future/) and
 [ADRs](docs/adr/).
 
 ## Documentation
@@ -446,6 +477,7 @@ by default; CLI, schema, and machine-readable JSON fields remain English.
   [capability/evidence map](docs/capability_map.md)
 - [Architecture](docs/architecture.md), [training design](docs/training_design.md), and
   [M5 SFT contract](docs/m5_sft_contract.md)
+- [M7 serving and Production contract (Chinese)](docs/m7_serving_contract.md)
 - [Data contract](docs/dataset_contract.md), [evaluation spec](docs/evaluation_spec.md),
   and [experiment lineage](docs/experiment_lineage.md)
 - [Hardware strategy](docs/hardware_strategy.md) and

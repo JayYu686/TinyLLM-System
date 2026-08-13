@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "M7PackageVersion": {
+      "additionalProperties": false,
+      "description": "One normalized installed distribution identity.",
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z0-9_.-]{1,100}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "M7PackageVersion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Path-free software identity for a serving evidence campaign.",
+  "properties": {
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "packages": {
+      "items": {
+        "$ref": "#/$defs/M7PackageVersion"
+      },
+      "title": "Packages",
+      "type": "array"
+    },
+    "platform": {
+      "maxLength": 300,
+      "minLength": 1,
+      "title": "Platform",
+      "type": "string"
+    },
+    "python_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Python Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "serving_constraints_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Serving Constraints Sha256",
+      "type": "string"
+    },
+    "vllm_wheel_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Vllm Wheel Sha256",
+      "type": "string"
+    },
+    "vllm_wheel_source": {
+      "const": "vllm-github-release-cu118",
+      "title": "Vllm Wheel Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "captured_at",
+    "python_version",
+    "platform",
+    "packages",
+    "serving_constraints_sha256",
+    "vllm_wheel_sha256",
+    "vllm_wheel_source",
+    "git_commit",
+    "git_dirty"
+  ],
+  "title": "M7ServingEnvironment",
+  "type": "object"
+}

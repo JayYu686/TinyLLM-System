@@ -1,0 +1,9 @@
+schema_version: "1.0"
+benchmark_id: m7-inference-qwen3-0-6b-v1
+concurrency: [1, 4, 8, 16, 32]
+input_tokens: [128, 512, 1024]
+output_tokens: [128, 256]
+warmup_requests: 20
+measured_requests: 100
+repeats: 3
+request_timeout_seconds: 120.0

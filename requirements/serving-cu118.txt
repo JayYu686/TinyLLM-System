@@ -1,0 +1,49 @@
+-c constraints/serving.txt
+
+# vLLM 0.8.5.post1 CUDA 11.8 compatibility candidates. vLLM itself is installed
+# from the reviewed official wheel with --no-deps after this file.
+# Ray's cgraph extra is intentionally omitted: it pulls CUDA 12 CuPy, while M7 is
+# a single-GPU CUDA 11.8 deployment and does not use Ray pipeline parallelism.
+aiohttp
+blake3
+cachetools
+cloudpickle
+compressed-tensors==0.9.3
+depyf==0.18.0
+einops
+gguf>=0.13.0
+lm-format-enforcer==0.10.12
+llguidance==0.7.30
+lark==1.2.2
+mistral-common[opencv]>=1.5.4
+msgspec
+ninja
+numba==0.61.2
+openai==1.77.0
+opencv-python-headless>=4.11.0
+opentelemetry-semantic-conventions-ai==0.4.13
+outlines==0.1.11
+partial-json-parser
+pillow
+prometheus-fastapi-instrumentator==7.1.0
+protobuf==4.25.9
+psutil
+py-cpuinfo
+python-json-logger
+python-multipart
+pyzmq>=25.0.0
+ray==2.56.1
+safetensors>=0.4.3
+scipy
+sentencepiece
+tiktoken>=0.6.0
+torch==2.6.0+cu118
+torchaudio==2.6.0+cu118
+torchvision==0.21.0+cu118
+transformers==4.57.6
+httptools
+uvloop
+watchfiles
+websockets
+xformers==0.0.29.post2
+xgrammar==0.1.18

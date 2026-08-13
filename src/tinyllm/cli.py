@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
+import hashlib
 import json
 import os
 import sys
@@ -17,6 +19,11 @@ from typer.main import get_command
 
 from tinyllm import __version__
 from tinyllm.benchmark.config import BenchmarkProfile, DDPBenchmarkConfigError
+from tinyllm.benchmark.inference import InferenceBenchmarkError, run_inference_benchmark
+from tinyllm.benchmark.inference_schema import (
+    InferenceBenchmarkConfigError,
+    load_inference_benchmark_config,
+)
 from tinyllm.benchmark.schema import BenchmarkGroup
 from tinyllm.benchmark.supervisor import (
     BenchmarkPreflightError,
@@ -39,6 +46,15 @@ from tinyllm.data import (
     prepare_m2_dataset,
     summarize_registered_dataset,
 )
+from tinyllm.deployment import (
+    DeploymentError,
+    DeploymentErrorCode,
+    promote_production,
+    resolve_model,
+    rollback_production,
+    show_deployment,
+)
+from tinyllm.deployment.gate import assemble_m7_production_gate
 from tinyllm.doctor.collector import DoctorCollector
 from tinyllm.doctor.render import render_json, render_text
 from tinyllm.evaluation import (
@@ -87,6 +103,7 @@ from tinyllm.lineage import (
 )
 from tinyllm.schemas import canonical_config_hash
 from tinyllm.schemas.artifacts import DEFAULT_ARTIFACT_ROOT
+from tinyllm.serving.config import ServingConfigError, load_gateway_config
 from tinyllm.training import (
     CheckpointError,
     TrainingConfigError,
@@ -122,10 +139,16 @@ run_app = typer.Typer(
     help="Rebuild and query the local Run lineage index.",
     no_args_is_help=True,
 )
+deploy_app = typer.Typer(
+    name="deploy",
+    help="Resolve and atomically manage immutable model deployments.",
+    no_args_is_help=True,
+)
 app.add_typer(data_app, name="data")
 app.add_typer(eval_app, name="eval")
 app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(run_app, name="run")
+app.add_typer(deploy_app, name="deploy")
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,6 +204,219 @@ def _run_index_error(exc: RunIndexError, *, json_output: bool) -> NoReturn:
     _output_error(str(exc), json_output=json_output, error_code=exc.code.value)
     usage_errors = {RunIndexErrorCode.INVALID_INPUT}
     raise typer.Exit(code=2 if exc.code in usage_errors else 3)
+
+
+def _deployment_error(exc: DeploymentError, *, json_output: bool) -> NoReturn:
+    """Map deployment failures onto the frozen CLI exit classes."""
+
+    _output_error(str(exc), json_output=json_output, error_code=exc.code.value)
+    if exc.code == DeploymentErrorCode.INVALID_INPUT:
+        raise typer.Exit(code=2)
+    if exc.code == DeploymentErrorCode.GATE_REJECTED:
+        raise typer.Exit(code=6)
+    raise typer.Exit(code=7)
+
+
+@deploy_app.command("resolve")
+def deploy_resolve(
+    ctx: typer.Context,
+    model: Annotated[
+        str,
+        typer.Option("--model", help="Production Alias or immutable M6/M7 model version."),
+    ] = "production",
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Resolve one deployment and verify model and Tokenizer artifacts."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = resolve_model(artifact_root, model)
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"verified: {result.model_version} status={result.status} "
+            f"model_sha256={result.model_artifact_sha256}"
+        )
+
+
+@deploy_app.command("show")
+def deploy_show(
+    ctx: typer.Context,
+    model: Annotated[
+        str,
+        typer.Option("--model", help="Production Alias or immutable M6/M7 model version."),
+    ] = "production",
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable path-free machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Show a verified path-free deployment projection."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = show_deployment(artifact_root, model)
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        typer.echo(
+            f"{result['status']}: {result['model_version']} "
+            f"candidate={result['candidate_model_version']}"
+        )
+
+
+@deploy_app.command("promote")
+def deploy_promote(
+    ctx: typer.Context,
+    gate: Annotated[
+        Path,
+        typer.Option("--gate", help="Absolute accepted M7 Production Gate JSON."),
+    ],
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Publish an accepted M7 Production record and update its Alias."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = promote_production(artifact_root, gate)
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(f"Production: {result.production_version}")
+
+
+@deploy_app.command("gate")
+def deploy_gate(
+    ctx: typer.Context,
+    benchmark: Annotated[Path, typer.Option("--benchmark", help="M7 benchmark summary JSON.")],
+    contract: Annotated[Path, typer.Option("--contract", help="M7 API contract evidence JSON.")],
+    recovery: Annotated[Path, typer.Option("--recovery", help="M7 recovery evidence JSON.")],
+    rollback: Annotated[Path, typer.Option("--rollback", help="M7 rollback evidence JSON.")],
+    security: Annotated[Path, typer.Option("--security", help="M7 security audit JSON.")],
+    m6_comparison: Annotated[
+        Path, typer.Option("--m6-comparison", help="Accepted M6 comparison JSON.")
+    ],
+    m6_candidate_evaluation: Annotated[
+        Path, typer.Option("--m6-candidate-evaluation", help="M6 Candidate evaluation JSON.")
+    ],
+    environment: Annotated[
+        Path, typer.Option("--environment", help="Frozen serving environment evidence.")
+    ],
+    hardware: Annotated[Path, typer.Option("--hardware", help="Frozen serving hardware evidence.")],
+    output: Annotated[Path, typer.Option("--output", help="New absolute M7 Gate JSON path.")],
+    candidate: Annotated[
+        str, typer.Option("--candidate", help="Immutable M6 Candidate version.")
+    ] = "qwen3-0-6b-m6-d16c2357",
+    serving_config: Annotated[
+        Path, typer.Option("--serving-config", help="Validated M7 serving YAML.")
+    ] = Path("configs/serving/m7_gateway.yaml"),
+    benchmark_config: Annotated[
+        Path, typer.Option("--benchmark-config", help="Frozen M7 benchmark YAML.")
+    ] = Path("configs/benchmark/m7_inference.yaml"),
+    benchmark_gateway_config: Annotated[
+        Path,
+        typer.Option(
+            "--benchmark-gateway-config", help="Gateway YAML used for the formal benchmark."
+        ),
+    ] = Path("configs/serving/m7_gateway_benchmark.yaml"),
+    artifact_root: Annotated[
+        Path, typer.Option("--artifact-root", help="Absolute private Artifact Store root.")
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool, typer.Option("--json", help="Emit stable machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Recompute an M7 Production Gate solely from immutable evidence."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = assemble_m7_production_gate(
+            artifact_root=artifact_root,
+            candidate_model_version=candidate,
+            benchmark_path=benchmark,
+            contract_path=contract,
+            recovery_path=recovery,
+            rollback_path=rollback,
+            security_path=security,
+            m6_comparison_path=m6_comparison,
+            m6_candidate_evaluation_path=m6_candidate_evaluation,
+            serving_config_path=serving_config,
+            benchmark_config_path=benchmark_config,
+            benchmark_gateway_config_path=benchmark_gateway_config,
+            environment_path=environment,
+            hardware_path=hardware,
+            output_path=output,
+        )
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"{result.status}: {result.gate_id} production_eligible="
+            f"{str(result.production_eligible).lower()}"
+        )
+
+
+@deploy_app.command("rollback")
+def deploy_rollback(
+    ctx: typer.Context,
+    target: Annotated[
+        str | None,
+        typer.Option("--target", help="Prior immutable M7 version; default is Alias history."),
+    ] = None,
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Atomically point the Production Alias at a prior accepted deployment."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = rollback_production(artifact_root, target)
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"Production: {result.production_version} previous={result.previous_production_version}"
+        )
 
 
 @run_app.command("rebuild")
@@ -1449,6 +1685,108 @@ def doctor(
         raise typer.Exit(code=3)
 
 
+@app.command("serve")
+def serve_command(
+    ctx: typer.Context,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Strict M7 Gateway YAML configuration."),
+    ] = Path("configs/serving/m7_gateway.yaml"),
+    model: Annotated[
+        str,
+        typer.Option("--model", help="Production Alias or immutable M6/M7 model version."),
+    ] = "production",
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit startup errors as stable JSON."),
+    ] = False,
+) -> None:
+    """Start the authenticated local Gateway in the isolated serving environment."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        gateway_config = load_gateway_config(config)
+        resolved = resolve_model(artifact_root, model)
+    except ServingConfigError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="SERVING_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    token = os.environ.get(gateway_config.bearer_token_env)
+    if token is None or len(token) < 32:
+        _output_error(
+            f"environment variable {gateway_config.bearer_token_env} must contain a "
+            "Bearer Token of at least 32 characters",
+            json_output=json_output,
+            error_code="SERVING_AUTH_CONFIG_ERROR",
+        )
+        raise typer.Exit(code=7)
+    try:
+        import uvicorn
+
+        from tinyllm.serving.backend import VLLMHTTPBackend
+        from tinyllm.serving.gateway import create_gateway
+        from tinyllm.serving.observability import StructuredEventLog
+        from tinyllm.serving.supervisor import BackendSupervisor
+    except ImportError as exc:
+        _output_error(
+            "serving dependencies are unavailable; use the isolated serving profile",
+            json_output=json_output,
+            error_code="SERVING_DEPENDENCY_ERROR",
+        )
+        raise typer.Exit(code=7) from exc
+    supervisor = (
+        BackendSupervisor(
+            config=gateway_config,
+            resolved_model=resolved,
+            artifact_root=artifact_root,
+        )
+        if gateway_config.manage_backend
+        else None
+    )
+    backend = VLLMHTTPBackend(
+        gateway_config.backend_base_url,
+        request_timeout_seconds=gateway_config.request_timeout_seconds,
+        health_timeout_seconds=gateway_config.backend_health_timeout_seconds,
+        internal_token=supervisor.internal_token if supervisor is not None else None,
+    )
+    gateway = create_gateway(
+        config=gateway_config,
+        resolved_model=resolved,
+        backend=backend,
+        bearer_token=token,
+        supervisor=supervisor,
+        event_log=StructuredEventLog(
+            artifact_root / "deployments" / "runtime" / gateway_config.config_id / "events.jsonl"
+        ),
+    )
+    try:
+        uvicorn.run(
+            gateway,
+            host=gateway_config.host,
+            port=gateway_config.port,
+            log_level="info",
+            access_log=False,
+            http="h11",
+            h11_max_incomplete_event_size=16_384,
+            proxy_headers=False,
+            server_header=False,
+            date_header=False,
+        )
+    except (OSError, RuntimeError) as exc:
+        _output_error(
+            "Gateway failed to start or terminated unexpectedly",
+            json_output=json_output,
+            error_code="SERVING_RUNTIME_ERROR",
+        )
+        raise typer.Exit(code=7) from exc
+
+
 @app.command("train")
 def train_command(
     ctx: typer.Context,
@@ -1622,6 +1960,116 @@ def benchmark_train(
             f"pass: {result.run_id} profile={result.profile} world_size={result.world_size} "
             f"repeat={result.repeat} tokens_per_second={result.tokens_per_second:.3f}"
         )
+
+
+@benchmark_app.command("inference")
+def benchmark_inference(
+    ctx: typer.Context,
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Frozen M7 inference benchmark YAML."),
+    ] = Path("configs/benchmark/m7_inference.yaml"),
+    model: Annotated[
+        str,
+        typer.Option("--model", help="Production Alias or immutable M6/M7 model version."),
+    ] = "production",
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    output_dir: Annotated[
+        Path,
+        typer.Option("--output-dir", help="New absolute private benchmark directory."),
+    ] = Path("."),
+    direct_url: Annotated[
+        str,
+        typer.Option("--direct-url", help="Loopback Direct vLLM base URL."),
+    ] = "http://127.0.0.1:8001",
+    gateway_url: Annotated[
+        str,
+        typer.Option("--gateway-url", help="Loopback TinyLLM Gateway base URL."),
+    ] = "http://127.0.0.1:8000",
+    environment: Annotated[
+        Path,
+        typer.Option("--environment", help="Private serving environment JSON."),
+    ] = Path("environment.json"),
+    hardware: Annotated[
+        Path,
+        typer.Option("--hardware", help="Private serving hardware JSON."),
+    ] = Path("hardware.json"),
+    gateway_config: Annotated[
+        Path,
+        typer.Option("--gateway-config", help="Gateway YAML used during the benchmark."),
+    ] = Path("configs/serving/m7_gateway_benchmark.yaml"),
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Run the frozen request-level Direct/Gateway inference benchmark."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    token = os.environ.get("TINYLLM_GATEWAY_BEARER_TOKEN")
+    if token is None or len(token) < 32:
+        _output_error(
+            "TINYLLM_GATEWAY_BEARER_TOKEN must contain at least 32 characters",
+            json_output=json_output,
+            error_code="SERVING_AUTH_CONFIG_ERROR",
+        )
+        raise typer.Exit(code=7)
+    direct_token = os.environ.get("TINYLLM_VLLM_INTERNAL_TOKEN")
+    if direct_token is None or len(direct_token) < 32:
+        _output_error(
+            "TINYLLM_VLLM_INTERNAL_TOKEN must contain at least 32 characters",
+            json_output=json_output,
+            error_code="SERVING_INTERNAL_AUTH_CONFIG_ERROR",
+        )
+        raise typer.Exit(code=7)
+    if not output_dir.is_absolute() or not environment.is_absolute() or not hardware.is_absolute():
+        _output_error(
+            "M7 benchmark output and evidence paths must be absolute",
+            json_output=json_output,
+            error_code="INFERENCE_BENCHMARK_INPUT_ERROR",
+        )
+        raise typer.Exit(code=2)
+    try:
+        benchmark_config = load_inference_benchmark_config(config)
+        gateway_benchmark_config = load_gateway_config(gateway_config)
+        resolved = resolve_model(artifact_root, model)
+        environment_sha256 = hashlib.sha256(environment.read_bytes()).hexdigest()
+        hardware_sha256 = hashlib.sha256(hardware.read_bytes()).hexdigest()
+        result = asyncio.run(
+            run_inference_benchmark(
+                config=benchmark_config,
+                resolved_model=resolved,
+                direct_url=direct_url,
+                direct_bearer_token=direct_token,
+                gateway_url=gateway_url,
+                gateway_bearer_token=token,
+                output_dir=output_dir,
+                environment_sha256=environment_sha256,
+                hardware_sha256=hardware_sha256,
+                gateway_config_sha256=canonical_config_hash(gateway_benchmark_config),
+            )
+        )
+    except InferenceBenchmarkConfigError as exc:
+        _output_error(str(exc), json_output=json_output, error_code="INFERENCE_CONFIG_ERROR")
+        raise typer.Exit(code=2) from exc
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    except (InferenceBenchmarkError, OSError, RuntimeError) as exc:
+        _output_error(str(exc), json_output=json_output, error_code="INFERENCE_BENCHMARK_FAILED")
+        raise typer.Exit(code=7) from exc
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"{result.status}: requests={result.total_requests} "
+            f"success_rate={result.success_rate_basis_points / 100:.2f}%"
+        )
+    if result.status != "succeeded":
+        raise typer.Exit(code=7)
 
 
 def build_parser() -> click.Command:

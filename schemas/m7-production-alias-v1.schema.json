@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "description": "Atomically replaceable pointer to one immutable Production record.",
+  "properties": {
+    "alias": {
+      "const": "production",
+      "default": "production",
+      "title": "Alias",
+      "type": "string"
+    },
+    "previous_production_version": {
+      "anyOf": [
+        {
+          "pattern": "^qwen3-(0-6b|8b)-m7-[0-9a-f]{8}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Previous Production Version"
+    },
+    "production_record_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Production Record Sha256",
+      "type": "string"
+    },
+    "production_version": {
+      "pattern": "^qwen3-(0-6b|8b)-m7-[0-9a-f]{8}$",
+      "title": "Production Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "production_version",
+    "production_record_sha256",
+    "updated_at"
+  ],
+  "title": "M7ProductionAlias",
+  "type": "object"
+}

@@ -17,6 +17,7 @@ IGNORED_PARTS = {
     ".venv",
     ".venv-baseline",
     ".venv-m4",
+    ".venv-serving",
 }
 
 

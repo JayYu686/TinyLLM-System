@@ -1,5 +1,9 @@
 # 推理服务设计
 
+> M7 的冻结接口、安全边界、Benchmark 和 Production Gate 以
+> [M7 在线推理与 Production 晋级契约](m7_serving_contract.md)为准。本文保留后端抽象与资源
+> 策略说明。
+
 ## 1. 目标
 
 将 candidate 或 production 模型统一部署，并提供可比较的性能结果。
@@ -27,8 +31,9 @@ InferenceBackend
 第一阶段提供：
 
 - `/v1/chat/completions`
-- `/health`
-- `/models`
+- `/v1/models`
+- `/health/live`
+- `/health/ready`
 - `/metrics`
 - `/version`
 
@@ -52,24 +57,16 @@ InferenceBackend
 
 ### 单卡模型
 
-优先多副本 Data Parallel，提高吞吐。
+优先验证单实例性能；多副本 Data Parallel 作为后续容量扩展策略。
 
 ### 单卡放不下
 
-MVP 使用成熟推理框架提供的 Tensor Parallel。Pipeline Parallel 属于 Future Work，不进入当前实现范围。
+使用成熟推理框架提供的 Tensor Parallel。Pipeline Parallel 属于 Future Work，不进入当前实现范围。
 
 ### 推荐资源布局
 
-```text
-GPU 0–1：副本 A，TP=2
-GPU 2–3：副本 B，TP=2
-GPU 4–5：副本 C，TP=2
-GPU 6–7：副本 D，TP=2
-GPU 8：评测
-GPU 9：备用
-```
-
-仅作为后期测试模板，不代表所有模型都适合 TP=2。
+M7 的 0.6B Candidate 使用一张经 Preflight 确认空闲的 RTX 3090；实际 GPU 索引写入硬件
+证据。多副本和 Tensor Parallel 只在模型容量或真实负载提出需求后进入增强实验。
 
 ## 6. 部署约束
 

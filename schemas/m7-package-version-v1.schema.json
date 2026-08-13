@@ -1,0 +1,23 @@
+{
+  "additionalProperties": false,
+  "description": "One normalized installed distribution identity.",
+  "properties": {
+    "name": {
+      "pattern": "^[A-Za-z0-9_.-]{1,100}$",
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "version"
+  ],
+  "title": "M7PackageVersion",
+  "type": "object"
+}

@@ -1,0 +1,177 @@
+{
+  "additionalProperties": false,
+  "description": "Secure-by-default local Model Gateway configuration.",
+  "properties": {
+    "backend_base_url": {
+      "default": "http://127.0.0.1:8001",
+      "title": "Backend Base Url",
+      "type": "string"
+    },
+    "backend_cleanup_timeout_seconds": {
+      "default": 30.0,
+      "exclusiveMinimum": 0,
+      "maximum": 120,
+      "title": "Backend Cleanup Timeout Seconds",
+      "type": "number"
+    },
+    "backend_health_timeout_seconds": {
+      "default": 2.0,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Backend Health Timeout Seconds",
+      "type": "number"
+    },
+    "backend_restart_limit": {
+      "default": 2,
+      "maximum": 10,
+      "minimum": 0,
+      "title": "Backend Restart Limit",
+      "type": "integer"
+    },
+    "backend_startup_timeout_seconds": {
+      "default": 180.0,
+      "exclusiveMinimum": 0,
+      "maximum": 600,
+      "title": "Backend Startup Timeout Seconds",
+      "type": "number"
+    },
+    "bearer_token_env": {
+      "default": "TINYLLM_GATEWAY_BEARER_TOKEN",
+      "pattern": "^[A-Z][A-Z0-9_]{2,63}$",
+      "title": "Bearer Token Env",
+      "type": "string"
+    },
+    "config_id": {
+      "pattern": "^m7-gateway-[a-z0-9-]{1,64}$",
+      "title": "Config Id",
+      "type": "string"
+    },
+    "enforce_eager": {
+      "default": true,
+      "title": "Enforce Eager",
+      "type": "boolean"
+    },
+    "expose_docs": {
+      "const": false,
+      "default": false,
+      "title": "Expose Docs",
+      "type": "boolean"
+    },
+    "gpu_index": {
+      "default": 7,
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Gpu Index",
+      "type": "integer"
+    },
+    "gpu_memory_utilization": {
+      "default": 0.4,
+      "exclusiveMinimum": 0.1,
+      "maximum": 0.95,
+      "title": "Gpu Memory Utilization",
+      "type": "number"
+    },
+    "host": {
+      "const": "127.0.0.1",
+      "default": "127.0.0.1",
+      "title": "Host",
+      "type": "string"
+    },
+    "manage_backend": {
+      "default": true,
+      "title": "Manage Backend",
+      "type": "boolean"
+    },
+    "max_concurrency": {
+      "default": 32,
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Max Concurrency",
+      "type": "integer"
+    },
+    "max_request_bytes": {
+      "default": 1048576,
+      "maximum": 8388608,
+      "minimum": 1024,
+      "title": "Max Request Bytes",
+      "type": "integer"
+    },
+    "model_max_length": {
+      "default": 4096,
+      "maximum": 40960,
+      "minimum": 512,
+      "title": "Model Max Length",
+      "type": "integer"
+    },
+    "port": {
+      "default": 8000,
+      "maximum": 65535,
+      "minimum": 1024,
+      "title": "Port",
+      "type": "integer"
+    },
+    "preflight_max_memory_used_mib": {
+      "default": 1024,
+      "maximum": 24576,
+      "minimum": 0,
+      "title": "Preflight Max Memory Used Mib",
+      "type": "integer"
+    },
+    "preflight_max_temperature_c": {
+      "default": 79,
+      "maximum": 95,
+      "minimum": 20,
+      "title": "Preflight Max Temperature C",
+      "type": "integer"
+    },
+    "preflight_max_utilization_percent": {
+      "default": 10,
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Preflight Max Utilization Percent",
+      "type": "integer"
+    },
+    "request_timeout_seconds": {
+      "default": 120.0,
+      "exclusiveMinimum": 0,
+      "maximum": 600,
+      "title": "Request Timeout Seconds",
+      "type": "number"
+    },
+    "requests_per_minute": {
+      "default": 120,
+      "maximum": 100000,
+      "minimum": 1,
+      "title": "Requests Per Minute",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool_call_parser": {
+      "const": "hermes",
+      "default": "hermes",
+      "title": "Tool Call Parser",
+      "type": "string"
+    },
+    "trusted_hosts": {
+      "default": [
+        "127.0.0.1",
+        "localhost"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Trusted Hosts",
+      "type": "array"
+    }
+  },
+  "required": [
+    "config_id"
+  ],
+  "title": "GatewayConfig",
+  "type": "object"
+}

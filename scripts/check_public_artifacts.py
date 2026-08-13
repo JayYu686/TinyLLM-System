@@ -14,6 +14,7 @@ SKIPPED_PARTS = {
     ".venv",
     ".venv-baseline",
     ".venv-m4",
+    ".venv-serving",
 }
 TEXT_SUFFIXES = {
     ".json",

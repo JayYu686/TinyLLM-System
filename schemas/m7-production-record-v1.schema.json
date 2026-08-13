@@ -1,0 +1,277 @@
+{
+  "$defs": {
+    "M6ModelIdentity": {
+      "additionalProperties": false,
+      "description": "Base or trained-model identity used by one M6 evaluation.",
+      "properties": {
+        "adaptation": {
+          "enum": [
+            "base",
+            "full_sft",
+            "lora"
+          ],
+          "title": "Adaptation",
+          "type": "string"
+        },
+        "adapter_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adapter Sha256"
+        },
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_revision": {
+          "enum": [
+            "c1899de289a04d12100db370d81485cdf75e47ca",
+            "b968826d9c46dd6066d109eabc6255188de91218"
+          ],
+          "title": "Base Revision",
+          "type": "string"
+        },
+        "dataset_manifest_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Manifest Sha256"
+        },
+        "dataset_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Version"
+        },
+        "model_artifact_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Model Artifact Sha256",
+          "type": "string"
+        },
+        "model_parameters": {
+          "exclusiveMinimum": 0,
+          "title": "Model Parameters",
+          "type": "integer"
+        },
+        "repository": {
+          "enum": [
+            "Qwen/Qwen3-0.6B",
+            "Qwen/Qwen3-8B"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "base",
+            "candidate"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "training_checkpoint_id": {
+          "anyOf": [
+            {
+              "pattern": "^checkpoint-tokens-[0-9]{10}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Checkpoint Id"
+        },
+        "training_config_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Config Sha256"
+        },
+        "training_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 180,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Run Id"
+        },
+        "training_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Tokens"
+        }
+      },
+      "required": [
+        "role",
+        "repository",
+        "base_revision",
+        "attention_architecture",
+        "adaptation",
+        "model_artifact_sha256",
+        "model_parameters"
+      ],
+      "title": "M6ModelIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable Production record that references, but never mutates, M6 evidence.",
+  "properties": {
+    "benchmark_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Benchmark Report Sha256",
+      "type": "string"
+    },
+    "candidate_record_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Record Sha256",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "model": {
+      "$ref": "#/$defs/M6ModelIdentity"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "production_eligible": {
+      "const": true,
+      "default": true,
+      "title": "Production Eligible",
+      "type": "boolean"
+    },
+    "production_gate_id": {
+      "pattern": "^m7-production-gate-[0-9a-f]{8}$",
+      "title": "Production Gate Id",
+      "type": "string"
+    },
+    "production_gate_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Production Gate Sha256",
+      "type": "string"
+    },
+    "production_version": {
+      "pattern": "^qwen3-(0-6b|8b)-m7-[0-9a-f]{8}$",
+      "title": "Production Version",
+      "type": "string"
+    },
+    "promoted_at": {
+      "format": "date-time",
+      "title": "Promoted At",
+      "type": "string"
+    },
+    "recovery_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Recovery Report Sha256",
+      "type": "string"
+    },
+    "rollback_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Rollback Report Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "security_audit_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Security Audit Sha256",
+      "type": "string"
+    },
+    "serving_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Serving Config Sha256",
+      "type": "string"
+    },
+    "source_candidate_version": {
+      "pattern": "^qwen3-(0-6b|8b)-m6-[0-9a-f]{8}$",
+      "title": "Source Candidate Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "Production",
+      "default": "Production",
+      "title": "Status",
+      "type": "string"
+    },
+    "tokenizer_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tokenizer Artifact Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "production_version",
+    "promoted_at",
+    "source_candidate_version",
+    "candidate_record_sha256",
+    "production_gate_id",
+    "production_gate_sha256",
+    "model",
+    "model_artifact_sha256",
+    "tokenizer_artifact_sha256",
+    "serving_config_sha256",
+    "environment_sha256",
+    "benchmark_report_sha256",
+    "recovery_report_sha256",
+    "rollback_report_sha256",
+    "security_audit_sha256"
+  ],
+  "title": "M7ProductionRecord",
+  "type": "object"
+}

@@ -1,4 +1,4 @@
-.PHONY: audit audit-baseline audit-m4 bootstrap bootstrap-baseline bootstrap-cpu bootstrap-gpu bootstrap-m4 bootstrap-m5 check coverage format-check install-local lint links m4-dependency-smoke public-check schema-check test typecheck
+.PHONY: audit audit-baseline audit-m4 audit-serving bootstrap bootstrap-baseline bootstrap-cpu bootstrap-gpu bootstrap-m4 bootstrap-m5 bootstrap-serving bootstrap-serving-vllm check coverage format-check install-local lint links m4-dependency-smoke public-check schema-check test typecheck
 
 VENV ?= .venv
 PYTHON := $(VENV)/bin/python
@@ -14,6 +14,9 @@ M4_PYTHON := $(M4_VENV)/bin/python
 M4_PIP_AUDIT := $(M4_VENV)/bin/pip-audit
 M5_VENV ?= .venv-m5
 M5_PYTHON := $(M5_VENV)/bin/python
+SERVING_VENV ?= .venv-serving
+SERVING_PYTHON := $(SERVING_VENV)/bin/python
+SERVING_PIP_AUDIT := $(SERVING_VENV)/bin/pip-audit
 
 bootstrap:
 	python3 -m venv $(VENV)
@@ -43,6 +46,18 @@ bootstrap-m5:
 	$(M5_PYTHON) -m pip install --upgrade pip
 	$(M5_PYTHON) -m pip install -r requirements/torch-cu118.txt
 	$(M5_PYTHON) -m pip install -c requirements/constraints/m5.txt -e ".[m5]"
+
+bootstrap-serving:
+	python3 -m venv $(SERVING_VENV)
+	$(SERVING_PYTHON) -m pip install --upgrade pip
+	$(SERVING_PYTHON) -m pip install -c requirements/constraints/serving.txt -e ".[serving]" pip-audit setuptools
+
+bootstrap-serving-vllm: bootstrap-serving
+	$(SERVING_PYTHON) -m pip install -r requirements/serving-cu118.txt \
+		--extra-index-url https://download.pytorch.org/whl/cu118
+	$(SERVING_PYTHON) -m pip install --no-deps \
+		https://github.com/vllm-project/vllm/releases/download/v0.8.5.post1/vllm-0.8.5.post1+cu118-cp38-abi3-manylinux1_x86_64.whl
+	$(SERVING_PYTHON) -m pip check
 
 install-local:
 	$(PYTHON) -m pip install -c requirements/constraints/dev.txt -e ".[dev]"
@@ -91,5 +106,8 @@ audit-m4:
 		--ignore-vuln PYSEC-2026-2288 \
 		--ignore-vuln PYSEC-2026-2289 \
 		--ignore-vuln PYSEC-2026-2290
+
+audit-serving:
+	$(SERVING_PIP_AUDIT) --skip-editable
 
 check: lint format-check typecheck coverage schema-check links public-check

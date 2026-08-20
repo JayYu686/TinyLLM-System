@@ -408,7 +408,7 @@ async def _evaluate_task(
         OSError,
         ValueError,
     ) as exc:
-        failure_reason = type(exc).__name__
+        failure_reason = f"{type(exc).__name__}:{exc}"
     finally:
         await model.close()
     record = store.load(record.run_id)

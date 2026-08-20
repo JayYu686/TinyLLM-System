@@ -274,6 +274,29 @@ def test_gateway_agent_model_rejects_unparsed_tool_or_evidence_markup() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    "content",
+    (
+        "<call_id>tinyllm_devops__get_run</call_id>",
+        "<search_evidence>tinyllm_devops__search_evidence</search_evidence>",
+        '<call_search_evidence>{"query":"M7"}</call_search_evidence>',
+    ),
+)
+def test_gateway_agent_model_rejects_legacy_pseudo_tool_tags(content: str) -> None:
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
+
+    with pytest.raises(AgentModelError, match="unparsed"):
+        asyncio.run(
+            _model(handler).decide(
+                messages=(AgentMessage(role="user", content="diagnose"),),
+                observations=(),
+                mode="nonthinking",
+                allowed_tools=("tinyllm-devops.search_evidence",),
+            )
+        )
+
+
 def test_gateway_agent_model_rejects_alternate_xml_tool_markup() -> None:
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(

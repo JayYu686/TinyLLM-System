@@ -137,7 +137,9 @@ def score_task(
     argument_correct = any(
         _calls_match(trajectory.calls, observed) for trajectory in task.allowed_trajectories
     )
-    schema_valid = all(call.schema_valid for call in observed)
+    schema_valid = all(call.schema_valid for call in observed) and not (
+        failure_reason or ""
+    ).startswith("AgentModelError:")
     available = {tool.tool_name for tool in task.available_tools}
     tool_hallucination = any(call.tool_name not in available for call in observed) or (
         bool(observed) and not tool_selection

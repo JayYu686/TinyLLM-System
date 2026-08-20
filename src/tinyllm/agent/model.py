@@ -329,10 +329,21 @@ class GatewayAgentModel:
             if text_calls:
                 return AgentModelDecision(tool_calls=text_calls)
             fixed_markup = any(
-                marker in content for marker in ("<tool_call>", "</tool_call>", "<证据>")
+                marker in content
+                for marker in (
+                    "<tool_call>",
+                    "</tool_call>",
+                    "<call_id>",
+                    "</call_id>",
+                    "<search_evidence>",
+                    "</search_evidence>",
+                    "<证据>",
+                )
             )
             alternate_markup = re.search(
-                r"<(?:call|function|tool)(?:\s|>)", content, flags=re.IGNORECASE
+                r"</?(?:call(?:_[a-z0-9_-]+)?|function|tool|search_evidence)(?:\s|>)",
+                content,
+                flags=re.IGNORECASE,
             )
             if fixed_markup or alternate_markup:
                 raise AgentModelError("model returned unparsed tool or evidence markup")

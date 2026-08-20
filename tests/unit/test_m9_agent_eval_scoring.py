@@ -62,6 +62,21 @@ def test_wrong_tool_is_hallucination_and_fails() -> None:
     assert result.task_success is False
 
 
+def test_agent_model_contract_failure_rejects_schema_validity() -> None:
+    task = build_tasks("dev")[0]
+    result = score_task(
+        task,
+        run_id="agent-test-contract-failure",
+        status="failed",
+        calls=(),
+        final_answer="",
+        failure_reason="AgentModelError:model returned unparsed tool or evidence markup",
+    )
+
+    assert result.schema_valid is False
+    assert result.task_success is False
+
+
 def test_parallel_calls_accept_either_order() -> None:
     task = next(
         item for item in build_tasks("dev") if item.category == "parallel_independent_tools"

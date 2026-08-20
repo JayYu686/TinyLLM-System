@@ -475,6 +475,20 @@ def test_toolace_call_parser_rejects_contract_violations(value: str, message: st
         parse_toolace_calls(value)
 
 
+def test_safe_parser_covers_empty_call_and_escaped_parenthesis_boundaries() -> None:
+    assert _toolace_expressions("") == ()
+    assert parse_toolace_calls("[GetCompetitions()]") == (("GetCompetitions", {}),)
+    escaped = r'(query="a\\\"b")'
+    assert _matching_parenthesis(escaped, 0) == len(escaped) - 1
+    assert (
+        _toolace_role_path_valid(
+            [{"from": "user"}, {"from": "assistant"}, {"from": "assistant"}],
+            set(),
+        )
+        is False
+    )
+
+
 def test_toolace_schema_extraction_rejects_envelope_and_schema_variants() -> None:
     with pytest.raises(M10AgentDataError, match="lacks the frozen"):
         _extract_toolace_tools("missing")
@@ -482,6 +496,17 @@ def test_toolace_schema_extraction_rejects_envelope_and_schema_variants() -> Non
         _extract_toolace_tools(
             "Here is a list of functions in JSON format that you can invoke:\n"
             "[bad]. \nShould you decide to return the function call(s)."
+        )
+
+
+def test_toolace_schema_extraction_rejects_non_array(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(m10_module, "_TOOLACE_SCHEMA_SUFFIX", "}. END")
+
+    with pytest.raises(M10AgentDataError, match="must be an array"):
+        _extract_toolace_tools(
+            "Here is a list of functions in JSON format that you can invoke:\n{}. END"
         )
 
 
@@ -501,6 +526,16 @@ def test_toolace_schema_extraction_rejects_envelope_and_schema_variants() -> Non
                 }
             ],
             (False, 0, 0),
+        ),
+        (
+            [
+                {
+                    "name": "x",
+                    "parameters": {"type": "object", "properties": {}},
+                    "required": [],
+                }
+            ],
+            (True, 0, 0),
         ),
     ],
 )

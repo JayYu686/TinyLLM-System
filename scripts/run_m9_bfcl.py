@@ -267,11 +267,20 @@ def _summarize(
     for spec in config.categories:
         path = score_root / model_directory / f"BFCL_v3_{spec.category}_score.json"
         try:
-            records = json.loads(path.read_text(encoding="utf-8"))
-            header = records[0]
+            with path.open(encoding="utf-8") as handle:
+                header = json.loads(next(handle))
+            if not isinstance(header, dict):
+                raise TypeError("BFCL score header is not an object")
             correct = int(header["correct_count"])
             total = int(header["total_count"])
-        except (OSError, ValueError, TypeError, KeyError, IndexError, json.JSONDecodeError) as exc:
+        except (
+            OSError,
+            StopIteration,
+            ValueError,
+            TypeError,
+            KeyError,
+            json.JSONDecodeError,
+        ) as exc:
             raise RuntimeError(f"BFCL score is missing or invalid: {spec.category}") from exc
         if total != spec.item_count:
             raise RuntimeError(

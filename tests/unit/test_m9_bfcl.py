@@ -51,14 +51,14 @@ def test_bfcl_summary_imports_original_category_counts(tmp_path: Path) -> None:
         path = model_root / f"BFCL_v3_{spec.category}_score.json"
         path.write_text(
             json.dumps(
-                [
-                    {
-                        "accuracy": 0.5,
-                        "correct_count": correct,
-                        "total_count": spec.item_count,
-                    }
-                ]
+                {
+                    "accuracy": 0.5,
+                    "correct_count": correct,
+                    "total_count": spec.item_count,
+                }
             )
+            + "\n"
+            + json.dumps({"id": f"{spec.category}_0", "valid": False})
             + "\n",
             encoding="utf-8",
         )

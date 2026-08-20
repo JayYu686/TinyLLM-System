@@ -7,5 +7,6 @@ openai==3.3.1
 pandas==3.0.5
 pydantic==2.13.4
 qwen-agent==0.0.34
+soundfile==0.13.1
 setuptools==84.0.0
 typer==0.20.1

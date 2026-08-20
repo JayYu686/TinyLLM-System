@@ -2,3 +2,5 @@
 -c constraints/bfcl.txt
 
 bfcl-eval @ git+https://github.com/ShishirPatil/gorilla.git@ea13468e4423454d0c213704fb87cf7cb3990433#subdirectory=berkeley-function-call-leaderboard
+# qwen-agent 0.0.34 imports this at module load but omits it from package metadata.
+soundfile

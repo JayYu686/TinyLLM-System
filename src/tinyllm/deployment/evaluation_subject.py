@@ -262,6 +262,12 @@ def publish_evaluation_subject(
 
     if not artifact_root.is_absolute() or artifact_root.is_symlink():
         raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
+    try:
+        record = M9EvaluationSubjectRecord.model_validate_json(record.model_dump_json())
+    except ValueError as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "Evaluation subject record is invalid"
+        ) from exc
     _validate_contained_paths(artifact_root, record)
     target = artifact_root / "registry" / "evaluation-subjects" / record.subject_id / "model.json"
     if target.exists():

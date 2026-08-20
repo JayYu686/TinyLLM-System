@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
-from scripts.run_m9_bfcl import _summarize
+from scripts.run_m9_bfcl import _install_tinyllm_handler, _summarize
 from tinyllm.agent_eval.config import load_bfcl_profile_config
 
 
@@ -67,3 +69,44 @@ def test_bfcl_summary_imports_original_category_counts(tmp_path: Path) -> None:
     assert summary.overall_accuracy_basis_points == 5000
     assert len(summary.categories) == 8
     assert summary.completed is True
+
+
+def test_bfcl_openai_client_ignores_host_proxy(monkeypatch: Any) -> None:
+    mapping: dict[str, Any] = {}
+    client_arguments: dict[str, Any] = {}
+
+    class BaseHandler:
+        def __init__(self, name: str, temperature: float) -> None:
+            self.name = name
+            self.temperature = temperature
+
+    class OpenAI:
+        def __init__(self, **kwargs: Any) -> None:
+            client_arguments.update(kwargs)
+
+    modules = {
+        "bfcl_eval.constants.model_config": SimpleNamespace(
+            MODEL_CONFIG_MAPPING=mapping,
+            ModelConfig=lambda **kwargs: SimpleNamespace(**kwargs),
+        ),
+        "bfcl_eval.model_handler.api_inference.openai_completion": SimpleNamespace(
+            OpenAICompletionsHandler=BaseHandler
+        ),
+        "openai": SimpleNamespace(
+            OpenAI=OpenAI,
+            DefaultHttpxClient=lambda **kwargs: {"transport": kwargs},
+        ),
+    }
+    monkeypatch.setattr("scripts.run_m9_bfcl.importlib.import_module", lambda name: modules[name])
+
+    _install_tinyllm_handler(
+        model_name="TinyLLM/Qwen3-FC",
+        served_model="production",
+        gateway_base_url="http://127.0.0.1:8000",
+        bearer_token="x" * 64,
+        mode="nonthinking",
+        max_completion_tokens=512,
+    )
+    mapping["TinyLLM/Qwen3-FC"].model_handler("TinyLLM/Qwen3-FC", 0.0)
+
+    assert client_arguments["http_client"] == {"transport": {"trust_env": False}}

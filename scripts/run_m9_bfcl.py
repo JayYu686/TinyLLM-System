@@ -95,6 +95,7 @@ def _install_tinyllm_handler(
             api_key=bearer_token,
             timeout=120.0,
             max_retries=0,
+            http_client=openai_module.DefaultHttpxClient(trust_env=False),
         )
         self.is_fc_model = True
 

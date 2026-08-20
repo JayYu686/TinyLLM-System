@@ -159,3 +159,115 @@ def test_base_record_rejects_adapter_claim(tmp_path: Path) -> None:
                 "adapter_dir": root / "adapter",
             }
         )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("model_files", ("model.safetensors", "config.json"), "unique and sorted"),
+        ("model_files", ("../config.json", "model.safetensors"), "top-level"),
+        ("model_dir", Path("relative/model"), "must be absolute"),
+        ("created_at", datetime(2026, 8, 20), "timezone-aware"),
+        ("tokenizer_files", ("tokenizer.json", "vocab.json"), "Tokenizer file set"),
+        ("effective_artifact_sha256", "0" * 64, "effective Artifact hash"),
+        ("subject_id", "qwen3-8b-m9-base-aaaaaaaa", "ID differs"),
+    ],
+)
+def test_record_rejects_identity_drift(
+    tmp_path: Path, field: str, value: object, message: str
+) -> None:
+    record = _record(tmp_path.resolve())
+    payload = record.model_dump(mode="python")
+    payload[field] = value
+
+    with pytest.raises(ValueError, match=message):
+        M9EvaluationSubjectRecord.model_validate(payload)
+
+
+def test_record_rejects_model_hash_drift(tmp_path: Path) -> None:
+    record = _record(tmp_path.resolve())
+    model = record.model.model_copy(update={"model_artifact_sha256": "0" * 64})
+
+    with pytest.raises(ValueError, match="model identity hash differs"):
+        M9EvaluationSubjectRecord.model_validate(
+            {**record.model_dump(mode="python"), "model": model}
+        )
+
+
+def test_historical_record_requires_adapter_identity(tmp_path: Path) -> None:
+    record = _record(tmp_path.resolve(), historical=True)
+    payload = record.model_dump(mode="python")
+    payload["adapter_dir"] = None
+    payload["adapter_files"] = ()
+    payload["adapter_artifact_sha256"] = None
+    payload["effective_artifact_sha256"] = record.base_model_artifact_sha256
+    payload["model"] = record.model.model_copy(
+        update={"model_artifact_sha256": record.base_model_artifact_sha256}
+    )
+    payload["subject_id"] = evaluation_subject_id(
+        kind="historical_lora",
+        model=payload["model"],
+        base_model_artifact_sha256=record.base_model_artifact_sha256,
+        tokenizer_artifact_sha256=record.tokenizer_artifact_sha256,
+        adapter_artifact_sha256=None,
+        source_evidence_sha256=record.source_evidence_sha256,
+    )
+
+    with pytest.raises(ValueError, match="requires an Adapter Artifact"):
+        M9EvaluationSubjectRecord.model_validate(payload)
+
+
+def test_resolved_subject_rejects_invalid_projection(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    record = _record(root)
+    _, record_sha = publish_evaluation_subject(root, record)
+    resolved = resolve_evaluation_subject(root, record.subject_id, now=NOW)
+    base = resolved.model_dump(mode="python")
+
+    with pytest.raises(ValueError, match="identity differs"):
+        type(resolved).model_validate({**base, "requested_ref": "qwen3-8b-m9-base-aaaaaaaa"})
+    with pytest.raises(ValueError, match="timezone-aware"):
+        type(resolved).model_validate({**base, "verified_at": datetime(2026, 8, 20)})
+    with pytest.raises(ValueError, match="resolved model hash differs"):
+        type(resolved).model_validate({**base, "model_artifact_sha256": "0" * 64})
+    with pytest.raises(ValueError, match="must appear together"):
+        type(resolved).model_validate(
+            {
+                **base,
+                "evaluation_subject_sha256": record_sha,
+                "adapter_dir": root / "adapter",
+            }
+        )
+
+
+def test_publish_revalidates_copied_schema(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    record = _record(root)
+    invalid = record.model_copy(update={"subject_id": "qwen3-8b-m9-base-aaaaaaaa"})
+
+    with pytest.raises(DeploymentError, match="record is invalid"):
+        publish_evaluation_subject(root, invalid)
+
+
+def test_resolve_reports_missing_and_corrupt_records(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    missing = "qwen3-8b-m9-base-aaaaaaaa"
+    with pytest.raises(DeploymentError, match="subject is missing"):
+        resolve_evaluation_subject(root, missing)
+
+    path = root / "registry" / "evaluation-subjects" / missing / "model.json"
+    path.parent.mkdir(parents=True)
+    path.write_text("not-json", encoding="utf-8")
+    with pytest.raises(DeploymentError, match="subject is invalid"):
+        resolve_evaluation_subject(root, missing)
+
+
+def test_resolve_serving_model_delegates_non_m9_reference(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    marker = object()
+    monkeypatch.setattr(
+        "tinyllm.deployment.registry.resolve_model", lambda *_args, **_kwargs: marker
+    )
+
+    assert resolve_serving_model(tmp_path.resolve(), "production") is marker

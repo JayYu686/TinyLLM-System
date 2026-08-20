@@ -270,6 +270,7 @@ class AgentEvalRunConfig(StrictSchema):
     task_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
     max_concurrency: int = Field(default=2, ge=1, le=8)
     physical_gpu_index: int = Field(ge=0, le=9)
+    seed: int = Field(default=20260820, ge=0, le=2_147_483_647)
 
     @field_validator("gateway_base_url")
     @classmethod

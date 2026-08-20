@@ -149,6 +149,7 @@ class GatewayAgentModel:
         model: str,
         clients: dict[str, MCPPolicyClient],
         timeout_seconds: float = 120.0,
+        seed: int | None = None,
         http_client: httpx.AsyncClient | None = None,
     ) -> None:
         normalized = base_url.rstrip("/")
@@ -161,6 +162,7 @@ class GatewayAgentModel:
         self.model = model
         self.clients = clients
         self.timeout_seconds = timeout_seconds
+        self.seed = seed
         self._owns_client = http_client is None
         self._http = http_client or httpx.AsyncClient(follow_redirects=False, trust_env=False)
         self._definitions: tuple[AgentToolDefinition, ...] | None = None
@@ -268,6 +270,8 @@ class GatewayAgentModel:
             ],
             "tool_choice": "auto",
         }
+        if self.seed is not None:
+            payload["seed"] = self.seed
         try:
             response = await self._http.post(
                 f"{self.base_url}/v1/chat/completions",

@@ -37,14 +37,32 @@ class _MCPClient:
         )
 
 
-def _model(handler: Any) -> GatewayAgentModel:
+def _model(handler: Any, *, seed: int | None = None) -> GatewayAgentModel:
     return GatewayAgentModel(
         base_url="http://127.0.0.1:8000",
         bearer_token=TOKEN,
         model="production",
         clients={"tinyllm-devops": _MCPClient()},  # type: ignore[dict-item]
+        seed=seed,
         http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     )
+
+
+def test_gateway_agent_model_forwards_optional_evaluation_seed() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = __import__("json").loads(request.content)
+        assert payload["seed"] == 20260820
+        return httpx.Response(200, json={"choices": [{"message": {"content": "done"}}]})
+
+    decision = asyncio.run(
+        _model(handler, seed=20260820).decide(
+            messages=(AgentMessage(role="user", content="diagnose"),),
+            observations=(),
+            mode="nonthinking",
+            allowed_tools=("tinyllm-devops.search_evidence",),
+        )
+    )
+    assert decision.message == "done"
 
 
 def test_gateway_agent_model_maps_openai_tool_call_to_local_authority() -> None:

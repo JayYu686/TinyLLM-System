@@ -376,6 +376,7 @@ async def _evaluate_task(
         model=config.model,
         clients=clients,
         timeout_seconds=config.task_timeout_seconds,
+        seed=config.seed,
     )
     runtime = AgentRuntime(
         config=_agent_config(task, config), store=store, model=model, clients=clients

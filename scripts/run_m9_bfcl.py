@@ -62,6 +62,25 @@ def _atomic_json(path: Path, value: object) -> None:
         raise
 
 
+def _normalize_bfcl_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Project BFCL's response-schema extension onto the OpenAI tool contract."""
+
+    normalized: list[dict[str, Any]] = []
+    for tool in tools:
+        if set(tool) != {"type", "function"} or tool.get("type") != "function":
+            raise RuntimeError("BFCL produced an unsupported tool envelope")
+        function = tool.get("function")
+        if not isinstance(function, dict):
+            raise RuntimeError("BFCL produced an invalid function definition")
+        unexpected = set(function).difference({"name", "description", "parameters", "response"})
+        if unexpected:
+            raise RuntimeError("BFCL produced an unsupported function definition")
+        wire_function = dict(function)
+        wire_function.pop("response", None)
+        normalized.append({"type": "function", "function": wire_function})
+    return normalized
+
+
 def _install_tinyllm_handler(
     *,
     model_name: str,
@@ -102,17 +121,18 @@ def _install_tinyllm_handler(
     def query_fc(self: Any, inference_data: dict[str, Any]) -> tuple[Any, float]:
         messages = inference_data["message"]
         tools = inference_data["tools"]
+        wire_tools = _normalize_bfcl_tools(tools)
         inference_data["inference_input_log"] = {
             "message": repr(messages),
-            "tool_count": len(tools),
+            "tool_count": len(wire_tools),
         }
         started = time.monotonic()
         response = self.client.chat.completions.create(
             model=served_model,
             messages=messages,
-            tools=tools or None,
-            tool_choice="auto" if tools else None,
-            parallel_tool_calls=True if tools else None,
+            tools=wire_tools or None,
+            tool_choice="auto" if wire_tools else None,
+            parallel_tool_calls=True if wire_tools else None,
             temperature=0.0,
             max_completion_tokens=max_completion_tokens,
             extra_body={"mode": mode},

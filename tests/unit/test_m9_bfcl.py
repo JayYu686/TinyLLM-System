@@ -9,6 +9,7 @@ import pytest
 
 from scripts.run_m9_bfcl import (
     _install_tinyllm_handler,
+    _normalize_bfcl_tools,
     _summarize,
     _validate_generation_results,
 )
@@ -116,6 +117,53 @@ def test_bfcl_openai_client_ignores_host_proxy(monkeypatch: Any) -> None:
     mapping["TinyLLM/Qwen3-FC"].model_handler("TinyLLM/Qwen3-FC", 0.0)
 
     assert client_arguments["http_client"] == {"transport": {"trust_env": False}}
+
+
+def test_bfcl_tool_projection_strips_only_response_schema() -> None:
+    source: list[dict[str, Any]] = [
+        {
+            "type": "function",
+            "function": {
+                "name": "grep",
+                "description": "Search a file.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"pattern": {"type": "string"}},
+                },
+                "response": {"type": "string"},
+            },
+        }
+    ]
+
+    normalized = _normalize_bfcl_tools(source)
+
+    assert normalized == [
+        {
+            "type": "function",
+            "function": {
+                "name": "grep",
+                "description": "Search a file.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"pattern": {"type": "string"}},
+                },
+            },
+        }
+    ]
+    assert "response" in source[0]["function"]
+
+
+@pytest.mark.parametrize(
+    "tool",
+    [
+        {"type": "computer", "function": {}},
+        {"type": "function", "function": "invalid"},
+        {"type": "function", "function": {"name": "x", "parameters": {}, "extra": 1}},
+    ],
+)
+def test_bfcl_tool_projection_rejects_unknown_wire_shapes(tool: dict[str, Any]) -> None:
+    with pytest.raises(RuntimeError, match="BFCL produced"):
+        _normalize_bfcl_tools([tool])
 
 
 def _write_generation_results(

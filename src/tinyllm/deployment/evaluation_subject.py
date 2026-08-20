@@ -1,0 +1,354 @@
+"""Immutable M9-only model subjects for measured baseline comparisons."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Literal, TypeAlias
+
+from pydantic import Field, field_validator, model_validator
+
+from tinyllm.deployment.registry import (
+    DeploymentError,
+    DeploymentErrorCode,
+    _artifact_set_sha256,
+    _validate_model_configuration,
+)
+from tinyllm.deployment.schema import ResolvedModel
+from tinyllm.evaluation.m6_schema import M6ModelIdentity
+from tinyllm.schemas.base import StrictSchema
+
+SHA256_PATTERN = r"^[0-9a-f]{64}$"
+SUBJECT_PATTERN = r"^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$"
+
+
+def _canonical_sha256(value: object) -> str:
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def effective_artifact_sha256(
+    model_artifact_sha256: str, adapter_artifact_sha256: str | None
+) -> str:
+    """Identify the exact effective weights without merging or copying the base."""
+
+    if adapter_artifact_sha256 is None:
+        return model_artifact_sha256
+    return _canonical_sha256(
+        {
+            "base_model_artifact_sha256": model_artifact_sha256,
+            "adapter_artifact_sha256": adapter_artifact_sha256,
+        }
+    )
+
+
+def evaluation_artifact_sha256(root: Path, names: tuple[str, ...]) -> str:
+    """Hash an explicit top-level deployable Artifact set with M7 semantics."""
+
+    return _artifact_set_sha256(root, names)
+
+
+def evaluation_subject_id(
+    *,
+    kind: Literal["base", "historical_lora"],
+    model: M6ModelIdentity,
+    base_model_artifact_sha256: str,
+    tokenizer_artifact_sha256: str,
+    adapter_artifact_sha256: str | None,
+    source_evidence_sha256: str,
+) -> str:
+    """Derive the immutable public-safe identity of one M9 evaluation subject."""
+
+    identity = _canonical_sha256(
+        {
+            "kind": kind,
+            "model": model.to_dict(),
+            "base_model_artifact_sha256": base_model_artifact_sha256,
+            "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
+            "adapter_artifact_sha256": adapter_artifact_sha256,
+            "source_evidence_sha256": source_evidence_sha256,
+        }
+    )
+    label = "base" if kind == "base" else "historical-lora"
+    return f"qwen3-8b-m9-{label}-{identity[:8]}"
+
+
+class M9EvaluationSubjectRecord(StrictSchema):
+    """Private, immutable identity for a model that cannot enter Production Registry."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["Evaluation"] = "Evaluation"
+    subject_id: str = Field(pattern=SUBJECT_PATTERN)
+    kind: Literal["base", "historical_lora"]
+    created_at: datetime
+    model: M6ModelIdentity
+    model_dir: Path
+    model_files: tuple[str, ...] = Field(min_length=2, max_length=20)
+    base_model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    tokenizer_dir: Path
+    tokenizer_files: tuple[str, ...] = Field(min_length=2, max_length=8)
+    tokenizer_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    adapter_dir: Path | None = None
+    adapter_files: tuple[str, ...] = Field(default=(), max_length=8)
+    adapter_artifact_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    effective_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_evidence_sha256: str = Field(pattern=SHA256_PATTERN)
+    production_eligible: Literal[False] = False
+
+    @field_validator("model_files", "tokenizer_files", "adapter_files", mode="before")
+    @classmethod
+    def freeze_files(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("model_files", "tokenizer_files", "adapter_files")
+    @classmethod
+    def validate_file_names(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if len(value) != len(set(value)) or tuple(sorted(value)) != value:
+            raise ValueError("evaluation subject file names must be unique and sorted")
+        if any(Path(name).name != name or name in {".", ".."} for name in value):
+            raise ValueError("evaluation subject accepts top-level file names only")
+        return value
+
+    @field_validator("model_dir", "tokenizer_dir", "adapter_dir")
+    @classmethod
+    def require_absolute_paths(cls, value: Path | None) -> Path | None:
+        if value is not None and not value.is_absolute():
+            raise ValueError("evaluation subject paths must be absolute")
+        return value
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> M9EvaluationSubjectRecord:
+        if self.created_at.tzinfo is None:
+            raise ValueError("evaluation subject timestamp must be timezone-aware")
+        if self.model.repository != "Qwen/Qwen3-8B":
+            raise ValueError("M9 evaluation subjects are frozen to Qwen3-8B")
+        if "config.json" not in self.model_files or not any(
+            name.endswith(".safetensors") for name in self.model_files
+        ):
+            raise ValueError("evaluation subject requires Config and Safetensors files")
+        if set(self.tokenizer_files) != {"tokenizer.json", "tokenizer_config.json"}:
+            raise ValueError("evaluation subject Tokenizer file set differs")
+        expected_effective = effective_artifact_sha256(
+            self.base_model_artifact_sha256, self.adapter_artifact_sha256
+        )
+        if self.effective_artifact_sha256 != expected_effective:
+            raise ValueError("evaluation subject effective Artifact hash differs")
+        if self.model.model_artifact_sha256 != expected_effective:
+            raise ValueError("evaluation subject model identity hash differs")
+        expected_id = evaluation_subject_id(
+            kind=self.kind,
+            model=self.model,
+            base_model_artifact_sha256=self.base_model_artifact_sha256,
+            tokenizer_artifact_sha256=self.tokenizer_artifact_sha256,
+            adapter_artifact_sha256=self.adapter_artifact_sha256,
+            source_evidence_sha256=self.source_evidence_sha256,
+        )
+        if self.subject_id != expected_id:
+            raise ValueError("evaluation subject ID differs from immutable inputs")
+        adapter_present = self.adapter_dir is not None
+        if self.kind == "base":
+            if self.model.role != "base" or self.model.adaptation != "base":
+                raise ValueError("base evaluation subject requires Base model identity")
+            if adapter_present or self.adapter_files or self.adapter_artifact_sha256 is not None:
+                raise ValueError("base evaluation subject cannot contain an Adapter")
+        else:
+            if self.model.role != "candidate" or self.model.adaptation != "lora":
+                raise ValueError("historical LoRA subject requires trained LoRA identity")
+            if (
+                not adapter_present
+                or not self.adapter_files
+                or self.adapter_artifact_sha256 is None
+            ):
+                raise ValueError("historical LoRA subject requires an Adapter Artifact")
+            if self.model.adapter_sha256 != self.adapter_artifact_sha256:
+                raise ValueError("historical LoRA identity and Adapter hash differ")
+        return self
+
+
+class ResolvedEvaluationSubject(StrictSchema):
+    """Hash-verified path projection accepted only by serving and evaluation flows."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    requested_ref: str = Field(pattern=SUBJECT_PATTERN)
+    status: Literal["Evaluation"] = "Evaluation"
+    model_version: str = Field(pattern=SUBJECT_PATTERN)
+    evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
+    model: M6ModelIdentity
+    model_dir: Path
+    model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    tokenizer_dir: Path
+    tokenizer_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    adapter_dir: Path | None = None
+    adapter_artifact_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    verified_at: datetime
+
+    @field_validator("model_dir", "tokenizer_dir", "adapter_dir")
+    @classmethod
+    def require_absolute_paths(cls, value: Path | None) -> Path | None:
+        if value is not None and not value.is_absolute():
+            raise ValueError("resolved evaluation subject paths must be absolute")
+        return value
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> ResolvedEvaluationSubject:
+        if self.requested_ref != self.model_version:
+            raise ValueError("resolved evaluation subject identity differs")
+        if self.verified_at.tzinfo is None:
+            raise ValueError("evaluation subject verification timestamp must be timezone-aware")
+        if self.model.model_artifact_sha256 != self.model_artifact_sha256:
+            raise ValueError("resolved model hash differs from evaluation identity")
+        if (self.adapter_dir is None) != (self.adapter_artifact_sha256 is None):
+            raise ValueError("resolved Adapter path and hash must appear together")
+        return self
+
+
+ServingModel: TypeAlias = ResolvedModel | ResolvedEvaluationSubject
+
+
+def _json_bytes(value: object) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+
+
+def _atomic_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    path.parent.chmod(0o700)
+    temporary = path.with_name(f".{path.name}.tmp-{uuid.uuid4().hex}")
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(_json_bytes(value))
+            os.fchmod(handle.fileno(), 0o600)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        directory_fd = os.open(path.parent, os.O_DIRECTORY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    except OSError:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def _validate_contained_paths(artifact_root: Path, record: M9EvaluationSubjectRecord) -> None:
+    try:
+        root = artifact_root.resolve(strict=True)
+        directories = (record.model_dir, record.tokenizer_dir, record.adapter_dir)
+        for directory in directories:
+            if directory is None:
+                continue
+            resolved = directory.resolve(strict=True)
+            if directory.is_symlink() or not resolved.is_relative_to(root):
+                raise DeploymentError(
+                    DeploymentErrorCode.UNSAFE_ARTIFACT,
+                    "Evaluation subject Artifact escapes the Artifact Store",
+                )
+    except (FileNotFoundError, OSError) as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.NOT_FOUND,
+            "Evaluation subject Artifact directory is unavailable",
+        ) from exc
+
+
+def publish_evaluation_subject(
+    artifact_root: Path, record: M9EvaluationSubjectRecord
+) -> tuple[M9EvaluationSubjectRecord, str]:
+    """Idempotently publish an Evaluation-only record outside Candidate/Production."""
+
+    if not artifact_root.is_absolute() or artifact_root.is_symlink():
+        raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
+    _validate_contained_paths(artifact_root, record)
+    target = artifact_root / "registry" / "evaluation-subjects" / record.subject_id / "model.json"
+    if target.exists():
+        try:
+            payload = target.read_bytes()
+            existing = M9EvaluationSubjectRecord.model_validate_json(payload)
+        except (OSError, ValueError) as exc:
+            raise DeploymentError(
+                DeploymentErrorCode.INVALID_INPUT, "Evaluation subject record is invalid"
+            ) from exc
+        existing_identity = existing.model_dump(mode="json", exclude={"created_at"})
+        requested_identity = record.model_dump(mode="json", exclude={"created_at"})
+        if existing_identity != requested_identity:
+            raise DeploymentError(
+                DeploymentErrorCode.CONFLICT, "Evaluation subject already exists with drift"
+            )
+        return existing, hashlib.sha256(payload).hexdigest()
+    _atomic_json(target, record.to_dict())
+    payload = target.read_bytes()
+    return record, hashlib.sha256(payload).hexdigest()
+
+
+def resolve_evaluation_subject(
+    artifact_root: Path, subject_id: str, *, now: datetime | None = None
+) -> ResolvedEvaluationSubject:
+    """Resolve one Evaluation subject and fail closed on any Artifact drift."""
+
+    if not artifact_root.is_absolute() or artifact_root.is_symlink():
+        raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
+    if re.fullmatch(SUBJECT_PATTERN, subject_id) is None:
+        raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Evaluation subject ID is invalid")
+    path = artifact_root / "registry" / "evaluation-subjects" / subject_id / "model.json"
+    try:
+        payload = path.read_bytes()
+        record = M9EvaluationSubjectRecord.model_validate_json(payload)
+    except FileNotFoundError as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.NOT_FOUND, "Evaluation subject is missing"
+        ) from exc
+    except (OSError, ValueError) as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "Evaluation subject is invalid"
+        ) from exc
+    if record.subject_id != subject_id:
+        raise DeploymentError(
+            DeploymentErrorCode.HASH_MISMATCH, "Evaluation subject identity differs"
+        )
+    _validate_contained_paths(artifact_root, record)
+    record_sha256 = hashlib.sha256(payload).hexdigest()
+    actual_model = _artifact_set_sha256(record.model_dir, record.model_files)
+    actual_tokenizer = _artifact_set_sha256(record.tokenizer_dir, record.tokenizer_files)
+    actual_adapter = (
+        _artifact_set_sha256(record.adapter_dir, record.adapter_files)
+        if record.adapter_dir is not None
+        else None
+    )
+    if (
+        actual_model != record.base_model_artifact_sha256
+        or actual_tokenizer != record.tokenizer_artifact_sha256
+        or actual_adapter != record.adapter_artifact_sha256
+    ):
+        raise DeploymentError(
+            DeploymentErrorCode.HASH_MISMATCH, "Evaluation subject Artifact hash differs"
+        )
+    _validate_model_configuration(record.model_dir, record.tokenizer_dir)
+    return ResolvedEvaluationSubject(
+        requested_ref=subject_id,
+        model_version=subject_id,
+        evaluation_subject_sha256=record_sha256,
+        model=record.model,
+        model_dir=record.model_dir,
+        model_artifact_sha256=record.effective_artifact_sha256,
+        tokenizer_dir=record.tokenizer_dir,
+        tokenizer_artifact_sha256=record.tokenizer_artifact_sha256,
+        adapter_dir=record.adapter_dir,
+        adapter_artifact_sha256=record.adapter_artifact_sha256,
+        verified_at=now or datetime.now(UTC),
+    )
+
+
+def resolve_serving_model(
+    artifact_root: Path, model_ref: str, *, now: datetime | None = None
+) -> ServingModel:
+    """Resolve a deployable M6/M7 model or an explicit M9 Evaluation subject."""
+
+    if model_ref.startswith("qwen3-8b-m9-"):
+        return resolve_evaluation_subject(artifact_root, model_ref, now=now)
+    from tinyllm.deployment.registry import resolve_model
+
+    return resolve_model(artifact_root, model_ref, now=now)

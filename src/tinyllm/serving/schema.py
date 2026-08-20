@@ -174,5 +174,16 @@ class VersionResponse(StrictSchema):
     service: Literal["tinyllm-gateway"] = "tinyllm-gateway"
     version: str
     model: str
-    candidate_model_version: str
+    deployment_status: Literal["Candidate", "Production", "Evaluation"]
+    candidate_model_version: str | None = None
+    evaluation_subject_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     model_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def validate_registry_identity(self) -> VersionResponse:
+        if self.deployment_status == "Evaluation":
+            if self.candidate_model_version is not None or self.evaluation_subject_sha256 is None:
+                raise ValueError("Evaluation version requires only an Evaluation record identity")
+        elif self.candidate_model_version is None or self.evaluation_subject_sha256 is not None:
+            raise ValueError("M6/M7 version requires only a Candidate identity")
+        return self

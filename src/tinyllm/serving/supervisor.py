@@ -11,7 +11,7 @@ from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
 
-from tinyllm.deployment import ResolvedModel
+from tinyllm.deployment import ResolvedEvaluationSubject, ServingModel
 from tinyllm.serving.config import GatewayConfig
 from tinyllm.training.smoke_preflight import GpuPreflight, inspect_gpus
 
@@ -27,7 +27,7 @@ class BackendSupervisor:
         self,
         *,
         config: GatewayConfig,
-        resolved_model: ResolvedModel,
+        resolved_model: ServingModel,
         python_executable: Path | None = None,
         gpu_inspector: Callable[[tuple[int, ...]], tuple[GpuPreflight, ...]] = inspect_gpus,
         artifact_root: Path | None = None,
@@ -81,6 +81,12 @@ class BackendSupervisor:
         """Return the fixed path-safe vLLM invocation without a shell."""
 
         port = self._config.backend_base_url.rsplit(":", 1)[-1]
+        adapter_dir = (
+            self._model.adapter_dir if isinstance(self._model, ResolvedEvaluationSubject) else None
+        )
+        served_model_name = (
+            f"{self._model.model_version}-base" if adapter_dir else self._model.model_version
+        )
         command = [
             str(self._python),
             "-m",
@@ -94,7 +100,7 @@ class BackendSupervisor:
             "--port",
             port,
             "--served-model-name",
-            self._model.model_version,
+            served_model_name,
             "--dtype",
             "bfloat16",
             "--max-model-len",
@@ -112,6 +118,16 @@ class BackendSupervisor:
             "--tool-call-parser",
             self._config.tool_call_parser,
         ]
+        if adapter_dir is not None:
+            command.extend(
+                [
+                    "--enable-lora",
+                    "--lora-modules",
+                    f"{self._model.model_version}={adapter_dir}",
+                    "--max-lora-rank",
+                    "16",
+                ]
+            )
         if self._config.enforce_eager:
             command.append("--enforce-eager")
         return tuple(command)

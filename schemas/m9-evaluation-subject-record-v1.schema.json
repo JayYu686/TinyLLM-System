@@ -1,0 +1,305 @@
+{
+  "$defs": {
+    "M6ModelIdentity": {
+      "additionalProperties": false,
+      "description": "Base or trained-model identity used by one M6 evaluation.",
+      "properties": {
+        "adaptation": {
+          "enum": [
+            "base",
+            "full_sft",
+            "lora"
+          ],
+          "title": "Adaptation",
+          "type": "string"
+        },
+        "adapter_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adapter Sha256"
+        },
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "base_revision": {
+          "enum": [
+            "c1899de289a04d12100db370d81485cdf75e47ca",
+            "b968826d9c46dd6066d109eabc6255188de91218"
+          ],
+          "title": "Base Revision",
+          "type": "string"
+        },
+        "dataset_manifest_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Manifest Sha256"
+        },
+        "dataset_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Version"
+        },
+        "model_artifact_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Model Artifact Sha256",
+          "type": "string"
+        },
+        "model_parameters": {
+          "exclusiveMinimum": 0,
+          "title": "Model Parameters",
+          "type": "integer"
+        },
+        "repository": {
+          "enum": [
+            "Qwen/Qwen3-0.6B",
+            "Qwen/Qwen3-8B"
+          ],
+          "title": "Repository",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "base",
+            "candidate"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "training_checkpoint_id": {
+          "anyOf": [
+            {
+              "pattern": "^checkpoint-tokens-[0-9]{10}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Checkpoint Id"
+        },
+        "training_config_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Config Sha256"
+        },
+        "training_run_id": {
+          "anyOf": [
+            {
+              "maxLength": 180,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Run Id"
+        },
+        "training_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Training Tokens"
+        }
+      },
+      "required": [
+        "role",
+        "repository",
+        "base_revision",
+        "attention_architecture",
+        "adaptation",
+        "model_artifact_sha256",
+        "model_parameters"
+      ],
+      "title": "M6ModelIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Private, immutable identity for a model that cannot enter Production Registry.",
+  "properties": {
+    "adapter_artifact_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Artifact Sha256"
+    },
+    "adapter_dir": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Dir"
+    },
+    "adapter_files": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Adapter Files",
+      "type": "array"
+    },
+    "base_model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Base Model Artifact Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "effective_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Effective Artifact Sha256",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "base",
+        "historical_lora"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "model": {
+      "$ref": "#/$defs/M6ModelIdentity"
+    },
+    "model_dir": {
+      "format": "path",
+      "title": "Model Dir",
+      "type": "string"
+    },
+    "model_files": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "minItems": 2,
+      "title": "Model Files",
+      "type": "array"
+    },
+    "production_eligible": {
+      "const": false,
+      "default": false,
+      "title": "Production Eligible",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Evidence Sha256",
+      "type": "string"
+    },
+    "status": {
+      "const": "Evaluation",
+      "default": "Evaluation",
+      "title": "Status",
+      "type": "string"
+    },
+    "subject_id": {
+      "pattern": "^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$",
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "tokenizer_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tokenizer Artifact Sha256",
+      "type": "string"
+    },
+    "tokenizer_dir": {
+      "format": "path",
+      "title": "Tokenizer Dir",
+      "type": "string"
+    },
+    "tokenizer_files": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 2,
+      "title": "Tokenizer Files",
+      "type": "array"
+    }
+  },
+  "required": [
+    "subject_id",
+    "kind",
+    "created_at",
+    "model",
+    "model_dir",
+    "model_files",
+    "base_model_artifact_sha256",
+    "tokenizer_dir",
+    "tokenizer_files",
+    "tokenizer_artifact_sha256",
+    "effective_artifact_sha256",
+    "source_evidence_sha256"
+  ],
+  "title": "M9EvaluationSubjectRecord",
+  "type": "object"
+}

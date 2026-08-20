@@ -3,8 +3,38 @@
   "description": "Public version and active deployment identity.",
   "properties": {
     "candidate_model_version": {
-      "title": "Candidate Model Version",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Candidate Model Version"
+    },
+    "deployment_status": {
+      "enum": [
+        "Candidate",
+        "Production",
+        "Evaluation"
+      ],
+      "title": "Deployment Status",
       "type": "string"
+    },
+    "evaluation_subject_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evaluation Subject Sha256"
     },
     "model": {
       "title": "Model",
@@ -35,7 +65,7 @@
   "required": [
     "version",
     "model",
-    "candidate_model_version",
+    "deployment_status",
     "model_artifact_sha256"
   ],
   "title": "VersionResponse",

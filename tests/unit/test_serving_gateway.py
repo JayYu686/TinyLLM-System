@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from tinyllm.deployment import ResolvedModel
+from tinyllm.deployment import ResolvedEvaluationSubject, ResolvedModel
 from tinyllm.evaluation import M6ModelIdentity
 from tinyllm.serving.backend import BackendError, ChatBackend
 from tinyllm.serving.config import GatewayConfig
@@ -107,6 +107,28 @@ def _resolved() -> ResolvedModel:
     )
 
 
+def _evaluation_resolved() -> ResolvedEvaluationSubject:
+    return ResolvedEvaluationSubject(
+        requested_ref="qwen3-8b-m9-base-aaaaaaaa",
+        model_version="qwen3-8b-m9-base-aaaaaaaa",
+        evaluation_subject_sha256="f" * 64,
+        model=M6ModelIdentity(
+            role="base",
+            repository="Qwen/Qwen3-8B",
+            base_revision="b968826d9c46dd6066d109eabc6255188de91218",
+            attention_architecture="gqa",
+            adaptation="base",
+            model_artifact_sha256="b" * 64,
+            model_parameters=8_234_382_336,
+        ),
+        model_dir=Path("/data/tinyllm/qwen3-8b"),
+        model_artifact_sha256="b" * 64,
+        tokenizer_dir=Path("/data/tinyllm/qwen3-8b"),
+        tokenizer_artifact_sha256="e" * 64,
+        verified_at=datetime(2026, 8, 20, tzinfo=UTC),
+    )
+
+
 def _client(backend: FakeBackend, **config: Any) -> TestClient:
     gateway_config = GatewayConfig(
         config_id="m7-gateway-unit",
@@ -147,6 +169,38 @@ def test_health_version_auth_and_docs_are_secure_by_default() -> None:
         readiness = client.get("/health/ready")
         assert readiness.status_code == 503
         assert readiness.json()["ready"] is False
+
+
+def test_evaluation_subject_requires_exact_model_id() -> None:
+    backend = FakeBackend()
+    config = GatewayConfig(config_id="m8-gateway-evaluation-unit", trusted_hosts=("testserver",))
+    with TestClient(
+        create_gateway(
+            config=config,
+            resolved_model=_evaluation_resolved(),
+            backend=backend,
+            bearer_token=TOKEN,
+        )
+    ) as client:
+        version = client.get("/version").json()
+        assert version["deployment_status"] == "Evaluation"
+        assert version["candidate_model_version"] is None
+        assert version["evaluation_subject_sha256"] == "f" * 64
+        rejected = client.post(
+            "/v1/chat/completions",
+            headers=_headers(),
+            json={"model": "production", "messages": [{"role": "user", "content": "hi"}]},
+        )
+        accepted = client.post(
+            "/v1/chat/completions",
+            headers=_headers(),
+            json={
+                "model": "qwen3-8b-m9-base-aaaaaaaa",
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+        )
+        assert rejected.status_code == 404
+        assert accepted.status_code == 200
 
 
 def test_nonstream_chat_forwards_trace_without_logging_content() -> None:

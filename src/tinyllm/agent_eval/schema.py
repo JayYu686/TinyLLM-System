@@ -365,6 +365,7 @@ class AgentEvalSummary(StrictSchema):
     model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_model_id: str = Field(min_length=1, max_length=180)
     deployment_record_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    evaluation_subject_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     environment_sha256: str = Field(pattern=SHA256_PATTERN)
     hardware_sha256: str = Field(pattern=SHA256_PATTERN)
     physical_gpu_index: int = Field(ge=0, le=9)

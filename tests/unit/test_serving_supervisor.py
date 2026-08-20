@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from tinyllm.deployment import ResolvedModel
+from tinyllm.deployment import ResolvedEvaluationSubject, ResolvedModel
 from tinyllm.evaluation import M6ModelIdentity
 from tinyllm.serving.config import GatewayConfig
 from tinyllm.serving.supervisor import BackendSupervisor, BackendSupervisorError
@@ -89,6 +89,43 @@ def test_supervisor_command_is_fixed_and_path_safe() -> None:
         gpu_inspector=lambda _indices: _gpu(),
     )
     assert "--enforce-eager" not in lazy_supervisor.command()
+
+
+def test_supervisor_routes_evaluation_adapter_without_merging_weights() -> None:
+    base = _resolved()
+    model = ResolvedEvaluationSubject(
+        requested_ref="qwen3-8b-m9-historical-lora-aaaaaaaa",
+        model_version="qwen3-8b-m9-historical-lora-aaaaaaaa",
+        evaluation_subject_sha256="f" * 64,
+        model=base.model.model_copy(
+            update={
+                "repository": "Qwen/Qwen3-8B",
+                "base_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+                "adaptation": "lora",
+                "model_artifact_sha256": "b" * 64,
+                "model_parameters": 8_234_382_336,
+                "adapter_sha256": "a" * 64,
+            }
+        ),
+        model_dir=Path("/data/tinyllm/qwen3-8b"),
+        model_artifact_sha256="b" * 64,
+        tokenizer_dir=Path("/data/tinyllm/qwen3-8b"),
+        tokenizer_artifact_sha256="e" * 64,
+        adapter_dir=Path("/data/tinyllm/adapter"),
+        adapter_artifact_sha256="a" * 64,
+        verified_at=datetime(2026, 8, 20, tzinfo=UTC),
+    )
+    command = BackendSupervisor(
+        config=GatewayConfig(config_id="m8-gateway-evaluation-unit", gpu_index=7),
+        resolved_model=model,
+        gpu_inspector=lambda _indices: _gpu(),
+    ).command()
+
+    assert "--enable-lora" in command
+    assert command[command.index("--served-model-name") + 1].endswith("-base")
+    assert command[command.index("--lora-modules") + 1] == (
+        "qwen3-8b-m9-historical-lora-aaaaaaaa=/data/tinyllm/adapter"
+    )
 
 
 def test_supervisor_rejects_short_internal_token() -> None:

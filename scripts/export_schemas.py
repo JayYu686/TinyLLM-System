@@ -151,6 +151,8 @@ from tinyllm.deployment import (
     M7ServingEnvironment,
     M7ServingHardware,
     M7VulnerabilityAssessment,
+    M9EvaluationSubjectRecord,
+    ResolvedEvaluationSubject,
     ResolvedModel,
 )
 from tinyllm.evaluation import (
@@ -489,6 +491,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m7-vulnerability-assessment-v1.schema.json": M7VulnerabilityAssessment,
     "m7-resolved-model-v1.schema.json": ResolvedModel,
     "m7-version-response-v1.schema.json": VersionResponse,
+    "m9-evaluation-subject-record-v1.schema.json": M9EvaluationSubjectRecord,
+    "m9-resolved-evaluation-subject-v1.schema.json": ResolvedEvaluationSubject,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,

@@ -78,6 +78,15 @@ BFCL 官方 Overall 或用于官方排行榜比较。
 
 BFCL 在独立环境运行。TinyLLM Endpoint Handler 仅连接环回 Gateway，通过环境变量读取
 Bearer Token，并发送 OpenAI Chat Completions Tool Calling 请求；它不会修改固定 BFCL 源码。
+适配器会移除 BFCL 函数定义中的非标准 `response` 扩展，同时保留 `name`、`description` 和
+`parameters`；HTTP Client 禁止继承宿主机代理。Multi-turn Profile 使用 16K Context，Gateway
+最多接受 1024 条消息，请求仍受 1 MiB Body、Context 和 Tool Schema 复杂度限制。Agent API
+自身的 8 Step 与 12 次工具调用限制保持不变。
+
+上游生成器会把端点异常记录为题目结果并继续执行，因此 TinyLLM 在调用评分器之前执行额外
+的失败闭锁：8 个类别必须各自达到冻结题数，1840 个 ID 必须唯一，且任一缺失 Result、
+`traceback` 或 `Error during inference` 都会拒绝评分和正式 Summary。
+
 依赖安装和审计分别使用 `make bootstrap-bfcl` 与 `make audit-bfcl`。上游固定依赖的适用边界
 记录在 `requirements/m9_bfcl_security_exceptions.md`，审计例外不适用于任何线上服务进程。
 

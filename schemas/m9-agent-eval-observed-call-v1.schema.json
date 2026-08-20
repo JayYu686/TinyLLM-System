@@ -1,0 +1,56 @@
+{
+  "additionalProperties": false,
+  "description": "One normalized tool-call observation from an evaluated Agent Run.",
+  "properties": {
+    "approval_observed": {
+      "default": false,
+      "title": "Approval Observed",
+      "type": "boolean"
+    },
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
+    },
+    "attempts": {
+      "default": 1,
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Attempts",
+      "type": "integer"
+    },
+    "result_status": {
+      "enum": [
+        "succeeded",
+        "failed",
+        "not_executed"
+      ],
+      "title": "Result Status",
+      "type": "string"
+    },
+    "schema_valid": {
+      "title": "Schema Valid",
+      "type": "boolean"
+    },
+    "sequence": {
+      "maximum": 12,
+      "minimum": 1,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "tool_name": {
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "title": "Tool Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "sequence",
+    "tool_name",
+    "arguments",
+    "schema_valid",
+    "result_status"
+  ],
+  "title": "AgentEvalObservedCall",
+  "type": "object"
+}

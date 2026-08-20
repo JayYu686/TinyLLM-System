@@ -37,14 +37,32 @@ class _MCPClient:
         )
 
 
-def _model(handler: Any) -> GatewayAgentModel:
+def _model(handler: Any, *, seed: int | None = None) -> GatewayAgentModel:
     return GatewayAgentModel(
         base_url="http://127.0.0.1:8000",
         bearer_token=TOKEN,
         model="production",
         clients={"tinyllm-devops": _MCPClient()},  # type: ignore[dict-item]
+        seed=seed,
         http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
     )
+
+
+def test_gateway_agent_model_forwards_optional_evaluation_seed() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = __import__("json").loads(request.content)
+        assert payload["seed"] == 20260820
+        return httpx.Response(200, json={"choices": [{"message": {"content": "done"}}]})
+
+    decision = asyncio.run(
+        _model(handler, seed=20260820).decide(
+            messages=(AgentMessage(role="user", content="diagnose"),),
+            observations=(),
+            mode="nonthinking",
+            allowed_tools=("tinyllm-devops.search_evidence",),
+        )
+    )
+    assert decision.message == "done"
 
 
 def test_gateway_agent_model_maps_openai_tool_call_to_local_authority() -> None:
@@ -244,6 +262,29 @@ def test_gateway_agent_model_repairs_leading_text_tool_markup() -> None:
 def test_gateway_agent_model_rejects_unparsed_tool_or_evidence_markup() -> None:
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"choices": [{"message": {"content": "<证据>fake"}}]})
+
+    with pytest.raises(AgentModelError, match="unparsed"):
+        asyncio.run(
+            _model(handler).decide(
+                messages=(AgentMessage(role="user", content="diagnose"),),
+                observations=(),
+                mode="nonthinking",
+                allowed_tools=("tinyllm-devops.search_evidence",),
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "content",
+    (
+        "<call_id>tinyllm_devops__get_run</call_id>",
+        "<search_evidence>tinyllm_devops__search_evidence</search_evidence>",
+        '<call_search_evidence>{"query":"M7"}</call_search_evidence>',
+    ),
+)
+def test_gateway_agent_model_rejects_legacy_pseudo_tool_tags(content: str) -> None:
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
 
     with pytest.raises(AgentModelError, match="unparsed"):
         asyncio.run(

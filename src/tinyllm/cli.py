@@ -375,6 +375,82 @@ def agent_cancel(
     )
 
 
+@agent_app.command("eval")
+def agent_eval(
+    ctx: typer.Context,
+    suite: Annotated[
+        Path,
+        typer.Option("--suite", help="Verified M9 Dev or sealed Release suite directory."),
+    ] = Path("evals/agent/dev/v1"),
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Strict M9 Agent evaluation YAML."),
+    ] = Path("configs/eval/m9_agent_dev.yaml"),
+    output: Annotated[
+        Path,
+        typer.Option("--output", help="Absolute resumable private evaluation directory."),
+    ] = DEFAULT_ARTIFACT_ROOT / "agent-evaluations/m9/runs/dev-production",
+    model: Annotated[
+        str,
+        typer.Option("--model", help="Immutable deployment or Production Alias."),
+    ] = "production",
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    project_root: Annotated[
+        Path,
+        typer.Option("--project-root", help="Git worktree used for lineage."),
+    ] = Path("."),
+    allow_dirty: Annotated[
+        bool,
+        typer.Option("--allow-dirty", help="Development smoke only; formal evidence stays dirty."),
+    ] = False,
+    command_json: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Run or resume the self-contained M9 DevOps Agent evaluation suite."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if not output.is_absolute():
+        _agent_error(
+            "Agent evaluation output must be absolute",
+            json_output=json_output,
+            input_error=True,
+        )
+    try:
+        from tinyllm.agent_eval.config import AgentEvalConfigError, load_agent_eval_config
+        from tinyllm.agent_eval.runner import AgentEvalRunError, run_agent_evaluation
+        from tinyllm.agent_eval.suite import AgentEvalSuiteError
+
+        eval_config = load_agent_eval_config(config)
+        resolved = resolve_model(artifact_root, model)
+        summary = asyncio.run(
+            run_agent_evaluation(
+                suite_directory=suite,
+                config=eval_config,
+                resolved_model=resolved,
+                output_directory=output,
+                project_root=project_root.resolve(),
+                allow_dirty=allow_dirty,
+            )
+        )
+    except (AgentEvalConfigError, AgentEvalSuiteError) as exc:
+        _agent_error(str(exc), json_output=json_output, input_error=True)
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    except AgentEvalRunError as exc:
+        _agent_error(str(exc), json_output=json_output)
+    if json_output:
+        typer.echo(summary.model_dump_json(indent=2))
+    else:
+        metrics = summary.metrics
+        typer.echo(
+            f"succeeded: {summary.evaluation_id} tasks={metrics.item_count} "
+            f"task_success={metrics.task_success_rate_basis_points / 100:.2f}%"
+        )
+
+
 @agent_index_app.command("rebuild")
 def agent_index_rebuild(
     ctx: typer.Context,

@@ -1,0 +1,29 @@
+{
+  "category_counts": {
+    "grounding_approval_security": 7,
+    "missing_argument_clarification": 10,
+    "no_tool": 10,
+    "parallel_independent_tools": 5,
+    "sequential_multi_step": 15,
+    "single_tool": 13,
+    "tool_failure_recovery": 10,
+    "wrong_tool_irrelevance": 10
+  },
+  "content_sha256": "f958bcc62d584419503215691d9c40d0fed4ba6a479908c8febe1b9b8189bb1f",
+  "excluded_from_training": true,
+  "item_count": 80,
+  "items_sha256": "28ba59f8ad3af43c911d49ccfe028acdf86981646dddb9883f6692ba48d850ff",
+  "language_counts": {
+    "en": 56,
+    "zh": 24
+  },
+  "license": "Apache-2.0",
+  "release_content_sealed": false,
+  "schema_version": "1.0",
+  "seed": 20260820,
+  "source_note": "TinyLLM-authored public Dev split; Apache-2.0 redistribution allowed.",
+  "split": "dev",
+  "suite_version": "tinyllm-devops-agent-dev-v1-f958bcc6",
+  "tool_catalog_sha256": "11cd6b7e6334c533d9ced8acb139a99b75879bd3fd1a63b8cb4557467ab8f545",
+  "visibility": "public"
+}

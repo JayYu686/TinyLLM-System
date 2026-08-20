@@ -1,0 +1,277 @@
+{
+  "$defs": {
+    "AgentEvalMetricSummary": {
+      "additionalProperties": false,
+      "description": "Frozen aggregate metrics for one complete Agent suite execution.",
+      "properties": {
+        "approval_safety_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Approval Safety Basis Points",
+          "type": "integer"
+        },
+        "arbitrary_command_attempts": {
+          "minimum": 0,
+          "title": "Arbitrary Command Attempts",
+          "type": "integer"
+        },
+        "argument_accuracy_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Argument Accuracy Basis Points",
+          "type": "integer"
+        },
+        "average_tokens_per_task_milli": {
+          "minimum": 0,
+          "title": "Average Tokens Per Task Milli",
+          "type": "integer"
+        },
+        "average_tool_calls_milli": {
+          "minimum": 0,
+          "title": "Average Tool Calls Milli",
+          "type": "integer"
+        },
+        "error_recovery_rate_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Error Recovery Rate Basis Points",
+          "type": "integer"
+        },
+        "grounding_accuracy_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Grounding Accuracy Basis Points",
+          "type": "integer"
+        },
+        "item_count": {
+          "exclusiveMinimum": 0,
+          "title": "Item Count",
+          "type": "integer"
+        },
+        "multi_step_success_rate_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Multi Step Success Rate Basis Points",
+          "type": "integer"
+        },
+        "no_tool_accuracy_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "No Tool Accuracy Basis Points",
+          "type": "integer"
+        },
+        "p95_end_to_end_milliseconds": {
+          "minimum": 0,
+          "title": "P95 End To End Milliseconds",
+          "type": "integer"
+        },
+        "path_escape_attempts": {
+          "minimum": 0,
+          "title": "Path Escape Attempts",
+          "type": "integer"
+        },
+        "schema_valid_rate_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Schema Valid Rate Basis Points",
+          "type": "integer"
+        },
+        "task_success_rate_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Task Success Rate Basis Points",
+          "type": "integer"
+        },
+        "tool_hallucination_rate_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Tool Hallucination Rate Basis Points",
+          "type": "integer"
+        },
+        "tool_selection_accuracy_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Tool Selection Accuracy Basis Points",
+          "type": "integer"
+        },
+        "unapproved_write_attempts": {
+          "minimum": 0,
+          "title": "Unapproved Write Attempts",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item_count",
+        "tool_selection_accuracy_basis_points",
+        "argument_accuracy_basis_points",
+        "schema_valid_rate_basis_points",
+        "no_tool_accuracy_basis_points",
+        "multi_step_success_rate_basis_points",
+        "task_success_rate_basis_points",
+        "tool_hallucination_rate_basis_points",
+        "error_recovery_rate_basis_points",
+        "grounding_accuracy_basis_points",
+        "approval_safety_basis_points",
+        "average_tool_calls_milli",
+        "average_tokens_per_task_milli",
+        "p95_end_to_end_milliseconds",
+        "unapproved_write_attempts",
+        "path_escape_attempts",
+        "arbitrary_command_attempts"
+      ],
+      "title": "AgentEvalMetricSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete lineage-bound result for one Dev or sealed Release evaluation.",
+  "properties": {
+    "agent_runtime_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Agent Runtime Version",
+      "type": "string"
+    },
+    "completed": {
+      "title": "Completed",
+      "type": "boolean"
+    },
+    "deployment_record_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deployment Record Sha256"
+    },
+    "driver_version": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Driver Version",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "evaluation_id": {
+      "pattern": "^m9-agent-eval-[0-9a-f]{8}$",
+      "title": "Evaluation Id",
+      "type": "string"
+    },
+    "gateway_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Gateway Version",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "hardware_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
+    },
+    "item_results_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Item Results Sha256",
+      "type": "string"
+    },
+    "metrics": {
+      "$ref": "#/$defs/AgentEvalMetricSummary"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "model_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "model_revision": {
+      "maxLength": 180,
+      "minLength": 7,
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "parent_model_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Parent Model Id",
+      "type": "string"
+    },
+    "physical_gpu_index": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Suite Content Sha256",
+      "type": "string"
+    },
+    "suite_version": {
+      "pattern": "^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$",
+      "title": "Suite Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "evaluation_id",
+    "evaluated_at",
+    "suite_version",
+    "suite_content_sha256",
+    "model_id",
+    "model_revision",
+    "model_artifact_sha256",
+    "parent_model_id",
+    "environment_sha256",
+    "hardware_sha256",
+    "physical_gpu_index",
+    "gpu_name",
+    "driver_version",
+    "gateway_version",
+    "agent_runtime_version",
+    "git_commit",
+    "git_dirty",
+    "metrics",
+    "item_results_sha256",
+    "completed"
+  ],
+  "title": "AgentEvalSummary",
+  "type": "object"
+}

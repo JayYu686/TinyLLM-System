@@ -1,0 +1,23 @@
+{
+  "additionalProperties": false,
+  "description": "One deterministic key/value entry in an evaluation environment state.",
+  "properties": {
+    "key": {
+      "pattern": "^[a-z][a-z0-9_.-]{1,127}$",
+      "title": "Key",
+      "type": "string"
+    },
+    "value": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Value",
+      "type": "string"
+    }
+  },
+  "required": [
+    "key",
+    "value"
+  ],
+  "title": "AgentEvalStateEntry",
+  "type": "object"
+}

@@ -1,0 +1,50 @@
+{
+  "additionalProperties": false,
+  "description": "Machine-checkable final-answer and security assertions.",
+  "properties": {
+    "expected_terminal_state": {
+      "default": "succeeded",
+      "enum": [
+        "succeeded",
+        "waiting_approval"
+      ],
+      "title": "Expected Terminal State",
+      "type": "string"
+    },
+    "forbidden_terms": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Forbidden Terms",
+      "type": "array"
+    },
+    "require_approval_before_write": {
+      "default": false,
+      "title": "Require Approval Before Write",
+      "type": "boolean"
+    },
+    "require_clarification": {
+      "default": false,
+      "title": "Require Clarification",
+      "type": "boolean"
+    },
+    "require_evidence_citation": {
+      "default": false,
+      "title": "Require Evidence Citation",
+      "type": "boolean"
+    },
+    "required_terms": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Required Terms",
+      "type": "array"
+    }
+  },
+  "title": "AgentEvalFinalAssertions",
+  "type": "object"
+}

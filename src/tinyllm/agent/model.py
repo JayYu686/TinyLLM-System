@@ -149,6 +149,7 @@ class GatewayAgentModel:
         model: str,
         clients: dict[str, MCPPolicyClient],
         timeout_seconds: float = 120.0,
+        seed: int | None = None,
         http_client: httpx.AsyncClient | None = None,
     ) -> None:
         normalized = base_url.rstrip("/")
@@ -161,9 +162,12 @@ class GatewayAgentModel:
         self.model = model
         self.clients = clients
         self.timeout_seconds = timeout_seconds
+        self.seed = seed
         self._owns_client = http_client is None
         self._http = http_client or httpx.AsyncClient(follow_redirects=False, trust_env=False)
         self._definitions: tuple[AgentToolDefinition, ...] | None = None
+        self.input_tokens = 0
+        self.output_tokens = 0
 
     async def close(self) -> None:
         if self._owns_client:
@@ -266,6 +270,8 @@ class GatewayAgentModel:
             ],
             "tool_choice": "auto",
         }
+        if self.seed is not None:
+            payload["seed"] = self.seed
         try:
             response = await self._http.post(
                 f"{self.base_url}/v1/chat/completions",
@@ -278,6 +284,14 @@ class GatewayAgentModel:
         except (httpx.HTTPError, json.JSONDecodeError) as exc:
             raise AgentModelError("Agent Gateway request failed") from exc
         try:
+            usage = value.get("usage", {})
+            if isinstance(usage, dict):
+                prompt_tokens = usage.get("prompt_tokens", 0)
+                completion_tokens = usage.get("completion_tokens", 0)
+                if isinstance(prompt_tokens, int) and prompt_tokens >= 0:
+                    self.input_tokens += prompt_tokens
+                if isinstance(completion_tokens, int) and completion_tokens >= 0:
+                    self.output_tokens += completion_tokens
             message = value["choices"][0]["message"]
             try:
                 _reject_private_reasoning(message)
@@ -315,10 +329,21 @@ class GatewayAgentModel:
             if text_calls:
                 return AgentModelDecision(tool_calls=text_calls)
             fixed_markup = any(
-                marker in content for marker in ("<tool_call>", "</tool_call>", "<证据>")
+                marker in content
+                for marker in (
+                    "<tool_call>",
+                    "</tool_call>",
+                    "<call_id>",
+                    "</call_id>",
+                    "<search_evidence>",
+                    "</search_evidence>",
+                    "<证据>",
+                )
             )
             alternate_markup = re.search(
-                r"<(?:call|function|tool)(?:\s|>)", content, flags=re.IGNORECASE
+                r"</?(?:call(?:_[a-z0-9_-]+)?|function|tool|search_evidence)(?:\s|>)",
+                content,
+                flags=re.IGNORECASE,
             )
             if fixed_markup or alternate_markup:
                 raise AgentModelError("model returned unparsed tool or evidence markup")

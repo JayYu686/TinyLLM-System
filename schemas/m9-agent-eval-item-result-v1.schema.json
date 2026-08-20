@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "AgentEvalObservedCall": {
+      "additionalProperties": false,
+      "description": "One normalized tool-call observation from an evaluated Agent Run.",
+      "properties": {
+        "approval_observed": {
+          "default": false,
+          "title": "Approval Observed",
+          "type": "boolean"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "attempts": {
+          "default": 1,
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "result_status": {
+          "enum": [
+            "succeeded",
+            "failed",
+            "not_executed"
+          ],
+          "title": "Result Status",
+          "type": "string"
+        },
+        "schema_valid": {
+          "title": "Schema Valid",
+          "type": "boolean"
+        },
+        "sequence": {
+          "maximum": 12,
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "tool_name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequence",
+        "tool_name",
+        "arguments",
+        "schema_valid",
+        "result_status"
+      ],
+      "title": "AgentEvalObservedCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Machine-readable task-level Agent evaluation result.",
+  "properties": {
+    "approval_safe": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approval Safe"
+    },
+    "arbitrary_command_attempts": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Arbitrary Command Attempts",
+      "type": "integer"
+    },
+    "argument_correct": {
+      "title": "Argument Correct",
+      "type": "boolean"
+    },
+    "calls": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AgentEvalObservedCall"
+      },
+      "maxItems": 12,
+      "title": "Calls",
+      "type": "array"
+    },
+    "category": {
+      "enum": [
+        "single_tool",
+        "no_tool",
+        "wrong_tool_irrelevance",
+        "missing_argument_clarification",
+        "sequential_multi_step",
+        "parallel_independent_tools",
+        "tool_failure_recovery",
+        "grounding_approval_security"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "cluster_id": {
+      "pattern": "^cluster-[a-z0-9-]{3,80}$",
+      "title": "Cluster Id",
+      "type": "string"
+    },
+    "duration_milliseconds": {
+      "minimum": 0,
+      "title": "Duration Milliseconds",
+      "type": "integer"
+    },
+    "error_recovery_success": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Recovery Success"
+    },
+    "evidence_citations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 12,
+      "title": "Evidence Citations",
+      "type": "array"
+    },
+    "failure_reason": {
+      "anyOf": [
+        {
+          "maxLength": 1024,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Reason"
+    },
+    "final_answer": {
+      "default": "",
+      "maxLength": 262144,
+      "title": "Final Answer",
+      "type": "string"
+    },
+    "grounding_correct": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Grounding Correct"
+    },
+    "input_tokens": {
+      "minimum": 0,
+      "title": "Input Tokens",
+      "type": "integer"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "multi_step_success": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Multi Step Success"
+    },
+    "no_tool_correct": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "No Tool Correct"
+    },
+    "output_tokens": {
+      "minimum": 0,
+      "title": "Output Tokens",
+      "type": "integer"
+    },
+    "path_escape_attempts": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Path Escape Attempts",
+      "type": "integer"
+    },
+    "run_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_valid": {
+      "title": "Schema Valid",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "failed",
+        "timed_out",
+        "waiting_approval"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "task_id": {
+      "pattern": "^m9-(?:dev|release)-(?:en|zh)-[a-z0-9-]+-[0-9]{3}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "task_success": {
+      "title": "Task Success",
+      "type": "boolean"
+    },
+    "tool_hallucination": {
+      "title": "Tool Hallucination",
+      "type": "boolean"
+    },
+    "tool_selection_correct": {
+      "title": "Tool Selection Correct",
+      "type": "boolean"
+    },
+    "unapproved_write_attempts": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Unapproved Write Attempts",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "task_id",
+    "cluster_id",
+    "category",
+    "language",
+    "run_id",
+    "status",
+    "duration_milliseconds",
+    "input_tokens",
+    "output_tokens",
+    "tool_selection_correct",
+    "argument_correct",
+    "schema_valid",
+    "task_success",
+    "tool_hallucination"
+  ],
+  "title": "AgentEvalItemResult",
+  "type": "object"
+}

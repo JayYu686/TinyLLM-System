@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "AgentEvalExpectedCall": {
+      "additionalProperties": false,
+      "description": "One semantically required tool invocation in an accepted trace.",
+      "properties": {
+        "argument_match": {
+          "default": "exact",
+          "enum": [
+            "exact",
+            "subset"
+          ],
+          "title": "Argument Match",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "parallel_group": {
+          "anyOf": [
+            {
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parallel Group"
+        },
+        "result_status": {
+          "default": "succeeded",
+          "enum": [
+            "succeeded",
+            "failed"
+          ],
+          "title": "Result Status",
+          "type": "string"
+        },
+        "tool_name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_name",
+        "arguments"
+      ],
+      "title": "AgentEvalExpectedCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One accepted ordered trace; equal parallel groups may occur in any order.",
+  "properties": {
+    "calls": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AgentEvalExpectedCall"
+      },
+      "maxItems": 12,
+      "title": "Calls",
+      "type": "array"
+    },
+    "requires_clarification": {
+      "default": false,
+      "title": "Requires Clarification",
+      "type": "boolean"
+    },
+    "requires_final_answer": {
+      "default": true,
+      "title": "Requires Final Answer",
+      "type": "boolean"
+    },
+    "trajectory_id": {
+      "pattern": "^trajectory-[a-z0-9-]{1,80}$",
+      "title": "Trajectory Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trajectory_id"
+  ],
+  "title": "AgentEvalAllowedTrajectory",
+  "type": "object"
+}

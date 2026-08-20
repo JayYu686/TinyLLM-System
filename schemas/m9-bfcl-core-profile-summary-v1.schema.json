@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "BFCLCategoryResult": {
+      "additionalProperties": false,
+      "description": "One category result imported from BFCL's original score artifact.",
+      "properties": {
+        "accuracy_basis_points": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Accuracy Basis Points",
+          "type": "integer"
+        },
+        "category": {
+          "enum": [
+            "simple",
+            "multiple",
+            "parallel",
+            "parallel_multiple",
+            "irrelevance",
+            "multi_turn_base",
+            "multi_turn_miss_func",
+            "multi_turn_miss_param"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "correct_items": {
+          "minimum": 0,
+          "title": "Correct Items",
+          "type": "integer"
+        },
+        "item_count": {
+          "exclusiveMinimum": 0,
+          "title": "Item Count",
+          "type": "integer"
+        },
+        "source_score_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Score Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "item_count",
+        "correct_items",
+        "accuracy_basis_points",
+        "source_score_sha256"
+      ],
+      "title": "BFCLCategoryResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Content-free TinyLLM projection of the pinned offline BFCL score artifacts.",
+  "properties": {
+    "bfcl_commit": {
+      "const": "ea13468e4423454d0c213704fb87cf7cb3990433",
+      "title": "Bfcl Commit",
+      "type": "string"
+    },
+    "bfcl_tag": {
+      "const": "v1.3",
+      "title": "Bfcl Tag",
+      "type": "string"
+    },
+    "categories": {
+      "items": {
+        "$ref": "#/$defs/BFCLCategoryResult"
+      },
+      "maxItems": 8,
+      "minItems": 8,
+      "title": "Categories",
+      "type": "array"
+    },
+    "completed": {
+      "title": "Completed",
+      "type": "boolean"
+    },
+    "correct_items": {
+      "maximum": 1840,
+      "minimum": 0,
+      "title": "Correct Items",
+      "type": "integer"
+    },
+    "endpoint_handler": {
+      "const": "tinyllm-openai-chat-completions-v1",
+      "title": "Endpoint Handler",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Artifact Sha256",
+      "type": "string"
+    },
+    "model_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "overall_accuracy_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Overall Accuracy Basis Points",
+      "type": "integer"
+    },
+    "profile_name": {
+      "const": "TinyLLM BFCL v1.3 Offline Core Profile",
+      "title": "Profile Name",
+      "type": "string"
+    },
+    "raw_results_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Results Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "total_items": {
+      "const": 1840,
+      "title": "Total Items",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "profile_name",
+    "bfcl_tag",
+    "bfcl_commit",
+    "evaluated_at",
+    "model_id",
+    "model_artifact_sha256",
+    "endpoint_handler",
+    "categories",
+    "total_items",
+    "correct_items",
+    "overall_accuracy_basis_points",
+    "raw_results_sha256",
+    "completed"
+  ],
+  "title": "BFCLCoreProfileSummary",
+  "type": "object"
+}

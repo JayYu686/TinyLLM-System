@@ -1,0 +1,62 @@
+{
+  "additionalProperties": false,
+  "description": "Paired Cluster Bootstrap interval for Candidate minus parent Task Success.",
+  "properties": {
+    "cluster_count": {
+      "exclusiveMinimum": 1,
+      "title": "Cluster Count",
+      "type": "integer"
+    },
+    "lower_95_basis_points": {
+      "maximum": 10000,
+      "minimum": -10000,
+      "title": "Lower 95 Basis Points",
+      "type": "integer"
+    },
+    "metric": {
+      "const": "task_success_difference_basis_points",
+      "title": "Metric",
+      "type": "string"
+    },
+    "observed_basis_points": {
+      "maximum": 10000,
+      "minimum": -10000,
+      "title": "Observed Basis Points",
+      "type": "integer"
+    },
+    "resamples": {
+      "maximum": 100000,
+      "minimum": 1000,
+      "title": "Resamples",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "upper_95_basis_points": {
+      "maximum": 10000,
+      "minimum": -10000,
+      "title": "Upper 95 Basis Points",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "metric",
+    "seed",
+    "resamples",
+    "observed_basis_points",
+    "lower_95_basis_points",
+    "upper_95_basis_points",
+    "cluster_count"
+  ],
+  "title": "AgentBootstrapInterval",
+  "type": "object"
+}

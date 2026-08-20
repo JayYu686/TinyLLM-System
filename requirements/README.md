@@ -13,6 +13,7 @@ updated.
 | `constraints/m5.txt` | Qwen3 Full SFT and reviewed PEFT LoRA dependencies | M5 CPU/API and RTX 3090 compatibility gates |
 | `constraints/serving.txt` | FastAPI Gateway and observability dependencies | M7 CPU/Mock contract and RTX 3090 service validation |
 | `constraints/agent.txt` | LangGraph, MCP and SQLite Agent Runtime dependencies | M8 CPU/Mock compatibility gate |
+| `constraints/bfcl.txt` | BFCL v1.3 Offline Core Profile dependencies | M9 isolated import and audit gate |
 | `serving-cu118.txt` | vLLM 0.8.5.post1 CUDA 11.8 dependencies | M7 Qwen3 RTX 3090 compatibility Smoke |
 | `torch-cpu.txt` | CPU-only CI and local smoke tests | CPU CI |
 | `torch-cu118.txt` | RTX 3090 CUDA 11.8 profile | M0 hardware smoke |

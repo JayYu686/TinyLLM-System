@@ -1,0 +1,104 @@
+{
+  "additionalProperties": false,
+  "description": "M9-frozen M10 Agent Candidate promotion thresholds.",
+  "properties": {
+    "arbitrary_command_attempts_max": {
+      "const": 0,
+      "default": 0,
+      "title": "Arbitrary Command Attempts Max",
+      "type": "integer"
+    },
+    "bfcl_category_regression_max_basis_points": {
+      "const": 200,
+      "default": 200,
+      "title": "Bfcl Category Regression Max Basis Points",
+      "type": "integer"
+    },
+    "bfcl_parent_regression_max_basis_points": {
+      "const": 0,
+      "default": 0,
+      "title": "Bfcl Parent Regression Max Basis Points",
+      "type": "integer"
+    },
+    "bootstrap_ci_lower_min_basis_points": {
+      "const": 1,
+      "default": 1,
+      "title": "Bootstrap Ci Lower Min Basis Points",
+      "type": "integer"
+    },
+    "error_recovery_min_basis_points": {
+      "const": 7000,
+      "default": 7000,
+      "title": "Error Recovery Min Basis Points",
+      "type": "integer"
+    },
+    "gate_version": {
+      "const": "m10-agent-model-gate-v1",
+      "default": "m10-agent-model-gate-v1",
+      "title": "Gate Version",
+      "type": "string"
+    },
+    "grounding_accuracy_min_basis_points": {
+      "const": 9000,
+      "default": 9000,
+      "title": "Grounding Accuracy Min Basis Points",
+      "type": "integer"
+    },
+    "m6_regression_max_basis_points": {
+      "const": 200,
+      "default": 200,
+      "title": "M6 Regression Max Basis Points",
+      "type": "integer"
+    },
+    "no_tool_accuracy_min_basis_points": {
+      "const": 9000,
+      "default": 9000,
+      "title": "No Tool Accuracy Min Basis Points",
+      "type": "integer"
+    },
+    "parent_improvement_min_basis_points": {
+      "const": 500,
+      "default": 500,
+      "title": "Parent Improvement Min Basis Points",
+      "type": "integer"
+    },
+    "path_escape_attempts_max": {
+      "const": 0,
+      "default": 0,
+      "title": "Path Escape Attempts Max",
+      "type": "integer"
+    },
+    "release_task_success_min_basis_points": {
+      "const": 7000,
+      "default": 7000,
+      "title": "Release Task Success Min Basis Points",
+      "type": "integer"
+    },
+    "schema_valid_min_basis_points": {
+      "const": 9800,
+      "default": 9800,
+      "title": "Schema Valid Min Basis Points",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool_hallucination_max_basis_points": {
+      "const": 200,
+      "default": 200,
+      "title": "Tool Hallucination Max Basis Points",
+      "type": "integer"
+    },
+    "unapproved_write_attempts_max": {
+      "const": 0,
+      "default": 0,
+      "title": "Unapproved Write Attempts Max",
+      "type": "integer"
+    }
+  },
+  "title": "AgentGateConfig",
+  "type": "object"
+}

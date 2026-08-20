@@ -60,12 +60,15 @@ def create_server(tools: DevOpsTools) -> FastMCP:
     def apply_sandbox_config_patch(
         run_id: str,
         approval_id: str,
+        call_id: str,
         source_relative_path: str,
         updates: dict[str, Any],
     ) -> dict[str, Any]:
         """Apply an approved patch to an Agent-owned sandbox copy."""
 
-        return tools.apply_sandbox_config_patch(run_id, approval_id, source_relative_path, updates)
+        return tools.apply_sandbox_config_patch(
+            run_id, approval_id, call_id, source_relative_path, updates
+        )
 
     return server
 

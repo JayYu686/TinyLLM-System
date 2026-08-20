@@ -22,7 +22,7 @@ jobs:
       - run: python -m pip install -r requirements/torch-cpu.txt
       - run: python -m pip install -c requirements/constraints/dev.txt -e ".[dev]"
       # CPU tests need Gateway libraries, while the CUDA/vLLM constraint set stays isolated.
-      - run: python -m pip install -e ".[serving]"
+      - run: python -m pip install -c requirements/constraints/agent.txt -e ".[serving,agent]"
       - run: make check VENV="$(python -c 'import sys; print(sys.prefix)')"
       # Serving dependencies are frozen for the reviewed CUDA 11.8 profile. These
       # exact findings are dispositioned in configs/security/m7_vulnerability_policy.yaml;

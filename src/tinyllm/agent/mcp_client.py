@@ -19,9 +19,15 @@ from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult, Tool
 
-from tinyllm.agent.schema import MCPServerConfig, MCPToolPolicy, _reject_private_reasoning
+from tinyllm.agent.schema import (
+    AgentToolDefinition,
+    MCPServerConfig,
+    MCPToolPolicy,
+    _reject_private_reasoning,
+)
 
 MAX_MCP_RESULT_BYTES = 65_536
+INTERNAL_WRITE_ARGUMENTS = frozenset({"run_id", "approval_id", "call_id"})
 
 
 class MCPClientError(RuntimeError):
@@ -130,6 +136,92 @@ class MCPPolicyClient:
             Draft202012Validator(schema).validate(arguments)
         except (SchemaError, ValidationError) as exc:
             raise MCPClientError("tool arguments failed the discovered JSON Schema") from exc
+
+    def _public_input_schema(self, tool: Tool, policy: MCPToolPolicy) -> dict[str, Any]:
+        normalized = self._normalize_nullable_schema(tool.inputSchema)
+        if not isinstance(normalized, dict):
+            raise MCPClientError("MCP tool input Schema is not an object")
+        input_schema = cast(dict[str, Any], normalized)
+        if policy.access == "sandbox_write":
+            properties = dict(input_schema.get("properties", {}))
+            for internal in INTERNAL_WRITE_ARGUMENTS:
+                properties.pop(internal, None)
+            required = [
+                item
+                for item in input_schema.get("required", [])
+                if item not in INTERNAL_WRITE_ARGUMENTS
+            ]
+            input_schema["properties"] = properties
+            input_schema["required"] = required
+        return input_schema
+
+    @classmethod
+    def _normalize_nullable_schema(cls, value: object) -> Any:
+        """Remove Pydantic's optional-null branch from model-facing input Schemas."""
+
+        if isinstance(value, list):
+            return [cls._normalize_nullable_schema(item) for item in value]
+        if not isinstance(value, dict):
+            return value
+        normalized = {
+            str(key): cls._normalize_nullable_schema(item)
+            for key, item in value.items()
+            if key != "anyOf"
+        }
+        branches = value.get("anyOf")
+        if isinstance(branches, list) and len(branches) == 2:
+            concrete = [
+                item for item in branches if isinstance(item, dict) and item.get("type") != "null"
+            ]
+            nulls = [
+                item for item in branches if isinstance(item, dict) and item.get("type") == "null"
+            ]
+            if len(concrete) == len(nulls) == 1:
+                normalized.update(cls._normalize_nullable_schema(concrete[0]))
+                return normalized
+        if branches is not None:
+            normalized["anyOf"] = cls._normalize_nullable_schema(branches)
+        return normalized
+
+    async def validate_call(self, tool_name: str, arguments: dict[str, Any]) -> None:
+        """Validate model arguments against the server Schema before policy approval."""
+
+        policy = self.policy(tool_name)
+        async with self._session() as session:
+            await session.initialize()
+            catalog = self._catalog(await session.list_tools())
+        try:
+            tool = catalog[tool_name]
+        except KeyError as exc:
+            raise MCPClientError("registered MCP tool is missing") from exc
+        self._validate_input(self._public_input_schema(tool, policy), arguments)
+
+    async def discover_tools(self) -> tuple[AgentToolDefinition, ...]:
+        """Discover Schemas, retaining authority only for locally registered names."""
+
+        async with self._session() as session:
+            await session.initialize()
+            catalog = self._catalog(await session.list_tools())
+        missing = sorted(set(self._policy) - set(catalog))
+        if missing:
+            raise MCPClientError(f"registered MCP tools are missing: {missing}")
+        definitions: list[AgentToolDefinition] = []
+        for name in self._policy:
+            tool = catalog[name]
+            try:
+                Draft202012Validator.check_schema(tool.inputSchema)
+                input_schema = self._public_input_schema(tool, self._policy[name])
+                definitions.append(
+                    AgentToolDefinition(
+                        server_id=self.server.server_id,
+                        tool_name=name,
+                        description=tool.description,
+                        input_schema=input_schema,
+                    )
+                )
+            except (SchemaError, ValueError) as exc:
+                raise MCPClientError("MCP tool advertises an invalid input Schema") from exc
+        return tuple(definitions)
 
     @staticmethod
     def _result(result: CallToolResult, tool: Tool) -> dict[str, Any]:

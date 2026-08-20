@@ -14,7 +14,12 @@ from typing import Any
 import yaml
 
 from tinyllm.agent.evidence import search_evidence
-from tinyllm.agent.schema import AGENT_RUN_PATTERN, AgentApprovalDecision
+from tinyllm.agent.schema import (
+    AGENT_RUN_PATTERN,
+    AgentApprovalDecision,
+    AgentToolCall,
+    agent_tool_call_sha256,
+)
 
 MAX_DOCUMENT_BYTES = 65_536
 MAX_RESULT_CHARACTERS = 32_000
@@ -272,6 +277,7 @@ class DevOpsTools:
         self,
         run_id: str,
         approval_id: str,
+        call_id: str,
         source_relative_path: str,
         updates: dict[str, Any],
     ) -> dict[str, object]:
@@ -299,6 +305,20 @@ class DevOpsTools:
             raise DevOpsToolError("approval for the sandbox write is missing or invalid") from exc
         if decision.approval_id != approval_id or decision.decision != "approved":
             raise DevOpsToolError("sandbox write was not approved")
+        try:
+            proposed = AgentToolCall(
+                call_id=call_id,
+                server_id="tinyllm-devops",
+                tool_name="apply_sandbox_config_patch",
+                arguments={
+                    "source_relative_path": source_relative_path,
+                    "updates": updates,
+                },
+            )
+        except ValueError as exc:
+            raise DevOpsToolError("sandbox write identity is invalid") from exc
+        if agent_tool_call_sha256(proposed) != decision.tool_call_sha256:
+            raise DevOpsToolError("sandbox write differs from the approved tool call")
         sandboxes = self.artifact_root / "agent-sandboxes"
         if sandboxes.exists() and (not sandboxes.is_dir() or sandboxes.is_symlink()):
             raise DevOpsToolError("Agent sandbox collection is unsafe")
@@ -318,14 +338,23 @@ class DevOpsTools:
             current = current / part
             if current.is_symlink():
                 raise DevOpsToolError("sandbox path contains a symlink")
-        if target.exists() or target.is_symlink():
-            raise DevOpsToolError("sandbox patch approval has already been consumed")
         try:
             value: Any = yaml.safe_load(_read_bounded(source))
             if not isinstance(value, dict):
                 raise ValueError
             value.update(updates)
             payload = yaml.safe_dump(value, allow_unicode=True, sort_keys=True).encode()
+            if target.exists() and not target.is_symlink():
+                if target.read_bytes() == payload:
+                    return {
+                        "schema_version": "1.0",
+                        "relative_path": target.relative_to(self.artifact_root).as_posix(),
+                        "content_sha256": hashlib.sha256(payload).hexdigest(),
+                        "approval_id": approval_id,
+                    }
+                raise DevOpsToolError("sandbox write target conflicts with the approved patch")
+            if target.is_symlink():
+                raise DevOpsToolError("sandbox patch target is a symlink")
             _atomic_new(target, payload)
         except (OSError, ValueError, yaml.YAMLError) as exc:
             raise DevOpsToolError("sandbox configuration patch failed") from exc

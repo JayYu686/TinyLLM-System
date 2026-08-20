@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "description": "Locally authorized tool metadata discovered from an MCP Server.",
+  "properties": {
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "input_schema": {
+      "additionalProperties": true,
+      "title": "Input Schema",
+      "type": "object"
+    },
+    "server_id": {
+      "pattern": "^[a-z][a-z0-9-]{2,63}$",
+      "title": "Server Id",
+      "type": "string"
+    },
+    "tool_name": {
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "title": "Tool Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "server_id",
+    "tool_name",
+    "input_schema"
+  ],
+  "title": "AgentToolDefinition",
+  "type": "object"
+}

@@ -1,0 +1,78 @@
+{
+  "additionalProperties": false,
+  "description": "One real OpenAI-client tool-calling compatibility observation.",
+  "properties": {
+    "content_characters": {
+      "minimum": 0,
+      "title": "Content Characters",
+      "type": "integer"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "finish_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Finish Reason"
+    },
+    "mode": {
+      "enum": [
+        "auto",
+        "required",
+        "none",
+        "named"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "raw_markup_exposed": {
+      "title": "Raw Markup Exposed",
+      "type": "boolean"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "stream": {
+      "title": "Stream",
+      "type": "boolean"
+    },
+    "tool_names": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Tool Names",
+      "type": "array"
+    }
+  },
+  "required": [
+    "mode",
+    "stream",
+    "status",
+    "content_characters",
+    "raw_markup_exposed"
+  ],
+  "title": "M8ToolCallingCase",
+  "type": "object"
+}

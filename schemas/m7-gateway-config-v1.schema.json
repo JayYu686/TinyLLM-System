@@ -42,7 +42,7 @@
       "type": "string"
     },
     "config_id": {
-      "pattern": "^m7-gateway-[a-z0-9-]{1,64}$",
+      "pattern": "^m[78]-gateway-[a-z0-9-]{1,64}$",
       "title": "Config Id",
       "type": "string"
     },

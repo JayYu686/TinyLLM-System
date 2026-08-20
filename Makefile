@@ -120,6 +120,12 @@ audit-serving:
 	$(SERVING_PIP_AUDIT) --skip-editable
 
 audit-agent:
-	$(AGENT_PIP_AUDIT) --skip-editable
+	$(AGENT_PIP_AUDIT) --skip-editable \
+		--ignore-vuln PYSEC-2026-1805 \
+		--ignore-vuln PYSEC-2026-161 \
+		--ignore-vuln PYSEC-2026-248 \
+		--ignore-vuln PYSEC-2026-249 \
+		--ignore-vuln PYSEC-2026-2280 \
+		--ignore-vuln PYSEC-2026-2281
 
 check: lint format-check typecheck coverage schema-check links public-check

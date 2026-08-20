@@ -78,4 +78,7 @@ vLLM's local execution import path without mixing CUDA major versions.
 M8 uses `.venv-agent`. It pins MCP to the maintained `1.29.x` line with a `<2` upper bound,
 so the frozen MCP 2025-06-18 conformance contract cannot move silently to a new major protocol
 implementation. LangGraph and its SQLite checkpointer stay isolated from both training and
-Serving environments.
+Serving environments. `make audit-agent` ignores only the reviewed findings inherited from the
+M7 FastAPI/OTel dependency profile; their M8-specific applicability and controls are recorded in
+[m8_security_exceptions.md](m8_security_exceptions.md). Any additional advisory remains a hard
+failure.

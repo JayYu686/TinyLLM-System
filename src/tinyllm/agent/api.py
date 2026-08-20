@@ -13,6 +13,8 @@ from fastapi import APIRouter, Header, HTTPException, Request, Security
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from tinyllm.agent.mcp_client import MCPClientError
+from tinyllm.agent.model import AgentModelError
 from tinyllm.agent.runtime import AgentRuntime, AgentRuntimeError
 from tinyllm.agent.schema import (
     AgentApprovalDecision,
@@ -20,6 +22,7 @@ from tinyllm.agent.schema import (
     AgentEvent,
     AgentRunRecord,
     AgentRunRequest,
+    agent_tool_call_sha256,
 )
 from tinyllm.agent.store import TERMINAL_STATUSES, AgentRunStore, AgentStoreError
 
@@ -64,7 +67,14 @@ class AgentExecutionService:
             raise
         except TimeoutError:
             self._fail_if_running(run_id, "AGENT_RUN_TIMEOUT")
-        except (AgentRuntimeError, AgentStoreError, ValueError, OSError):
+        except (
+            AgentRuntimeError,
+            AgentStoreError,
+            AgentModelError,
+            MCPClientError,
+            ValueError,
+            OSError,
+        ):
             self._fail_if_running(run_id, "AGENT_RUNTIME_FAILED")
 
     def resume(self, run_id: str) -> None:
@@ -93,7 +103,14 @@ class AgentExecutionService:
             raise
         except TimeoutError:
             self._fail_if_running(run_id, "AGENT_RUN_TIMEOUT")
-        except (AgentRuntimeError, AgentStoreError, ValueError, OSError):
+        except (
+            AgentRuntimeError,
+            AgentStoreError,
+            AgentModelError,
+            MCPClientError,
+            ValueError,
+            OSError,
+        ):
             self._fail_if_running(run_id, "AGENT_RUNTIME_FAILED")
 
     def recover(self) -> int:
@@ -101,10 +118,17 @@ class AgentExecutionService:
 
         recovered = 0
         for record in self.store.list_records():
+            record, _expired = self.store.expire_if_due(record.run_id)
             if record.status in {"created", "running"}:
                 self.start(record)
                 recovered += 1
         return recovered
+
+    def refresh(self, run_id: str) -> AgentRunRecord:
+        """Apply time-based state transitions before exposing a Run projection."""
+
+        record, _expired = self.store.expire_if_due(run_id)
+        return record
 
     def cancel(self, run_id: str) -> tuple[AgentRunRecord, bool]:
         task = self._tasks.get(run_id)
@@ -112,11 +136,26 @@ class AgentExecutionService:
             task.cancel()
         return self.store.cancel(run_id)
 
-    def _fail_if_running(self, run_id: str, code: str) -> None:
+    async def shutdown(self) -> None:
+        """Cancel only in-process work; durable Runs remain recoverable safe-node state."""
+
+        active = [task for task in self._tasks.values() if not task.done()]
+        for task in active:
+            task.cancel()
+        if active:
+            await asyncio.gather(*active, return_exceptions=True)
+        closer = getattr(self.runtime.model, "close", None)
+        if closer is not None:
+            await closer()
+
+    def _fail_if_running(self, run_id: str, code: str, detail: BaseException | None = None) -> None:
         record = self.store.load(run_id)
         if record.status in TERMINAL_STATUSES:
             return
-        self.store.append_event(run_id, "run.failed", {"code": code})
+        payload: dict[str, object] = {"code": code}
+        if detail is not None:
+            payload["error_type"] = type(detail).__name__
+        self.store.append_event(run_id, "run.failed", payload)
         self.store.transition(run_id, status="failed", error_code=code)
 
 
@@ -130,6 +169,7 @@ def create_agent_router(
     store: AgentRunStore,
     service: AgentExecutionService,
     bearer_token: str,
+    expected_model: str = "production",
     poll_seconds: float = 0.1,
 ) -> APIRouter:
     """Create the frozen M8 Agent API router without exposing runtime internals."""
@@ -161,6 +201,8 @@ def create_agent_router(
         idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     ) -> AgentRunRecord:
         try:
+            if body.model != expected_model:
+                raise HTTPException(status_code=404, detail="Agent model is not deployed")
             record, created = store.create(
                 body, idempotency_key=required_idempotency(idempotency_key)
             )
@@ -173,7 +215,7 @@ def create_agent_router(
     @router.get("/runs/{run_id}", dependencies=[Security(authenticate)])
     async def get_run(run_id: str) -> AgentRunRecord:
         try:
-            return store.load(run_id)
+            return service.refresh(run_id)
         except AgentStoreError as exc:
             raise HTTPException(status_code=404, detail="Agent Run was not found") from exc
 
@@ -186,7 +228,7 @@ def create_agent_router(
         if last_event_id is not None and last_event_id < 0:
             raise HTTPException(status_code=400, detail="Last-Event-ID must be non-negative")
         try:
-            store.load(run_id)
+            service.refresh(run_id)
         except AgentStoreError as exc:
             raise HTTPException(status_code=404, detail="Agent Run was not found") from exc
 
@@ -196,7 +238,7 @@ def create_agent_router(
                 for event in store.events_after(run_id, cursor):
                     cursor = event.sequence
                     yield _sse(event)
-                record = store.load(run_id)
+                record = service.refresh(run_id)
                 if record.status in TERMINAL_STATUSES and cursor >= record.last_event_sequence:
                     return
                 if await request.is_disconnected():
@@ -220,10 +262,25 @@ def create_agent_router(
         idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     ) -> AgentRunRecord:
         try:
+            key = required_idempotency(idempotency_key)
+            try:
+                existing = store.load_approval(run_id, approval_id)
+            except AgentStoreError:
+                existing = None
+            if existing is not None:
+                if existing.decision != body.decision or existing.idempotency_key != key:
+                    raise AgentStoreError(
+                        "approval was repeated with a different decision or Idempotency-Key"
+                    )
+                return service.refresh(run_id)
+            record = service.refresh(run_id)
+            if record.pending_tool_call is None:
+                raise AgentStoreError("Agent Run has no pending tool call")
             decision = AgentApprovalDecision(
                 approval_id=approval_id,
+                tool_call_sha256=agent_tool_call_sha256(record.pending_tool_call),
                 decision=body.decision,
-                idempotency_key=required_idempotency(idempotency_key),
+                idempotency_key=key,
                 decided_at=datetime.now(UTC),
             )
             created = store.decide_approval(run_id, decision)

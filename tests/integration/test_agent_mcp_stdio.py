@@ -35,3 +35,10 @@ def test_reference_stdio_mcp_server_is_policy_checked(tmp_path: Path) -> None:
     result = asyncio.run(client.call("search_evidence", {"query": "backend failure", "top_k": 3}))
     assert result["schema_version"] == "1.0"
     assert result["results"]
+    definitions = asyncio.run(client.discover_tools())
+    patch = next(item for item in definitions if item.tool_name == "apply_sandbox_config_patch")
+    properties = patch.input_schema["properties"]
+    assert "run_id" not in properties
+    assert "approval_id" not in properties
+    assert "call_id" not in properties
+    assert {"source_relative_path", "updates"}.issubset(properties)

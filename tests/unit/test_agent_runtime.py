@@ -6,7 +6,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from tinyllm.agent import AgentApprovalDecision, AgentRunRequest, AgentRunStore, load_agent_config
+from tinyllm.agent import (
+    AgentApprovalDecision,
+    AgentRunRequest,
+    AgentRunStore,
+    agent_tool_call_sha256,
+    load_agent_config,
+)
 from tinyllm.agent.runtime import AgentRuntime
 from tinyllm.agent.schema import AgentMessage, AgentModelDecision
 
@@ -43,6 +49,10 @@ class _Client:
     def policy(self, name: str) -> _Policy:
         assert name in self.tool_names
         return _Policy(self.approval_required or name == "apply_sandbox_config_patch")
+
+    async def validate_call(self, name: str, arguments: dict[str, Any]) -> None:
+        assert name in self.tool_names
+        assert isinstance(arguments, dict)
 
     async def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         self.calls.append((name, arguments))
@@ -124,10 +134,12 @@ def test_runtime_suspends_write_and_resumes_only_after_approval(tmp_path: Path) 
     assert waiting.status == "waiting_approval"
     assert client.calls == []
     assert waiting.pending_approval_id is not None
+    assert waiting.pending_tool_call is not None
     store.decide_approval(
         run_id,
         AgentApprovalDecision(
             approval_id=waiting.pending_approval_id,
+            tool_call_sha256=agent_tool_call_sha256(waiting.pending_tool_call),
             decision="approved",
             idempotency_key="runtime-approval-operation-0001",
             decided_at=NOW,
@@ -158,7 +170,9 @@ def test_runtime_stops_repeated_identical_tool_loop(tmp_path: Path) -> None:
     assert record.error_code == "AGENT_TOOL_LOOP"
 
 
-def test_runtime_rejects_final_claim_without_evidence_citation(tmp_path: Path) -> None:
+def test_runtime_attaches_actual_evidence_identity_when_model_omits_citation(
+    tmp_path: Path,
+) -> None:
     store, run_id, messages = _run(tmp_path)
     runtime = AgentRuntime(
         config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
@@ -169,7 +183,7 @@ def test_runtime_rejects_final_claim_without_evidence_citation(tmp_path: Path) -
         clients={"tinyllm-devops": _Client()},  # type: ignore[dict-item]
     )
 
-    assert asyncio.run(runtime.run(run_id, messages=messages)) is None
+    answer = asyncio.run(runtime.run(run_id, messages=messages))
     record = store.load(run_id)
-    assert record.status == "failed"
-    assert record.error_code == "AGENT_GROUNDING_REQUIRED"
+    assert record.status == "succeeded"
+    assert answer == "ok\n\nEvidence: [evidence:call_one]"

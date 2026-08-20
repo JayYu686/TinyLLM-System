@@ -30,10 +30,16 @@
       "default": "1.0",
       "title": "Schema Version",
       "type": "string"
+    },
+    "tool_call_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tool Call Sha256",
+      "type": "string"
     }
   },
   "required": [
     "approval_id",
+    "tool_call_sha256",
     "decision",
     "idempotency_key",
     "decided_at"

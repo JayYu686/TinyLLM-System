@@ -12,6 +12,7 @@ from tinyllm.agent import (
     AgentRunStore,
     AgentStoreError,
     AgentToolCall,
+    agent_tool_call_sha256,
 )
 
 NOW = datetime(2026, 8, 13, tzinfo=UTC)
@@ -68,20 +69,22 @@ def test_agent_store_approval_is_idempotent(tmp_path: Path) -> None:
     store = AgentRunStore(tmp_path)
     record, _ = store.create(_request(), idempotency_key="client-create-operation-0003", now=NOW)
     approval_id = "approval-123456abcdef"
+    pending_call = AgentToolCall(
+        call_id="call_patch_1",
+        server_id="tinyllm-devops",
+        tool_name="apply_sandbox_config_patch",
+        arguments={},
+    )
     store.transition(
         record.run_id,
         status="waiting_approval",
         pending_approval_id=approval_id,
-        pending_tool_call=AgentToolCall(
-            call_id="call_patch_1",
-            server_id="tinyllm-devops",
-            tool_name="apply_sandbox_config_patch",
-            arguments={},
-        ),
+        pending_tool_call=pending_call,
         now=NOW + timedelta(seconds=1),
     )
     decision = AgentApprovalDecision(
         approval_id=approval_id,
+        tool_call_sha256=agent_tool_call_sha256(pending_call),
         decision="approved",
         idempotency_key="client-approval-operation-0001",
         decided_at=NOW + timedelta(seconds=2),
@@ -108,6 +111,41 @@ def test_agent_store_explicit_cancel_is_idempotent(tmp_path: Path) -> None:
     assert cancelled.completed_at is not None
     with pytest.raises(AgentStoreError, match="terminal"):
         store.append_event(record.run_id, "run.failed", {"code": "CANCELLED"})
+
+
+def test_agent_store_expires_waiting_run_at_immutable_deadline(tmp_path: Path) -> None:
+    store = AgentRunStore(tmp_path)
+    record, _ = store.create(
+        _request(),
+        idempotency_key="client-expiry-operation-0001",
+        now=NOW,
+        expires_in=timedelta(seconds=10),
+    )
+    pending_call = AgentToolCall(
+        call_id="call_expiry",
+        server_id="tinyllm-devops",
+        tool_name="apply_sandbox_config_patch",
+        arguments={"updates": {"seed": 42}},
+    )
+    store.transition(
+        record.run_id,
+        status="waiting_approval",
+        pending_approval_id="approval-123456abcdea",
+        pending_tool_call=pending_call,
+        now=NOW + timedelta(seconds=1),
+    )
+
+    before, before_changed = store.expire_if_due(record.run_id, now=NOW + timedelta(seconds=9))
+    expired, changed = store.expire_if_due(record.run_id, now=NOW + timedelta(seconds=30))
+    repeated, repeated_changed = store.expire_if_due(record.run_id, now=NOW + timedelta(seconds=40))
+
+    assert before.status == "waiting_approval"
+    assert before_changed is False
+    assert changed is True
+    assert repeated_changed is False
+    assert expired.status == repeated.status == "expired"
+    assert expired.completed_at == record.expires_at
+    assert store.events_after(record.run_id)[-1].data["code"] == "AGENT_RUN_EXPIRED"
 
 
 def test_agent_store_rejects_corrupt_event_sequence(tmp_path: Path) -> None:
@@ -156,4 +194,45 @@ def test_agent_store_rejects_unsafe_roots_keys_and_transitions(tmp_path: Path) -
             record.run_id,
             status="failed",
             now=NOW + timedelta(seconds=1),
+        )
+
+
+def test_langgraph_checkpoint_path_is_private_and_reused(tmp_path: Path) -> None:
+    store = AgentRunStore(tmp_path)
+    record, _ = store.create(_request(), idempotency_key="client-create-operation-0008", now=NOW)
+
+    first = store.langgraph_checkpoint_path(record.run_id)
+    second = store.langgraph_checkpoint_path(record.run_id)
+
+    assert first == second
+    assert first.stat().st_mode & 0o777 == 0o600
+    assert first.parent.stat().st_mode & 0o777 == 0o700
+
+
+def test_approval_rejects_tool_call_hash_drift(tmp_path: Path) -> None:
+    store = AgentRunStore(tmp_path)
+    record, _ = store.create(_request(), idempotency_key="client-create-operation-0009", now=NOW)
+    call = AgentToolCall(
+        call_id="call_patch_2",
+        server_id="tinyllm-devops",
+        tool_name="apply_sandbox_config_patch",
+        arguments={"source_relative_path": "configs/train.yaml", "updates": {"seed": 42}},
+    )
+    store.transition(
+        record.run_id,
+        status="waiting_approval",
+        pending_approval_id="approval-abcdef123456",
+        pending_tool_call=call,
+        now=NOW + timedelta(seconds=1),
+    )
+    with pytest.raises(AgentStoreError, match="bound"):
+        store.decide_approval(
+            record.run_id,
+            AgentApprovalDecision(
+                approval_id="approval-abcdef123456",
+                tool_call_sha256="0" * 64,
+                decision="approved",
+                idempotency_key="client-approval-operation-0002",
+                decided_at=NOW + timedelta(seconds=2),
+            ),
         )

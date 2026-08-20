@@ -23,6 +23,7 @@ from tinyllm.agent.schema import (
     AgentRunRecord,
     AgentRunRequest,
     AgentToolCall,
+    agent_tool_call_sha256,
 )
 
 TERMINAL_STATUSES = {"succeeded", "failed", "cancelled", "expired"}
@@ -193,6 +194,26 @@ class AgentRunStore:
                 raise AgentStoreError("Agent Run index contains a corrupt record") from exc
         return tuple(records)
 
+    def langgraph_checkpoint_path(self, run_id: str) -> Path:
+        """Return a private, pre-created SQLite file for LangGraph safe-node state."""
+
+        directory = self._directory(run_id) / "langgraph"
+        try:
+            directory.mkdir(mode=0o700, exist_ok=True)
+            if directory.is_symlink() or not directory.is_dir():
+                raise ValueError
+            directory.chmod(0o700)
+            path = directory / "checkpoints.sqlite3"
+            if not path.exists():
+                with path.open("xb") as handle:
+                    os.fchmod(handle.fileno(), 0o600)
+            if path.is_symlink() or not path.is_file():
+                raise ValueError
+            path.chmod(0o600)
+            return path
+        except (OSError, ValueError) as exc:
+            raise AgentStoreError("LangGraph checkpoint path is unsafe") from exc
+
     def append_event(
         self,
         run_id: str,
@@ -269,6 +290,9 @@ class AgentRunStore:
             or record.pending_approval_id != decision.approval_id
         ):
             raise AgentStoreError("Agent Run is not waiting for this approval")
+        assert record.pending_tool_call is not None
+        if agent_tool_call_sha256(record.pending_tool_call) != decision.tool_call_sha256:
+            raise AgentStoreError("approval is not bound to the pending tool call")
         directory.mkdir(mode=0o700, exist_ok=True)
         _atomic_new(path, payload)
         return True
@@ -285,6 +309,35 @@ class AgentRunStore:
             return AgentApprovalDecision.model_validate_json(path.read_bytes())
         except (OSError, ValidationError, ValueError) as exc:
             raise AgentStoreError("approval decision is missing or corrupt") from exc
+
+    def expire_if_due(
+        self,
+        run_id: str,
+        *,
+        now: datetime | None = None,
+    ) -> tuple[AgentRunRecord, bool]:
+        """Expire one nonterminal Run once its immutable deadline has passed."""
+
+        record = self.load(run_id)
+        if record.status in TERMINAL_STATUSES:
+            return record, False
+        timestamp = now or datetime.now(UTC)
+        if timestamp.tzinfo is None:
+            raise AgentStoreError("Agent expiry timestamp must be timezone-aware")
+        if timestamp.astimezone(UTC) < record.expires_at:
+            return record, False
+        # The record contract keeps updated_at at or before expires_at. Persist the
+        # transition at the immutable deadline even if the expiry sweep runs later.
+        self.append_event(
+            run_id,
+            "run.failed",
+            {"code": "AGENT_RUN_EXPIRED", "status": "expired"},
+            now=record.expires_at,
+        )
+        return (
+            self.transition(run_id, status="expired", now=record.expires_at),
+            True,
+        )
 
     def transition(
         self,

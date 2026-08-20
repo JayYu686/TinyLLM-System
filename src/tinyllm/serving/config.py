@@ -19,7 +19,7 @@ class GatewayConfig(StrictSchema):
     """Secure-by-default local Model Gateway configuration."""
 
     schema_version: Literal["1.0"] = "1.0"
-    config_id: str = Field(pattern=r"^m7-gateway-[a-z0-9-]{1,64}$")
+    config_id: str = Field(pattern=r"^m[78]-gateway-[a-z0-9-]{1,64}$")
     host: Literal["127.0.0.1"] = "127.0.0.1"
     port: int = Field(default=8000, ge=1024, le=65535)
     backend_base_url: str = "http://127.0.0.1:8001"

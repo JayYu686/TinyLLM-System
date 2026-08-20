@@ -1,0 +1,151 @@
+{
+  "additionalProperties": false,
+  "description": "Restart-safe approval and sandbox-write evidence for the M8 Agent contract.",
+  "properties": {
+    "approval_id": {
+      "pattern": "^approval-[0-9a-f]{12}$",
+      "title": "Approval Id",
+      "type": "string"
+    },
+    "event_types": {
+      "items": {
+        "enum": [
+          "run.started",
+          "model.delta",
+          "tool.call.proposed",
+          "approval.required",
+          "tool.started",
+          "tool.completed",
+          "message.completed",
+          "run.completed",
+          "run.failed"
+        ],
+        "type": "string"
+      },
+      "title": "Event Types",
+      "type": "array"
+    },
+    "executed_at": {
+      "format": "date-time",
+      "title": "Executed At",
+      "type": "string"
+    },
+    "final_status": {
+      "const": "succeeded",
+      "title": "Final Status",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "idempotent_approval_succeeded": {
+      "title": "Idempotent Approval Succeeded",
+      "type": "boolean"
+    },
+    "idempotent_write_succeeded": {
+      "title": "Idempotent Write Succeeded",
+      "type": "boolean"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "restart_resume_succeeded": {
+      "title": "Restart Resume Succeeded",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^agent-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}-[0-9a-f]{4}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "sandbox_relative_path": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Sandbox Relative Path",
+      "type": "string"
+    },
+    "sandbox_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sandbox Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_relative_path": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Source Relative Path",
+      "type": "string"
+    },
+    "source_sha256_after": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Sha256 After",
+      "type": "string"
+    },
+    "source_sha256_before": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Sha256 Before",
+      "type": "string"
+    },
+    "source_unchanged": {
+      "title": "Source Unchanged",
+      "type": "boolean"
+    },
+    "tool_calls_completed": {
+      "const": 1,
+      "title": "Tool Calls Completed",
+      "type": "integer"
+    },
+    "transport": {
+      "const": "stdio",
+      "title": "Transport",
+      "type": "string"
+    },
+    "validation_id": {
+      "pattern": "^m8-agent-contract-[0-9a-f]{8}$",
+      "title": "Validation Id",
+      "type": "string"
+    },
+    "waiting_status": {
+      "const": "waiting_approval",
+      "title": "Waiting Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "validation_id",
+    "executed_at",
+    "git_commit",
+    "git_dirty",
+    "transport",
+    "run_id",
+    "approval_id",
+    "source_relative_path",
+    "source_sha256_before",
+    "source_sha256_after",
+    "sandbox_relative_path",
+    "sandbox_sha256",
+    "waiting_status",
+    "final_status",
+    "tool_calls_completed",
+    "event_types",
+    "source_unchanged",
+    "restart_resume_succeeded",
+    "idempotent_approval_succeeded",
+    "idempotent_write_succeeded",
+    "passed"
+  ],
+  "title": "M8AgentContractEvidence",
+  "type": "object"
+}

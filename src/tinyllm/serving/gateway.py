@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import json
 import re
@@ -11,8 +12,9 @@ import uuid
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from typing import cast
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, Security
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Response, Security
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -177,6 +179,63 @@ def _sanitize_completion(result: dict[str, object]) -> dict[str, object]:
     return result
 
 
+def _repair_auto_tool_completion(
+    result: dict[str, object], tool_names: frozenset[str]
+) -> dict[str, object]:
+    """Convert the fixed legacy Qwen JSON fallback into one OpenAI tool call."""
+
+    choices = result.get("choices")
+    if not isinstance(choices, list) or len(choices) != 1:
+        return result
+    choice = choices[0]
+    if not isinstance(choice, dict) or not isinstance(choice.get("message"), dict):
+        return result
+    message = choice["message"]
+    if message.get("tool_calls"):
+        return result
+    content = message.get("content")
+    if not isinstance(content, str) or not content.lstrip().startswith("{"):
+        return result
+    try:
+        value: object = json.loads(content)
+    except json.JSONDecodeError:
+        return result
+    if not isinstance(value, dict) or set(value) != {"name", "arguments"}:
+        return result
+    name = value.get("name")
+    arguments = value.get("arguments")
+    if not isinstance(name, str) or name not in tool_names or not isinstance(arguments, dict):
+        return result
+    identity = hashlib.sha256(content.encode()).hexdigest()[:24]
+    message["content"] = None
+    message["tool_calls"] = [
+        {
+            "id": f"call_{identity}",
+            "type": "function",
+            "function": {
+                "name": name,
+                "arguments": json.dumps(arguments, ensure_ascii=False, separators=(",", ":")),
+            },
+        }
+    ]
+    choice["finish_reason"] = "tool_calls"
+    return result
+
+
+def _normalize_tool_completion(result: dict[str, object]) -> dict[str, object]:
+    """Normalize legacy vLLM's tool-call termination to the OpenAI contract."""
+
+    choices = result.get("choices")
+    if not isinstance(choices, list):
+        return result
+    for choice in choices:
+        if not isinstance(choice, dict) or not isinstance(choice.get("message"), dict):
+            continue
+        if choice["message"].get("tool_calls"):
+            choice["finish_reason"] = "tool_calls"
+    return result
+
+
 class _SSECoTFilter:
     """Filter content deltas across arbitrary byte and token boundaries."""
 
@@ -229,6 +288,241 @@ class _SSECoTFilter:
         return b"\n".join(lines)
 
 
+class _SSEAutoToolRepair:
+    """Repair fixed Qwen/Hermes JSON tool markup across arbitrary SSE boundaries."""
+
+    def __init__(self, tool_names: frozenset[str]) -> None:
+        self._wire = b""
+        self._tool_names = tool_names
+        self._candidate = ""
+        self._collecting = False
+        self._repaired = False
+        self._finish_emitted = False
+        self._template: dict[str, object] | None = None
+
+    def feed(self, chunk: bytes) -> tuple[bytes, ...]:
+        self._wire += chunk
+        frames = self._wire.split(b"\n\n")
+        self._wire = frames.pop()
+        output: list[bytes] = []
+        for frame in frames:
+            output.extend(self._repair_frame(frame))
+        return tuple(output)
+
+    def flush(self) -> tuple[bytes, ...]:
+        output: list[bytes] = []
+        if self._wire:
+            output.extend(self._repair_frame(self._wire))
+            self._wire = b""
+        if self._collecting and not self._repaired:
+            output.append(self._error_frame("streamed tool JSON was incomplete or malformed"))
+        return tuple(output)
+
+    def _repair_frame(self, frame: bytes) -> list[bytes]:
+        if not frame:
+            return []
+        if frame == b"data: [DONE]":
+            output: list[bytes] = []
+            if self._collecting and not self._repaired:
+                output.append(self._error_frame("streamed tool JSON was incomplete or malformed"))
+            elif self._repaired and not self._finish_emitted:
+                output.append(self._finish_frame())
+                self._finish_emitted = True
+            output.append(frame + b"\n\n")
+            return output
+        lines = frame.splitlines()
+        for line in lines:
+            if not line.startswith(b"data: "):
+                continue
+            try:
+                decoded: object = json.loads(line[6:])
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            if not isinstance(decoded, dict) or not isinstance(decoded.get("choices"), list):
+                continue
+            self._template = {key: value for key, value in decoded.items() if key != "choices"}
+            for choice in decoded["choices"]:
+                if not isinstance(choice, dict) or not isinstance(choice.get("delta"), dict):
+                    continue
+                delta = choice["delta"]
+                if delta.get("tool_calls"):
+                    return [frame + b"\n\n"]
+                content = delta.get("content")
+                if self._repaired:
+                    return []
+                if not isinstance(content, str) or not content:
+                    continue
+                if not self._collecting:
+                    if content.lstrip().startswith("{"):
+                        self._collecting = True
+                    else:
+                        return [frame + b"\n\n"]
+                self._candidate += content
+                delta["content"] = ""
+                parsed = self._parse_candidate()
+                if parsed is None:
+                    return []
+                name, arguments = parsed
+                call_hash = hashlib.sha256(self._candidate.encode()).hexdigest()[:24]
+                delta.pop("content", None)
+                delta["tool_calls"] = [
+                    {
+                        "index": 0,
+                        "id": f"call_{call_hash}",
+                        "type": "function",
+                        "function": {
+                            "name": name,
+                            "arguments": json.dumps(
+                                arguments, ensure_ascii=False, separators=(",", ":")
+                            ),
+                        },
+                    }
+                ]
+                self._repaired = True
+                return [self._encoded_frame(decoded)]
+        return [frame + b"\n\n"]
+
+    def _parse_candidate(self) -> tuple[str, dict[str, object]] | None:
+        try:
+            value: object = json.loads(self._candidate)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(value, dict) or set(value) != {"name", "arguments"}:
+            return None
+        name = value.get("name")
+        arguments = value.get("arguments")
+        if not isinstance(name, str) or name not in self._tool_names:
+            return None
+        if not isinstance(arguments, dict):
+            return None
+        return name, cast(dict[str, object], arguments)
+
+    @staticmethod
+    def _encoded_frame(value: dict[str, object]) -> bytes:
+        return (
+            b"data: "
+            + json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode()
+            + b"\n\n"
+        )
+
+    def _finish_frame(self) -> bytes:
+        template = dict(self._template or {})
+        template["choices"] = [
+            {
+                "index": 0,
+                "delta": {"content": ""},
+                "logprobs": None,
+                "finish_reason": "tool_calls",
+            }
+        ]
+        return self._encoded_frame(template)
+
+    @staticmethod
+    def _error_frame(message: str) -> bytes:
+        return (
+            b"data: "
+            + json.dumps(
+                {
+                    "error": {
+                        "message": message,
+                        "type": "tinyllm_error",
+                        "param": None,
+                        "code": "tool_parser_error",
+                    }
+                },
+                separators=(",", ":"),
+            ).encode()
+            + b"\n\n"
+        )
+
+
+class _SSEToolNormalizer:
+    """Normalize native legacy tool deltas and their terminal finish reason."""
+
+    def __init__(self) -> None:
+        self._wire = b""
+        self._seen: set[int] = set()
+        self._finish_emitted = False
+        self._template: dict[str, object] | None = None
+
+    def feed(self, chunk: bytes) -> tuple[bytes, ...]:
+        self._wire += chunk
+        frames = self._wire.split(b"\n\n")
+        self._wire = frames.pop()
+        return tuple(self._normalize(frame) for frame in frames if frame)
+
+    def flush(self) -> tuple[bytes, ...]:
+        if not self._wire:
+            return ()
+        frame, self._wire = self._wire, b""
+        return (self._normalize(frame),)
+
+    def _normalize(self, frame: bytes) -> bytes:
+        if frame == b"data: [DONE]":
+            if self._seen and not self._finish_emitted:
+                template = dict(self._template or {})
+                template["choices"] = [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "logprobs": None,
+                        "finish_reason": "tool_calls",
+                    }
+                ]
+                self._finish_emitted = True
+                return (
+                    b"data: "
+                    + json.dumps(template, ensure_ascii=False, separators=(",", ":")).encode()
+                    + b"\n\ndata: [DONE]\n\n"
+                )
+            return frame + b"\n\n"
+        lines = frame.splitlines()
+        changed = False
+        for line_index, line in enumerate(lines):
+            if not line.startswith(b"data: "):
+                continue
+            try:
+                value: object = json.loads(line[6:])
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            if not isinstance(value, dict) or not isinstance(value.get("choices"), list):
+                continue
+            self._template = {key: item for key, item in value.items() if key != "choices"}
+            for choice in value["choices"]:
+                if not isinstance(choice, dict) or not isinstance(choice.get("delta"), dict):
+                    continue
+                delta = choice["delta"]
+                calls = delta.get("tool_calls")
+                if isinstance(calls, list):
+                    for raw in calls:
+                        if not isinstance(raw, dict):
+                            continue
+                        index = raw.get("index", 0)
+                        if not isinstance(index, int) or index < 0:
+                            continue
+                        function = raw.get("function")
+                        if not isinstance(function, dict):
+                            continue
+                        if index not in self._seen:
+                            self._seen.add(index)
+                            raw.setdefault("id", f"call_{uuid.uuid4().hex[:24]}")
+                            raw.setdefault("type", "function")
+                        else:
+                            function.pop("name", None)
+                        changed = True
+                if self._seen and choice.get("finish_reason") == "stop":
+                    choice["finish_reason"] = "tool_calls"
+                    changed = True
+                if choice.get("finish_reason") == "tool_calls":
+                    self._finish_emitted = True
+            if changed:
+                lines[line_index] = (
+                    b"data: "
+                    + json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode()
+                )
+        return b"\n".join(lines) + b"\n\n"
+
+
 def create_gateway(
     *,
     config: GatewayConfig,
@@ -238,6 +532,9 @@ def create_gateway(
     clock: Callable[[], float] = time.monotonic,
     supervisor: BackendSupervisor | None = None,
     event_log: StructuredEventLog | None = None,
+    agent_router: APIRouter | None = None,
+    agent_startup: Callable[[], object] | None = None,
+    agent_shutdown: Callable[[], Awaitable[None]] | None = None,
 ) -> FastAPI:
     """Build an authenticated, bounded Gateway around one verified deployment."""
 
@@ -259,9 +556,13 @@ def create_gateway(
                 model=resolved_model.model_version,
                 backend_managed=supervisor is not None,
             )
+        if agent_startup is not None:
+            agent_startup()
         try:
             yield
         finally:
+            if agent_shutdown is not None:
+                await agent_shutdown()
             if event_log is not None:
                 await event_log.write("gateway.stopping", model=resolved_model.model_version)
             await backend.close()
@@ -278,6 +579,8 @@ def create_gateway(
         lifespan=lifespan,
     )
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(config.trusted_hosts))
+    if agent_router is not None:
+        app.include_router(agent_router)
 
     auth_dependency = Security(security)
 
@@ -489,6 +792,12 @@ def create_gateway(
                 completion_tokens: int | None = None
                 usage_buffer = b""
                 cot_filter = _SSECoTFilter()
+                tool_normalizer = _SSEToolNormalizer() if body.tools else None
+                auto_tool_repair = (
+                    _SSEAutoToolRepair(frozenset(tool.function.name for tool in body.tools or ()))
+                    if body.tools and body.tool_choice == "auto"
+                    else None
+                )
                 disconnected_observed = False
 
                 async def disconnected() -> bool:
@@ -514,7 +823,17 @@ def create_gateway(
                                 metrics.tokens.labels(kind="prompt").inc(prompt_tokens)
                                 metrics.tokens.labels(kind="completion").inc(completion_tokens)
                         for safe_chunk in cot_filter.feed(chunk):
-                            yield safe_chunk
+                            repaired = (
+                                (safe_chunk,)
+                                if auto_tool_repair is None
+                                else auto_tool_repair.feed(safe_chunk)
+                            )
+                            for repaired_chunk in repaired:
+                                if tool_normalizer is None:
+                                    yield repaired_chunk
+                                else:
+                                    for normalized in tool_normalizer.feed(repaired_chunk):
+                                        yield normalized
                 except asyncio.CancelledError:
                     if not disconnected_observed:
                         disconnected_observed = True
@@ -534,7 +853,27 @@ def create_gateway(
                     yield f"data: {json.dumps(error)}\n\n".encode()
                 finally:
                     for safe_chunk in cot_filter.flush():
-                        yield safe_chunk
+                        repaired = (
+                            (safe_chunk,)
+                            if auto_tool_repair is None
+                            else auto_tool_repair.feed(safe_chunk)
+                        )
+                        for repaired_chunk in repaired:
+                            if tool_normalizer is None:
+                                yield repaired_chunk
+                            else:
+                                for normalized in tool_normalizer.feed(repaired_chunk):
+                                    yield normalized
+                    if auto_tool_repair is not None:
+                        for repaired_chunk in auto_tool_repair.flush():
+                            if tool_normalizer is None:
+                                yield repaired_chunk
+                            else:
+                                for normalized in tool_normalizer.feed(repaired_chunk):
+                                    yield normalized
+                    if tool_normalizer is not None:
+                        for normalized in tool_normalizer.flush():
+                            yield normalized
                     elapsed = max(0.0, clock() - started)
                     if completion_tokens is not None and completion_tokens > 0:
                         metrics.throughput.observe(completion_tokens / max(elapsed, 1e-9))
@@ -567,6 +906,13 @@ def create_gateway(
                 metrics.inflight.dec()
                 concurrency.release()
         result = _sanitize_completion(result)
+        if body.tools and body.tool_choice == "auto":
+            result = _repair_auto_tool_completion(
+                result,
+                frozenset(tool.function.name for tool in body.tools),
+            )
+        if body.tools:
+            result = _normalize_tool_completion(result)
         metrics.requests.labels(endpoint="chat", status_class="2xx").inc()
         usage = result.get("usage")
         if isinstance(usage, dict):

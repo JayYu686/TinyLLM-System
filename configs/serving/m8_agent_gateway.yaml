@@ -1,0 +1,27 @@
+schema_version: "1.0"
+config_id: m8-gateway-qwen3-0-6b-agent-v1
+host: 127.0.0.1
+port: 8010
+backend_base_url: http://127.0.0.1:8011
+manage_backend: true
+gpu_index: 4
+preflight_max_memory_used_mib: 1024
+preflight_max_utilization_percent: 10
+preflight_max_temperature_c: 79
+backend_startup_timeout_seconds: 180.0
+backend_cleanup_timeout_seconds: 30.0
+backend_restart_limit: 2
+model_max_length: 4096
+gpu_memory_utilization: 0.4
+tool_call_parser: hermes
+enforce_eager: true
+bearer_token_env: TINYLLM_GATEWAY_BEARER_TOKEN
+request_timeout_seconds: 120.0
+backend_health_timeout_seconds: 2.0
+max_concurrency: 32
+requests_per_minute: 120
+max_request_bytes: 1048576
+trusted_hosts:
+  - 127.0.0.1
+  - localhost
+expose_docs: false

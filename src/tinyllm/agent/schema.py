@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -118,6 +120,17 @@ class AgentRunRequest(StrictSchema):
             raise ValueError("MCP Server ID is invalid")
         return value
 
+    @model_validator(mode="after")
+    def reject_caller_supplied_authority_messages(self) -> AgentRunRequest:
+        """Keep system policy and tool observations under server control."""
+
+        for message in self.messages:
+            if message.role not in {"user", "assistant"}:
+                raise ValueError("Agent API messages may only use user or assistant roles")
+            if message.tool_calls is not None or message.tool_call_id is not None:
+                raise ValueError("Agent API messages cannot supply tool calls or tool results")
+        return self
+
 
 class MCPToolPolicy(StrictSchema):
     """Authoritative local policy for one MCP tool."""
@@ -221,6 +234,7 @@ class AgentApprovalDecision(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     approval_id: str = Field(pattern=APPROVAL_PATTERN)
+    tool_call_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     decision: Literal["approved", "rejected"]
     idempotency_key: str = Field(pattern=IDEMPOTENCY_KEY_PATTERN)
     decided_at: datetime
@@ -277,6 +291,31 @@ class AgentToolCall(StrictSchema):
         return value
 
 
+def agent_tool_call_sha256(call: AgentToolCall) -> str:
+    """Return the canonical identity bound to an Agent write approval."""
+
+    payload = json.dumps(
+        call.to_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+class AgentToolDefinition(StrictSchema):
+    """Locally authorized tool metadata discovered from an MCP Server."""
+
+    server_id: str = Field(pattern=MCP_SERVER_ID_PATTERN)
+    tool_name: str = Field(pattern=TOOL_NAME_PATTERN)
+    description: str | None = Field(default=None, max_length=4096)
+    input_schema: dict[str, Any]
+
+    @field_validator("input_schema")
+    @classmethod
+    def require_object_schema(cls, value: dict[str, Any]) -> dict[str, Any]:
+        if value.get("type") != "object":
+            raise ValueError("Agent tool input Schema must describe an object")
+        return value
+
+
 class AgentModelDecision(StrictSchema):
     """Parsed model decision: tool proposals or one final answer."""
 
@@ -295,6 +334,113 @@ class AgentModelDecision(StrictSchema):
         identifiers = tuple(item.call_id for item in self.tool_calls)
         if len(identifiers) != len(set(identifiers)):
             raise ValueError("model tool call identifiers must be unique")
+        return self
+
+
+class M8ToolCallingCase(StrictSchema):
+    """One real OpenAI-client tool-calling compatibility observation."""
+
+    mode: Literal["auto", "required", "none", "named"]
+    stream: bool
+    status: Literal["passed", "failed"]
+    finish_reason: str | None = None
+    tool_names: tuple[str, ...] = ()
+    content_characters: int = Field(ge=0)
+    raw_markup_exposed: bool
+    error_code: str | None = None
+
+    @field_validator("tool_names", mode="before")
+    @classmethod
+    def freeze_tool_names(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+
+class M8ToolCallingValidation(StrictSchema):
+    """Formal eight-cell Tool Calling validation on one immutable deployment."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    validation_id: str = Field(pattern=r"^m8-tool-calling-[0-9a-f]{8}$")
+    evaluated_at: datetime
+    model: str = Field(min_length=1, max_length=180)
+    gateway_version: str = Field(min_length=1, max_length=40)
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    git_dirty: bool
+    physical_gpu_index: int = Field(ge=0)
+    gpu_name: str = Field(min_length=1, max_length=180)
+    cases: tuple[M8ToolCallingCase, ...] = Field(min_length=8, max_length=8)
+    passed_cases: int = Field(ge=0, le=8)
+    passed: bool
+
+    @field_validator("cases", mode="before")
+    @classmethod
+    def freeze_cases(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @model_validator(mode="after")
+    def validate_summary(self) -> M8ToolCallingValidation:
+        actual = sum(case.status == "passed" for case in self.cases)
+        expected_modes = {"auto", "required", "none", "named"}
+        matrix = {(case.mode, case.stream) for case in self.cases}
+        expected = {(mode, stream) for mode in expected_modes for stream in (False, True)}
+        expected_pass = actual == 8 and not self.git_dirty
+        if actual != self.passed_cases or self.passed != expected_pass or matrix != expected:
+            raise ValueError("M8 Tool Calling summary is inconsistent")
+        return self
+
+
+class M8AgentContractEvidence(StrictSchema):
+    """Restart-safe approval and sandbox-write evidence for the M8 Agent contract."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    validation_id: str = Field(pattern=r"^m8-agent-contract-[0-9a-f]{8}$")
+    executed_at: datetime
+    git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
+    git_dirty: bool
+    transport: Literal["stdio"]
+    run_id: str = Field(pattern=AGENT_RUN_PATTERN)
+    approval_id: str = Field(pattern=APPROVAL_PATTERN)
+    source_relative_path: str = Field(min_length=1, max_length=500)
+    source_sha256_before: str = Field(pattern=r"^[0-9a-f]{64}$")
+    source_sha256_after: str = Field(pattern=r"^[0-9a-f]{64}$")
+    sandbox_relative_path: str = Field(min_length=1, max_length=500)
+    sandbox_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    waiting_status: Literal["waiting_approval"]
+    final_status: Literal["succeeded"]
+    tool_calls_completed: Literal[1]
+    event_types: tuple[AgentEventType, ...]
+    source_unchanged: bool
+    restart_resume_succeeded: bool
+    idempotent_approval_succeeded: bool
+    idempotent_write_succeeded: bool
+    passed: bool
+
+    @field_validator("event_types", mode="before")
+    @classmethod
+    def freeze_event_types(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @model_validator(mode="after")
+    def validate_contract(self) -> M8AgentContractEvidence:
+        required = {
+            "run.started",
+            "tool.call.proposed",
+            "approval.required",
+            "tool.started",
+            "tool.completed",
+            "message.completed",
+            "run.completed",
+        }
+        conditions = (
+            self.source_sha256_before == self.source_sha256_after,
+            self.source_unchanged,
+            self.restart_resume_succeeded,
+            self.idempotent_approval_succeeded,
+            self.idempotent_write_succeeded,
+            required.issubset(self.event_types),
+            not self.git_dirty,
+        )
+        if self.passed != all(conditions):
+            raise ValueError("M8 Agent contract evidence summary is inconsistent")
         return self
 
 

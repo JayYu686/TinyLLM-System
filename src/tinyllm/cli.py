@@ -51,6 +51,7 @@ from tinyllm.deployment import (
     DeploymentErrorCode,
     promote_production,
     resolve_model,
+    resolve_serving_model,
     rollback_production,
     show_deployment,
 )
@@ -392,7 +393,10 @@ def agent_eval(
     ] = DEFAULT_ARTIFACT_ROOT / "agent-evaluations/m9/runs/dev-production",
     model: Annotated[
         str,
-        typer.Option("--model", help="Immutable deployment or Production Alias."),
+        typer.Option(
+            "--model",
+            help="Production Alias, immutable deployment, or M9 Evaluation Subject.",
+        ),
     ] = "production",
     artifact_root: Annotated[
         Path,
@@ -424,7 +428,7 @@ def agent_eval(
         from tinyllm.agent_eval.suite import AgentEvalSuiteError
 
         eval_config = load_agent_eval_config(config)
-        resolved = resolve_model(artifact_root, model)
+        resolved = resolve_serving_model(artifact_root, model)
         summary = asyncio.run(
             run_agent_evaluation(
                 suite_directory=suite,
@@ -481,7 +485,10 @@ def deploy_resolve(
     ctx: typer.Context,
     model: Annotated[
         str,
-        typer.Option("--model", help="Production Alias or immutable M6/M7 model version."),
+        typer.Option(
+            "--model",
+            help="Production Alias, immutable M6/M7 model, or M9 Evaluation Subject.",
+        ),
     ] = "production",
     artifact_root: Annotated[
         Path,
@@ -1978,7 +1985,7 @@ def serve_command(
     json_output = state.json_output or command_json
     try:
         gateway_config = load_gateway_config(config)
-        resolved = resolve_model(artifact_root, model)
+        resolved = resolve_serving_model(artifact_root, model)
     except ServingConfigError as exc:
         _output_error(str(exc), json_output=json_output, error_code="SERVING_CONFIG_ERROR")
         raise typer.Exit(code=2) from exc

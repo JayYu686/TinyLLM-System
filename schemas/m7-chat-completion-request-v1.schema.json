@@ -237,7 +237,7 @@
       "items": {
         "$ref": "#/$defs/ChatMessage"
       },
-      "maxItems": 128,
+      "maxItems": 1024,
       "minItems": 1,
       "title": "Messages",
       "type": "array"

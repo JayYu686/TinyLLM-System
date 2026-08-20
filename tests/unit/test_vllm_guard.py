@@ -104,6 +104,38 @@ def test_guard_rejects_dynamic_or_pathological_schema(monkeypatch: pytest.Monkey
     assert asyncio.run(_call(monkeypatch, body=body)) == (400, False)
 
 
+def test_guard_allows_property_named_pattern_but_rejects_pattern_keyword(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    body: dict[str, Any] = {
+        "model": "unit",
+        "messages": [{"role": "user", "content": "search a file"}],
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "grep",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"pattern": {"type": "string"}},
+                        "required": ["pattern"],
+                    },
+                },
+            }
+        ],
+    }
+
+    assert asyncio.run(_call(monkeypatch, body=body)) == (200, True)
+    parameters = body["tools"][0]["function"]["parameters"]
+    assert isinstance(parameters, dict)
+    properties = parameters["properties"]
+    assert isinstance(properties, dict)
+    pattern_schema = properties["pattern"]
+    assert isinstance(pattern_schema, dict)
+    pattern_schema["pattern"] = "(a+)+$"
+    assert asyncio.run(_call(monkeypatch, body=body)) == (400, False)
+
+
 def test_guard_allows_only_fixed_thinking_template_argument(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

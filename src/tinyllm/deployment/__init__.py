@@ -1,5 +1,16 @@
 """Immutable deployment records and model resolution."""
 
+from tinyllm.deployment.evaluation_subject import (
+    M9EvaluationSubjectRecord,
+    ResolvedEvaluationSubject,
+    ServingModel,
+    effective_artifact_sha256,
+    evaluation_artifact_sha256,
+    evaluation_subject_id,
+    publish_evaluation_subject,
+    resolve_evaluation_subject,
+    resolve_serving_model,
+)
 from tinyllm.deployment.evidence_schema import (
     M7ContractEvidence,
     M7PackageVersion,
@@ -42,10 +53,19 @@ __all__ = [
     "M7ServingHardware",
     "M7PackageVersion",
     "M7VulnerabilityAssessment",
+    "M9EvaluationSubjectRecord",
+    "ResolvedEvaluationSubject",
     "ResolvedModel",
+    "ServingModel",
+    "effective_artifact_sha256",
+    "evaluation_artifact_sha256",
+    "evaluation_subject_id",
     "load_production_gate",
     "promote_production",
     "resolve_model",
+    "resolve_evaluation_subject",
+    "resolve_serving_model",
+    "publish_evaluation_subject",
     "rollback_production",
     "show_deployment",
 ]

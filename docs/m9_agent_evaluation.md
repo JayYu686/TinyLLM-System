@@ -78,8 +78,37 @@ BFCL 官方 Overall 或用于官方排行榜比较。
 
 BFCL 在独立环境运行。TinyLLM Endpoint Handler 仅连接环回 Gateway，通过环境变量读取
 Bearer Token，并发送 OpenAI Chat Completions Tool Calling 请求；它不会修改固定 BFCL 源码。
+适配器会移除 BFCL 函数定义中的非标准 `response` 扩展，同时保留 `name`、`description` 和
+`parameters`；HTTP Client 禁止继承宿主机代理。Multi-turn Profile 使用 16K Context，Gateway
+最多接受 1024 条消息，请求仍受 1 MiB Body、Context 和 Tool Schema 复杂度限制。Agent API
+自身的 8 Step 与 12 次工具调用限制保持不变。
+
+上游生成器会把端点异常记录为题目结果并继续执行，因此 TinyLLM 在调用评分器之前执行额外
+的失败闭锁：8 个类别必须各自达到冻结题数，1840 个 ID 必须唯一，且任一缺失 Result、
+`traceback` 或 `Error during inference` 都会拒绝评分和正式 Summary。
+
 依赖安装和审计分别使用 `make bootstrap-bfcl` 与 `make audit-bfcl`。上游固定依赖的适用边界
 记录在 `requirements/m9_bfcl_security_exceptions.md`，审计例外不适用于任何线上服务进程。
+
+## 评测对象注册
+
+M9 需要在相同协议下比较 M7 Production、Qwen3-8B Base 和 M5 历史 LoRA。后两者使用独立的
+`Evaluation` Registry，不创建 M6 Candidate 或 M7 Production 记录。每条记录固定 Base、
+Tokenizer、可选 Adapter 的文件集合与 SHA256，并明确保存 `production_eligible=false`。
+
+Gateway 仅在命令行显式传入不可变 Evaluation Subject ID 时加载这类模型；`production` Alias
+不会解析到 Evaluation 对象，请求也必须使用精确 Subject ID。LoRA 由 vLLM Adapter 路由加载，
+基础权重和 Adapter 分别校验，`effective_artifact_sha256` 绑定二者身份而不复制或合并权重。
+
+私有记录可按以下方式重建或幂等校验：
+
+```bash
+python scripts/register_m9_evaluation_subjects.py \
+  --artifact-root "$TINYLLM_ARTIFACT_ROOT" \
+  --model-dir "$TINYLLM_ARTIFACT_ROOT/cache/models/Qwen/Qwen3-8B/b968826d9c46dd6066d109eabc6255188de91218" \
+  --adapter-dir "$TINYLLM_ARTIFACT_ROOT/runs/m5-lora/20260731T125617Z-m5-formal-qwen3-8b-lora-cc363170-e922/exports/adapter" \
+  --historical-evidence reports/m5/raw/m5_lora_formal.json
+```
 
 ## M10 Agent Model Gate
 

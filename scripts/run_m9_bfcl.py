@@ -62,6 +62,25 @@ def _atomic_json(path: Path, value: object) -> None:
         raise
 
 
+def _normalize_bfcl_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Project BFCL's response-schema extension onto the OpenAI tool contract."""
+
+    normalized: list[dict[str, Any]] = []
+    for tool in tools:
+        if set(tool) != {"type", "function"} or tool.get("type") != "function":
+            raise RuntimeError("BFCL produced an unsupported tool envelope")
+        function = tool.get("function")
+        if not isinstance(function, dict):
+            raise RuntimeError("BFCL produced an invalid function definition")
+        unexpected = set(function).difference({"name", "description", "parameters", "response"})
+        if unexpected:
+            raise RuntimeError("BFCL produced an unsupported function definition")
+        wire_function = dict(function)
+        wire_function.pop("response", None)
+        normalized.append({"type": "function", "function": wire_function})
+    return normalized
+
+
 def _install_tinyllm_handler(
     *,
     model_name: str,
@@ -95,23 +114,25 @@ def _install_tinyllm_handler(
             api_key=bearer_token,
             timeout=120.0,
             max_retries=0,
+            http_client=openai_module.DefaultHttpxClient(trust_env=False),
         )
         self.is_fc_model = True
 
     def query_fc(self: Any, inference_data: dict[str, Any]) -> tuple[Any, float]:
         messages = inference_data["message"]
         tools = inference_data["tools"]
+        wire_tools = _normalize_bfcl_tools(tools)
         inference_data["inference_input_log"] = {
             "message": repr(messages),
-            "tool_count": len(tools),
+            "tool_count": len(wire_tools),
         }
         started = time.monotonic()
         response = self.client.chat.completions.create(
             model=served_model,
             messages=messages,
-            tools=tools or None,
-            tool_choice="auto" if tools else None,
-            parallel_tool_calls=True if tools else None,
+            tools=wire_tools or None,
+            tool_choice="auto" if wire_tools else None,
+            parallel_tool_calls=True if wire_tools else None,
             temperature=0.0,
             max_completion_tokens=max_completion_tokens,
             extra_body={"mode": mode},
@@ -174,8 +195,63 @@ def _run_bfcl(
         run_ids=False,
     )
     generation_module.main(arguments)
+    _validate_generation_results(
+        config=config,
+        result_root=result_root,
+    )
     evaluation_module.main([config.model_name], categories, result_root, score_root)
     return result_root, score_root
+
+
+def _validate_generation_results(*, config: Any, result_root: Path) -> None:
+    """Refuse to score incomplete BFCL generations or swallowed endpoint failures."""
+
+    model_directory = config.model_name.replace("/", "_")
+    model_root = result_root / model_directory
+    total_records = 0
+    all_ids: set[str] = set()
+    for spec in config.categories:
+        path = model_root / f"BFCL_v3_{spec.category}_result.json"
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError as exc:
+            raise RuntimeError(f"BFCL generation result is missing: {spec.category}") from exc
+        records: list[dict[str, Any]] = []
+        for line_number, line in enumerate(lines, start=1):
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"BFCL generation result is invalid: {spec.category} line {line_number}"
+                ) from exc
+            if not isinstance(record, dict):
+                raise RuntimeError(
+                    f"BFCL generation record is not an object: {spec.category} line {line_number}"
+                )
+            records.append(record)
+        if len(records) != spec.item_count:
+            raise RuntimeError(
+                f"BFCL category {spec.category} has {len(records)} generated items; "
+                f"expected {spec.item_count}"
+            )
+        for record in records:
+            item_id = record.get("id")
+            if not isinstance(item_id, str) or not item_id:
+                raise RuntimeError(f"BFCL category {spec.category} has a missing item id")
+            if item_id in all_ids:
+                raise RuntimeError(f"BFCL generation has a duplicate item id: {item_id}")
+            all_ids.add(item_id)
+            if "result" not in record:
+                raise RuntimeError(f"BFCL generation result is missing for item: {item_id}")
+            result = record["result"]
+            if "traceback" in record or (
+                isinstance(result, str) and result.lstrip().startswith("Error during inference:")
+            ):
+                raise RuntimeError(f"BFCL endpoint inference failed for item: {item_id}")
+        total_records += len(records)
+    expected_total = sum(spec.item_count for spec in config.categories)
+    if total_records != expected_total:
+        raise RuntimeError(f"BFCL generated {total_records} items; expected {expected_total}")
 
 
 def _summarize(
@@ -191,11 +267,20 @@ def _summarize(
     for spec in config.categories:
         path = score_root / model_directory / f"BFCL_v3_{spec.category}_score.json"
         try:
-            records = json.loads(path.read_text(encoding="utf-8"))
-            header = records[0]
+            with path.open(encoding="utf-8") as handle:
+                header = json.loads(next(handle))
+            if not isinstance(header, dict):
+                raise TypeError("BFCL score header is not an object")
             correct = int(header["correct_count"])
             total = int(header["total_count"])
-        except (OSError, ValueError, TypeError, KeyError, IndexError, json.JSONDecodeError) as exc:
+        except (
+            OSError,
+            StopIteration,
+            ValueError,
+            TypeError,
+            KeyError,
+            json.JSONDecodeError,
+        ) as exc:
             raise RuntimeError(f"BFCL score is missing or invalid: {spec.category}") from exc
         if total != spec.item_count:
             raise RuntimeError(

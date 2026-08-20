@@ -170,6 +170,19 @@
       "title": "Evaluation Id",
       "type": "string"
     },
+    "evaluation_subject_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evaluation Subject Sha256"
+    },
     "gateway_version": {
       "maxLength": 40,
       "minLength": 1,

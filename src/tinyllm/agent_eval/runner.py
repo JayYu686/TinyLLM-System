@@ -44,7 +44,7 @@ from tinyllm.agent_eval.schema import (
 )
 from tinyllm.agent_eval.scoring import aggregate_results, score_task
 from tinyllm.agent_eval.suite import load_suite
-from tinyllm.deployment import ResolvedModel
+from tinyllm.deployment import ResolvedEvaluationSubject, ServingModel
 from tinyllm.lineage.git import read_git_identity
 from tinyllm.training.smoke_preflight import inspect_gpus
 
@@ -469,7 +469,7 @@ def _metadata(
     *,
     manifest: AgentEvalSuiteManifest,
     config: AgentEvalRunConfig,
-    resolved: ResolvedModel,
+    resolved: ServingModel,
     git_commit: str,
     environment_sha256: str,
     hardware_sha256: str,
@@ -481,7 +481,16 @@ def _metadata(
         "config_sha256": canonical_json_sha256(config.to_dict()),
         "model_id": resolved.model_version,
         "model_artifact_sha256": resolved.model_artifact_sha256,
-        "deployment_record_sha256": resolved.production_record_sha256,
+        "deployment_record_sha256": (
+            None
+            if isinstance(resolved, ResolvedEvaluationSubject)
+            else resolved.production_record_sha256
+        ),
+        "evaluation_subject_sha256": (
+            resolved.evaluation_subject_sha256
+            if isinstance(resolved, ResolvedEvaluationSubject)
+            else None
+        ),
         "git_commit": git_commit,
         "environment_sha256": environment_sha256,
         "hardware_sha256": hardware_sha256,
@@ -492,7 +501,7 @@ async def run_agent_evaluation(
     *,
     suite_directory: Path,
     config: AgentEvalRunConfig,
-    resolved_model: ResolvedModel,
+    resolved_model: ServingModel,
     output_directory: Path,
     project_root: Path,
     allow_dirty: bool = False,
@@ -610,7 +619,16 @@ async def run_agent_evaluation(
         model_revision=resolved_model.model.base_revision,
         model_artifact_sha256=resolved_model.model_artifact_sha256,
         parent_model_id=(f"{resolved_model.model.repository}@{resolved_model.model.base_revision}"),
-        deployment_record_sha256=resolved_model.production_record_sha256,
+        deployment_record_sha256=(
+            None
+            if isinstance(resolved_model, ResolvedEvaluationSubject)
+            else resolved_model.production_record_sha256
+        ),
+        evaluation_subject_sha256=(
+            resolved_model.evaluation_subject_sha256
+            if isinstance(resolved_model, ResolvedEvaluationSubject)
+            else None
+        ),
         environment_sha256=environment_sha256,
         hardware_sha256=hardware_sha256,
         physical_gpu_index=config.physical_gpu_index,

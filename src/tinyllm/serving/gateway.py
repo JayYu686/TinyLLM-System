@@ -24,7 +24,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.requests import ClientDisconnect
 
 from tinyllm import __version__
-from tinyllm.deployment import ResolvedModel
+from tinyllm.deployment import ResolvedEvaluationSubject, ServingModel
 from tinyllm.serving.backend import BackendError, ChatBackend
 from tinyllm.serving.config import GatewayConfig
 from tinyllm.serving.observability import StructuredEventLog
@@ -526,7 +526,7 @@ class _SSEToolNormalizer:
 def create_gateway(
     *,
     config: GatewayConfig,
-    resolved_model: ResolvedModel,
+    resolved_model: ServingModel,
     backend: ChatBackend,
     bearer_token: str,
     clock: Callable[[], float] = time.monotonic,
@@ -718,10 +718,22 @@ def create_gateway(
 
     @app.get("/version")
     async def version() -> dict[str, object]:
+        evaluation_subject_sha256 = (
+            resolved_model.evaluation_subject_sha256
+            if isinstance(resolved_model, ResolvedEvaluationSubject)
+            else None
+        )
+        candidate_model_version = (
+            None
+            if isinstance(resolved_model, ResolvedEvaluationSubject)
+            else resolved_model.candidate_model_version
+        )
         return VersionResponse(
             version=__version__,
             model=resolved_model.model_version,
-            candidate_model_version=resolved_model.candidate_model_version,
+            deployment_status=resolved_model.status,
+            candidate_model_version=candidate_model_version,
+            evaluation_subject_sha256=evaluation_subject_sha256,
             model_artifact_sha256=resolved_model.model_artifact_sha256,
         ).to_dict()
 
@@ -754,7 +766,10 @@ def create_gateway(
     @app.post("/v1/chat/completions", dependencies=[Depends(authenticate)])
     async def chat(request: Request, body: ChatCompletionRequest) -> Response:
         request_id = request.state.request_id
-        if body.model not in {resolved_model.model_version, "production"}:
+        accepted_models = {resolved_model.model_version}
+        if not isinstance(resolved_model, ResolvedEvaluationSubject):
+            accepted_models.add("production")
+        if body.model not in accepted_models:
             return _openai_error(
                 "requested model is not deployed",
                 code="model_not_found",

@@ -8,7 +8,8 @@ Suite、模型 Artifact、Deployment、软件环境、GPU 身份、Git Commit、
 
 这组结果建立了 M10 的 0.6B 父模型能力起点。它同时表明当前模型擅长 No-tool 判断，但尚未
 形成稳定的 OpenAI Function Call、多步工具使用、失败恢复、证据引用和审批安全能力。该结果
-是 M9 基线，不是 Agent Candidate Gate 结果，也不表示 M9 已完成。
+是 M9 基线，不是 Agent Candidate Gate 结果；M9 的三模型完整比较与验收状态见
+[`m9_acceptance.md`](m9_acceptance.md)。
 
 ## 固定身份
 
@@ -78,7 +79,5 @@ Safety 仅为 71.43%。这些结果会作为 M10 数据构建中路径 Hard Nega
 
 ## 后续
 
-1. 在相同契约下建立固定 Qwen3-8B Base 与 M5 8B LoRA 历史对照。
-2. 运行 `TinyLLM BFCL v1.3 Offline Core Profile`，保存 1840 条离线任务结果。
-3. 汇总三组父模型基线，冻结 M10 训练前比较表。
-4. Release 160 条继续保持密封，M10 正式评测前不用于训练、筛选或调参。
+M9 已在相同契约下补齐 Qwen3-8B Base、M5 8B LoRA 历史对照及三组完整 BFCL Core
+Profile。Release 160 条继续保持密封，M10 正式评测前不用于训练、筛选或调参。

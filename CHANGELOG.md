@@ -5,6 +5,36 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+## 0.9.0-rc.1 - 2026-08-20
+
+- froze an original bilingual 240-task DevOps Agent Suite with 80 public Dev tasks and 160 sealed
+  Release tasks, deterministic tool environments, failure injection, trace assertions, and an
+  independently preregistered M10 Agent Model Gate;
+- registered immutable evaluation-only Qwen3-8B Base and historical LoRA subjects without
+  changing the M6 Candidate or M7 Production records;
+- completed real RTX 3090 Agent Dev baselines for the 0.6B Production, 8B Base, and historical
+  8B LoRA subjects, measuring Task Success of 20.00%, 36.25%, and 36.25%, respectively;
+- completed three fail-closed `TinyLLM BFCL v1.3 Offline Core Profile` runs over 5,520/5,520
+  items with zero inference failures; measured scores were 24.24%, 39.18%, and 36.25%;
+- hardened the offline BFCL adapter against host proxies, non-standard response schemas,
+  incomplete generations, swallowed endpoint errors, excessive multi-turn message counts, and
+  insufficient context limits while keeping the Agent API's own safety limits unchanged.
+
+## 0.8.0-beta.1 - 2026-08-20
+
+- delivered the bounded LangGraph DevOps agent runtime, OpenAI tool calling, an allowlisted MCP
+  client/reference server, SQLite FTS5 evidence retrieval, explicit approval, cancellation,
+  idempotency, SSE replay, and safe-node restart recovery;
+- passed the real Qwen tool-calling protocol matrix, MCP security checks, approval/resume smoke,
+  and public-artifact security review without exposing arbitrary shell or unrestricted file I/O.
+
+## 0.7.0 - 2026-08-13
+
+- delivered the lineage-aware vLLM/FastAPI Gateway, model resolver, observability, deployment
+  registry, atomic Production alias, rollback, and inference benchmark contracts;
+- completed the 18,000-request formal Direct/Gateway matrix with 18,000 successes and passed all
+  nine Production checks before promoting the M6 0.6B Candidate.
+
 ## 0.6.0-rc.1 - 2026-08-12
 
 - completed the independent M6 v7 release evaluation with four 300-item dual-mode passes,

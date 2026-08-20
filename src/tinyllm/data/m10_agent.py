@@ -303,6 +303,8 @@ def _toolace_expressions(value: str) -> tuple[tuple[str, str], ...]:
             if not trailing or trailing.startswith(","):
                 selected = (open_index, close_index)
                 break
+            if trailing.startswith(";"):
+                raise M10AgentDataError("ToolACE calls must be comma separated")
         if selected is None:
             raise M10AgentDataError("ToolACE call expression is malformed")
         open_index, close_index = selected

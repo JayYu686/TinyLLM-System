@@ -88,6 +88,16 @@ def test_chat_sequences_are_frozen() -> None:
     assert isinstance(request.messages, tuple)
 
 
+def test_chat_history_bound_covers_bfcl_parallel_tool_loops() -> None:
+    messages = [{"role": "user", "content": "step"} for _ in range(131)]
+
+    request = ChatCompletionRequest.model_validate(_request(messages=messages))
+
+    assert len(request.messages) == 131
+    with pytest.raises(ValidationError, match="at most 1024"):
+        ChatCompletionRequest.model_validate(_request(messages=messages * 8))
+
+
 def test_gateway_config_secure_defaults_and_loader(tmp_path: Path) -> None:
     path = tmp_path / "gateway.yaml"
     path.write_text(

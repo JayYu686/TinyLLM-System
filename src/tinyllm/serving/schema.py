@@ -90,7 +90,7 @@ class ChatCompletionRequest(StrictSchema):
     """Bounded OpenAI-compatible Chat Completions request."""
 
     model: str = Field(min_length=1, max_length=180)
-    messages: tuple[ChatMessage, ...] = Field(min_length=1, max_length=128)
+    messages: tuple[ChatMessage, ...] = Field(min_length=1, max_length=1024)
     mode: Literal["thinking", "nonthinking"] = "nonthinking"
     stream: bool = False
     stream_options: StreamOptions | None = None

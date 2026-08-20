@@ -1,0 +1,10 @@
+schema_version: "1.0"
+config_id: m9-agent-eval-dev-v1
+gateway_base_url: http://127.0.0.1:8000
+bearer_token_env: TINYLLM_GATEWAY_BEARER_TOKEN
+model: production
+mode: nonthinking
+max_steps: 8
+max_tool_calls: 12
+task_timeout_seconds: 120.0
+max_concurrency: 2

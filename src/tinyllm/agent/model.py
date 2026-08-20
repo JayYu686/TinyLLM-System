@@ -164,6 +164,8 @@ class GatewayAgentModel:
         self._owns_client = http_client is None
         self._http = http_client or httpx.AsyncClient(follow_redirects=False, trust_env=False)
         self._definitions: tuple[AgentToolDefinition, ...] | None = None
+        self.input_tokens = 0
+        self.output_tokens = 0
 
     async def close(self) -> None:
         if self._owns_client:
@@ -278,6 +280,14 @@ class GatewayAgentModel:
         except (httpx.HTTPError, json.JSONDecodeError) as exc:
             raise AgentModelError("Agent Gateway request failed") from exc
         try:
+            usage = value.get("usage", {})
+            if isinstance(usage, dict):
+                prompt_tokens = usage.get("prompt_tokens", 0)
+                completion_tokens = usage.get("completion_tokens", 0)
+                if isinstance(prompt_tokens, int) and prompt_tokens >= 0:
+                    self.input_tokens += prompt_tokens
+                if isinstance(completion_tokens, int) and completion_tokens >= 0:
+                    self.output_tokens += completion_tokens
             message = value["choices"][0]["message"]
             try:
                 _reject_private_reasoning(message)

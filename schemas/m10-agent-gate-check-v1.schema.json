@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "description": "One independently auditable Agent model gate check.",
+  "properties": {
+    "actual": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Actual",
+      "type": "string"
+    },
+    "evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Sha256",
+      "type": "string"
+    },
+    "name": {
+      "pattern": "^[a-z][a-z0-9_]{2,80}$",
+      "title": "Name",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "required": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Required",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "passed",
+    "actual",
+    "required",
+    "evidence_sha256"
+  ],
+  "title": "AgentGateCheck",
+  "type": "object"
+}

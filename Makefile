@@ -1,4 +1,4 @@
-.PHONY: audit audit-agent audit-baseline audit-m4 audit-serving bootstrap bootstrap-agent bootstrap-baseline bootstrap-cpu bootstrap-gpu bootstrap-m4 bootstrap-m5 bootstrap-serving bootstrap-serving-vllm check coverage format-check install-local lint links m4-dependency-smoke public-check schema-check test typecheck
+.PHONY: audit audit-agent audit-baseline audit-bfcl audit-m4 audit-serving bootstrap bootstrap-agent bootstrap-baseline bootstrap-bfcl bootstrap-cpu bootstrap-gpu bootstrap-m4 bootstrap-m5 bootstrap-serving bootstrap-serving-vllm check coverage format-check install-local lint links m4-dependency-smoke public-check schema-check test typecheck
 
 VENV ?= .venv
 PYTHON := $(VENV)/bin/python
@@ -20,6 +20,9 @@ SERVING_PIP_AUDIT := $(SERVING_VENV)/bin/pip-audit
 AGENT_VENV ?= .venv-agent
 AGENT_PYTHON := $(AGENT_VENV)/bin/python
 AGENT_PIP_AUDIT := $(AGENT_VENV)/bin/pip-audit
+BFCL_VENV ?= .venv-bfcl
+BFCL_PYTHON := $(BFCL_VENV)/bin/python
+BFCL_PIP_AUDIT := $(BFCL_VENV)/bin/pip-audit
 
 bootstrap:
 	python3 -m venv $(VENV)
@@ -67,6 +70,13 @@ bootstrap-agent:
 	$(AGENT_PYTHON) -m pip install --upgrade pip
 	$(AGENT_PYTHON) -m pip install -c requirements/constraints/agent.txt -e ".[serving,agent]" pip-audit setuptools
 	$(AGENT_PYTHON) -m pip check
+
+bootstrap-bfcl:
+	python3 -m venv $(BFCL_VENV)
+	$(BFCL_PYTHON) -m pip install --upgrade pip
+	$(BFCL_PYTHON) -m pip install -e .
+	$(BFCL_PYTHON) -m pip install -r requirements/bfcl.txt pip-audit
+	$(BFCL_PYTHON) -m pip check
 
 install-local:
 	$(PYTHON) -m pip install -c requirements/constraints/dev.txt -e ".[dev]"
@@ -128,5 +138,16 @@ audit-agent:
 		--ignore-vuln PYSEC-2026-249 \
 		--ignore-vuln PYSEC-2026-2280 \
 		--ignore-vuln PYSEC-2026-2281
+
+audit-bfcl:
+	$(BFCL_PIP_AUDIT) --skip-editable \
+		--ignore-vuln PYSEC-2026-3555 \
+		--ignore-vuln PYSEC-2026-3557 \
+		--ignore-vuln PYSEC-2026-3560 \
+		--ignore-vuln PYSEC-2026-3561 \
+		--ignore-vuln PYSEC-2026-3563 \
+		--ignore-vuln PYSEC-2026-3564 \
+		--ignore-vuln PYSEC-2026-3565 \
+		--ignore-vuln PYSEC-2026-3566
 
 check: lint format-check typecheck coverage schema-check links public-check

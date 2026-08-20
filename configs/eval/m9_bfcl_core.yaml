@@ -1,0 +1,36 @@
+schema_version: "1.0"
+profile_name: TinyLLM BFCL v1.3 Offline Core Profile
+bfcl_tag: v1.3
+bfcl_commit: ea13468e4423454d0c213704fb87cf7cb3990433
+model_name: TinyLLM/Qwen3-FC
+served_model: production
+gateway_base_url: http://127.0.0.1:8000
+bearer_token_env: TINYLLM_GATEWAY_BEARER_TOKEN
+mode: nonthinking
+temperature: 0.0
+max_completion_tokens: 512
+num_threads: 8
+categories:
+  - category: simple
+    item_count: 400
+  - category: multiple
+    item_count: 200
+  - category: parallel
+    item_count: 200
+  - category: parallel_multiple
+    item_count: 200
+  - category: irrelevance
+    item_count: 240
+  - category: multi_turn_base
+    item_count: 200
+  - category: multi_turn_miss_func
+    item_count: 200
+  - category: multi_turn_miss_param
+    item_count: 200
+excluded_categories:
+  - live
+  - java
+  - javascript
+  - multi_turn_long_context
+  - agentic_web_search
+  - external_memory

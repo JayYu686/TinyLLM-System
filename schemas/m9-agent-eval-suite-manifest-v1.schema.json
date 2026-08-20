@@ -1,0 +1,128 @@
+{
+  "additionalProperties": false,
+  "description": "Immutable identity and distribution summary for one M9 suite split.",
+  "properties": {
+    "category_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "single_tool",
+          "no_tool",
+          "wrong_tool_irrelevance",
+          "missing_argument_clarification",
+          "sequential_multi_step",
+          "parallel_independent_tools",
+          "tool_failure_recovery",
+          "grounding_approval_security"
+        ]
+      },
+      "title": "Category Counts",
+      "type": "object"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "excluded_from_training": {
+      "const": true,
+      "default": true,
+      "title": "Excluded From Training",
+      "type": "boolean"
+    },
+    "item_count": {
+      "exclusiveMinimum": 0,
+      "title": "Item Count",
+      "type": "integer"
+    },
+    "items_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Items Sha256",
+      "type": "string"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "license": {
+      "const": "Apache-2.0",
+      "title": "License",
+      "type": "string"
+    },
+    "release_content_sealed": {
+      "title": "Release Content Sealed",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "source_note": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Source Note",
+      "type": "string"
+    },
+    "split": {
+      "enum": [
+        "dev",
+        "release"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "suite_version": {
+      "pattern": "^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$",
+      "title": "Suite Version",
+      "type": "string"
+    },
+    "tool_catalog_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tool Catalog Sha256",
+      "type": "string"
+    },
+    "visibility": {
+      "enum": [
+        "public",
+        "private"
+      ],
+      "title": "Visibility",
+      "type": "string"
+    }
+  },
+  "required": [
+    "suite_version",
+    "split",
+    "visibility",
+    "license",
+    "seed",
+    "item_count",
+    "category_counts",
+    "language_counts",
+    "tool_catalog_sha256",
+    "items_sha256",
+    "content_sha256",
+    "release_content_sealed",
+    "source_note"
+  ],
+  "title": "AgentEvalSuiteManifest",
+  "type": "object"
+}

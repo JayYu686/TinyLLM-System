@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "AgentBootstrapInterval": {
+      "additionalProperties": false,
+      "description": "Paired Cluster Bootstrap interval for Candidate minus parent Task Success.",
+      "properties": {
+        "cluster_count": {
+          "exclusiveMinimum": 1,
+          "title": "Cluster Count",
+          "type": "integer"
+        },
+        "lower_95_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Lower 95 Basis Points",
+          "type": "integer"
+        },
+        "metric": {
+          "const": "task_success_difference_basis_points",
+          "title": "Metric",
+          "type": "string"
+        },
+        "observed_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Observed Basis Points",
+          "type": "integer"
+        },
+        "resamples": {
+          "maximum": 100000,
+          "minimum": 1000,
+          "title": "Resamples",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seed": {
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "upper_95_basis_points": {
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Upper 95 Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "metric",
+        "seed",
+        "resamples",
+        "observed_basis_points",
+        "lower_95_basis_points",
+        "upper_95_basis_points",
+        "cluster_count"
+      ],
+      "title": "AgentBootstrapInterval",
+      "type": "object"
+    },
+    "AgentGateCheck": {
+      "additionalProperties": false,
+      "description": "One independently auditable Agent model gate check.",
+      "properties": {
+        "actual": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Actual",
+          "type": "string"
+        },
+        "evidence_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Sha256",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{2,80}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "required": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Required",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "passed",
+        "actual",
+        "required",
+        "evidence_sha256"
+      ],
+      "title": "AgentGateCheck",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable aggregate M10 gate decision using M9-frozen thresholds.",
+  "properties": {
+    "candidate_evaluation_id": {
+      "pattern": "^m9-agent-eval-[0-9a-f]{8}$",
+      "title": "Candidate Evaluation Id",
+      "type": "string"
+    },
+    "candidate_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Summary Sha256",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/AgentGateCheck"
+      },
+      "minItems": 1,
+      "title": "Checks",
+      "type": "array"
+    },
+    "decision": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "gate_version": {
+      "const": "m10-agent-model-gate-v1",
+      "default": "m10-agent-model-gate-v1",
+      "title": "Gate Version",
+      "type": "string"
+    },
+    "parent_evaluation_id": {
+      "pattern": "^m9-agent-eval-[0-9a-f]{8}$",
+      "title": "Parent Evaluation Id",
+      "type": "string"
+    },
+    "parent_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Parent Summary Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "task_success_interval": {
+      "$ref": "#/$defs/AgentBootstrapInterval"
+    }
+  },
+  "required": [
+    "evaluated_at",
+    "candidate_evaluation_id",
+    "parent_evaluation_id",
+    "candidate_summary_sha256",
+    "parent_summary_sha256",
+    "task_success_interval",
+    "checks",
+    "decision"
+  ],
+  "title": "AgentGateResult",
+  "type": "object"
+}

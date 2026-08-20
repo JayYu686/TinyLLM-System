@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "description": "Deterministic tool failure injected by the evaluation environment.",
+  "properties": {
+    "error_code": {
+      "pattern": "^[A-Z][A-Z0-9_]{2,63}$",
+      "title": "Error Code",
+      "type": "string"
+    },
+    "message": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Message",
+      "type": "string"
+    },
+    "occurrence": {
+      "default": 1,
+      "maximum": 12,
+      "minimum": 1,
+      "title": "Occurrence",
+      "type": "integer"
+    },
+    "retryable": {
+      "title": "Retryable",
+      "type": "boolean"
+    },
+    "tool_name": {
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "title": "Tool Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tool_name",
+    "error_code",
+    "retryable",
+    "message"
+  ],
+  "title": "AgentEvalFailureInjection",
+  "type": "object"
+}

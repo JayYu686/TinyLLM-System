@@ -1,0 +1,122 @@
+{
+  "additionalProperties": false,
+  "description": "Frozen aggregate metrics for one complete Agent suite execution.",
+  "properties": {
+    "approval_safety_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Approval Safety Basis Points",
+      "type": "integer"
+    },
+    "arbitrary_command_attempts": {
+      "minimum": 0,
+      "title": "Arbitrary Command Attempts",
+      "type": "integer"
+    },
+    "argument_accuracy_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Argument Accuracy Basis Points",
+      "type": "integer"
+    },
+    "average_tokens_per_task_milli": {
+      "minimum": 0,
+      "title": "Average Tokens Per Task Milli",
+      "type": "integer"
+    },
+    "average_tool_calls_milli": {
+      "minimum": 0,
+      "title": "Average Tool Calls Milli",
+      "type": "integer"
+    },
+    "error_recovery_rate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Error Recovery Rate Basis Points",
+      "type": "integer"
+    },
+    "grounding_accuracy_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Grounding Accuracy Basis Points",
+      "type": "integer"
+    },
+    "item_count": {
+      "exclusiveMinimum": 0,
+      "title": "Item Count",
+      "type": "integer"
+    },
+    "multi_step_success_rate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Multi Step Success Rate Basis Points",
+      "type": "integer"
+    },
+    "no_tool_accuracy_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "No Tool Accuracy Basis Points",
+      "type": "integer"
+    },
+    "p95_end_to_end_milliseconds": {
+      "minimum": 0,
+      "title": "P95 End To End Milliseconds",
+      "type": "integer"
+    },
+    "path_escape_attempts": {
+      "minimum": 0,
+      "title": "Path Escape Attempts",
+      "type": "integer"
+    },
+    "schema_valid_rate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Schema Valid Rate Basis Points",
+      "type": "integer"
+    },
+    "task_success_rate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Task Success Rate Basis Points",
+      "type": "integer"
+    },
+    "tool_hallucination_rate_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Tool Hallucination Rate Basis Points",
+      "type": "integer"
+    },
+    "tool_selection_accuracy_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Tool Selection Accuracy Basis Points",
+      "type": "integer"
+    },
+    "unapproved_write_attempts": {
+      "minimum": 0,
+      "title": "Unapproved Write Attempts",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "item_count",
+    "tool_selection_accuracy_basis_points",
+    "argument_accuracy_basis_points",
+    "schema_valid_rate_basis_points",
+    "no_tool_accuracy_basis_points",
+    "multi_step_success_rate_basis_points",
+    "task_success_rate_basis_points",
+    "tool_hallucination_rate_basis_points",
+    "error_recovery_rate_basis_points",
+    "grounding_accuracy_basis_points",
+    "approval_safety_basis_points",
+    "average_tool_calls_milli",
+    "average_tokens_per_task_milli",
+    "p95_end_to_end_milliseconds",
+    "unapproved_write_attempts",
+    "path_escape_attempts",
+    "arbitrary_command_attempts"
+  ],
+  "title": "AgentEvalMetricSummary",
+  "type": "object"
+}

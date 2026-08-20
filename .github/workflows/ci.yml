@@ -60,6 +60,7 @@ jobs:
           --ignore-vuln PYSEC-2026-2288
           --ignore-vuln PYSEC-2026-2289
           --ignore-vuln PYSEC-2026-2290
+          --ignore-vuln PYSEC-2026-3716
 
   m4-dependencies:
     runs-on: ubuntu-22.04

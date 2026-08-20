@@ -104,7 +104,8 @@ audit-baseline:
 		--ignore-vuln PYSEC-2026-1939 \
 		--ignore-vuln PYSEC-2026-2288 \
 		--ignore-vuln PYSEC-2026-2289 \
-		--ignore-vuln PYSEC-2026-2290
+		--ignore-vuln PYSEC-2026-2290 \
+		--ignore-vuln PYSEC-2026-3716
 
 m4-dependency-smoke:
 	$(M4_PYTHON) scripts/check_m4_dependencies.py

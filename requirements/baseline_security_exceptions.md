@@ -1,6 +1,6 @@
 # Baseline dependency-audit exceptions
 
-Reviewed: 2026-07-15
+Reviewed: 2026-08-20
 
 Scope: the isolated `.venv-baseline` M2.4c evaluation environment only. These exceptions do not
 apply to arbitrary model loading, Transformers Trainer checkpoints, hosted inference, or the
@@ -19,7 +19,9 @@ TinyLLM does not open an externally supplied sqlitedict database.
 | `PYSEC-2026-2288` | Transformers 4.57.6 | Affects Transformers Trainer RNG checkpoint loading; TinyLLM does not use Trainer and runs PyTorch 2.7.1. The first fix is Transformers 5.0. | Remove after the Transformers 5 compatibility gate passes. |
 | `PYSEC-2026-2289` | Transformers 4.57.6 | Affects model-config-selected remote kernels. The exact local config is hash-pinned, contains no dynamic-kernel field, and execution is offline with explicit SDPA. The first fix is Transformers 5.3. | Remove after the Transformers 5.3+ compatibility gate passes. |
 | `PYSEC-2026-1939` | sqlitedict 2.1.0 | No fixed release exists. It is a transitive lm-eval dependency and only project-created local cache state is accepted. | Remove when lm-eval removes the dependency or sqlitedict publishes a fix. |
+| `PYSEC-2026-3716` | Datasets 4.8.5 | A crafted folder-builder metadata `file_name` can escape its dataset directory. The frozen Baseline loads only pinned, hash-verified text benchmark artifacts through lm-eval; it does not use ImageFolder, AudioFolder, VideoFolder, PDFFolder, user metadata, `save_to_disk`, or `push_to_hub`. Upgrading to Datasets 5 changes the frozen M2/M6 evaluation environment and must pass a separate compatibility gate. | Remove after Datasets 5.0.1+ reproduces the frozen Baseline outputs, or immediately if arbitrary/user-supplied folder datasets enter scope. |
 
-Before M5, re-run `make audit-baseline`, check for fixed compatible releases, and review this table.
+Before every evaluation release, re-run `make audit-baseline`, check for fixed compatible releases,
+and review this table.
 Any change to model source, online loading, model architecture, Attention backend, or serialized
 cache/checkpoint input invalidates these exceptions and requires a new security review.

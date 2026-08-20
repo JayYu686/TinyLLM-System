@@ -44,6 +44,16 @@
       "minimum": 1,
       "title": "Near Duplicate Threshold Basis Points",
       "type": "integer"
+    },
+    "prompt_match_required": {
+      "const": true,
+      "title": "Prompt Match Required",
+      "type": "boolean"
+    },
+    "shared_protocol_schema_match_alone_is_duplicate": {
+      "const": false,
+      "title": "Shared Protocol Schema Match Alone Is Duplicate",
+      "type": "boolean"
     }
   },
   "required": [
@@ -51,7 +61,9 @@
     "near_dedup_algorithm",
     "near_dedup_fields",
     "near_duplicate_threshold_basis_points",
-    "cross_source_before_split"
+    "cross_source_before_split",
+    "prompt_match_required",
+    "shared_protocol_schema_match_alone_is_duplicate"
   ],
   "title": "M10AgentDedupPolicy",
   "type": "object"

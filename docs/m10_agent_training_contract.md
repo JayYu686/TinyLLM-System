@@ -112,8 +112,9 @@ source verify
 ```
 
 Exact Dedup 使用规范化 Prompt、Tool Schema、Tool Calls 和最终回答的内容哈希。Near Dedup
-对 Prompt 与 Tool Schema 的 5-gram MinHash 执行，阈值固定为 0.85。去重先于切分，具有相同
-来源会话、工具集合或生成模板的记录使用同一 Group ID。
+以 Prompt 的 5-gram MinHash 命中为必要条件，阈值固定为 0.85；Tool Schema 用于确认工具协议
+身份和组合相似度，但七个样本共享同一公开 MCP Tool Catalog 本身不构成重复或污染。去重先于
+切分，具有相同来源会话或生成模板的记录使用同一 Group ID。
 
 污染检查覆盖 M9 Dev、密封 M9 Release、BFCL Offline Core 和 M6 领域评测。Exact 或 Near
 命中都会阻止正式数据注册。针对 Release 的扫描只向公开侧输出计数、算法版本和输入/输出

@@ -1,0 +1,31 @@
+{
+  "category_counts": {
+    "grounding_approval_security": 240,
+    "missing_argument_clarification": 360,
+    "no_tool": 360,
+    "parallel_independent_tools": 120,
+    "sequential_multi_step": 360,
+    "single_tool": 360,
+    "tool_failure_recovery": 240,
+    "wrong_tool_irrelevance": 360
+  },
+  "contains_source_or_evaluation_content": false,
+  "contamination_report_sha256": "2c0238e35a101cc3e1f8d22c5fdbb4aafa0761743505f06a7c10ee7e3b8a4005",
+  "contamination_status": "pass",
+  "content_sha256": "2ac97fcd3b59384eec17f2ac73d47aca85f865a4ebfbce525efcc280f1772e9d",
+  "dataset_version": "m10-devops-training-v1-2ac97fcd",
+  "duplicate_report_sha256": "b54e314caf73bd198ea7982b869721eefee8b8addf997aca599418c4cb227d6e",
+  "duplicate_status": "pass",
+  "item_count": 2400,
+  "items_sha256": "4f335c7055dbab53bbcef9c5271d14983cba27be272c24fc001b620a6aa1017d",
+  "language_counts": {
+    "en": 1680,
+    "zh": 720
+  },
+  "manifest_sha256": "609e0124ecaa202f0973e023dd99e8844ffa3dbf3f0ca219070d4ccd9a4b019a",
+  "private_artifacts_only": true,
+  "review_status": "pending",
+  "schema_version": "1.0",
+  "status": "review_pending",
+  "training_permitted": false
+}

@@ -1,0 +1,65 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free result for one immutable evaluation target.",
+  "properties": {
+    "contains_target_content": {
+      "const": false,
+      "default": false,
+      "title": "Contains Target Content",
+      "type": "boolean"
+    },
+    "exact_matches": {
+      "minimum": 0,
+      "title": "Exact Matches",
+      "type": "integer"
+    },
+    "maximum_candidate_prompt_similarity_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Maximum Candidate Prompt Similarity Basis Points",
+      "type": "integer"
+    },
+    "near_matches": {
+      "minimum": 0,
+      "title": "Near Matches",
+      "type": "integer"
+    },
+    "target_content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Target Content Sha256",
+      "type": "string"
+    },
+    "target_id": {
+      "enum": [
+        "m9_dev",
+        "m9_release",
+        "bfcl_core",
+        "m6_domain"
+      ],
+      "title": "Target Id",
+      "type": "string"
+    },
+    "target_items": {
+      "exclusiveMinimum": 0,
+      "title": "Target Items",
+      "type": "integer"
+    },
+    "target_version": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Target Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_id",
+    "target_version",
+    "target_content_sha256",
+    "target_items",
+    "exact_matches",
+    "near_matches",
+    "maximum_candidate_prompt_similarity_basis_points"
+  ],
+  "title": "M10ContaminationTargetResult",
+  "type": "object"
+}

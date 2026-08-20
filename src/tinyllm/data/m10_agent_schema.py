@@ -114,6 +114,8 @@ class M10AgentDedupPolicy(StrictSchema):
     near_dedup_fields: tuple[Literal["prompt", "tool_schema"], Literal["prompt", "tool_schema"]]
     near_duplicate_threshold_basis_points: int = Field(ge=1, le=10_000)
     cross_source_before_split: Literal[True]
+    prompt_match_required: Literal[True]
+    shared_protocol_schema_match_alone_is_duplicate: Literal[False]
 
     @field_validator("near_dedup_fields", mode="before")
     @classmethod

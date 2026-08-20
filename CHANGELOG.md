@@ -11,6 +11,9 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 - added safe ToolACE/Hermes source parsers, immutable JSON Schemas, and a real content-free profile
   of 13,193 pinned external rows, accepting 12,592 structural candidates and isolating 601 rows
   under stable rejection reasons.
+- built 2,400 deterministic bilingual DevOps Agent trajectories with message-level supervision
+  masks, strict tool-call/result pairing, grouped MinHash deduplication, and content-free scans
+  against M9 Dev/Release, BFCL Core, and M6 Domain; training remains blocked pending content review.
 
 ## 0.9.0-rc.1 - 2026-08-20
 

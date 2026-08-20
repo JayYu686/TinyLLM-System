@@ -29,6 +29,10 @@ registered `qwen3-0-6b-m6-d16c2357` as Candidate. M7 subsequently completed its 
 formal serving matrix, recovery, rollback, and security gates, promoting
 `qwen3-0-6b-m7-fa678d92` to Production.
 
+M8 then completed its clean-commit 8/8 OpenAI Tool Calling matrix, bounded MCP tools, durable
+approval/restart recovery, FTS5 grounding, and sandbox-only idempotent write contract. The runtime
+is complete; Agent task quality remains gated by M9/M10.
+
 ## Agent release train
 
 | Window | Milestone | Required outcome | Release |

@@ -1,0 +1,55 @@
+{
+  "additionalProperties": false,
+  "description": "Durable SSE event with a per-Run monotonic sequence.",
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "data": {
+      "additionalProperties": true,
+      "title": "Data",
+      "type": "object"
+    },
+    "event_type": {
+      "enum": [
+        "run.started",
+        "model.delta",
+        "tool.call.proposed",
+        "approval.required",
+        "tool.started",
+        "tool.completed",
+        "message.completed",
+        "run.completed",
+        "run.failed"
+      ],
+      "title": "Event Type",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^agent-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}-[0-9a-f]{4}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence": {
+      "minimum": 1,
+      "title": "Sequence",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "sequence",
+    "event_type",
+    "created_at"
+  ],
+  "title": "AgentEvent",
+  "type": "object"
+}

@@ -8,3 +8,4 @@ pytest-cov==6.3.0
 ruff==0.15.21
 setuptools==83.0.0
 types-PyYAML==6.0.12.20260518
+types-jsonschema==4.26.0.20260518

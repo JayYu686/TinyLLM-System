@@ -1,0 +1,129 @@
+{
+  "$defs": {
+    "MCPToolPolicy": {
+      "additionalProperties": false,
+      "description": "Authoritative local policy for one MCP tool.",
+      "properties": {
+        "access": {
+          "enum": [
+            "read",
+            "sandbox_write"
+          ],
+          "title": "Access",
+          "type": "string"
+        },
+        "approval_required": {
+          "title": "Approval Required",
+          "type": "boolean"
+        },
+        "max_attempts": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "default": 10.0,
+          "exclusiveMinimum": 0,
+          "maximum": 30,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "access",
+        "approval_required",
+        "max_attempts"
+      ],
+      "title": "MCPToolPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One administrator-controlled MCP Server registration.",
+  "properties": {
+    "args": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Args",
+      "type": "array"
+    },
+    "bearer_token_env": {
+      "anyOf": [
+        {
+          "pattern": "^TINYLLM_[A-Z0-9_]{3,100}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bearer Token Env"
+    },
+    "command": {
+      "anyOf": [
+        {
+          "format": "path",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Command"
+    },
+    "server_id": {
+      "pattern": "^[a-z][a-z0-9-]{2,63}$",
+      "title": "Server Id",
+      "type": "string"
+    },
+    "tools": {
+      "items": {
+        "$ref": "#/$defs/MCPToolPolicy"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Tools",
+      "type": "array"
+    },
+    "transport": {
+      "enum": [
+        "stdio",
+        "streamable_http"
+      ],
+      "title": "Transport",
+      "type": "string"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Url"
+    }
+  },
+  "required": [
+    "server_id",
+    "transport",
+    "tools"
+  ],
+  "title": "MCPServerConfig",
+  "type": "object"
+}

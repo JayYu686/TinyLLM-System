@@ -144,11 +144,23 @@ deploy_app = typer.Typer(
     help="Resolve and atomically manage immutable model deployments.",
     no_args_is_help=True,
 )
+agent_app = typer.Typer(
+    name="agent",
+    help="Run and control the bounded DevOps Agent.",
+    no_args_is_help=True,
+)
+agent_index_app = typer.Typer(
+    name="index",
+    help="Build the private line-addressable Agent evidence index.",
+    no_args_is_help=True,
+)
 app.add_typer(data_app, name="data")
 app.add_typer(eval_app, name="eval")
 app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(run_app, name="run")
 app.add_typer(deploy_app, name="deploy")
+app.add_typer(agent_app, name="agent")
+agent_app.add_typer(agent_index_app, name="index")
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,6 +227,177 @@ def _deployment_error(exc: DeploymentError, *, json_output: bool) -> NoReturn:
     if exc.code == DeploymentErrorCode.GATE_REJECTED:
         raise typer.Exit(code=6)
     raise typer.Exit(code=7)
+
+
+def _agent_error(message: str, *, json_output: bool, input_error: bool = False) -> NoReturn:
+    _output_error(message, json_output=json_output, error_code="AGENT_ERROR")
+    raise typer.Exit(code=2 if input_error else 8)
+
+
+def _agent_api_request(
+    *,
+    method: str,
+    base_url: str,
+    token_env: str,
+    path: str,
+    body: dict[str, object] | None = None,
+    idempotency_key: str | None = None,
+) -> dict[str, object]:
+    if not base_url.rstrip("/").startswith(("http://127.0.0.1:", "http://localhost:")):
+        raise ValueError("Agent API URL must use a loopback HTTP address")
+    token = os.environ.get(token_env, "")
+    if len(token) < 32:
+        raise ValueError(f"environment variable {token_env} must contain a 32-character token")
+    try:
+        import httpx
+    except ImportError as exc:
+        raise RuntimeError("Agent HTTP dependencies are unavailable") from exc
+    headers = {"Authorization": f"Bearer {token}"}
+    if idempotency_key is not None:
+        headers["Idempotency-Key"] = idempotency_key
+    try:
+        response = httpx.request(
+            method,
+            f"{base_url.rstrip('/')}{path}",
+            headers=headers,
+            json=body,
+            timeout=15,
+            follow_redirects=False,
+            trust_env=False,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except (httpx.HTTPError, json.JSONDecodeError) as exc:
+        raise RuntimeError("Agent API request failed") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("Agent API returned an invalid response")
+    return cast(dict[str, object], payload)
+
+
+@agent_app.command("run")
+def agent_run(
+    ctx: typer.Context,
+    message: Annotated[str, typer.Argument(help="DevOps diagnostic request.")],
+    mode: Annotated[str, typer.Option("--mode", help="nonthinking or thinking.")] = "nonthinking",
+    max_steps: Annotated[int, typer.Option("--max-steps", min=1, max=8)] = 8,
+    base_url: Annotated[str, typer.Option("--base-url")] = "http://127.0.0.1:8000",
+    token_env: Annotated[str, typer.Option("--token-env")] = "TINYLLM_GATEWAY_BEARER_TOKEN",
+    idempotency_key: Annotated[str | None, typer.Option("--idempotency-key")] = None,
+    command_json: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Create one asynchronous Agent Run through the authenticated API."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if mode not in {"thinking", "nonthinking"} or not message.strip():
+        _agent_error("Agent mode or message is invalid", json_output=json_output, input_error=True)
+    key = idempotency_key or f"cli-agent-create-{hashlib.sha256(message.encode()).hexdigest()[:24]}"
+    try:
+        result = _agent_api_request(
+            method="POST",
+            base_url=base_url,
+            token_env=token_env,
+            path="/v1/agent/runs",
+            body={
+                "schema_version": "1.0",
+                "model": "production",
+                "messages": [{"role": "user", "content": message}],
+                "mode": mode,
+                "mcp_server_ids": ["tinyllm-devops"],
+                "max_steps": max_steps,
+            },
+            idempotency_key=key,
+        )
+    except (RuntimeError, ValueError) as exc:
+        _agent_error(str(exc), json_output=json_output)
+    typer.echo(
+        json.dumps(result, ensure_ascii=False, indent=2) if json_output else result["run_id"]
+    )
+
+
+@agent_app.command("approve")
+def agent_approve(
+    ctx: typer.Context,
+    run_id: Annotated[str, typer.Argument()],
+    approval_id: Annotated[str, typer.Argument()],
+    decision: Annotated[str, typer.Option("--decision")] = "approved",
+    base_url: Annotated[str, typer.Option("--base-url")] = "http://127.0.0.1:8000",
+    token_env: Annotated[str, typer.Option("--token-env")] = "TINYLLM_GATEWAY_BEARER_TOKEN",
+    idempotency_key: Annotated[str | None, typer.Option("--idempotency-key")] = None,
+    command_json: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Approve or reject one persisted sandbox-write proposal."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    if decision not in {"approved", "rejected"}:
+        _agent_error("approval decision is invalid", json_output=json_output, input_error=True)
+    key = idempotency_key or f"cli-agent-approval-{approval_id}-{decision}"
+    try:
+        result = _agent_api_request(
+            method="POST",
+            base_url=base_url,
+            token_env=token_env,
+            path=f"/v1/agent/runs/{run_id}/approvals/{approval_id}",
+            body={"schema_version": "1.0", "decision": decision},
+            idempotency_key=key,
+        )
+    except (RuntimeError, ValueError) as exc:
+        _agent_error(str(exc), json_output=json_output)
+    typer.echo(
+        json.dumps(result, ensure_ascii=False, indent=2) if json_output else result["status"]
+    )
+
+
+@agent_app.command("cancel")
+def agent_cancel(
+    ctx: typer.Context,
+    run_id: Annotated[str, typer.Argument()],
+    base_url: Annotated[str, typer.Option("--base-url")] = "http://127.0.0.1:8000",
+    token_env: Annotated[str, typer.Option("--token-env")] = "TINYLLM_GATEWAY_BEARER_TOKEN",
+    command_json: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Explicitly cancel one Agent Run; SSE disconnect never cancels it."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = _agent_api_request(
+            method="POST",
+            base_url=base_url,
+            token_env=token_env,
+            path=f"/v1/agent/runs/{run_id}/cancel",
+        )
+    except (RuntimeError, ValueError) as exc:
+        _agent_error(str(exc), json_output=json_output)
+    typer.echo(
+        json.dumps(result, ensure_ascii=False, indent=2) if json_output else result["status"]
+    )
+
+
+@agent_index_app.command("rebuild")
+def agent_index_rebuild(
+    ctx: typer.Context,
+    output: Annotated[Path, typer.Option("--output", help="New immutable index directory.")],
+    artifact_root: Annotated[Path, typer.Option("--artifact-root")] = DEFAULT_ARTIFACT_ROOT,
+    project_root: Annotated[Path | None, typer.Option("--project-root")] = None,
+    command_json: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Build an FTS5/BM25 evidence index from allowlisted repository and Run fields."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        from tinyllm.agent.evidence import rebuild_evidence_index
+
+        result = rebuild_evidence_index(
+            project_root=project_root or Path.cwd(),
+            artifact_root=artifact_root,
+            output_dir=output,
+        )
+    except (ImportError, OSError, ValueError, RuntimeError) as exc:
+        _agent_error(str(exc), json_output=json_output)
+    typer.echo(result.model_dump_json(indent=2) if json_output else result.index_version)
 
 
 @deploy_app.command("resolve")
@@ -1704,6 +1887,14 @@ def serve_command(
         bool,
         typer.Option("--json", help="Emit startup errors as stable JSON."),
     ] = False,
+    agent_config: Annotated[
+        Path | None,
+        typer.Option("--agent-config", help="Enable the M8 Agent API with this strict YAML."),
+    ] = None,
+    evidence_index: Annotated[
+        Path | None,
+        typer.Option("--evidence-index", help="Immutable M8 evidence-index directory."),
+    ] = None,
 ) -> None:
     """Start the authenticated local Gateway in the isolated serving environment."""
 
@@ -1755,6 +1946,34 @@ def serve_command(
         health_timeout_seconds=gateway_config.backend_health_timeout_seconds,
         internal_token=supervisor.internal_token if supervisor is not None else None,
     )
+    agent_components = None
+    if (agent_config is None) != (evidence_index is None):
+        _output_error(
+            "--agent-config and --evidence-index must be provided together",
+            json_output=json_output,
+            error_code="AGENT_CONFIG_ERROR",
+        )
+        raise typer.Exit(code=2)
+    if agent_config is not None and evidence_index is not None:
+        try:
+            from tinyllm.agent.factory import build_agent_api
+
+            agent_components = build_agent_api(
+                config_path=agent_config,
+                artifact_root=artifact_root,
+                project_root=Path.cwd(),
+                evidence_index=evidence_index,
+                gateway_base_url=f"http://{gateway_config.host}:{gateway_config.port}",
+                bearer_token=token,
+                model="production",
+            )
+        except (ImportError, OSError, ValueError, RuntimeError) as exc:
+            _output_error(
+                "Agent API composition failed",
+                json_output=json_output,
+                error_code="AGENT_RUNTIME_ERROR",
+            )
+            raise typer.Exit(code=8) from exc
     gateway = create_gateway(
         config=gateway_config,
         resolved_model=resolved,
@@ -1763,6 +1982,11 @@ def serve_command(
         supervisor=supervisor,
         event_log=StructuredEventLog(
             artifact_root / "deployments" / "runtime" / gateway_config.config_id / "events.jsonl"
+        ),
+        agent_router=agent_components.router if agent_components is not None else None,
+        agent_startup=agent_components.service.recover if agent_components is not None else None,
+        agent_shutdown=(
+            agent_components.service.shutdown if agent_components is not None else None
         ),
     )
     try:

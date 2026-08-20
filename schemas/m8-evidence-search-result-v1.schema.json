@@ -1,0 +1,65 @@
+{
+  "additionalProperties": false,
+  "description": "One line-addressable untrusted evidence search result.",
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "document_id": {
+      "pattern": "^doc-[0-9a-f]{16}$",
+      "title": "Document Id",
+      "type": "string"
+    },
+    "end_line": {
+      "minimum": 1,
+      "title": "End Line",
+      "type": "integer"
+    },
+    "excerpt": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Excerpt",
+      "type": "string"
+    },
+    "relative_path": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Relative Path",
+      "type": "string"
+    },
+    "relevance_score": {
+      "minimum": 0,
+      "title": "Relevance Score",
+      "type": "number"
+    },
+    "source_kind": {
+      "enum": [
+        "documentation",
+        "report",
+        "registry",
+        "run_metadata"
+      ],
+      "title": "Source Kind",
+      "type": "string"
+    },
+    "start_line": {
+      "minimum": 1,
+      "title": "Start Line",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "document_id",
+    "source_kind",
+    "relative_path",
+    "start_line",
+    "end_line",
+    "content_sha256",
+    "relevance_score",
+    "excerpt"
+  ],
+  "title": "EvidenceSearchResult",
+  "type": "object"
+}

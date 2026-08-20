@@ -1,0 +1,168 @@
+{
+  "$defs": {
+    "M8ToolCallingCase": {
+      "additionalProperties": false,
+      "description": "One real OpenAI-client tool-calling compatibility observation.",
+      "properties": {
+        "content_characters": {
+          "minimum": 0,
+          "title": "Content Characters",
+          "type": "integer"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "finish_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finish Reason"
+        },
+        "mode": {
+          "enum": [
+            "auto",
+            "required",
+            "none",
+            "named"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "raw_markup_exposed": {
+          "title": "Raw Markup Exposed",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "stream": {
+          "title": "Stream",
+          "type": "boolean"
+        },
+        "tool_names": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tool Names",
+          "type": "array"
+        }
+      },
+      "required": [
+        "mode",
+        "stream",
+        "status",
+        "content_characters",
+        "raw_markup_exposed"
+      ],
+      "title": "M8ToolCallingCase",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Formal eight-cell Tool Calling validation on one immutable deployment.",
+  "properties": {
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/M8ToolCallingCase"
+      },
+      "maxItems": 8,
+      "minItems": 8,
+      "title": "Cases",
+      "type": "array"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "gateway_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Gateway Version",
+      "type": "string"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_name": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "passed_cases": {
+      "maximum": 8,
+      "minimum": 0,
+      "title": "Passed Cases",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "validation_id": {
+      "pattern": "^m8-tool-calling-[0-9a-f]{8}$",
+      "title": "Validation Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "validation_id",
+    "evaluated_at",
+    "model",
+    "gateway_version",
+    "git_commit",
+    "git_dirty",
+    "physical_gpu_index",
+    "gpu_name",
+    "cases",
+    "passed_cases",
+    "passed"
+  ],
+  "title": "M8ToolCallingValidation",
+  "type": "object"
+}

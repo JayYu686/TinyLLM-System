@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "AgentToolCall": {
+      "additionalProperties": false,
+      "description": "One model-proposed tool call, pending local policy enforcement.",
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "call_id": {
+          "pattern": "^call_[A-Za-z0-9_-]{1,120}$",
+          "title": "Call Id",
+          "type": "string"
+        },
+        "server_id": {
+          "pattern": "^[a-z][a-z0-9-]{2,63}$",
+          "title": "Server Id",
+          "type": "string"
+        },
+        "tool_name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id",
+        "server_id",
+        "tool_name",
+        "arguments"
+      ],
+      "title": "AgentToolCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Content-minimized state projection for one Agent Run.",
+  "properties": {
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z][A-Z0-9_]{2,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "last_event_sequence": {
+      "minimum": 0,
+      "title": "Last Event Sequence",
+      "type": "integer"
+    },
+    "max_steps": {
+      "maximum": 8,
+      "minimum": 1,
+      "title": "Max Steps",
+      "type": "integer"
+    },
+    "mcp_server_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Mcp Server Ids",
+      "type": "array"
+    },
+    "mode": {
+      "enum": [
+        "thinking",
+        "nonthinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "pending_approval_id": {
+      "anyOf": [
+        {
+          "pattern": "^approval-[0-9a-f]{12}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pending Approval Id"
+    },
+    "pending_tool_call": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AgentToolCall"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^agent-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}-[0-9a-f]{4}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "created",
+        "running",
+        "waiting_approval",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "expired"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "steps_completed": {
+      "maximum": 8,
+      "minimum": 0,
+      "title": "Steps Completed",
+      "type": "integer"
+    },
+    "tool_calls_completed": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Tool Calls Completed",
+      "type": "integer"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "request_sha256",
+    "model",
+    "mode",
+    "mcp_server_ids",
+    "max_steps",
+    "status",
+    "created_at",
+    "updated_at",
+    "expires_at",
+    "steps_completed",
+    "tool_calls_completed",
+    "last_event_sequence"
+  ],
+  "title": "AgentRunRecord",
+  "type": "object"
+}

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tinyllm-system"
-version = "0.7.0"
+version = "0.8.0b1"
 description = "Hardware-aware LLM training, evaluation, and deployment for consumer multi-GPU systems."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -49,11 +49,18 @@ m5 = [
 serving = [
   "fastapi>=0.128.8,<0.129",
   "httpx>=0.28.1,<0.29",
+  "openai>=1.77,<1.78",
   "opentelemetry-api>=1.26,<1.27",
   "opentelemetry-exporter-otlp>=1.26,<1.27",
   "opentelemetry-sdk>=1.26,<1.27",
   "prometheus-client>=0.24.1,<0.25",
   "uvicorn>=0.40,<0.41",
+]
+agent = [
+  "jsonschema>=4.26,<4.27",
+  "langgraph>=1.2.11,<1.3",
+  "langgraph-checkpoint-sqlite>=3.1.1,<3.2",
+  "mcp>=1.29,<2",
 ]
 dev = [
   "mypy>=1.11,<2",
@@ -63,6 +70,7 @@ dev = [
   "ruff>=0.9,<1",
   "setuptools>=83,<84",
   "types-PyYAML>=6.0.12,<7",
+  "types-jsonschema>=4.26,<5",
 ]
 
 [project.scripts]

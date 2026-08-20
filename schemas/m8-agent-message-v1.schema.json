@@ -1,0 +1,78 @@
+{
+  "additionalProperties": false,
+  "description": "Text and tool-result message accepted by the bounded Agent API.",
+  "properties": {
+    "content": {
+      "anyOf": [
+        {
+          "maxLength": 262144,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content"
+    },
+    "name": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Name"
+    },
+    "role": {
+      "enum": [
+        "system",
+        "user",
+        "assistant",
+        "tool"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "tool_call_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tool Call Id"
+    },
+    "tool_calls": {
+      "anyOf": [
+        {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tool Calls"
+    }
+  },
+  "required": [
+    "role"
+  ],
+  "title": "AgentMessage",
+  "type": "object"
+}

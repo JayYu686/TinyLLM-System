@@ -164,7 +164,7 @@ sequenceDiagram
 | M5 双模式 SFT | 已完成 | 0.6B 四卡 Full SFT 50M Token 与 8B BF16 LoRA 10M Token；两条路线均完成 Exact Resume、双模式评测和导出 |
 | M6 评测与晋级 | 已完成 | 独立 v7 双模式评测与 160 条人工审查；11/11 门禁通过；0.6B Full-SFT 注册为 Candidate |
 | M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
-| M8 DevOps Agent | 进行中 | Tool Calling、MCP、LangGraph、审批与证据检索 |
+| M8 DevOps Agent | 已完成 | Tool Calling 8/8；MCP、LangGraph、FTS5 证据检索、显式审批与重启恢复 |
 | M9 Agent 评测 | 计划中 | BFCL Offline Core Profile 与 240 条 DevOps Agent Suite |
 | M10 Agent 后训练 | 计划中 | 0.6B Full SFT、8B LoRA 与 Agent Model Gate |
 
@@ -216,6 +216,9 @@ sequenceDiagram
 - [M7 在线推理契约](docs/m7_serving_contract.md)与
   [M7.0/M7.1 基础审查报告](reports/m7/m7_foundation.md)、
   [M7 总验收](reports/m7/m7_acceptance.md)
+- [M8 Agent 契约](docs/m8_agent_contract.md)、
+  [M8 安全实践审查](reports/m8/security_best_practices.md)与
+  [M8 总验收](reports/m8/m8_acceptance.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -309,10 +312,12 @@ tinyllm compare
 tinyllm promote
 tinyllm deploy resolve|show|promote|rollback
 tinyllm serve
+tinyllm agent run|approve|cancel
+tinyllm agent index rebuild
 ```
 
-M8 将增加 `tinyllm agent run|approve|cancel|eval|index rebuild`。完整的
-`tinyllm run reproduce` 和 Training Planner 放入增强阶段。
+`tinyllm agent eval` 随 M9 冻结评测契约交付。完整的 `tinyllm run reproduce` 和 Training
+Planner 放入增强阶段。
 
 命令提供稳定 `--json` 输出，便于 Shell、CI 和后续服务集成：
 
@@ -437,7 +442,8 @@ v1–v6 的拒绝证据保持不可变；v7 完成 160/160 人工复核并通过
 ## 核心边界与后续研究
 
 当前已完成版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、Candidate 晋级、
-在线推理和 Production 门禁。M8–M10 依次交付 DevOps Agent、Agent Evaluation 和 Agent 后训练。
+在线推理、Production 门禁和能力受限的 DevOps Agent。M9–M10 继续交付 Agent Evaluation 和
+Agent 后训练。
 以下方向位于后续研究清单：
 
 - MoE、Pipeline Parallel 和多节点训练；
@@ -460,6 +466,7 @@ M7 直接集成 vLLM 的 OpenAI-compatible API，并在其外层增加血缘感�
 - [系统架构](docs/architecture.md)、[训练设计](docs/training_design.md)与
   [M5 SFT 契约](docs/m5_sft_contract.md)、[M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)
 - [M7 在线推理与 Production 晋级契约](docs/m7_serving_contract.md)
+- [M8 Tool Calling、MCP 与 DevOps Agent 契约](docs/m8_agent_contract.md)
 - [数据契约](docs/dataset_contract.md)、[评测规范](docs/evaluation_spec.md)与
   [实验血缘](docs/experiment_lineage.md)
 - [硬件策略](docs/hardware_strategy.md)与[Benchmark 规范](docs/benchmark_plan.md)

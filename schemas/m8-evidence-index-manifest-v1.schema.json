@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "description": "Deterministic identity of one rebuilt SQLite FTS5 evidence index.",
+  "properties": {
+    "built_at": {
+      "format": "date-time",
+      "title": "Built At",
+      "type": "string"
+    },
+    "chunks": {
+      "minimum": 1,
+      "title": "Chunks",
+      "type": "integer"
+    },
+    "documents": {
+      "minimum": 1,
+      "title": "Documents",
+      "type": "integer"
+    },
+    "index_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Index Sha256",
+      "type": "string"
+    },
+    "index_version": {
+      "pattern": "^m8-evidence-[0-9a-f]{8}$",
+      "title": "Index Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Root Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "index_version",
+    "built_at",
+    "source_root_sha256",
+    "documents",
+    "chunks",
+    "index_sha256"
+  ],
+  "title": "EvidenceIndexManifest",
+  "type": "object"
+}

@@ -178,7 +178,7 @@ sequenceDiagram
 | M5 dual-mode SFT | Complete | 0.6B four-GPU Full SFT over 50M tokens and 8B BF16 LoRA over 10M tokens; both routes completed Exact Resume, dual-mode evaluation, and export |
 | M6 evaluation and promotion | Complete | Independent v7 dual-mode evaluation, 160 human judgments, 11/11 gates passed, and the 0.6B Full-SFT artifact registered as Candidate |
 | M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
-| M8 DevOps agent | In progress | Tool calling, MCP, LangGraph, approval, and evidence retrieval |
+| M8 DevOps agent | Complete | Tool calling 8/8; MCP, LangGraph, FTS5 retrieval, explicit approval, and restart recovery |
 | M9 agent evaluation | Planned | BFCL Offline Core Profile and a 240-task DevOps Agent Suite |
 | M10 agent post-training | Planned | 0.6B Full SFT, 8B LoRA, and Agent Model Gate |
 
@@ -223,6 +223,9 @@ failure paths, real reports, and documentation. Evidence entry points:
 - [M7 serving contract (Chinese)](docs/m7_serving_contract.md) and
   [M7.0/M7.1 foundation review (Chinese)](reports/m7/m7_foundation.md), and
   [M7 acceptance report (Chinese)](reports/m7/m7_acceptance.md)
+- [M8 agent contract (Chinese)](docs/m8_agent_contract.md),
+  [M8 security review (Chinese)](reports/m8/security_best_practices.md), and
+  [M8 acceptance report (Chinese)](reports/m8/m8_acceptance.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -320,10 +323,12 @@ tinyllm compare
 tinyllm promote
 tinyllm deploy resolve|show|promote|rollback
 tinyllm serve
+tinyllm agent run|approve|cancel
+tinyllm agent index rebuild
 ```
 
-M8 will add `tinyllm agent run|approve|cancel|eval|index rebuild`. Full
-`tinyllm run reproduce` and the Training Planner are enhancement work.
+`tinyllm agent eval` ships with M9's frozen evaluation contract. Full `tinyllm run reproduce`
+and the Training Planner are enhancement work.
 
 Commands expose stable `--json` output for shell, CI, and service integration:
 
@@ -453,8 +458,8 @@ The v1–v6 rejection evidence remains immutable. v7 completed all 160 human jud
 ## Core boundary and future research
 
 The completed release covers single-host single/multi-GPU training, data versioning,
-checkpointing, automated evaluation, Candidate promotion, serving, and Production. M8–M10 deliver
-a DevOps agent, Agent Evaluation, and Agent post-training. The following directions
+checkpointing, automated evaluation, Candidate promotion, serving, Production, and a bounded
+DevOps agent. M9–M10 deliver Agent Evaluation and Agent post-training. The following directions
 live in the future research queue:
 
 - MoE, pipeline parallelism, and multi-node training;
@@ -480,6 +485,7 @@ by default; CLI, schema, and machine-readable JSON fields remain English.
 - [Architecture](docs/architecture.md), [training design](docs/training_design.md), and
   [M5 SFT contract](docs/m5_sft_contract.md)
 - [M7 serving and Production contract (Chinese)](docs/m7_serving_contract.md)
+- [M8 Tool Calling, MCP, and DevOps Agent contract (Chinese)](docs/m8_agent_contract.md)
 - [Data contract](docs/dataset_contract.md), [evaluation spec](docs/evaluation_spec.md),
   and [experiment lineage](docs/experiment_lineage.md)
 - [Hardware strategy](docs/hardware_strategy.md) and

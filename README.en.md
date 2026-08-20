@@ -179,7 +179,7 @@ sequenceDiagram
 | M6 evaluation and promotion | Complete | Independent v7 dual-mode evaluation, 160 human judgments, 11/11 gates passed, and the 0.6B Full-SFT artifact registered as Candidate |
 | M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
 | M8 DevOps agent | Complete | Tool calling 8/8; MCP, LangGraph, FTS5 retrieval, explicit approval, and restart recovery |
-| M9 agent evaluation | Planned | BFCL Offline Core Profile and a 240-task DevOps Agent Suite |
+| M9 agent evaluation | Complete | Frozen 240-task DevOps Agent Suite; three parent baselines; 5,520/5,520 BFCL items with zero inference failures |
 | M10 agent post-training | Planned | 0.6B Full SFT, 8B LoRA, and Agent Model Gate |
 
 Milestone status represents a combined gate across implementation, tests, smoke runs,
@@ -226,6 +226,9 @@ failure paths, real reports, and documentation. Evidence entry points:
 - [M8 agent contract (Chinese)](docs/m8_agent_contract.md),
   [M8 security review (Chinese)](reports/m8/security_best_practices.md), and
   [M8 acceptance report (Chinese)](reports/m8/m8_acceptance.md)
+- [M9 evaluation contract (Chinese)](docs/m9_agent_evaluation.md),
+  [0.6B Agent Dev baseline (Chinese)](reports/m9/agent_dev_production_baseline.md), and
+  [M9 acceptance report (Chinese)](reports/m9/m9_acceptance.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -455,12 +458,30 @@ The v1–v6 rejection evidence remains immutable. v7 completed all 160 human jud
 18,000-request inference matrix, recovery, rollback, and security gates, and was promoted as
 `qwen3-0-6b-m7-fa678d92`. See the [M7 acceptance report](reports/m7/m7_acceptance.md).
 
+### Agent Readiness baselines
+
+M9 freezes 80 public Dev tasks, 160 sealed Release tasks, and the 1,840-item offline BFCL Core
+Profile before Agent post-training. The measured parent and historical baselines are:
+
+| Subject | DevOps Agent Dev Task Success | BFCL Offline Core Profile |
+| -- | --: | --: |
+| Qwen3-0.6B Production | 20.00% in both repeats | 24.24% (446/1840) |
+| Qwen3-8B Base | 36.25% | **39.18% (721/1840)** |
+| historical Qwen3-8B LoRA | 36.25% | 36.25% (667/1840) |
+
+All three BFCL runs completed 5,520/5,520 items with zero formal inference failures. The 8B Base
+leads the 0.6B model by 14.94 percentage points on this profile, while Missing Function multi-turn
+accuracy remains 3.00% and Agent Dev Error Recovery is 0% for all three subjects. These are M10
+parent baselines, not an Agent Candidate pass. See the
+[M9 acceptance report](reports/m9/m9_acceptance.md) for category scores, evidence boundaries, and
+artifact hashes.
+
 ## Core boundary and future research
 
 The completed release covers single-host single/multi-GPU training, data versioning,
 checkpointing, automated evaluation, Candidate promotion, serving, Production, and a bounded
-DevOps agent. M9–M10 deliver Agent Evaluation and Agent post-training. The following directions
-live in the future research queue:
+DevOps agent, plus pre-training Agent Evaluation. M10 delivers Agent post-training and its
+independent capability gate. The following directions live in the future research queue:
 
 - MoE, pipeline parallelism, and multi-node training;
 - custom KV cache, tensor parallelism, FlashAttention, and CUDA kernels;

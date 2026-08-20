@@ -165,7 +165,7 @@ sequenceDiagram
 | M6 评测与晋级 | 已完成 | 独立 v7 双模式评测与 160 条人工审查；11/11 门禁通过；0.6B Full-SFT 注册为 Candidate |
 | M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
 | M8 DevOps Agent | 已完成 | Tool Calling 8/8；MCP、LangGraph、FTS5 证据检索、显式审批与重启恢复 |
-| M9 Agent 评测 | 计划中 | BFCL Offline Core Profile 与 240 条 DevOps Agent Suite |
+| M9 Agent 评测 | 已完成 | 240 条 DevOps Agent Suite 冻结；三组父模型基线；BFCL 共 5,520/5,520 条且 0 推理失败 |
 | M10 Agent 后训练 | 计划中 | 0.6B Full SFT、8B LoRA 与 Agent Model Gate |
 
 当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
@@ -219,6 +219,9 @@ sequenceDiagram
 - [M8 Agent 契约](docs/m8_agent_contract.md)、
   [M8 安全实践审查](reports/m8/security_best_practices.md)与
   [M8 总验收](reports/m8/m8_acceptance.md)
+- [M9 评测契约](docs/m9_agent_evaluation.md)、
+  [0.6B Agent Dev 基线](reports/m9/agent_dev_production_baseline.md)与
+  [M9 总验收](reports/m9/m9_acceptance.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -439,11 +442,27 @@ v1–v6 的拒绝证据保持不可变；v7 完成 160/160 人工复核并通过
 恢复、回滚和安全门禁，已作为 `qwen3-0-6b-m7-fa678d92` 晋级 Production；完整指标见
 [M7 总验收](reports/m7/m7_acceptance.md)。
 
+### Agent Readiness 基线
+
+M9 在训练前冻结 80 条公开 Dev、160 条密封 Release 和 1,840 条固定 BFCL 离线核心任务。
+三个父模型/历史对象的真实基线为：
+
+| 对象 | DevOps Agent Dev Task Success | BFCL Offline Core Profile |
+| -- | --: | --: |
+| Qwen3-0.6B Production | 20.00%（两次运行一致） | 24.24%（446/1840） |
+| Qwen3-8B Base | 36.25% | **39.18%（721/1840）** |
+| Qwen3-8B 历史 LoRA | 36.25% | 36.25%（667/1840） |
+
+三组 BFCL 共完成 5,520/5,520 条，正式推理失败为 0。8B Base 的 BFCL 总分比 0.6B 高
+14.94pp，但 Missing Function 多轮任务仍只有 3.00%；三组 Agent Dev 的 Error Recovery 均为
+0%。这些结果用于冻结 M10 的父模型起点和数据重点，不表示 Agent Candidate 已通过门禁。
+完整分类结果、失败边界和原始哈希见 [M9 总验收](reports/m9/m9_acceptance.md)。
+
 ## 核心边界与后续研究
 
 当前已完成版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、Candidate 晋级、
-在线推理、Production 门禁和能力受限的 DevOps Agent。M9–M10 继续交付 Agent Evaluation 和
-Agent 后训练。
+在线推理、Production 门禁、能力受限的 DevOps Agent 和训练前 Agent Evaluation。M10 继续
+交付 Agent 后训练与独立能力门禁。
 以下方向位于后续研究清单：
 
 - MoE、Pipeline Parallel 和多节点训练；

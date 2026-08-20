@@ -31,7 +31,9 @@ formal serving matrix, recovery, rollback, and security gates, promoting
 
 M8 then completed its clean-commit 8/8 OpenAI Tool Calling matrix, bounded MCP tools, durable
 approval/restart recovery, FTS5 grounding, and sandbox-only idempotent write contract. The runtime
-is complete; Agent task quality remains gated by M9/M10.
+is complete. M9 subsequently froze the 80/160 Dev/Release split, completed three real Agent Dev
+baselines, and ran 5,520/5,520 BFCL Core items with zero inference failures. Agent model quality
+and Production eligibility remain gated by M10.
 
 ## Agent release train
 

@@ -4,6 +4,9 @@ M9 在模型训练前冻结 DevOps Agent 的任务、评分和晋级边界。它
 选择正确工具并填写正确参数，Agent Runtime 是否能安全执行多步轨迹，能力提升是否同时满足
 BFCL、M6 质量回归和 M7 Serving 血缘约束。
 
+本契约已完成真实验收。三组父模型/历史对象共完成 5,520 条 BFCL Core 任务且无正式推理
+失败，Agent Dev 与分类结果见 [M9 验收报告](../reports/m9/m9_acceptance.md)。
+
 ## 评测组成
 
 自建套件共 240 条原创任务：

@@ -148,21 +148,27 @@ def _validate_chat_body(body: bytes) -> None:
 def _validate_json_schema(value: object) -> None:
     if not isinstance(value, dict):
         raise ValueError("backend tool parameters must be a JSON Schema object")
-    stack: list[tuple[object, int]] = [(value, 1)]
+    stack: list[tuple[object, int, bool]] = [(value, 1, True)]
     visited = 0
     while stack:
-        current, depth = stack.pop()
+        current, depth, is_schema_node = stack.pop()
         if depth > MAX_TOOL_SCHEMA_DEPTH:
             raise ValueError("backend tool schema exceeds the nesting limit")
         visited += 1
         if visited > MAX_TOOL_SCHEMA_NODES:
             raise ValueError("backend tool schema is too complex")
         if isinstance(current, dict):
-            if FORBIDDEN_SCHEMA_KEYWORDS.intersection(current):
+            if is_schema_node and FORBIDDEN_SCHEMA_KEYWORDS.intersection(current):
                 raise ValueError("backend tool schema uses an unsafe keyword")
-            stack.extend((item, depth + 1) for item in current.values())
+            for key, item in current.items():
+                # Keys below `properties` are user-visible argument names, not
+                # JSON Schema keywords. Their values are schema nodes again.
+                child_is_schema_node = not (is_schema_node and key == "properties")
+                if not is_schema_node:
+                    child_is_schema_node = True
+                stack.append((item, depth + 1, child_is_schema_node))
         elif isinstance(current, list):
-            stack.extend((item, depth + 1) for item in current)
+            stack.extend((item, depth + 1, True) for item in current)
 
 
 def _structure_depth(value: object) -> int:

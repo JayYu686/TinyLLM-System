@@ -175,8 +175,63 @@ def _run_bfcl(
         run_ids=False,
     )
     generation_module.main(arguments)
+    _validate_generation_results(
+        config=config,
+        result_root=result_root,
+    )
     evaluation_module.main([config.model_name], categories, result_root, score_root)
     return result_root, score_root
+
+
+def _validate_generation_results(*, config: Any, result_root: Path) -> None:
+    """Refuse to score incomplete BFCL generations or swallowed endpoint failures."""
+
+    model_directory = config.model_name.replace("/", "_")
+    model_root = result_root / model_directory
+    total_records = 0
+    all_ids: set[str] = set()
+    for spec in config.categories:
+        path = model_root / f"BFCL_v3_{spec.category}_result.json"
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError as exc:
+            raise RuntimeError(f"BFCL generation result is missing: {spec.category}") from exc
+        records: list[dict[str, Any]] = []
+        for line_number, line in enumerate(lines, start=1):
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"BFCL generation result is invalid: {spec.category} line {line_number}"
+                ) from exc
+            if not isinstance(record, dict):
+                raise RuntimeError(
+                    f"BFCL generation record is not an object: {spec.category} line {line_number}"
+                )
+            records.append(record)
+        if len(records) != spec.item_count:
+            raise RuntimeError(
+                f"BFCL category {spec.category} has {len(records)} generated items; "
+                f"expected {spec.item_count}"
+            )
+        for record in records:
+            item_id = record.get("id")
+            if not isinstance(item_id, str) or not item_id:
+                raise RuntimeError(f"BFCL category {spec.category} has a missing item id")
+            if item_id in all_ids:
+                raise RuntimeError(f"BFCL generation has a duplicate item id: {item_id}")
+            all_ids.add(item_id)
+            if "result" not in record:
+                raise RuntimeError(f"BFCL generation result is missing for item: {item_id}")
+            result = record["result"]
+            if "traceback" in record or (
+                isinstance(result, str) and result.lstrip().startswith("Error during inference:")
+            ):
+                raise RuntimeError(f"BFCL endpoint inference failed for item: {item_id}")
+        total_records += len(records)
+    expected_total = sum(spec.item_count for spec in config.categories)
+    if total_records != expected_total:
+        raise RuntimeError(f"BFCL generated {total_records} items; expected {expected_total}")
 
 
 def _summarize(

@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "M10AgentArtifactSpec": {
+      "additionalProperties": false,
+      "description": "One immutable source artifact selected from a pinned dataset revision.",
+      "properties": {
+        "filename": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "title": "Filename",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M10AgentArtifactSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Identity, license, readiness, and token share of one M10 source.",
+  "properties": {
+    "artifacts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M10AgentArtifactSpec"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "content_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Sha256"
+    },
+    "dataset_id": {
+      "minLength": 1,
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "license": {
+      "enum": [
+        "apache-2.0",
+        "mixed-allowlisted"
+      ],
+      "title": "License",
+      "type": "string"
+    },
+    "license_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "License Evidence Sha256"
+    },
+    "manifest_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Manifest Sha256"
+    },
+    "mixture_basis_points": {
+      "exclusiveMinimum": 0,
+      "maximum": 10000,
+      "title": "Mixture Basis Points",
+      "type": "integer"
+    },
+    "readiness": {
+      "enum": [
+        "ready",
+        "pending_build"
+      ],
+      "title": "Readiness",
+      "type": "string"
+    },
+    "redistributable": {
+      "title": "Redistributable",
+      "type": "boolean"
+    },
+    "revision": {
+      "minLength": 1,
+      "title": "Revision",
+      "type": "string"
+    },
+    "source_id": {
+      "enum": [
+        "toolace",
+        "hermes_function_calling",
+        "tinyllm_devops",
+        "m6_domain_replay",
+        "m2_no_tool_replay"
+      ],
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_kind": {
+      "enum": [
+        "external",
+        "authored",
+        "registered_replay"
+      ],
+      "title": "Source Kind",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_id",
+    "source_kind",
+    "dataset_id",
+    "revision",
+    "license",
+    "mixture_basis_points",
+    "readiness",
+    "redistributable"
+  ],
+  "title": "M10AgentSourceSpec",
+  "type": "object"
+}

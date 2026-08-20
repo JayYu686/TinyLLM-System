@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "Language ratio measured over supervised tokens after filtering.",
+  "properties": {
+    "chinese_basis_points": {
+      "const": 3000,
+      "title": "Chinese Basis Points",
+      "type": "integer"
+    },
+    "english_basis_points": {
+      "const": 7000,
+      "title": "English Basis Points",
+      "type": "integer"
+    },
+    "unit": {
+      "const": "supervised_tokens",
+      "title": "Unit",
+      "type": "string"
+    }
+  },
+  "required": [
+    "unit",
+    "english_basis_points",
+    "chinese_basis_points"
+  ],
+  "title": "M10AgentLanguageTarget",
+  "type": "object"
+}

@@ -8,3 +8,4 @@ max_steps: 8
 max_tool_calls: 12
 task_timeout_seconds: 120.0
 max_concurrency: 2
+physical_gpu_index: 4

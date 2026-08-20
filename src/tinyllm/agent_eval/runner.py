@@ -6,7 +6,10 @@ import asyncio
 import hashlib
 import json
 import os
+import platform
 import re
+import subprocess
+import sys
 import uuid
 from collections import Counter
 from datetime import UTC, datetime
@@ -43,6 +46,7 @@ from tinyllm.agent_eval.scoring import aggregate_results, score_task
 from tinyllm.agent_eval.suite import load_suite
 from tinyllm.deployment import ResolvedModel
 from tinyllm.lineage.git import read_git_identity
+from tinyllm.training.smoke_preflight import inspect_gpus
 
 _CITATION = re.compile(r"\[evidence:(call_[A-Za-z0-9_-]+)\]")
 
@@ -69,6 +73,68 @@ def _atomic_bytes(path: Path, payload: bytes) -> None:
     except OSError:
         temporary.unlink(missing_ok=True)
         raise
+
+
+def _sha256_bytes(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _capture_environment(*, gateway_version: dict[str, object]) -> dict[str, object]:
+    try:
+        packages = subprocess.run(
+            [sys.executable, "-m", "pip", "freeze", "--all"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        ).stdout.splitlines()
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        raise AgentEvalRunError("cannot capture Agent evaluation software environment") from exc
+    return {
+        "schema_version": "1.0",
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "tinyllm": __version__,
+        "gateway": gateway_version,
+        "pip_freeze": sorted(line for line in packages if line),
+    }
+
+
+def _capture_hardware(physical_gpu_index: int) -> dict[str, object]:
+    try:
+        row = inspect_gpus((physical_gpu_index,))[0]
+    except RuntimeError as exc:
+        raise AgentEvalRunError("cannot capture Agent evaluation GPU hardware") from exc
+    return {
+        "schema_version": "1.0",
+        "index": row["index"],
+        "name": row["name"],
+        "driver_version": row["driver_version"],
+    }
+
+
+async def _read_gateway_version(
+    *, base_url: str, bearer_token: str, timeout_seconds: float
+) -> dict[str, object]:
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(follow_redirects=False, trust_env=False) as client:
+            response = await client.get(
+                f"{base_url.rstrip('/')}/version",
+                headers={"Authorization": f"Bearer {bearer_token}"},
+                timeout=min(timeout_seconds, 30.0),
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise AgentEvalRunError("cannot verify Agent evaluation Gateway identity") from exc
+    if not isinstance(payload, dict):
+        raise AgentEvalRunError("Agent evaluation Gateway identity is invalid")
+    required = {"schema_version", "service", "version", "model", "model_artifact_sha256"}
+    if not required.issubset(payload):
+        raise AgentEvalRunError("Agent evaluation Gateway identity is incomplete")
+    return cast(dict[str, object], payload)
 
 
 def _fixture_result(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -404,6 +470,8 @@ def _metadata(
     config: AgentEvalRunConfig,
     resolved: ResolvedModel,
     git_commit: str,
+    environment_sha256: str,
+    hardware_sha256: str,
 ) -> dict[str, object]:
     return {
         "schema_version": "1.0",
@@ -414,6 +482,8 @@ def _metadata(
         "model_artifact_sha256": resolved.model_artifact_sha256,
         "deployment_record_sha256": resolved.production_record_sha256,
         "git_commit": git_commit,
+        "environment_sha256": environment_sha256,
+        "hardware_sha256": hardware_sha256,
     }
 
 
@@ -442,10 +512,48 @@ async def run_agent_evaluation(
         raise AgentEvalRunError(
             f"environment variable {config.bearer_token_env} must contain a 32-character token"
         )
+    gateway_version = await _read_gateway_version(
+        base_url=config.gateway_base_url,
+        bearer_token=token,
+        timeout_seconds=config.task_timeout_seconds,
+    )
+    if gateway_version.get("model") != resolved_model.model_version:
+        raise AgentEvalRunError("Gateway model differs from the resolved evaluation model")
+    if gateway_version.get("model_artifact_sha256") != resolved_model.model_artifact_sha256:
+        raise AgentEvalRunError("Gateway model Artifact hash differs from Registry evidence")
+
     output_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     output_directory.chmod(0o700)
+    resolved_config_payload = _json_bytes(config.to_dict())
+    suite_manifest_payload = _json_bytes(manifest.to_dict())
+    environment_payload = _json_bytes(_capture_environment(gateway_version=gateway_version))
+    hardware = _capture_hardware(config.physical_gpu_index)
+    hardware_payload = _json_bytes(hardware)
+    lineage_files = {
+        "config.resolved.json": resolved_config_payload,
+        "suite.manifest.json": suite_manifest_payload,
+        "environment.json": environment_payload,
+        "hardware.json": hardware_payload,
+    }
+    for name, payload in lineage_files.items():
+        path = output_directory / name
+        if path.exists():
+            try:
+                if path.read_bytes() != payload:
+                    raise AgentEvalRunError(f"resumed Agent evaluation {name} differs")
+            except OSError as exc:
+                raise AgentEvalRunError(f"cannot verify resumed Agent evaluation {name}") from exc
+        else:
+            _atomic_bytes(path, payload)
+    environment_sha256 = _sha256_bytes(environment_payload)
+    hardware_sha256 = _sha256_bytes(hardware_payload)
     metadata = _metadata(
-        manifest=manifest, config=config, resolved=resolved_model, git_commit=commit
+        manifest=manifest,
+        config=config,
+        resolved=resolved_model,
+        git_commit=commit,
+        environment_sha256=environment_sha256,
+        hardware_sha256=hardware_sha256,
     )
     metadata_path = output_directory / "evaluation.metadata.json"
     if metadata_path.exists():
@@ -502,6 +610,11 @@ async def run_agent_evaluation(
         model_artifact_sha256=resolved_model.model_artifact_sha256,
         parent_model_id=(f"{resolved_model.model.repository}@{resolved_model.model.base_revision}"),
         deployment_record_sha256=resolved_model.production_record_sha256,
+        environment_sha256=environment_sha256,
+        hardware_sha256=hardware_sha256,
+        physical_gpu_index=config.physical_gpu_index,
+        gpu_name=str(hardware["name"]),
+        driver_version=str(hardware["driver_version"]),
         gateway_version=__version__,
         agent_runtime_version=__version__,
         git_commit=commit,

@@ -149,6 +149,17 @@
       "default": null,
       "title": "Deployment Record Sha256"
     },
+    "driver_version": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Driver Version",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
     "evaluated_at": {
       "format": "date-time",
       "title": "Evaluated At",
@@ -173,6 +184,17 @@
     "git_dirty": {
       "title": "Git Dirty",
       "type": "boolean"
+    },
+    "gpu_name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "hardware_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
     },
     "item_results_sha256": {
       "pattern": "^[0-9a-f]{64}$",
@@ -205,6 +227,12 @@
       "title": "Parent Model Id",
       "type": "string"
     },
+    "physical_gpu_index": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
     "schema_version": {
       "const": "1.0",
       "default": "1.0",
@@ -231,6 +259,11 @@
     "model_revision",
     "model_artifact_sha256",
     "parent_model_id",
+    "environment_sha256",
+    "hardware_sha256",
+    "physical_gpu_index",
+    "gpu_name",
+    "driver_version",
     "gateway_version",
     "agent_runtime_version",
     "git_commit",

@@ -269,6 +269,7 @@ class AgentEvalRunConfig(StrictSchema):
     max_tool_calls: int = Field(default=12, ge=1, le=12)
     task_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
     max_concurrency: int = Field(default=2, ge=1, le=8)
+    physical_gpu_index: int = Field(ge=0, le=9)
 
     @field_validator("gateway_base_url")
     @classmethod
@@ -363,6 +364,11 @@ class AgentEvalSummary(StrictSchema):
     model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_model_id: str = Field(min_length=1, max_length=180)
     deployment_record_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    hardware_sha256: str = Field(pattern=SHA256_PATTERN)
+    physical_gpu_index: int = Field(ge=0, le=9)
+    gpu_name: str = Field(min_length=1, max_length=200)
+    driver_version: str = Field(min_length=1, max_length=80)
     gateway_version: str = Field(min_length=1, max_length=40)
     agent_runtime_version: str = Field(min_length=1, max_length=40)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")

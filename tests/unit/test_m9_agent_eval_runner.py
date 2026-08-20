@@ -58,6 +58,7 @@ def _config() -> AgentEvalRunConfig:
         bearer_token_env="TINYLLM_TEST_TOKEN",
         model="production",
         max_concurrency=1,
+        physical_gpu_index=4,
     )
 
 

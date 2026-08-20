@@ -56,6 +56,11 @@ P95 End-to-End Latency
 题目继续；任一身份变化都会拒绝续跑。正式结果要求干净 Git，开发 Smoke 可显式使用
 `--allow-dirty`，但该标记会保留在结果中。
 
+每次评测还会在开始前验证 Gateway `/version` 返回的模型版本与 Artifact 哈希，并保存
+`config.resolved.json`、`suite.manifest.json`、`environment.json` 和 `hardware.json`。Summary
+引用软件环境与 GPU 身份文件的 SHA256；配置中的 `physical_gpu_index` 必须与承载 Gateway
+Backend 的物理卡一致。
+
 ## BFCL Core Profile
 
 外部对照固定为 `TinyLLM BFCL v1.3 Offline Core Profile`：

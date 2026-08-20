@@ -54,6 +54,12 @@
       "title": "Model",
       "type": "string"
     },
+    "physical_gpu_index": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
     "schema_version": {
       "const": "1.0",
       "default": "1.0",
@@ -71,7 +77,8 @@
   "required": [
     "config_id",
     "gateway_base_url",
-    "bearer_token_env"
+    "bearer_token_env",
+    "physical_gpu_index"
   ],
   "title": "AgentEvalRunConfig",
   "type": "object"

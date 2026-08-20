@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "description": "Primary, mutually exclusive rejection reason count.",
+  "properties": {
+    "reason": {
+      "enum": [
+        "invalid_row_shape",
+        "invalid_role_path",
+        "invalid_tool_schema",
+        "malformed_tool_call"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "rows": {
+      "exclusiveMinimum": 0,
+      "title": "Rows",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "reason",
+    "rows"
+  ],
+  "title": "M10SourceRejectionCount",
+  "type": "object"
+}

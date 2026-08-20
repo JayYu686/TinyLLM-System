@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "description": "One evaluation boundary that training data must not overlap.",
+  "properties": {
+    "matching": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "enum": [
+            "exact",
+            "minhash_5gram"
+          ],
+          "type": "string"
+        },
+        {
+          "enum": [
+            "exact",
+            "minhash_5gram"
+          ],
+          "type": "string"
+        }
+      ],
+      "title": "Matching",
+      "type": "array"
+    },
+    "may_influence_generation_or_selection": {
+      "const": false,
+      "title": "May Influence Generation Or Selection",
+      "type": "boolean"
+    },
+    "target_id": {
+      "enum": [
+        "m9_dev",
+        "m9_release",
+        "bfcl_core",
+        "m6_domain"
+      ],
+      "title": "Target Id",
+      "type": "string"
+    },
+    "visibility": {
+      "enum": [
+        "public",
+        "sealed_private"
+      ],
+      "title": "Visibility",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_id",
+    "visibility",
+    "matching",
+    "may_influence_generation_or_selection"
+  ],
+  "title": "M10AgentContaminationTarget",
+  "type": "object"
+}

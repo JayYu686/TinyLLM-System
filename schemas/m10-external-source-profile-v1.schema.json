@@ -1,0 +1,232 @@
+{
+  "$defs": {
+    "M10AgentArtifactSpec": {
+      "additionalProperties": false,
+      "description": "One immutable source artifact selected from a pinned dataset revision.",
+      "properties": {
+        "filename": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "title": "Filename",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M10AgentArtifactSpec",
+      "type": "object"
+    },
+    "M10SourceRejectionCount": {
+      "additionalProperties": false,
+      "description": "Primary, mutually exclusive rejection reason count.",
+      "properties": {
+        "reason": {
+          "enum": [
+            "invalid_row_shape",
+            "invalid_role_path",
+            "invalid_tool_schema",
+            "malformed_tool_call"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "rows": {
+          "exclusiveMinimum": 0,
+          "title": "Rows",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "reason",
+        "rows"
+      ],
+      "title": "M10SourceRejectionCount",
+      "type": "object"
+    },
+    "M10SourceRolePathCount": {
+      "additionalProperties": false,
+      "description": "Content-free count of one source conversation role path.",
+      "properties": {
+        "role_path": {
+          "minLength": 1,
+          "pattern": "^[a-z]+(?:>[a-z]+)*$",
+          "title": "Role Path",
+          "type": "string"
+        },
+        "rows": {
+          "exclusiveMinimum": 0,
+          "title": "Rows",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "role_path",
+        "rows"
+      ],
+      "title": "M10SourceRolePathCount",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Path-free aggregate profile of one pinned external dataset.",
+  "properties": {
+    "accepted_shape_rows": {
+      "minimum": 0,
+      "title": "Accepted Shape Rows",
+      "type": "integer"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/M10AgentArtifactSpec"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "contains_source_content": {
+      "const": false,
+      "default": false,
+      "title": "Contains Source Content",
+      "type": "boolean"
+    },
+    "dataset_id": {
+      "minLength": 1,
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "dict_to_object_normalizations": {
+      "minimum": 0,
+      "title": "Dict To Object Normalizations",
+      "type": "integer"
+    },
+    "malformed_tool_calls": {
+      "minimum": 0,
+      "title": "Malformed Tool Calls",
+      "type": "integer"
+    },
+    "no_tool_candidate_rows": {
+      "minimum": 0,
+      "title": "No Tool Candidate Rows",
+      "type": "integer"
+    },
+    "null_required_normalizations": {
+      "minimum": 0,
+      "title": "Null Required Normalizations",
+      "type": "integer"
+    },
+    "parsed_tool_calls": {
+      "minimum": 0,
+      "title": "Parsed Tool Calls",
+      "type": "integer"
+    },
+    "rejected_shape_rows": {
+      "minimum": 0,
+      "title": "Rejected Shape Rows",
+      "type": "integer"
+    },
+    "rejection_counts": {
+      "items": {
+        "$ref": "#/$defs/M10SourceRejectionCount"
+      },
+      "title": "Rejection Counts",
+      "type": "array"
+    },
+    "revision": {
+      "minLength": 1,
+      "title": "Revision",
+      "type": "string"
+    },
+    "role_paths": {
+      "items": {
+        "$ref": "#/$defs/M10SourceRolePathCount"
+      },
+      "title": "Role Paths",
+      "type": "array"
+    },
+    "rows_with_tool_definitions": {
+      "minimum": 0,
+      "title": "Rows With Tool Definitions",
+      "type": "integer"
+    },
+    "source_id": {
+      "enum": [
+        "toolace",
+        "hermes_function_calling"
+      ],
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_rows": {
+      "exclusiveMinimum": 0,
+      "title": "Source Rows",
+      "type": "integer"
+    },
+    "tool_call_candidate_rows": {
+      "minimum": 0,
+      "title": "Tool Call Candidate Rows",
+      "type": "integer"
+    },
+    "tool_definitions": {
+      "minimum": 0,
+      "title": "Tool Definitions",
+      "type": "integer"
+    },
+    "tool_name_collision_rows": {
+      "minimum": 0,
+      "title": "Tool Name Collision Rows",
+      "type": "integer"
+    },
+    "tools_per_row_max": {
+      "minimum": 0,
+      "title": "Tools Per Row Max",
+      "type": "integer"
+    },
+    "tools_per_row_mean_milli": {
+      "minimum": 0,
+      "title": "Tools Per Row Mean Milli",
+      "type": "integer"
+    },
+    "tools_per_row_min": {
+      "minimum": 0,
+      "title": "Tools Per Row Min",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "source_id",
+    "dataset_id",
+    "revision",
+    "artifacts",
+    "source_rows",
+    "accepted_shape_rows",
+    "rejected_shape_rows",
+    "role_paths",
+    "rejection_counts",
+    "rows_with_tool_definitions",
+    "tool_definitions",
+    "tools_per_row_min",
+    "tools_per_row_max",
+    "tools_per_row_mean_milli",
+    "tool_call_candidate_rows",
+    "no_tool_candidate_rows",
+    "parsed_tool_calls",
+    "malformed_tool_calls",
+    "dict_to_object_normalizations",
+    "null_required_normalizations",
+    "tool_name_collision_rows"
+  ],
+  "title": "M10ExternalSourceProfile",
+  "type": "object"
+}

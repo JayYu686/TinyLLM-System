@@ -1,0 +1,23 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free count of one source conversation role path.",
+  "properties": {
+    "role_path": {
+      "minLength": 1,
+      "pattern": "^[a-z]+(?:>[a-z]+)*$",
+      "title": "Role Path",
+      "type": "string"
+    },
+    "rows": {
+      "exclusiveMinimum": 0,
+      "title": "Rows",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "role_path",
+    "rows"
+  ],
+  "title": "M10SourceRolePathCount",
+  "type": "object"
+}

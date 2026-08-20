@@ -1,0 +1,58 @@
+{
+  "additionalProperties": false,
+  "description": "Deterministic exact and near-duplicate controls.",
+  "properties": {
+    "cross_source_before_split": {
+      "const": true,
+      "title": "Cross Source Before Split",
+      "type": "boolean"
+    },
+    "exact_normalized_dedup": {
+      "const": true,
+      "title": "Exact Normalized Dedup",
+      "type": "boolean"
+    },
+    "near_dedup_algorithm": {
+      "const": "minhash_5gram",
+      "title": "Near Dedup Algorithm",
+      "type": "string"
+    },
+    "near_dedup_fields": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "enum": [
+            "prompt",
+            "tool_schema"
+          ],
+          "type": "string"
+        },
+        {
+          "enum": [
+            "prompt",
+            "tool_schema"
+          ],
+          "type": "string"
+        }
+      ],
+      "title": "Near Dedup Fields",
+      "type": "array"
+    },
+    "near_duplicate_threshold_basis_points": {
+      "maximum": 10000,
+      "minimum": 1,
+      "title": "Near Duplicate Threshold Basis Points",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "exact_normalized_dedup",
+    "near_dedup_algorithm",
+    "near_dedup_fields",
+    "near_duplicate_threshold_basis_points",
+    "cross_source_before_split"
+  ],
+  "title": "M10AgentDedupPolicy",
+  "type": "object"
+}

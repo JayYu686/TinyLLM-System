@@ -1,0 +1,227 @@
+{
+  "contains_source_content": false,
+  "data_config_sha256": "7a6015e50c96bec5709c924bb2c2c054f4180c83f3c3c733cb42d56bca3f1e0e",
+  "profile_version": "m10-external-source-profile-v1",
+  "profiles": [
+    {
+      "accepted_shape_rows": 10770,
+      "artifacts": [
+        {
+          "filename": "data.json",
+          "sha256": "ba12c083fca7e8da48c67ad5b895e495447da7c66e39a2e19742c082e6cb537e",
+          "size_bytes": 37154735
+        }
+      ],
+      "contains_source_content": false,
+      "dataset_id": "lockon/ToolACE",
+      "dict_to_object_normalizations": 33663,
+      "malformed_tool_calls": 96,
+      "no_tool_candidate_rows": 1946,
+      "null_required_normalizations": 33663,
+      "parsed_tool_calls": 18169,
+      "rejected_shape_rows": 530,
+      "rejection_counts": [
+        {
+          "reason": "invalid_row_shape",
+          "rows": 5
+        },
+        {
+          "reason": "invalid_tool_schema",
+          "rows": 524
+        },
+        {
+          "reason": "malformed_tool_call",
+          "rows": 1
+        }
+      ],
+      "revision": "6bda777c88d21e5a204703c1ee45597a8fa4f734",
+      "role_paths": [
+        {
+          "role_path": "invalid",
+          "rows": 5
+        },
+        {
+          "role_path": "user>assistant",
+          "rows": 10500
+        },
+        {
+          "role_path": "user>assistant>tool>assistant",
+          "rows": 6
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>tool>assistant",
+          "rows": 259
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>tool>assistant>tool>assistant",
+          "rows": 24
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>tool>assistant>tool>assistant>tool>assistant",
+          "rows": 2
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>tool>assistant>user>assistant>tool>assistant",
+          "rows": 1
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>tool>assistant>tool>assistant",
+          "rows": 1
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>tool>assistant>user>assistant",
+          "rows": 22
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>tool>assistant>user>assistant>tool>assistant",
+          "rows": 8
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>tool>assistant>user>assistant>user>assistant",
+          "rows": 7
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>user>assistant",
+          "rows": 179
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>user>assistant>tool>assistant",
+          "rows": 125
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>user>assistant>tool>assistant>user>assistant",
+          "rows": 44
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>user>assistant>user>assistant",
+          "rows": 34
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>user>assistant>user>assistant>tool>assistant",
+          "rows": 17
+        },
+        {
+          "role_path": "user>assistant>tool>assistant>user>assistant>user>assistant>user>assistant>user>assistant",
+          "rows": 5
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>tool>assistant",
+          "rows": 5
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>tool>assistant>tool>assistant",
+          "rows": 2
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>user>assistant",
+          "rows": 20
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>user>assistant>tool>assistant",
+          "rows": 4
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>user>assistant>tool>assistant>user>assistant",
+          "rows": 2
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>user>assistant>user>assistant",
+          "rows": 13
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>user>assistant>user>assistant>tool>assistant",
+          "rows": 5
+        },
+        {
+          "role_path": "user>assistant>user>assistant>tool>assistant>user>assistant>user>assistant>user>assistant",
+          "rows": 4
+        },
+        {
+          "role_path": "user>assistant>user>assistant>user>assistant",
+          "rows": 3
+        },
+        {
+          "role_path": "user>assistant>user>assistant>user>assistant>tool>assistant",
+          "rows": 1
+        },
+        {
+          "role_path": "user>assistant>user>assistant>user>assistant>tool>assistant>user>assistant",
+          "rows": 1
+        },
+        {
+          "role_path": "user>assistant>user>assistant>user>assistant>tool>assistant>user>assistant>tool>assistant",
+          "rows": 1
+        }
+      ],
+      "rows_with_tool_definitions": 10529,
+      "source_id": "toolace",
+      "source_rows": 11300,
+      "tool_call_candidate_rows": 9354,
+      "tool_definitions": 33663,
+      "tool_name_collision_rows": 6,
+      "tools_per_row_max": 9,
+      "tools_per_row_mean_milli": 2979,
+      "tools_per_row_min": 0
+    },
+    {
+      "accepted_shape_rows": 1822,
+      "artifacts": [
+        {
+          "filename": "func-calling.json",
+          "sha256": "769478035a886678d525d057ea66e3fd1e247f43e35c8d6d7cc866e080b6742b",
+          "size_bytes": 20554130
+        }
+      ],
+      "contains_source_content": false,
+      "dataset_id": "NousResearch/hermes-function-calling-v1",
+      "dict_to_object_normalizations": 0,
+      "malformed_tool_calls": 61,
+      "no_tool_candidate_rows": 10,
+      "null_required_normalizations": 0,
+      "parsed_tool_calls": 2920,
+      "rejected_shape_rows": 71,
+      "rejection_counts": [
+        {
+          "reason": "invalid_role_path",
+          "rows": 10
+        },
+        {
+          "reason": "invalid_tool_schema",
+          "rows": 61
+        }
+      ],
+      "revision": "dae3e1d28cfbcf4b915c04ea1e072030529b4bda",
+      "role_paths": [
+        {
+          "role_path": "system>human>gpt",
+          "rows": 793
+        },
+        {
+          "role_path": "system>human>gpt>tool",
+          "rows": 163
+        },
+        {
+          "role_path": "system>human>gpt>tool>gpt",
+          "rows": 927
+        },
+        {
+          "role_path": "system>human>tool>gpt",
+          "rows": 10
+        }
+      ],
+      "rows_with_tool_definitions": 1832,
+      "source_id": "hermes_function_calling",
+      "source_rows": 1893,
+      "tool_call_candidate_rows": 1883,
+      "tool_definitions": 3582,
+      "tool_name_collision_rows": 0,
+      "tools_per_row_max": 6,
+      "tools_per_row_mean_milli": 1892,
+      "tools_per_row_min": 0
+    }
+  ],
+  "schema_version": "1.0",
+  "total_accepted_shape_rows": 12592,
+  "total_rejected_shape_rows": 601,
+  "total_source_rows": 13193
+}

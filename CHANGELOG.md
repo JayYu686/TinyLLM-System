@@ -5,6 +5,13 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+- preregistered the M10 Agent training mixture, language and supervision policy, fixed external
+  revisions, replay lineage, deduplication, sealed-Release contamination boundary, and fail-closed
+  training-readiness contract;
+- added safe ToolACE/Hermes source parsers, immutable JSON Schemas, and a real content-free profile
+  of 13,193 pinned external rows, accepting 12,592 structural candidates and isolating 601 rows
+  under stable rejection reasons.
+
 ## 0.9.0-rc.1 - 2026-08-20
 
 - froze an original bilingual 240-task DevOps Agent Suite with 80 public Dev tasks and 160 sealed

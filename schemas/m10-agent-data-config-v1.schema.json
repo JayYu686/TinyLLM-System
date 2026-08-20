@@ -1,0 +1,504 @@
+{
+  "$defs": {
+    "M10AgentArtifactSpec": {
+      "additionalProperties": false,
+      "description": "One immutable source artifact selected from a pinned dataset revision.",
+      "properties": {
+        "filename": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "title": "Filename",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M10AgentArtifactSpec",
+      "type": "object"
+    },
+    "M10AgentContaminationPolicy": {
+      "additionalProperties": false,
+      "description": "Leakage controls, including the sealed M9 Release boundary.",
+      "properties": {
+        "fail_on_exact_match": {
+          "const": true,
+          "title": "Fail On Exact Match",
+          "type": "boolean"
+        },
+        "fail_on_near_match": {
+          "const": true,
+          "title": "Fail On Near Match",
+          "type": "boolean"
+        },
+        "release_scan_output": {
+          "const": "content_free_counts_and_hashes_only",
+          "title": "Release Scan Output",
+          "type": "string"
+        },
+        "targets": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/M10AgentContaminationTarget"
+            },
+            {
+              "$ref": "#/$defs/M10AgentContaminationTarget"
+            },
+            {
+              "$ref": "#/$defs/M10AgentContaminationTarget"
+            },
+            {
+              "$ref": "#/$defs/M10AgentContaminationTarget"
+            }
+          ],
+          "title": "Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "targets",
+        "fail_on_exact_match",
+        "fail_on_near_match",
+        "release_scan_output"
+      ],
+      "title": "M10AgentContaminationPolicy",
+      "type": "object"
+    },
+    "M10AgentContaminationTarget": {
+      "additionalProperties": false,
+      "description": "One evaluation boundary that training data must not overlap.",
+      "properties": {
+        "matching": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "enum": [
+                "exact",
+                "minhash_5gram"
+              ],
+              "type": "string"
+            },
+            {
+              "enum": [
+                "exact",
+                "minhash_5gram"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Matching",
+          "type": "array"
+        },
+        "may_influence_generation_or_selection": {
+          "const": false,
+          "title": "May Influence Generation Or Selection",
+          "type": "boolean"
+        },
+        "target_id": {
+          "enum": [
+            "m9_dev",
+            "m9_release",
+            "bfcl_core",
+            "m6_domain"
+          ],
+          "title": "Target Id",
+          "type": "string"
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "sealed_private"
+          ],
+          "title": "Visibility",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_id",
+        "visibility",
+        "matching",
+        "may_influence_generation_or_selection"
+      ],
+      "title": "M10AgentContaminationTarget",
+      "type": "object"
+    },
+    "M10AgentDedupPolicy": {
+      "additionalProperties": false,
+      "description": "Deterministic exact and near-duplicate controls.",
+      "properties": {
+        "cross_source_before_split": {
+          "const": true,
+          "title": "Cross Source Before Split",
+          "type": "boolean"
+        },
+        "exact_normalized_dedup": {
+          "const": true,
+          "title": "Exact Normalized Dedup",
+          "type": "boolean"
+        },
+        "near_dedup_algorithm": {
+          "const": "minhash_5gram",
+          "title": "Near Dedup Algorithm",
+          "type": "string"
+        },
+        "near_dedup_fields": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "enum": [
+                "prompt",
+                "tool_schema"
+              ],
+              "type": "string"
+            },
+            {
+              "enum": [
+                "prompt",
+                "tool_schema"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Near Dedup Fields",
+          "type": "array"
+        },
+        "near_duplicate_threshold_basis_points": {
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Near Duplicate Threshold Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "exact_normalized_dedup",
+        "near_dedup_algorithm",
+        "near_dedup_fields",
+        "near_duplicate_threshold_basis_points",
+        "cross_source_before_split"
+      ],
+      "title": "M10AgentDedupPolicy",
+      "type": "object"
+    },
+    "M10AgentLanguageTarget": {
+      "additionalProperties": false,
+      "description": "Language ratio measured over supervised tokens after filtering.",
+      "properties": {
+        "chinese_basis_points": {
+          "const": 3000,
+          "title": "Chinese Basis Points",
+          "type": "integer"
+        },
+        "english_basis_points": {
+          "const": 7000,
+          "title": "English Basis Points",
+          "type": "integer"
+        },
+        "unit": {
+          "const": "supervised_tokens",
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "english_basis_points",
+        "chinese_basis_points"
+      ],
+      "title": "M10AgentLanguageTarget",
+      "type": "object"
+    },
+    "M10AgentSourceSpec": {
+      "additionalProperties": false,
+      "description": "Identity, license, readiness, and token share of one M10 source.",
+      "properties": {
+        "artifacts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M10AgentArtifactSpec"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Sha256"
+        },
+        "dataset_id": {
+          "minLength": 1,
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "license": {
+          "enum": [
+            "apache-2.0",
+            "mixed-allowlisted"
+          ],
+          "title": "License",
+          "type": "string"
+        },
+        "license_evidence_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Evidence Sha256"
+        },
+        "manifest_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manifest Sha256"
+        },
+        "mixture_basis_points": {
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Mixture Basis Points",
+          "type": "integer"
+        },
+        "readiness": {
+          "enum": [
+            "ready",
+            "pending_build"
+          ],
+          "title": "Readiness",
+          "type": "string"
+        },
+        "redistributable": {
+          "title": "Redistributable",
+          "type": "boolean"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "source_id": {
+          "enum": [
+            "toolace",
+            "hermes_function_calling",
+            "tinyllm_devops",
+            "m6_domain_replay",
+            "m2_no_tool_replay"
+          ],
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "external",
+            "authored",
+            "registered_replay"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "source_kind",
+        "dataset_id",
+        "revision",
+        "license",
+        "mixture_basis_points",
+        "readiness",
+        "redistributable"
+      ],
+      "title": "M10AgentSourceSpec",
+      "type": "object"
+    },
+    "M10AgentSupervisionPolicy": {
+      "additionalProperties": false,
+      "description": "Loss-mask and reasoning policy for canonical Agent conversations.",
+      "properties": {
+        "assistant_final_answers": {
+          "const": true,
+          "title": "Assistant Final Answers",
+          "type": "boolean"
+        },
+        "assistant_tool_calls": {
+          "const": true,
+          "title": "Assistant Tool Calls",
+          "type": "boolean"
+        },
+        "mask_system_messages": {
+          "const": true,
+          "title": "Mask System Messages",
+          "type": "boolean"
+        },
+        "mask_tool_results": {
+          "const": true,
+          "title": "Mask Tool Results",
+          "type": "boolean"
+        },
+        "mask_user_messages": {
+          "const": true,
+          "title": "Mask User Messages",
+          "type": "boolean"
+        },
+        "preserve_native_dual_mode_with_m6_replay": {
+          "const": true,
+          "title": "Preserve Native Dual Mode With M6 Replay",
+          "type": "boolean"
+        },
+        "primary_mode": {
+          "const": "nonthinking",
+          "title": "Primary Mode",
+          "type": "string"
+        },
+        "synthetic_cot_teacher_data": {
+          "const": false,
+          "title": "Synthetic Cot Teacher Data",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "assistant_tool_calls",
+        "assistant_final_answers",
+        "mask_system_messages",
+        "mask_user_messages",
+        "mask_tool_results",
+        "primary_mode",
+        "preserve_native_dual_mode_with_m6_replay",
+        "synthetic_cot_teacher_data"
+      ],
+      "title": "M10AgentSupervisionPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Preregistered M10 mixture contract; it is not trainable until frozen.",
+  "properties": {
+    "config_version": {
+      "const": "m10-agent-data-v1",
+      "title": "Config Version",
+      "type": "string"
+    },
+    "contamination": {
+      "$ref": "#/$defs/M10AgentContaminationPolicy"
+    },
+    "dataset_name": {
+      "const": "tinyllm-agent-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "deduplication": {
+      "$ref": "#/$defs/M10AgentDedupPolicy"
+    },
+    "language_target": {
+      "$ref": "#/$defs/M10AgentLanguageTarget"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_length": {
+      "const": 2048,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "sources": {
+      "maxItems": 5,
+      "minItems": 5,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M10AgentSourceSpec"
+        },
+        {
+          "$ref": "#/$defs/M10AgentSourceSpec"
+        },
+        {
+          "$ref": "#/$defs/M10AgentSourceSpec"
+        },
+        {
+          "$ref": "#/$defs/M10AgentSourceSpec"
+        },
+        {
+          "$ref": "#/$defs/M10AgentSourceSpec"
+        }
+      ],
+      "title": "Sources",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "preregistered",
+        "frozen"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "supervision": {
+      "$ref": "#/$defs/M10AgentSupervisionPolicy"
+    },
+    "tokenizer_id": {
+      "const": "Qwen/Qwen3-0.6B",
+      "title": "Tokenizer Id",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    },
+    "training_permitted": {
+      "title": "Training Permitted",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "config_version",
+    "status",
+    "training_permitted",
+    "dataset_name",
+    "tokenizer_id",
+    "tokenizer_revision",
+    "sequence_length",
+    "sources",
+    "language_target",
+    "supervision",
+    "deduplication",
+    "contamination"
+  ],
+  "title": "M10AgentDataConfig",
+  "type": "object"
+}

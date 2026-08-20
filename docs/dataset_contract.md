@@ -159,6 +159,15 @@ SHA256 和处理配置哈希。Dataset Card 许可只描述数据集发布物，
 OASST 的 Prompter 行用于组装上下文，不单独计为候选训练样本；Manifest 因此分别记录
 `source_rows` 和 `candidate_samples`，不能用“原始行数 = 接收数 + 拒绝数”的错误假设。
 
+## 10. M10 Agent 后训练数据
+
+M10 在既有数据契约上增加 OpenAI 风格 Tool Schema、Assistant Tool Call、Tool Result 和最终
+回答。固定混合、监督掩码、来源身份、去重、密封 Release 边界和训练前闭锁详见
+[`m10_agent_training_contract.md`](m10_agent_training_contract.md)。
+
+M10 配置处于 `preregistered` 时只能执行来源验证与数据构建；五个来源全部冻结、污染检查
+通过并生成不可变 Dataset Manifest 后，才允许转为 `frozen` 并启动正式训练。
+
 导入产物仍不是可训练数据。只有完成规范化、Exact Dedup、分组切分、Tokenization、
 Packing 和注册，并产生最终 Dataset Manifest 后，Trainer 才能读取该版本。
 

@@ -1,0 +1,58 @@
+{
+  "additionalProperties": false,
+  "description": "Loss-mask and reasoning policy for canonical Agent conversations.",
+  "properties": {
+    "assistant_final_answers": {
+      "const": true,
+      "title": "Assistant Final Answers",
+      "type": "boolean"
+    },
+    "assistant_tool_calls": {
+      "const": true,
+      "title": "Assistant Tool Calls",
+      "type": "boolean"
+    },
+    "mask_system_messages": {
+      "const": true,
+      "title": "Mask System Messages",
+      "type": "boolean"
+    },
+    "mask_tool_results": {
+      "const": true,
+      "title": "Mask Tool Results",
+      "type": "boolean"
+    },
+    "mask_user_messages": {
+      "const": true,
+      "title": "Mask User Messages",
+      "type": "boolean"
+    },
+    "preserve_native_dual_mode_with_m6_replay": {
+      "const": true,
+      "title": "Preserve Native Dual Mode With M6 Replay",
+      "type": "boolean"
+    },
+    "primary_mode": {
+      "const": "nonthinking",
+      "title": "Primary Mode",
+      "type": "string"
+    },
+    "synthetic_cot_teacher_data": {
+      "const": false,
+      "title": "Synthetic Cot Teacher Data",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "assistant_tool_calls",
+    "assistant_final_answers",
+    "mask_system_messages",
+    "mask_user_messages",
+    "mask_tool_results",
+    "primary_mode",
+    "preserve_native_dual_mode_with_m6_replay",
+    "synthetic_cot_teacher_data"
+  ],
+  "title": "M10AgentSupervisionPolicy",
+  "type": "object"
+}

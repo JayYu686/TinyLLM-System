@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "description": "One immutable source artifact selected from a pinned dataset revision.",
+  "properties": {
+    "filename": {
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "title": "Filename",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "filename",
+    "size_bytes",
+    "sha256"
+  ],
+  "title": "M10AgentArtifactSpec",
+  "type": "object"
+}

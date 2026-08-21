@@ -251,10 +251,15 @@ from tinyllm.data.m10_devops import (
 from tinyllm.data.m10_devops import (
     scan_contamination as scan_m10_devops_contamination,
 )
+from tinyllm.data.m10_devops_review import (
+    M10DevOpsReviewError,
+    finalize_m10_devops_content_review,
+)
 from tinyllm.data.m10_devops_schema import (
     M10ContaminationTargetResult,
     M10DevOpsBuildReport,
     M10DevOpsContaminationReport,
+    M10DevOpsContentReviewResult,
     M10DevOpsDatasetManifest,
     M10DevOpsDuplicateReport,
     M10DevOpsFunctionCall,
@@ -545,6 +550,7 @@ __all__ = [
     "M10SourceRolePathCount",
     "M10ContaminationTargetResult",
     "M10DevOpsBuildReport",
+    "M10DevOpsContentReviewResult",
     "M10DevOpsContaminationReport",
     "M10DevOpsDataError",
     "M10DevOpsDatasetManifest",
@@ -553,11 +559,13 @@ __all__ = [
     "M10DevOpsToolCall",
     "M10DevOpsTrainingMessage",
     "M10DevOpsTrainingSample",
+    "M10DevOpsReviewError",
     "CATEGORY_COUNTS",
     "LANGUAGE_COUNTS",
     "build_devops_samples",
     "build_m10_devops_manifest",
     "build_m10_devops_public_report",
+    "finalize_m10_devops_content_review",
     "load_m10_devops_dataset",
     "scan_authored_duplicates",
     "scan_m10_devops_contamination",

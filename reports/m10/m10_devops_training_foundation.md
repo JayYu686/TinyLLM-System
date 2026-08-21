@@ -4,11 +4,13 @@
 
 M10 自建 DevOps 训练源已经完成确定性构建、Schema 校验、分组去重和四边界污染扫描。
 正式版本为 `m10-devops-training-v1-2ac97fcd`，完整 2,400 条 Canonical JSONL 与 80 条
-分层内容审查包均保存在私有 Artifact Store。当前内容审查状态为 `pending`，因此
-`training_permitted=false`；本报告不将机器校验替代为人工内容确认。
+分层内容审查包均保存在私有 Artifact Store。维护者已于 `2026-08-21T01:00:18Z` 确认
+80/80 条抽样轨迹，来源状态为 `approved`，允许进入完整 M10 混合构建。该批准不授权在最终
+混合、Token 配平和污染门禁完成前启动训练。
 
 公开的内容无关构建摘要见
-[`raw/m10_devops_training_build.json`](raw/m10_devops_training_build.json)。
+[`raw/m10_devops_training_build.json`](raw/m10_devops_training_build.json)，内容审查审批摘要见
+[`raw/m10_devops_content_review.json`](raw/m10_devops_content_review.json)。
 
 ## 数据构成
 
@@ -106,6 +108,11 @@ $TINYLLM_ARTIFACT_ROOT/reviews/m10-devops-training-v1-2ac97fcd/review_packet.md
 它按八个类别、两种语言各固定抽取五条，共 80 条，并隐藏重复的完整 Tool Schema 以便人工
 核对 Prompt、调用参数、Tool Result、最终结论和安全边界。
 
+审批记录将原始 Pending Manifest、Review Packet、Items、Duplicate Report 与 Contamination
+Report 的 SHA256 绑定到独立 Approved Manifest。原始数据目录保持不变；批准制品以原子目录
+提交并保留 Commit Marker。公开审批记录 SHA256 为
+`53c6ef815795010dc38c26ac618bbf92390c30efe73ab0bcda74bdea5ec577ed`。
+
 ## 当前门禁与下一步
 
 | 检查 | 状态 |
@@ -114,9 +121,10 @@ $TINYLLM_ARTIFACT_ROOT/reviews/m10-devops-training-v1-2ac97fcd/review_packet.md
 | Schema、消息哈希与调用配对 | 通过 |
 | Exact / 分组 Near Dedup | 通过 |
 | 四边界污染扫描 | 通过 |
-| 80 条分层内容审查 | 待人工确认 |
-| 允许进入完整 M10 混合 | 否 |
+| 80 条分层内容审查 | 80/80 通过 |
+| 允许进入完整 M10 混合 | 是 |
+| 完整 M10 混合冻结 | 待完成 |
+| 允许启动 M10 训练 | 否 |
 
-人工确认后才能签发 `review_status=approved` 的新 Manifest，并把该来源写入冻结的 M10 数据
-配置。随后进入两个外部来源的 Canonical Import、跨来源去重、Replay 接入、Tokenizer 实测
-监督 Token 配比和最终 Dataset Registry；在这些步骤完成前不启动 GPU 训练。
+下一步进入两个外部来源的 Canonical Import、跨来源去重、Replay 接入、Tokenizer 实测监督
+Token 配比和最终 Dataset Registry；在这些步骤完成前不启动 GPU 训练。

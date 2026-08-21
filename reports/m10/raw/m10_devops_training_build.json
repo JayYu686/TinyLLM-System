@@ -22,10 +22,10 @@
     "en": 1680,
     "zh": 720
   },
-  "manifest_sha256": "609e0124ecaa202f0973e023dd99e8844ffa3dbf3f0ca219070d4ccd9a4b019a",
+  "manifest_sha256": "f5d9c835ea6a3fcfe48602ed830045d552898ce750c8fcdb58a8d8bdaa04a477",
   "private_artifacts_only": true,
-  "review_status": "pending",
+  "review_status": "approved",
   "schema_version": "1.0",
-  "status": "review_pending",
-  "training_permitted": false
+  "status": "ready",
+  "training_permitted": true
 }

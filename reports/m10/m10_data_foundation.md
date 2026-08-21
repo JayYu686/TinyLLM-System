@@ -8,7 +8,7 @@ CPU 上完成真实哈希验证和内容无关画像；公开聚合与私有正�
 
 当前数据配置保持 `preregistered`、`training_permitted=false`。这是预期的失败闭锁状态：自建
 DevOps 训练轨迹已构建为 `m10-devops-training-v1-2ac97fcd`，真实去重与四边界污染扫描通过；
-80 条分层内容审查仍待人工确认，M10 正式训练尚未启动。详见
+80 条分层内容审查已由维护者全部确认，自建来源获准进入完整混合构建；M10 正式训练仍未启动。详见
 [`m10_devops_training_foundation.md`](m10_devops_training_foundation.md)。
 
 ## 固定混合
@@ -17,7 +17,7 @@ DevOps 训练轨迹已构建为 `m10-devops-training-v1-2ac97fcd`，真实去重
 | -- | --: | -- |
 | ToolACE | 30% | Artifact 与许可证据已固定 |
 | Hermes Function Calling | 20% | Artifact 与许可证据已固定 |
-| TinyLLM DevOps 轨迹 | 20% | 待构建与审查 |
+| TinyLLM DevOps 轨迹 | 20% | 2,400 条已冻结；内容审查通过 |
 | M6 领域能力 Replay | 20% | Dataset Version、内容与 Manifest 哈希已固定 |
 | M2 No-tool Replay | 10% | Dataset Version、内容与 Manifest 哈希已固定 |
 
@@ -74,10 +74,10 @@ Tool 参数、Tool Result、绝对路径、用户名或主机名。
 | ToolACE/Hermes 固定 Artifact 哈希 | 通过 |
 | 安全 Tool Call 解析和合成失败路径 | 通过 |
 | 真实外部源内容无关画像 | 通过 |
-| DevOps 自建训练轨迹 | 2,400 条已构建，待人工内容确认 |
+| DevOps 自建训练轨迹 | 2,400 条已构建；80/80 内容审查通过 |
 | 跨来源 Exact/Near Dedup | 待数据齐备后执行 |
 | M9 Dev/Release、BFCL、M6 污染检查 | 自建来源通过；完整混合待执行 |
 | Frozen Dataset Manifest | 待完成 |
 
-下一批工作是确认 80 条 DevOps Agent 分层审查样本，再实现 Canonical Importer、跨来源去重、
-Replay 接入、污染闭锁、Token 配平和注册。当前无需占用 GPU。
+下一批工作是实现 Canonical Importer、跨来源去重、Replay 接入、污染闭锁、Token 配平和注册。
+当前无需占用 GPU。

@@ -27,7 +27,7 @@ M9 的 160 条 Release 在 M10 正式评测前保持密封，只用于最终污�
 | -- | -- | --: | -- |
 | ToolACE | `lockon/ToolACE@6bda777...`，`data.json` | 30% | 已固定 |
 | Hermes Function Calling | `NousResearch/hermes-function-calling-v1@dae3e1d...`，`func-calling.json` | 20% | 已固定 |
-| TinyLLM DevOps 轨迹 | `tinyllm/devops-agent-training` | 20% | 待构建和内容审查 |
+| TinyLLM DevOps 轨迹 | `tinyllm/devops-agent-training` | 20% | 2,400 条已冻结；80 条分层审查通过 |
 | M6 领域能力 Replay | `m6-domain-generalization-mixture-v2-f2e029e4` | 20% | 已注册 |
 | M2 No-tool Replay | `m2-sft-v1-f82ff32e` | 10% | 已注册 |
 
@@ -133,6 +133,10 @@ Config 和 Dataset Manifest：
 5. 实际监督 Token 比例和 70/30 语言比例达到契约；
 6. Canonical JSONL、Rejected JSONL、Shard、Manifest 与 Commit Marker 原子写入并校验；
 7. 同一输入、配置、Seed 和代码版本重复构建得到相同内容哈希。
+
+自建 DevOps 来源已通过第 2 项，并以独立审批记录绑定 Pending Manifest、审查包、去重与污染
+报告。该批准只允许来源进入完整混合构建；在其余四个来源、Token 配平和最终 Manifest 完成前，
+不得把来源级批准解释为 M10 训练许可。
 
 ## 8. 训练与评测阶段
 

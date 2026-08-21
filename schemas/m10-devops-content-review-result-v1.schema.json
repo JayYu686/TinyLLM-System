@@ -1,0 +1,158 @@
+{
+  "additionalProperties": false,
+  "description": "Path-free maintainer approval bound to one immutable review packet.",
+  "properties": {
+    "approved_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Approved Manifest Sha256",
+      "type": "string"
+    },
+    "authored_source_authorized": {
+      "const": true,
+      "default": true,
+      "title": "Authored Source Authorized",
+      "type": "boolean"
+    },
+    "category_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "single_tool",
+          "no_tool",
+          "wrong_tool_irrelevance",
+          "missing_argument_clarification",
+          "sequential_multi_step",
+          "parallel_independent_tools",
+          "tool_failure_recovery",
+          "grounding_approval_security"
+        ]
+      },
+      "title": "Category Counts",
+      "type": "object"
+    },
+    "full_m10_mixture_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Full M10 Mixture Authorized",
+      "type": "boolean"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "m10_training_authorized": {
+      "const": false,
+      "default": false,
+      "title": "M10 Training Authorized",
+      "type": "boolean"
+    },
+    "passed_items": {
+      "const": 80,
+      "default": 80,
+      "title": "Passed Items",
+      "type": "integer"
+    },
+    "rejected_items": {
+      "const": 0,
+      "default": 0,
+      "title": "Rejected Items",
+      "type": "integer"
+    },
+    "review_version": {
+      "const": "m10-devops-content-review-v1",
+      "default": "m10-devops-content-review-v1",
+      "title": "Review Version",
+      "type": "string"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "reviewed_items": {
+      "const": 80,
+      "default": 80,
+      "title": "Reviewed Items",
+      "type": "integer"
+    },
+    "reviewer_role": {
+      "const": "maintainer",
+      "default": "maintainer",
+      "title": "Reviewer Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_contamination_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Contamination Report Sha256",
+      "type": "string"
+    },
+    "source_content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Content Sha256",
+      "type": "string"
+    },
+    "source_dataset_version": {
+      "pattern": "^m10-devops-training-v1-[0-9a-f]{8}$",
+      "title": "Source Dataset Version",
+      "type": "string"
+    },
+    "source_duplicate_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Duplicate Report Sha256",
+      "type": "string"
+    },
+    "source_items_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Items Sha256",
+      "type": "string"
+    },
+    "source_pending_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Pending Manifest Sha256",
+      "type": "string"
+    },
+    "source_review_packet_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Review Packet Sha256",
+      "type": "string"
+    },
+    "status": {
+      "const": "approved",
+      "default": "approved",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reviewed_at",
+    "source_dataset_version",
+    "source_pending_manifest_sha256",
+    "source_items_sha256",
+    "source_content_sha256",
+    "source_review_packet_sha256",
+    "source_duplicate_report_sha256",
+    "source_contamination_report_sha256",
+    "approved_manifest_sha256",
+    "category_counts",
+    "language_counts"
+  ],
+  "title": "M10DevOpsContentReviewResult",
+  "type": "object"
+}

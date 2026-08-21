@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,10 @@ from tinyllm.data.m10_devops import (
     scan_authored_duplicates,
     scan_contamination,
     write_dataset,
+)
+from tinyllm.data.m10_devops_review import (
+    M10DevOpsReviewError,
+    finalize_m10_devops_content_review,
 )
 from tinyllm.data.m10_devops_schema import (
     M10DevOpsBuildReport,
@@ -224,6 +229,52 @@ def test_public_report_cannot_claim_ready_before_review(
     assert report.status == "review_pending"
     assert report.training_permitted is False
     assert report.private_artifacts_only is True
+
+
+def test_maintainer_review_binds_packet_and_preserves_pending_source(
+    tmp_path: Path, samples: tuple[M10DevOpsTrainingSample, ...]
+) -> None:
+    pending = build_manifest(samples)
+    duplicate = scan_authored_duplicates(samples)
+    targets = tuple(
+        ContaminationTarget(
+            target_id=target_id,
+            version=f"{target_id}-v1",
+            content_sha256=canonical_json_sha256([target_id]),
+            prompts=(f"review target {target_id} alpha beta gamma delta epsilon",),
+        )
+        for target_id in ("m9_dev", "m9_release", "bfcl_core", "m6_domain")
+    )
+    contamination = scan_contamination(samples, pending, targets)
+    dataset_dir = write_dataset(tmp_path / "datasets", samples, pending, duplicate, contamination)
+    packet_path = tmp_path / "review_packet.md"
+    packet_path.write_text(render_review_packet(samples, pending), encoding="utf-8")
+
+    result, approved, public = finalize_m10_devops_content_review(
+        dataset_dir=dataset_dir,
+        review_packet_path=packet_path,
+        reviewed_at=datetime(2026, 8, 21, 1, 2, 3, tzinfo=UTC),
+    )
+
+    assert result.status == "approved"
+    assert result.reviewed_items == result.passed_items == 80
+    assert result.authored_source_authorized is True
+    assert result.full_m10_mixture_authorized is False
+    assert result.m10_training_authorized is False
+    assert approved.review_status == "approved"
+    assert approved.content_sha256 == pending.content_sha256
+    assert public.status == "ready"
+    assert public.training_permitted is True
+    loaded_pending, _ = load_dataset(dataset_dir)
+    assert loaded_pending.review_status == "pending"
+
+    packet_path.write_text("tampered\n", encoding="utf-8")
+    with pytest.raises(M10DevOpsReviewError, match="packet differs"):
+        finalize_m10_devops_content_review(
+            dataset_dir=dataset_dir,
+            review_packet_path=packet_path,
+            reviewed_at=datetime(2026, 8, 21, 1, 2, 3, tzinfo=UTC),
+        )
 
 
 def test_message_schema_rejects_mask_hash_and_visible_reasoning() -> None:

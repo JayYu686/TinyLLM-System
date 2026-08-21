@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
@@ -339,4 +340,58 @@ class M10DevOpsBuildReport(StrictSchema):
             "ready" if ready else "review_pending"
         ):
             raise ValueError("M10 authored build status is inconsistent")
+        return self
+
+
+class M10DevOpsContentReviewResult(StrictSchema):
+    """Path-free maintainer approval bound to one immutable review packet."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    review_version: Literal["m10-devops-content-review-v1"] = "m10-devops-content-review-v1"
+    reviewed_at: datetime
+    status: Literal["approved"] = "approved"
+    reviewer_role: Literal["maintainer"] = "maintainer"
+    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v1-[0-9a-f]{8}$")
+    source_pending_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_items_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_content_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_review_packet_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_duplicate_report_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_contamination_report_sha256: str = Field(pattern=SHA256_PATTERN)
+    approved_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    reviewed_items: Literal[80] = 80
+    passed_items: Literal[80] = 80
+    rejected_items: Literal[0] = 0
+    category_counts: dict[M10DevOpsCategory, int]
+    language_counts: dict[M10DevOpsLanguage, int]
+    authored_source_authorized: Literal[True] = True
+    full_m10_mixture_authorized: Literal[False] = False
+    m10_training_authorized: Literal[False] = False
+
+    @field_validator("reviewed_at")
+    @classmethod
+    def require_utc(cls, value: datetime) -> datetime:
+        offset = value.utcoffset()
+        if value.tzinfo is None or offset is None or offset.total_seconds() != 0:
+            raise ValueError("M10 DevOps review timestamp must use UTC")
+        return value
+
+    @model_validator(mode="after")
+    def validate_review(self) -> M10DevOpsContentReviewResult:
+        expected_categories = {
+            "single_tool": 10,
+            "no_tool": 10,
+            "wrong_tool_irrelevance": 10,
+            "missing_argument_clarification": 10,
+            "sequential_multi_step": 10,
+            "parallel_independent_tools": 10,
+            "tool_failure_recovery": 10,
+            "grounding_approval_security": 10,
+        }
+        if (
+            self.passed_items + self.rejected_items != self.reviewed_items
+            or self.category_counts != expected_categories
+            or self.language_counts != {"en": 40, "zh": 40}
+        ):
+            raise ValueError("M10 DevOps content-review accounting is inconsistent")
         return self

@@ -180,7 +180,7 @@ sequenceDiagram
 | M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
 | M8 DevOps agent | Complete | Tool calling 8/8; MCP, LangGraph, FTS5 retrieval, explicit approval, and restart recovery |
 | M9 agent evaluation | Complete | Frozen 240-task DevOps Agent Suite; three parent baselines; 5,520/5,520 BFCL items with zero inference failures |
-| M10 agent post-training | In progress | Data contract, external-source profile, 2,400 DevOps trajectories, and the stratified 80-item content review are complete; full mixture, 0.6B Full SFT, 8B LoRA, and Agent Model Gate remain |
+| M10 agent post-training | In progress | Data contract, 12,592 external canonical records, 2,400 DevOps trajectories, and the stratified 80-item content review are complete; full mixture, 0.6B Full SFT, 8B LoRA, and Agent Model Gate remain |
 
 Milestone status represents a combined gate across implementation, tests, smoke runs,
 failure paths, real reports, and documentation. Evidence entry points:

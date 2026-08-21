@@ -1,0 +1,51 @@
+{
+  "contains_source_content": false,
+  "report_version": "m10-external-canonical-import-v1",
+  "schema_version": "1.0",
+  "sources": [
+    {
+      "accepted_rows": 10770,
+      "content_sha256": "5ff7e19533e330722975605a03d0e8bedb2c0295dace04a6e93d7486b9c8dcca",
+      "import_version": "m10-toolace-canonical-v1-5ff7e195",
+      "language_counts": {
+        "en": 10763,
+        "zh": 7
+      },
+      "manifest_sha256": "8b185ce98d9b6eb7fa6ffce6b6b8f031c548941f0f8811f73f8deb7f038b4080",
+      "masked_messages": 24042,
+      "rejected_rows": 530,
+      "rejection_counts": {
+        "invalid_row_shape": 5,
+        "invalid_tool_schema": 524,
+        "malformed_tool_call": 1
+      },
+      "source_id": "toolace",
+      "source_rows": 11300,
+      "supervised_messages": 13272,
+      "tool_calls": 18139
+    },
+    {
+      "accepted_rows": 1822,
+      "content_sha256": "fb8b61ba289fe192afe5c815fb5b58a57ac4d75337b8fea49409e915df2d7be1",
+      "import_version": "m10-hermes-canonical-v1-fb8b61ba",
+      "language_counts": {
+        "en": 1822
+      },
+      "manifest_sha256": "88ee87fdd108c6c1f226016288495a3062696417364fe800a6034103a6f892a9",
+      "masked_messages": 4734,
+      "rejected_rows": 71,
+      "rejection_counts": {
+        "invalid_role_path": 10,
+        "invalid_tool_schema": 61
+      },
+      "source_id": "hermes_function_calling",
+      "source_rows": 1893,
+      "supervised_messages": 2749,
+      "tool_calls": 2920
+    }
+  ],
+  "status": "pass",
+  "total_accepted_rows": 12592,
+  "total_rejected_rows": 601,
+  "total_source_rows": 13193
+}

@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "M10CanonicalToolCall": {
+      "additionalProperties": false,
+      "description": "One normalized assistant function call.",
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "call_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Call Sha256",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^call_[a-z0-9_]{3,160}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "arguments",
+        "call_sha256"
+      ],
+      "title": "M10CanonicalToolCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One message with an immutable assistant-only loss decision.",
+  "properties": {
+    "content": {
+      "anyOf": [
+        {
+          "maxLength": 524288,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content"
+    },
+    "message_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Message Sha256",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "system",
+        "user",
+        "assistant",
+        "tool"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "supervised": {
+      "title": "Supervised",
+      "type": "boolean"
+    },
+    "tool_call_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Tool Call Ids",
+      "type": "array"
+    },
+    "tool_calls": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M10CanonicalToolCall"
+      },
+      "maxItems": 32,
+      "title": "Tool Calls",
+      "type": "array"
+    }
+  },
+  "required": [
+    "role",
+    "supervised",
+    "message_sha256"
+  ],
+  "title": "M10CanonicalMessage",
+  "type": "object"
+}

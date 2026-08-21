@@ -25,8 +25,8 @@ M9 的 160 条 Release 在 M10 正式评测前保持密封，只用于最终污�
 
 | 来源 | 固定身份 | 监督 Token 比例 | 当前状态 |
 | -- | -- | --: | -- |
-| ToolACE | `lockon/ToolACE@6bda777...`，`data.json` | 30% | 已固定 |
-| Hermes Function Calling | `NousResearch/hermes-function-calling-v1@dae3e1d...`，`func-calling.json` | 20% | 已固定 |
+| ToolACE | `lockon/ToolACE@6bda777...`，`data.json` | 30% | Canonical `5ff7e195` 已提交 |
+| Hermes Function Calling | `NousResearch/hermes-function-calling-v1@dae3e1d...`，`func-calling.json` | 20% | Canonical `fb8b61ba` 已提交 |
 | TinyLLM DevOps 轨迹 | `tinyllm/devops-agent-training` | 20% | 2,400 条已冻结；80 条分层审查通过 |
 | M6 领域能力 Replay | `m6-domain-generalization-mixture-v2-f2e029e4` | 20% | 已注册 |
 | M2 No-tool Replay | `m2-sft-v1-f82ff32e` | 10% | 已注册 |

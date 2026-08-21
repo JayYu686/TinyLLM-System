@@ -1,0 +1,177 @@
+{
+  "$defs": {
+    "M10ExternalImportSummary": {
+      "additionalProperties": false,
+      "description": "Path-free public summary for one private canonical import.",
+      "properties": {
+        "accepted_rows": {
+          "minimum": 0,
+          "title": "Accepted Rows",
+          "type": "integer"
+        },
+        "content_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "import_version": {
+          "pattern": "^m10-(?:toolace|hermes)-canonical-v1-[0-9a-f]{8}$",
+          "title": "Import Version",
+          "type": "string"
+        },
+        "language_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "en",
+              "zh"
+            ]
+          },
+          "title": "Language Counts",
+          "type": "object"
+        },
+        "manifest_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "masked_messages": {
+          "minimum": 0,
+          "title": "Masked Messages",
+          "type": "integer"
+        },
+        "rejected_rows": {
+          "minimum": 0,
+          "title": "Rejected Rows",
+          "type": "integer"
+        },
+        "rejection_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "invalid_row_shape",
+              "invalid_role_path",
+              "invalid_tool_schema",
+              "malformed_tool_call",
+              "unpaired_tool_result",
+              "visible_reasoning"
+            ]
+          },
+          "title": "Rejection Counts",
+          "type": "object"
+        },
+        "source_id": {
+          "enum": [
+            "toolace",
+            "hermes_function_calling"
+          ],
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_rows": {
+          "exclusiveMinimum": 0,
+          "title": "Source Rows",
+          "type": "integer"
+        },
+        "supervised_messages": {
+          "minimum": 0,
+          "title": "Supervised Messages",
+          "type": "integer"
+        },
+        "tool_calls": {
+          "minimum": 0,
+          "title": "Tool Calls",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_id",
+        "import_version",
+        "manifest_sha256",
+        "content_sha256",
+        "source_rows",
+        "accepted_rows",
+        "rejected_rows",
+        "rejection_counts",
+        "language_counts",
+        "supervised_messages",
+        "masked_messages",
+        "tool_calls"
+      ],
+      "title": "M10ExternalImportSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Combined content-free evidence for both frozen external sources.",
+  "properties": {
+    "contains_source_content": {
+      "const": false,
+      "default": false,
+      "title": "Contains Source Content",
+      "type": "boolean"
+    },
+    "report_version": {
+      "const": "m10-external-canonical-import-v1",
+      "default": "m10-external-canonical-import-v1",
+      "title": "Report Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sources": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M10ExternalImportSummary"
+        },
+        {
+          "$ref": "#/$defs/M10ExternalImportSummary"
+        }
+      ],
+      "title": "Sources",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "total_accepted_rows": {
+      "minimum": 0,
+      "title": "Total Accepted Rows",
+      "type": "integer"
+    },
+    "total_rejected_rows": {
+      "minimum": 0,
+      "title": "Total Rejected Rows",
+      "type": "integer"
+    },
+    "total_source_rows": {
+      "exclusiveMinimum": 0,
+      "title": "Total Source Rows",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "status",
+    "sources",
+    "total_source_rows",
+    "total_accepted_rows",
+    "total_rejected_rows"
+  ],
+  "title": "M10ExternalImportReport",
+  "type": "object"
+}

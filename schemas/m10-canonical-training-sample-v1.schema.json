@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "M10CanonicalMessage": {
+      "additionalProperties": false,
+      "description": "One message with an immutable assistant-only loss decision.",
+      "properties": {
+        "content": {
+          "anyOf": [
+            {
+              "maxLength": 524288,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content"
+        },
+        "message_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Message Sha256",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "system",
+            "user",
+            "assistant",
+            "tool"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "supervised": {
+          "title": "Supervised",
+          "type": "boolean"
+        },
+        "tool_call_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Tool Call Ids",
+          "type": "array"
+        },
+        "tool_calls": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M10CanonicalToolCall"
+          },
+          "maxItems": 32,
+          "title": "Tool Calls",
+          "type": "array"
+        }
+      },
+      "required": [
+        "role",
+        "supervised",
+        "message_sha256"
+      ],
+      "title": "M10CanonicalMessage",
+      "type": "object"
+    },
+    "M10CanonicalToolCall": {
+      "additionalProperties": false,
+      "description": "One normalized assistant function call.",
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "call_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Call Sha256",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^call_[a-z0-9_]{3,160}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "arguments",
+        "call_sha256"
+      ],
+      "title": "M10CanonicalToolCall",
+      "type": "object"
+    },
+    "M10CanonicalToolDefinition": {
+      "additionalProperties": false,
+      "description": "One normalized OpenAI function definition.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 16384,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "input_schema": {
+          "additionalProperties": true,
+          "title": "Input Schema",
+          "type": "object"
+        },
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "tool_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Tool Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "input_schema",
+        "tool_sha256"
+      ],
+      "title": "M10CanonicalToolDefinition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One canonical external Agent conversation.",
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "group_id": {
+      "pattern": "^group-(?:toolace|hermes)-[0-9a-f]{16}$",
+      "title": "Group Id",
+      "type": "string"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "license": {
+      "const": "Apache-2.0",
+      "default": "Apache-2.0",
+      "title": "License",
+      "type": "string"
+    },
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/M10CanonicalMessage"
+      },
+      "maxItems": 128,
+      "minItems": 3,
+      "title": "Messages",
+      "type": "array"
+    },
+    "mode": {
+      "const": "nonthinking",
+      "default": "nonthinking",
+      "title": "Mode",
+      "type": "string"
+    },
+    "prompt_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_id": {
+      "enum": [
+        "toolace",
+        "hermes_function_calling"
+      ],
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_record_id": {
+      "pattern": "^(?:toolace|hermes)-[a-z0-9_-]{1,128}$",
+      "title": "Source Record Id",
+      "type": "string"
+    },
+    "source_record_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Record Sha256",
+      "type": "string"
+    },
+    "source_revision": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "tool_schema_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Tool Schema Sha256",
+      "type": "string"
+    },
+    "tools": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M10CanonicalToolDefinition"
+      },
+      "maxItems": 256,
+      "title": "Tools",
+      "type": "array"
+    }
+  },
+  "required": [
+    "source_id",
+    "source_revision",
+    "source_record_id",
+    "source_record_sha256",
+    "language",
+    "group_id",
+    "messages",
+    "prompt_sha256",
+    "tool_schema_sha256",
+    "content_sha256"
+  ],
+  "title": "M10CanonicalTrainingSample",
+  "type": "object"
+}

@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "description": "One normalized assistant function call.",
+  "properties": {
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
+    },
+    "call_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Call Sha256",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^call_[a-z0-9_]{3,160}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+      "title": "Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "arguments",
+    "call_sha256"
+  ],
+  "title": "M10CanonicalToolCall",
+  "type": "object"
+}

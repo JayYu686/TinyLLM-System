@@ -17,6 +17,8 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 - recorded maintainer approval of the stratified 80-item DevOps content review in an immutable,
   hash-bound approval artifact; the authored source may now enter mixture construction while the
   full M10 mixture and training remain blocked.
+- canonicalized all 13,193 pinned ToolACE/Hermes rows into strict assistant-only supervision
+  records, accepting 12,592 and isolating 601 under stable reasons with atomic private artifacts.
 
 ## 0.9.0-rc.1 - 2026-08-20
 

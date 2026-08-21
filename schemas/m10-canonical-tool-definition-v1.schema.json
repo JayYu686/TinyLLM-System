@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "description": "One normalized OpenAI function definition.",
+  "properties": {
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 16384,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "input_schema": {
+      "additionalProperties": true,
+      "title": "Input Schema",
+      "type": "object"
+    },
+    "name": {
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+      "title": "Name",
+      "type": "string"
+    },
+    "tool_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Tool Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "input_schema",
+    "tool_sha256"
+  ],
+  "title": "M10CanonicalToolDefinition",
+  "type": "object"
+}

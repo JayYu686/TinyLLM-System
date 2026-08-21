@@ -1,0 +1,147 @@
+{
+  "additionalProperties": false,
+  "description": "Committed identity and aggregate facts for one external canonical source.",
+  "properties": {
+    "accepted_rows": {
+      "minimum": 0,
+      "title": "Accepted Rows",
+      "type": "integer"
+    },
+    "contains_evaluation_content": {
+      "const": false,
+      "default": false,
+      "title": "Contains Evaluation Content",
+      "type": "boolean"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_id": {
+      "minLength": 1,
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "import_version": {
+      "pattern": "^m10-(?:toolace|hermes)-canonical-v1-[0-9a-f]{8}$",
+      "title": "Import Version",
+      "type": "string"
+    },
+    "items_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Items Sha256",
+      "type": "string"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "masked_messages": {
+      "minimum": 0,
+      "title": "Masked Messages",
+      "type": "integer"
+    },
+    "rejected_rows": {
+      "minimum": 0,
+      "title": "Rejected Rows",
+      "type": "integer"
+    },
+    "rejected_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Rejected Sha256",
+      "type": "string"
+    },
+    "rejection_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "invalid_row_shape",
+          "invalid_role_path",
+          "invalid_tool_schema",
+          "malformed_tool_call",
+          "unpaired_tool_result",
+          "visible_reasoning"
+        ]
+      },
+      "title": "Rejection Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Artifact Sha256",
+      "type": "string"
+    },
+    "source_id": {
+      "enum": [
+        "toolace",
+        "hermes_function_calling"
+      ],
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_revision": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "source_rows": {
+      "exclusiveMinimum": 0,
+      "title": "Source Rows",
+      "type": "integer"
+    },
+    "status": {
+      "const": "committed",
+      "default": "committed",
+      "title": "Status",
+      "type": "string"
+    },
+    "supervised_messages": {
+      "minimum": 0,
+      "title": "Supervised Messages",
+      "type": "integer"
+    },
+    "tool_calls": {
+      "minimum": 0,
+      "title": "Tool Calls",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "import_version",
+    "source_id",
+    "dataset_id",
+    "source_revision",
+    "source_artifact_sha256",
+    "source_rows",
+    "accepted_rows",
+    "rejected_rows",
+    "rejection_counts",
+    "language_counts",
+    "supervised_messages",
+    "masked_messages",
+    "tool_calls",
+    "items_sha256",
+    "rejected_sha256",
+    "content_sha256"
+  ],
+  "title": "M10ExternalImportManifest",
+  "type": "object"
+}

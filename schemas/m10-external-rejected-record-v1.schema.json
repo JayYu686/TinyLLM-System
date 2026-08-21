@@ -1,0 +1,50 @@
+{
+  "additionalProperties": false,
+  "description": "One private rejected source row with content-free identity.",
+  "properties": {
+    "reason": {
+      "enum": [
+        "invalid_row_shape",
+        "invalid_role_path",
+        "invalid_tool_schema",
+        "malformed_tool_call",
+        "unpaired_tool_result",
+        "visible_reasoning"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "row_index": {
+      "minimum": 0,
+      "title": "Row Index",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_id": {
+      "enum": [
+        "toolace",
+        "hermes_function_calling"
+      ],
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_record_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Record Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_id",
+    "row_index",
+    "source_record_sha256",
+    "reason"
+  ],
+  "title": "M10ExternalRejectedRecord",
+  "type": "object"
+}

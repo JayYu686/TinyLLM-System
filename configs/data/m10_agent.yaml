@@ -82,6 +82,8 @@ deduplication:
     - tool_schema
   near_duplicate_threshold_basis_points: 8500
   cross_source_before_split: true
+  prompt_match_required: true
+  shared_protocol_schema_match_alone_is_duplicate: false
 contamination:
   targets:
     - target_id: m9_dev

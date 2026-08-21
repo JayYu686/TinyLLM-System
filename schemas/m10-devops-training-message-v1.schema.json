@@ -1,0 +1,130 @@
+{
+  "$defs": {
+    "M10DevOpsFunctionCall": {
+      "additionalProperties": false,
+      "description": "One normalized OpenAI function invocation.",
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "arguments"
+      ],
+      "title": "M10DevOpsFunctionCall",
+      "type": "object"
+    },
+    "M10DevOpsToolCall": {
+      "additionalProperties": false,
+      "description": "One assistant tool call with a stable conversation-local identifier.",
+      "properties": {
+        "function": {
+          "$ref": "#/$defs/M10DevOpsFunctionCall"
+        },
+        "id": {
+          "pattern": "^call_[a-z0-9_]{3,120}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "function",
+          "default": "function",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "function"
+      ],
+      "title": "M10DevOpsToolCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One canonical message and its immutable supervision decision.",
+  "properties": {
+    "content": {
+      "anyOf": [
+        {
+          "maxLength": 262144,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content"
+    },
+    "message_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Message Sha256",
+      "type": "string"
+    },
+    "name": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Name"
+    },
+    "role": {
+      "enum": [
+        "system",
+        "user",
+        "assistant",
+        "tool"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "supervised": {
+      "title": "Supervised",
+      "type": "boolean"
+    },
+    "tool_call_id": {
+      "anyOf": [
+        {
+          "pattern": "^call_[a-z0-9_]{3,120}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tool Call Id"
+    },
+    "tool_calls": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M10DevOpsToolCall"
+      },
+      "maxItems": 8,
+      "title": "Tool Calls",
+      "type": "array"
+    }
+  },
+  "required": [
+    "role",
+    "supervised",
+    "message_sha256"
+  ],
+  "title": "M10DevOpsTrainingMessage",
+  "type": "object"
+}

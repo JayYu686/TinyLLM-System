@@ -166,7 +166,7 @@ sequenceDiagram
 | M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
 | M8 DevOps Agent | 已完成 | Tool Calling 8/8；MCP、LangGraph、FTS5 证据检索、显式审批与重启恢复 |
 | M9 Agent 评测 | 已完成 | 240 条 DevOps Agent Suite 冻结；三组父模型基线；BFCL 共 5,520/5,520 条且 0 推理失败 |
-| M10 Agent 后训练 | 计划中 | 0.6B Full SFT、8B LoRA 与 Agent Model Gate |
+| M10 Agent 后训练 | 进行中 | 数据契约、外部源画像、2,400 条 DevOps 轨迹及 80 条分层内容审查已完成；完整混合、0.6B Full SFT、8B LoRA 与 Agent Model Gate 待完成 |
 
 当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
 详细证据可从以下入口查看：

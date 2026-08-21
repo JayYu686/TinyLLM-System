@@ -232,6 +232,41 @@ from tinyllm.data.m10_agent_schema import (
     M10SourceRejectionCount,
     M10SourceRolePathCount,
 )
+from tinyllm.data.m10_devops import (
+    CATEGORY_COUNTS,
+    LANGUAGE_COUNTS,
+    M10DevOpsDataError,
+    build_devops_samples,
+    scan_authored_duplicates,
+)
+from tinyllm.data.m10_devops import (
+    build_manifest as build_m10_devops_manifest,
+)
+from tinyllm.data.m10_devops import (
+    build_public_report as build_m10_devops_public_report,
+)
+from tinyllm.data.m10_devops import (
+    load_dataset as load_m10_devops_dataset,
+)
+from tinyllm.data.m10_devops import (
+    scan_contamination as scan_m10_devops_contamination,
+)
+from tinyllm.data.m10_devops_review import (
+    M10DevOpsReviewError,
+    finalize_m10_devops_content_review,
+)
+from tinyllm.data.m10_devops_schema import (
+    M10ContaminationTargetResult,
+    M10DevOpsBuildReport,
+    M10DevOpsContaminationReport,
+    M10DevOpsContentReviewResult,
+    M10DevOpsDatasetManifest,
+    M10DevOpsDuplicateReport,
+    M10DevOpsFunctionCall,
+    M10DevOpsToolCall,
+    M10DevOpsTrainingMessage,
+    M10DevOpsTrainingSample,
+)
 from tinyllm.data.packing import (
     DatasetBuild,
     PackingError,
@@ -513,6 +548,27 @@ __all__ = [
     "M10ExternalSourceProfileReport",
     "M10SourceRejectionCount",
     "M10SourceRolePathCount",
+    "M10ContaminationTargetResult",
+    "M10DevOpsBuildReport",
+    "M10DevOpsContentReviewResult",
+    "M10DevOpsContaminationReport",
+    "M10DevOpsDataError",
+    "M10DevOpsDatasetManifest",
+    "M10DevOpsDuplicateReport",
+    "M10DevOpsFunctionCall",
+    "M10DevOpsToolCall",
+    "M10DevOpsTrainingMessage",
+    "M10DevOpsTrainingSample",
+    "M10DevOpsReviewError",
+    "CATEGORY_COUNTS",
+    "LANGUAGE_COUNTS",
+    "build_devops_samples",
+    "build_m10_devops_manifest",
+    "build_m10_devops_public_report",
+    "finalize_m10_devops_content_review",
+    "load_m10_devops_dataset",
+    "scan_authored_duplicates",
+    "scan_m10_devops_contamination",
     "M6DomainGeneralizationMixtureManifest",
     "M6GateRepairMixtureManifest",
     "M6GateRepairTask",

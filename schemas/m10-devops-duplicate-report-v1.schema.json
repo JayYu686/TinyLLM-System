@@ -1,0 +1,86 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free exact and near-duplicate scan result.",
+  "properties": {
+    "algorithm": {
+      "const": "minhash-5gram-lsh-v1",
+      "default": "minhash-5gram-lsh-v1",
+      "title": "Algorithm",
+      "type": "string"
+    },
+    "clustered_near_duplicate_pairs": {
+      "minimum": 0,
+      "title": "Clustered Near Duplicate Pairs",
+      "type": "integer"
+    },
+    "cross_group_near_duplicate_pairs": {
+      "minimum": 0,
+      "title": "Cross Group Near Duplicate Pairs",
+      "type": "integer"
+    },
+    "exact_duplicate_pairs": {
+      "minimum": 0,
+      "title": "Exact Duplicate Pairs",
+      "type": "integer"
+    },
+    "item_count": {
+      "const": 2400,
+      "default": 2400,
+      "title": "Item Count",
+      "type": "integer"
+    },
+    "maximum_candidate_prompt_similarity_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Maximum Candidate Prompt Similarity Basis Points",
+      "type": "integer"
+    },
+    "permutation_count": {
+      "const": 128,
+      "default": 128,
+      "title": "Permutation Count",
+      "type": "integer"
+    },
+    "report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Report Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "shared_tool_schema_alone_is_match": {
+      "const": false,
+      "default": false,
+      "title": "Shared Tool Schema Alone Is Match",
+      "type": "boolean"
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "threshold_basis_points": {
+      "const": 8500,
+      "default": 8500,
+      "title": "Threshold Basis Points",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "exact_duplicate_pairs",
+    "clustered_near_duplicate_pairs",
+    "cross_group_near_duplicate_pairs",
+    "maximum_candidate_prompt_similarity_basis_points",
+    "status",
+    "report_sha256"
+  ],
+  "title": "M10DevOpsDuplicateReport",
+  "type": "object"
+}

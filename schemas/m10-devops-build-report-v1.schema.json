@@ -1,0 +1,145 @@
+{
+  "additionalProperties": false,
+  "description": "Public, path-free summary of one authored-source build.",
+  "properties": {
+    "category_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "single_tool",
+          "no_tool",
+          "wrong_tool_irrelevance",
+          "missing_argument_clarification",
+          "sequential_multi_step",
+          "parallel_independent_tools",
+          "tool_failure_recovery",
+          "grounding_approval_security"
+        ]
+      },
+      "title": "Category Counts",
+      "type": "object"
+    },
+    "contains_source_or_evaluation_content": {
+      "const": false,
+      "default": false,
+      "title": "Contains Source Or Evaluation Content",
+      "type": "boolean"
+    },
+    "contamination_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Contamination Report Sha256",
+      "type": "string"
+    },
+    "contamination_status": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Contamination Status",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m10-devops-training-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "duplicate_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Duplicate Report Sha256",
+      "type": "string"
+    },
+    "duplicate_status": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Duplicate Status",
+      "type": "string"
+    },
+    "item_count": {
+      "const": 2400,
+      "default": 2400,
+      "title": "Item Count",
+      "type": "integer"
+    },
+    "items_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Items Sha256",
+      "type": "string"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "private_artifacts_only": {
+      "const": true,
+      "default": true,
+      "title": "Private Artifacts Only",
+      "type": "boolean"
+    },
+    "review_status": {
+      "enum": [
+        "pending",
+        "approved"
+      ],
+      "title": "Review Status",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "review_pending",
+        "ready"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "training_permitted": {
+      "title": "Training Permitted",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "status",
+    "dataset_version",
+    "manifest_sha256",
+    "items_sha256",
+    "content_sha256",
+    "category_counts",
+    "language_counts",
+    "duplicate_report_sha256",
+    "contamination_report_sha256",
+    "duplicate_status",
+    "contamination_status",
+    "review_status",
+    "training_permitted"
+  ],
+  "title": "M10DevOpsBuildReport",
+  "type": "object"
+}

@@ -1,0 +1,148 @@
+{
+  "additionalProperties": false,
+  "description": "Immutable authored-source identity and aggregate validation evidence.",
+  "properties": {
+    "category_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "single_tool",
+          "no_tool",
+          "wrong_tool_irrelevance",
+          "missing_argument_clarification",
+          "sequential_multi_step",
+          "parallel_independent_tools",
+          "tool_failure_recovery",
+          "grounding_approval_security"
+        ]
+      },
+      "title": "Category Counts",
+      "type": "object"
+    },
+    "contains_evaluation_content": {
+      "const": false,
+      "default": false,
+      "title": "Contains Evaluation Content",
+      "type": "boolean"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m10-devops-training-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "generator_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Generator Config Sha256",
+      "type": "string"
+    },
+    "item_count": {
+      "const": 2400,
+      "default": 2400,
+      "title": "Item Count",
+      "type": "integer"
+    },
+    "items_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Items Sha256",
+      "type": "string"
+    },
+    "language_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Counts",
+      "type": "object"
+    },
+    "license": {
+      "const": "Apache-2.0",
+      "default": "Apache-2.0",
+      "title": "License",
+      "type": "string"
+    },
+    "masked_message_count": {
+      "exclusiveMinimum": 0,
+      "title": "Masked Message Count",
+      "type": "integer"
+    },
+    "review_status": {
+      "enum": [
+        "pending",
+        "approved"
+      ],
+      "title": "Review Status",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "const": 20260820,
+      "default": 20260820,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "source_revision": {
+      "const": "m10-devops-training-v1",
+      "default": "m10-devops-training-v1",
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "supervised_message_count": {
+      "exclusiveMinimum": 0,
+      "title": "Supervised Message Count",
+      "type": "integer"
+    },
+    "tool_call_count": {
+      "minimum": 0,
+      "title": "Tool Call Count",
+      "type": "integer"
+    },
+    "tool_catalog_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Tool Catalog Sha256",
+      "type": "string"
+    },
+    "training_permitted": {
+      "title": "Training Permitted",
+      "type": "boolean"
+    },
+    "unique_group_count": {
+      "exclusiveMinimum": 0,
+      "title": "Unique Group Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "dataset_version",
+    "category_counts",
+    "language_counts",
+    "supervised_message_count",
+    "masked_message_count",
+    "tool_call_count",
+    "unique_group_count",
+    "tool_catalog_sha256",
+    "items_sha256",
+    "content_sha256",
+    "generator_config_sha256",
+    "review_status",
+    "training_permitted"
+  ],
+  "title": "M10DevOpsDatasetManifest",
+  "type": "object"
+}

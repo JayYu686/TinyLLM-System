@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "description": "One normalized OpenAI function invocation.",
+  "properties": {
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
+    },
+    "name": {
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "title": "Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "arguments"
+  ],
+  "title": "M10DevOpsFunctionCall",
+  "type": "object"
+}

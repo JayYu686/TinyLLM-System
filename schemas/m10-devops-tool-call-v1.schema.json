@@ -1,0 +1,50 @@
+{
+  "$defs": {
+    "M10DevOpsFunctionCall": {
+      "additionalProperties": false,
+      "description": "One normalized OpenAI function invocation.",
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "arguments"
+      ],
+      "title": "M10DevOpsFunctionCall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One assistant tool call with a stable conversation-local identifier.",
+  "properties": {
+    "function": {
+      "$ref": "#/$defs/M10DevOpsFunctionCall"
+    },
+    "id": {
+      "pattern": "^call_[a-z0-9_]{3,120}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "type": {
+      "const": "function",
+      "default": "function",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "function"
+  ],
+  "title": "M10DevOpsToolCall",
+  "type": "object"
+}

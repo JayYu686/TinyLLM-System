@@ -2,7 +2,7 @@
 # environment. The upstream evaluator pins datamodel-code-generator 0.25.7;
 # its reviewed, offline-only exception is documented separately.
 datamodel-code-generator==0.25.7
-numpy==1.26.4
+numpy==2.4.6
 openai==3.3.1
 pandas==3.0.5
 pydantic==2.13.4

@@ -45,5 +45,5 @@ httptools
 uvloop
 watchfiles
 websockets
-xformers==0.0.29.post2
+xformers==0.0.31.post1
 xgrammar==0.1.18

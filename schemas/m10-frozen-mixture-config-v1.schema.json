@@ -1,0 +1,309 @@
+{
+  "$defs": {
+    "M10FrozenContaminationConfig": {
+      "additionalProperties": false,
+      "description": "Frozen evaluation boundaries checked before token selection.",
+      "properties": {
+        "bfcl_version": {
+          "const": "bfcl-v1.3-ea13468e-offline-core",
+          "title": "Bfcl Version",
+          "type": "string"
+        },
+        "fail_on_match": {
+          "const": true,
+          "title": "Fail On Match",
+          "type": "boolean"
+        },
+        "m6_domain_version": {
+          "const": "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1",
+          "title": "M6 Domain Version",
+          "type": "string"
+        },
+        "m9_dev_version": {
+          "const": "tinyllm-devops-agent-dev-v1-f958bcc6",
+          "title": "M9 Dev Version",
+          "type": "string"
+        },
+        "m9_release_version": {
+          "const": "tinyllm-devops-agent-release-v1-1ae9b75b",
+          "title": "M9 Release Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "m9_dev_version",
+        "m9_release_version",
+        "bfcl_version",
+        "m6_domain_version",
+        "fail_on_match"
+      ],
+      "title": "M10FrozenContaminationConfig",
+      "type": "object"
+    },
+    "M10FrozenDedupConfig": {
+      "additionalProperties": false,
+      "description": "Frozen exact and MinHash near-duplicate policy.",
+      "properties": {
+        "exact_normalized": {
+          "const": true,
+          "title": "Exact Normalized",
+          "type": "boolean"
+        },
+        "minhash_permutations": {
+          "const": 128,
+          "title": "Minhash Permutations",
+          "type": "integer"
+        },
+        "prompt_5gram_threshold_basis_points": {
+          "const": 8500,
+          "title": "Prompt 5Gram Threshold Basis Points",
+          "type": "integer"
+        },
+        "tool_schema_5gram_threshold_basis_points": {
+          "const": 8500,
+          "title": "Tool Schema 5Gram Threshold Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "exact_normalized",
+        "minhash_permutations",
+        "prompt_5gram_threshold_basis_points",
+        "tool_schema_5gram_threshold_basis_points"
+      ],
+      "title": "M10FrozenDedupConfig",
+      "type": "object"
+    },
+    "M10FrozenInput": {
+      "additionalProperties": false,
+      "description": "One immutable upstream selected by version and content identity.",
+      "properties": {
+        "approval_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approval Sha256"
+        },
+        "content_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "content_sha256",
+        "manifest_sha256"
+      ],
+      "title": "M10FrozenInput",
+      "type": "object"
+    },
+    "M10FrozenInputs": {
+      "additionalProperties": false,
+      "description": "The five frozen sources in their public contract order.",
+      "properties": {
+        "hermes_function_calling": {
+          "$ref": "#/$defs/M10FrozenInput"
+        },
+        "m2_no_tool_replay": {
+          "$ref": "#/$defs/M10FrozenInput"
+        },
+        "m6_domain_replay": {
+          "$ref": "#/$defs/M10FrozenInput"
+        },
+        "tinyllm_devops": {
+          "$ref": "#/$defs/M10FrozenInput"
+        },
+        "toolace": {
+          "$ref": "#/$defs/M10FrozenInput"
+        }
+      },
+      "required": [
+        "toolace",
+        "hermes_function_calling",
+        "tinyllm_devops",
+        "m6_domain_replay",
+        "m2_no_tool_replay"
+      ],
+      "title": "M10FrozenInputs",
+      "type": "object"
+    },
+    "M10MixtureStratum": {
+      "additionalProperties": false,
+      "description": "Exact supervised-token budget for one source/language/mode slice.",
+      "properties": {
+        "language": {
+          "enum": [
+            "en",
+            "zh"
+          ],
+          "title": "Language",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "nonthinking",
+            "thinking"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "source_id": {
+          "enum": [
+            "toolace",
+            "hermes_function_calling",
+            "tinyllm_devops",
+            "m6_domain_replay",
+            "m2_no_tool_replay"
+          ],
+          "title": "Source Id",
+          "type": "string"
+        },
+        "supervised_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Supervised Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_id",
+        "language",
+        "mode",
+        "supervised_tokens"
+      ],
+      "title": "M10MixtureStratum",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Exact build recipe for the one-million supervised-token logical epoch.",
+  "properties": {
+    "build_seed": {
+      "const": 20260822,
+      "title": "Build Seed",
+      "type": "integer"
+    },
+    "config_version": {
+      "const": "m10-agent-frozen-mixture-v1",
+      "title": "Config Version",
+      "type": "string"
+    },
+    "contamination": {
+      "$ref": "#/$defs/M10FrozenContaminationConfig"
+    },
+    "dataset_name": {
+      "const": "tinyllm-agent-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "deduplication": {
+      "$ref": "#/$defs/M10FrozenDedupConfig"
+    },
+    "inputs": {
+      "$ref": "#/$defs/M10FrozenInputs"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_length": {
+      "const": 2048,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "source_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Config Sha256",
+      "type": "string"
+    },
+    "strata": {
+      "maxItems": 10,
+      "minItems": 10,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureStratum"
+        }
+      ],
+      "title": "Strata",
+      "type": "array"
+    },
+    "target_supervised_tokens": {
+      "const": 1000000,
+      "title": "Target Supervised Tokens",
+      "type": "integer"
+    },
+    "tokenizer_id": {
+      "const": "Qwen/Qwen3-0.6B",
+      "title": "Tokenizer Id",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "config_version",
+    "source_config_sha256",
+    "build_seed",
+    "dataset_name",
+    "target_supervised_tokens",
+    "sequence_length",
+    "tokenizer_id",
+    "tokenizer_revision",
+    "inputs",
+    "strata",
+    "deduplication",
+    "contamination"
+  ],
+  "title": "M10FrozenMixtureConfig",
+  "type": "object"
+}

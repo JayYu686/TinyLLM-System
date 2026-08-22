@@ -230,6 +230,11 @@ class TokenizersBackend:
         encoding = self._tokenizer.encode(text, add_special_tokens=False)
         return TokenEncoding(ids=tuple(encoding.ids), offsets=tuple(encoding.offsets))
 
+    def decode(self, token_ids: Iterable[int]) -> str:
+        """Decode an already verified token sequence without dropping special tokens."""
+
+        return cast(str, self._tokenizer.decode(list(token_ids), skip_special_tokens=False))
+
     def validate_identity(self, identity: TokenizerIdentity) -> None:
         """Check vocabulary and all frozen special-token identities."""
 

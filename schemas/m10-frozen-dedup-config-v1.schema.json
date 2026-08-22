@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "description": "Frozen exact and MinHash near-duplicate policy.",
+  "properties": {
+    "exact_normalized": {
+      "const": true,
+      "title": "Exact Normalized",
+      "type": "boolean"
+    },
+    "minhash_permutations": {
+      "const": 128,
+      "title": "Minhash Permutations",
+      "type": "integer"
+    },
+    "prompt_5gram_threshold_basis_points": {
+      "const": 8500,
+      "title": "Prompt 5Gram Threshold Basis Points",
+      "type": "integer"
+    },
+    "tool_schema_5gram_threshold_basis_points": {
+      "const": 8500,
+      "title": "Tool Schema 5Gram Threshold Basis Points",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "exact_normalized",
+    "minhash_permutations",
+    "prompt_5gram_threshold_basis_points",
+    "tool_schema_5gram_threshold_basis_points"
+  ],
+  "title": "M10FrozenDedupConfig",
+  "type": "object"
+}

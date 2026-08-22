@@ -103,18 +103,20 @@ source verify
 → license/filter
 → cross-source exact dedup
 → prompt/tool-schema 5-gram MinHash near dedup
-→ grouped split
 → eval contamination scan
 → tokenize
+→ overlength reject
 → supervised-token balance
-→ pack
+→ fixed-length sequence materialization
 → register
 ```
 
 Exact Dedup 使用规范化 Prompt、Tool Schema、Tool Calls 和最终回答的内容哈希。Near Dedup
 以 Prompt 的 5-gram MinHash 命中为必要条件，阈值固定为 0.85；Tool Schema 用于确认工具协议
 身份和组合相似度，但七个样本共享同一公开 MCP Tool Catalog 本身不构成重复或污染。去重先于
-切分，具有相同来源会话或生成模板的记录使用同一 Group ID。
+筛选，具有相同来源会话或生成模板的记录使用同一 Group ID。M10 使用独立冻结的 M9
+Dev/Release 作为开发与发布评测边界，因此来源数据只构建 Train 混合，不从训练源再次派生
+数据相关的 Validation Split。
 
 污染检查覆盖 M9 Dev、密封 M9 Release、BFCL Offline Core 和 M6 领域评测。Exact 或 Near
 命中都会阻止正式数据注册。针对 Release 的扫描只向公开侧输出计数、算法版本和输入/输出
@@ -122,21 +124,24 @@ Exact Dedup 使用规范化 Prompt、Tool Schema、Tool Calls 和最终回答的
 
 ## 7. 数据状态与训练前门禁
 
-[`configs/data/m10_agent.yaml`](../configs/data/m10_agent.yaml) 当前状态为
-`preregistered`、`training_permitted=false`。只有以下条件全部满足后，才能创建新的 Frozen
-Config 和 Dataset Manifest：
+[`configs/data/m10_agent.yaml`](../configs/data/m10_agent.yaml) 保持不可变的来源预注册状态
+`preregistered`、`training_permitted=false`；最终训练身份由
+[`configs/data/m10_agent_frozen.yaml`](../configs/data/m10_agent_frozen.yaml) 与新的 Dataset
+Manifest 共同表达。只有以下条件全部满足后，才能创建 Frozen Config 和 Dataset Manifest：
 
 1. 两个外部固定 Artifact 的文件大小、SHA256、许可证据与结构画像通过；
 2. DevOps 训练轨迹完成内容审查、许可声明、确定性重建和哈希冻结；
 3. M6 与 M2 Replay 的 Manifest、内容哈希和 Tokenizer 验证通过；
-4. 许可过滤、Exact/Near Dedup、分组切分和四类污染检查全部通过；
+4. 许可过滤、Exact/Near Dedup 和四类污染检查全部通过；
 5. 实际监督 Token 比例和 70/30 语言比例达到契约；
 6. Canonical JSONL、Rejected JSONL、Shard、Manifest 与 Commit Marker 原子写入并校验；
 7. 同一输入、配置、Seed 和代码版本重复构建得到相同内容哈希。
 
-自建 DevOps 来源已通过第 2 项，并以独立审批记录绑定 Pending Manifest、审查包、去重与污染
-报告。该批准只允许来源进入完整混合构建；在其余四个来源、Token 配平和最终 Manifest 完成前，
-不得把来源级批准解释为 M10 训练许可。
+M10.1 已完成上述七项门禁。最终版本 `m10-agent-sft-v1-4655d3e3` 包含 8,061 条
+2,048 长度序列和精确 1,000,000 个监督 Token；来源比例为 30/20/20/20/10，语言比例为
+70/30，Thinking 比例为 6%。M9 Dev、密封 Release、BFCL Core 和 M6 Domain 的 Exact/Near
+污染均为零。完整计数和哈希见
+[`M10.1 Agent 训练混合验收报告`](../reports/m10/m10_frozen_mixture.md)。
 
 ## 8. 训练与评测阶段
 

@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "Frozen evaluation boundaries checked before token selection.",
+  "properties": {
+    "bfcl_version": {
+      "const": "bfcl-v1.3-ea13468e-offline-core",
+      "title": "Bfcl Version",
+      "type": "string"
+    },
+    "fail_on_match": {
+      "const": true,
+      "title": "Fail On Match",
+      "type": "boolean"
+    },
+    "m6_domain_version": {
+      "const": "tinyllm-domain-thinking-boundary-audit-v1-b82cbca1",
+      "title": "M6 Domain Version",
+      "type": "string"
+    },
+    "m9_dev_version": {
+      "const": "tinyllm-devops-agent-dev-v1-f958bcc6",
+      "title": "M9 Dev Version",
+      "type": "string"
+    },
+    "m9_release_version": {
+      "const": "tinyllm-devops-agent-release-v1-1ae9b75b",
+      "title": "M9 Release Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "m9_dev_version",
+    "m9_release_version",
+    "bfcl_version",
+    "m6_domain_version",
+    "fail_on_match"
+  ],
+  "title": "M10FrozenContaminationConfig",
+  "type": "object"
+}

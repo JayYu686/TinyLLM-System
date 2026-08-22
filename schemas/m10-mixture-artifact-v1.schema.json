@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "One content-addressed private mixture file.",
+  "properties": {
+    "path": {
+      "const": "sequences.npz",
+      "title": "Path",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "path",
+    "size_bytes",
+    "sha256"
+  ],
+  "title": "M10MixtureArtifact",
+  "type": "object"
+}

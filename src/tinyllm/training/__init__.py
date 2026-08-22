@@ -126,6 +126,14 @@ from tinyllm.training.m5_lora_schema import (
     M5LoRAMemory,
     M5LoRARunResult,
 )
+from tinyllm.training.m10_sft_schema import (
+    M10CheckpointFile,
+    M10CheckpointManifest,
+    M10ContinuationGate,
+    M10FullSFTConfig,
+    M10FullSFTRunResult,
+    M10StageExport,
+)
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
 from tinyllm.training.resume import ResumeMode, restore_from_config, restore_trainer
 from tinyllm.training.run import run_single_device_training
@@ -216,6 +224,12 @@ __all__ = [
     "M5RunConfig",
     "M5SFTConfig",
     "M5TrainingLoopConfig",
+    "M10CheckpointFile",
+    "M10CheckpointManifest",
+    "M10ContinuationGate",
+    "M10FullSFTConfig",
+    "M10FullSFTRunResult",
+    "M10StageExport",
     "M4QwenApiEvidence",
     "M4RegisteredDatasetView",
     "M4TorchApiEvidence",

@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "M10CheckpointFile": {
+      "additionalProperties": false,
+      "description": "One integrity-checked PyTorch training-state payload.",
+      "properties": {
+        "path": {
+          "const": "training_state.pt",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M10CheckpointFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Atomic single-GPU Exact Resume identity at an epoch boundary.",
+  "properties": {
+    "checkpoint_id": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "completed_epochs": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Completed Epochs",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "dataset_manifest_sha256": {
+      "const": "6ec41bdee5d6509cbd04c6f4a0c1c7af2fa0ef116de185d9c43e2076d1ee0490",
+      "title": "Dataset Manifest Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "const": "m10-agent-sft-v1-4655d3e3",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "file": {
+      "$ref": "#/$defs/M10CheckpointFile"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "global_step": {
+      "exclusiveMinimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "parent_model_artifact_sha256": {
+      "const": "63db3b5f6ce0f12224167635fc8d67c53c32d7922caba3d65ac20c950f07dde6",
+      "title": "Parent Model Artifact Sha256",
+      "type": "string"
+    },
+    "parent_production_record_sha256": {
+      "const": "a83eaff5e9b91be403bddb7a4ac23926465e0a78872921429dad72b6ee7d0ca5",
+      "title": "Parent Production Record Sha256",
+      "type": "string"
+    },
+    "parent_production_version": {
+      "const": "qwen3-0-6b-m7-fa678d92",
+      "title": "Parent Production Version",
+      "type": "string"
+    },
+    "pin_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "stage",
+            "final"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pin Reason"
+    },
+    "pinned": {
+      "title": "Pinned",
+      "type": "boolean"
+    },
+    "resume_capability": {
+      "const": "exact",
+      "default": "exact",
+      "title": "Resume Capability",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_cursor": {
+      "const": 0,
+      "title": "Sequence Cursor",
+      "type": "integer"
+    },
+    "strategy": {
+      "const": "single",
+      "default": "single",
+      "title": "Strategy",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "maximum": 10000000,
+      "minimum": 1000000,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    },
+    "world_size": {
+      "const": 1,
+      "default": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "run_id",
+    "global_step",
+    "completed_epochs",
+    "sequence_cursor",
+    "supervised_tokens",
+    "config_sha256",
+    "dataset_version",
+    "dataset_manifest_sha256",
+    "parent_production_version",
+    "parent_production_record_sha256",
+    "parent_model_artifact_sha256",
+    "git_commit",
+    "file",
+    "pinned"
+  ],
+  "title": "M10CheckpointManifest",
+  "type": "object"
+}

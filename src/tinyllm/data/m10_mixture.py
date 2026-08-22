@@ -19,6 +19,8 @@ from typing import Any, cast
 import numpy as np
 import yaml
 from pydantic import ValidationError
+from torch import Tensor
+from torch.utils.data import Dataset
 
 from tinyllm.data.m5_dual_mode_correction import align_legacy_nonthinking_sequence_v2
 from tinyllm.data.m5_mixture import (
@@ -1345,3 +1347,28 @@ def build_public_report(manifest: M10FrozenMixtureManifest) -> M10FrozenMixtureR
         contamination_report_sha256=manifest.contamination_report_sha256,
         training_permitted=True,
     )
+
+
+class M10FrozenDataset(Dataset[dict[str, Tensor]]):
+    """Torch Dataset over one fully revalidated private M10.1 mixture."""
+
+    def __init__(self, root: Path) -> None:
+        self.manifest = open_frozen_mixture(root)
+        with np.load(root / _SEQUENCE_FILE, allow_pickle=False) as arrays:
+            self._input_ids = arrays["input_ids"].copy()
+            self._labels = arrays["labels"].copy()
+            self._attention_masks = arrays["attention_masks"].copy()
+
+    def __len__(self) -> int:
+        return self.manifest.sequence_count
+
+    def __getitem__(self, index: int) -> dict[str, Tensor]:
+        import torch
+
+        return {
+            "input_ids": torch.from_numpy(self._input_ids[index].astype(np.int64, copy=False)),
+            "labels": torch.from_numpy(self._labels[index].astype(np.int64, copy=False)),
+            "attention_mask": torch.from_numpy(
+                self._attention_masks[index].astype(np.int64, copy=False)
+            ),
+        }

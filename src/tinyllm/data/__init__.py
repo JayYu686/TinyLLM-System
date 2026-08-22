@@ -287,6 +287,7 @@ from tinyllm.data.m10_devops_schema import (
     M10DevOpsTrainingSample,
 )
 from tinyllm.data.m10_mixture import (
+    M10FrozenDataset,
     M10MixtureError,
     build_frozen_mixture,
     open_frozen_mixture,
@@ -608,6 +609,7 @@ __all__ = [
     "M10DevOpsTrainingSample",
     "M10DevOpsReviewError",
     "M10FrozenContaminationConfig",
+    "M10FrozenDataset",
     "M10FrozenDedupConfig",
     "M10FrozenInput",
     "M10FrozenInputs",

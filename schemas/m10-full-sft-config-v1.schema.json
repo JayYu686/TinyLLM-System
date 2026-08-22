@@ -1,0 +1,421 @@
+{
+  "$defs": {
+    "M10CheckpointConfig": {
+      "additionalProperties": false,
+      "description": "Token-indexed Exact Resume and retention policy.",
+      "properties": {
+        "keep_last": {
+          "const": 2,
+          "title": "Keep Last",
+          "type": "integer"
+        },
+        "pin_stage_checkpoints": {
+          "const": true,
+          "title": "Pin Stage Checkpoints",
+          "type": "boolean"
+        },
+        "resume": {
+          "const": "auto",
+          "title": "Resume",
+          "type": "string"
+        },
+        "save_interval_tokens": {
+          "const": 1000000,
+          "title": "Save Interval Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "save_interval_tokens",
+        "keep_last",
+        "resume",
+        "pin_stage_checkpoints"
+      ],
+      "title": "M10CheckpointConfig",
+      "type": "object"
+    },
+    "M10DataConfig": {
+      "additionalProperties": false,
+      "description": "The immutable M10.1 training array identity.",
+      "properties": {
+        "assistant_only_loss": {
+          "const": true,
+          "title": "Assistant Only Loss",
+          "type": "boolean"
+        },
+        "dataset_version": {
+          "const": "m10-agent-sft-v1-4655d3e3",
+          "title": "Dataset Version",
+          "type": "string"
+        },
+        "language_target": {
+          "const": "en70-zh30",
+          "title": "Language Target",
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "const": "6ec41bdee5d6509cbd04c6f4a0c1c7af2fa0ef116de185d9c43e2076d1ee0490",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "mode_target": {
+          "const": "nonthinking94-thinking6",
+          "title": "Mode Target",
+          "type": "string"
+        },
+        "sequence_length": {
+          "const": 2048,
+          "title": "Sequence Length",
+          "type": "integer"
+        },
+        "target_supervised_tokens_per_epoch": {
+          "const": 1000000,
+          "title": "Target Supervised Tokens Per Epoch",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "dataset_version",
+        "manifest_sha256",
+        "sequence_length",
+        "target_supervised_tokens_per_epoch",
+        "assistant_only_loss",
+        "language_target",
+        "mode_target"
+      ],
+      "title": "M10DataConfig",
+      "type": "object"
+    },
+    "M10EvaluationConfig": {
+      "additionalProperties": false,
+      "description": "Pre-registered stage decision without opening the sealed Release set.",
+      "properties": {
+        "agent_dev_version": {
+          "const": "tinyllm-devops-agent-dev-v1-f958bcc6",
+          "title": "Agent Dev Version",
+          "type": "string"
+        },
+        "m6_max_regression_basis_points": {
+          "const": 200,
+          "title": "M6 Max Regression Basis Points",
+          "type": "integer"
+        },
+        "release_set_access": {
+          "const": "m10_final_gate_only",
+          "title": "Release Set Access",
+          "type": "string"
+        },
+        "stage_5m_to_10m_min_improvement_basis_points": {
+          "const": 100,
+          "title": "Stage 5M To 10M Min Improvement Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent_dev_version",
+        "stage_5m_to_10m_min_improvement_basis_points",
+        "m6_max_regression_basis_points",
+        "release_set_access"
+      ],
+      "title": "M10EvaluationConfig",
+      "type": "object"
+    },
+    "M10ModelConfig": {
+      "additionalProperties": false,
+      "description": "Pinned M7 Production parent and reviewed Qwen3 architecture.",
+      "properties": {
+        "adaptation": {
+          "const": "full_sft",
+          "title": "Adaptation",
+          "type": "string"
+        },
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "license": {
+          "const": "Apache-2.0",
+          "title": "License",
+          "type": "string"
+        },
+        "model_type": {
+          "const": "qwen3",
+          "title": "Model Type",
+          "type": "string"
+        },
+        "parent_model_artifact_sha256": {
+          "const": "63db3b5f6ce0f12224167635fc8d67c53c32d7922caba3d65ac20c950f07dde6",
+          "title": "Parent Model Artifact Sha256",
+          "type": "string"
+        },
+        "parent_model_ref": {
+          "const": "production",
+          "title": "Parent Model Ref",
+          "type": "string"
+        },
+        "parent_production_record_sha256": {
+          "const": "a83eaff5e9b91be403bddb7a4ac23926465e0a78872921429dad72b6ee7d0ca5",
+          "title": "Parent Production Record Sha256",
+          "type": "string"
+        },
+        "parent_production_version": {
+          "const": "qwen3-0-6b-m7-fa678d92",
+          "title": "Parent Production Version",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-0.6B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "model_type",
+        "license",
+        "attention_architecture",
+        "adaptation",
+        "trust_remote_code",
+        "parent_model_ref",
+        "parent_production_version",
+        "parent_production_record_sha256",
+        "parent_model_artifact_sha256"
+      ],
+      "title": "M10ModelConfig",
+      "type": "object"
+    },
+    "M10OptimizationConfig": {
+      "additionalProperties": false,
+      "description": "One-GPU BF16 optimization contract shared by all three stages.",
+      "properties": {
+        "gradient_accumulation_steps": {
+          "const": 4,
+          "title": "Gradient Accumulation Steps",
+          "type": "integer"
+        },
+        "gradient_checkpointing": {
+          "const": true,
+          "title": "Gradient Checkpointing",
+          "type": "boolean"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "max_grad_norm": {
+          "exclusiveMinimum": 0,
+          "title": "Max Grad Norm",
+          "type": "number"
+        },
+        "max_job_duration_seconds": {
+          "const": 43200,
+          "title": "Max Job Duration Seconds",
+          "type": "integer"
+        },
+        "max_train_tokens": {
+          "const": 10000000,
+          "title": "Max Train Tokens",
+          "type": "integer"
+        },
+        "micro_batch_size": {
+          "const": 2,
+          "title": "Micro Batch Size",
+          "type": "integer"
+        },
+        "stage_tokens": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "const": 1000000,
+              "type": "integer"
+            },
+            {
+              "const": 5000000,
+              "type": "integer"
+            },
+            {
+              "const": 10000000,
+              "type": "integer"
+            }
+          ],
+          "title": "Stage Tokens",
+          "type": "array"
+        },
+        "warmup_tokens": {
+          "const": 100000,
+          "title": "Warmup Tokens",
+          "type": "integer"
+        },
+        "weight_decay": {
+          "minimum": 0,
+          "title": "Weight Decay",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_train_tokens",
+        "stage_tokens",
+        "micro_batch_size",
+        "gradient_accumulation_steps",
+        "learning_rate",
+        "weight_decay",
+        "max_grad_norm",
+        "warmup_tokens",
+        "gradient_checkpointing",
+        "max_job_duration_seconds"
+      ],
+      "title": "M10OptimizationConfig",
+      "type": "object"
+    },
+    "M10ParallelConfig": {
+      "additionalProperties": false,
+      "description": "M10.2 intentionally uses one independently available RTX 3090.",
+      "properties": {
+        "device_type": {
+          "const": "cuda",
+          "title": "Device Type",
+          "type": "string"
+        },
+        "strategy": {
+          "const": "single",
+          "title": "Strategy",
+          "type": "string"
+        },
+        "world_size": {
+          "const": 1,
+          "title": "World Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "strategy",
+        "device_type",
+        "world_size"
+      ],
+      "title": "M10ParallelConfig",
+      "type": "object"
+    },
+    "M10PrecisionConfig": {
+      "additionalProperties": false,
+      "description": "RTX 3090 precision identity.",
+      "properties": {
+        "allow_tf32": {
+          "const": true,
+          "title": "Allow Tf32",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bf16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "use_grad_scaler": {
+          "const": false,
+          "title": "Use Grad Scaler",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dtype",
+        "allow_tf32",
+        "use_grad_scaler"
+      ],
+      "title": "M10PrecisionConfig",
+      "type": "object"
+    },
+    "M10RunConfig": {
+      "additionalProperties": false,
+      "description": "Stable identity for the single seeded M10 Full-SFT campaign.",
+      "properties": {
+        "name": {
+          "const": "m10-agent-full-sft-qwen3-0-6b-seed42",
+          "title": "Name",
+          "type": "string"
+        },
+        "purpose": {
+          "const": "agent_full_sft",
+          "title": "Purpose",
+          "type": "string"
+        },
+        "seed": {
+          "const": 42,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "seed",
+        "purpose"
+      ],
+      "title": "M10RunConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete staged Full-SFT configuration.",
+  "properties": {
+    "checkpoint": {
+      "$ref": "#/$defs/M10CheckpointConfig"
+    },
+    "config_kind": {
+      "const": "m10_agent_full_sft",
+      "title": "Config Kind",
+      "type": "string"
+    },
+    "data": {
+      "$ref": "#/$defs/M10DataConfig"
+    },
+    "evaluation": {
+      "$ref": "#/$defs/M10EvaluationConfig"
+    },
+    "model": {
+      "$ref": "#/$defs/M10ModelConfig"
+    },
+    "optimization": {
+      "$ref": "#/$defs/M10OptimizationConfig"
+    },
+    "parallel": {
+      "$ref": "#/$defs/M10ParallelConfig"
+    },
+    "precision": {
+      "$ref": "#/$defs/M10PrecisionConfig"
+    },
+    "run": {
+      "$ref": "#/$defs/M10RunConfig"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "config_kind",
+    "run",
+    "model",
+    "data",
+    "optimization",
+    "precision",
+    "parallel",
+    "checkpoint",
+    "evaluation"
+  ],
+  "title": "M10FullSFTConfig",
+  "type": "object"
+}

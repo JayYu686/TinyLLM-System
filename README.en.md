@@ -180,7 +180,7 @@ sequenceDiagram
 | M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
 | M8 DevOps agent | Complete | Tool calling 8/8; MCP, LangGraph, FTS5 retrieval, explicit approval, and restart recovery |
 | M9 agent evaluation | Complete | Frozen 240-task DevOps Agent Suite; three parent baselines; 5,520/5,520 BFCL items with zero inference failures |
-| M10 agent post-training | In progress | M10.1 froze the five-source 1M supervised-token mixture (70/30 English/Chinese, 6% Thinking) with zero contamination matches across four boundaries; 0.6B Full SFT, 8B LoRA, and Agent Model Gate remain |
+| M10 agent post-training | In progress | M10.1 froze the five-source 1M supervised-token mixture; M10.2 single-GPU 0.6B Full SFT, staged Checkpoint/Resume, and real preflight are ready, while GPU training metrics remain unevaluated |
 
 Milestone status represents a combined gate across implementation, tests, smoke runs,
 failure paths, real reports, and documentation. Evidence entry points:
@@ -230,7 +230,8 @@ failure paths, real reports, and documentation. Evidence entry points:
   [0.6B Agent Dev baseline (Chinese)](reports/m9/agent_dev_production_baseline.md), and
   [M9 acceptance report (Chinese)](reports/m9/m9_acceptance.md)
 - [M10 Agent post-training contract (Chinese)](docs/m10_agent_training_contract.md) and
-  [M10.1 frozen mixture acceptance (Chinese)](reports/m10/m10_frozen_mixture.md)
+  [M10.1 frozen mixture acceptance (Chinese)](reports/m10/m10_frozen_mixture.md), and
+  [M10.2 Full-SFT readiness (Chinese)](reports/m10/m10_full_sft_readiness.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured

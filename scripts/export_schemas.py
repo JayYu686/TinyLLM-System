@@ -309,6 +309,13 @@ from tinyllm.training.m5_lora_schema import (
     M5LoRAHardware,
     M5LoRARunResult,
 )
+from tinyllm.training.m10_sft_schema import (
+    M10CheckpointManifest,
+    M10ContinuationGate,
+    M10FullSFTConfig,
+    M10FullSFTRunResult,
+    M10StageExport,
+)
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -349,6 +356,11 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-frozen-mixture-config-v1.schema.json": M10FrozenMixtureConfig,
     "m10-frozen-mixture-manifest-v1.schema.json": M10FrozenMixtureManifest,
     "m10-frozen-mixture-report-v1.schema.json": M10FrozenMixtureReport,
+    "m10-full-sft-checkpoint-manifest-v1.schema.json": M10CheckpointManifest,
+    "m10-full-sft-continuation-gate-v1.schema.json": M10ContinuationGate,
+    "m10-full-sft-config-v1.schema.json": M10FullSFTConfig,
+    "m10-full-sft-run-result-v1.schema.json": M10FullSFTRunResult,
+    "m10-full-sft-stage-export-v1.schema.json": M10StageExport,
     "m10-mixture-artifact-v1.schema.json": M10MixtureArtifact,
     "m10-mixture-input-evidence-v1.schema.json": M10MixtureInputEvidence,
     "m10-mixture-stratum-v1.schema.json": M10MixtureStratum,

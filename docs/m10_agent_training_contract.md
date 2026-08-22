@@ -148,6 +148,15 @@ M10.1 已完成上述七项门禁。最终版本 `m10-agent-sft-v1-4655d3e3` 包
 0.6B 父模型固定为 M7 Production，执行 1M、5M、10M Supervised Token 三阶段 Full SFT。
 5M 到 10M 只有在 Agent Dev 提升至少 1pp 且 M6 回退不超过 2pp 时继续。
 
+M10.2 使用同一冻结配置和同一 Run 依次完成三个阶段。每个逻辑 Epoch 精确消费 1M
+Supervised Token；1M 和 5M 通过 Exact Resume 延续优化器、RNG 与数据进度，不能通过修改
+`max_train_tokens` 创建新的配置身份。阶段 Checkpoint 与 Safetensors Export 分离，1M、5M、
+10M 三个边界永久 Pin。当前训练接口与真实数据/Production 父模型 Preflight 已通过，真实 GPU
+训练指标仍为 `not_evaluated`，详见
+[`M10.2 Full SFT 工程就绪报告`](../reports/m10/m10_full_sft_readiness.md)。
+5M→10M 启动接口默认拒绝，必须提供通过严格 Schema、阈值计算与阶段血缘校验的 Continuation
+Gate；仅按文件名或人工声明通过不能解除阻断。
+
 8B 父模型固定为 Qwen3-8B Base，执行相同阶段的 BF16 LoRA。历史 M5 Domain Adapter 仅保留
 诊断身份，不作为初始化点。BF16 LoRA 在固定最小配置真实 OOM 后，才创建独立策略身份切换
 到 NF4 QLoRA。

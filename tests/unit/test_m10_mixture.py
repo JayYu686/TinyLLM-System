@@ -36,6 +36,7 @@ from tinyllm.data.m10_devops_review import (
 )
 from tinyllm.data.m10_devops_schema import M10DevOpsTrainingSample, canonical_json_sha256
 from tinyllm.data.m10_mixture import (
+    M10FrozenDataset,
     M10MixtureError,
     M10TextCandidate,
     _pad_sequence,
@@ -650,6 +651,7 @@ def test_synthetic_full_build_is_atomic_reopenable_and_exact(
     reopened = open_frozen_mixture(tmp_path / "frozen" / manifest.dataset_version)
     repeated = write_frozen_mixture(tmp_path / "frozen", build)
     report = build_public_report(reopened)
+    dataset = M10FrozenDataset(tmp_path / "frozen" / manifest.dataset_version)
 
     assert reopened == repeated == manifest
     assert manifest.target_supervised_tokens == 1_000_000
@@ -663,6 +665,9 @@ def test_synthetic_full_build_is_atomic_reopenable_and_exact(
     assert manifest.language_supervised_tokens == {"en": 700_000, "zh": 300_000}
     assert manifest.mode_supervised_tokens == {"nonthinking": 940_000, "thinking": 60_000}
     assert report.training_permitted is True
+    assert len(dataset) == manifest.sequence_count
+    assert set(dataset[0]) == {"input_ids", "labels", "attention_mask"}
+    assert tuple(dataset[0]["input_ids"].shape) == (2048,)
 
     source = tmp_path / "frozen" / manifest.dataset_version
     cases = {

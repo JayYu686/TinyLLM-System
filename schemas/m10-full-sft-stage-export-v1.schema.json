@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "description": "Immutable model export for one evaluated M10 stage.",
+  "properties": {
+    "checkpoint_id": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "export_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Export Sha256",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "enum": [
+        1000000,
+        5000000,
+        10000000
+      ],
+      "title": "Supervised Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "supervised_tokens",
+    "export_sha256"
+  ],
+  "title": "M10StageExport",
+  "type": "object"
+}

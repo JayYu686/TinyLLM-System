@@ -120,6 +120,7 @@ omit = [
   "*/src/tinyllm/data/m5_formal.py",
   "*/src/tinyllm/training/m5_formal.py",
   "*/src/tinyllm/training/m5_lora.py",
+  "*/src/tinyllm/training/m10_sft_worker.py",
 ]
 
 [tool.coverage.report]
@@ -138,4 +139,5 @@ omit = [
   "*/src/tinyllm/data/m5_formal.py",
   "*/src/tinyllm/training/m5_formal.py",
   "*/src/tinyllm/training/m5_lora.py",
+  "*/src/tinyllm/training/m10_sft_worker.py",
 ]

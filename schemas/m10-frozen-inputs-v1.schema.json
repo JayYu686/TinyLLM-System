@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "M10FrozenInput": {
+      "additionalProperties": false,
+      "description": "One immutable upstream selected by version and content identity.",
+      "properties": {
+        "approval_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approval Sha256"
+        },
+        "content_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "content_sha256",
+        "manifest_sha256"
+      ],
+      "title": "M10FrozenInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The five frozen sources in their public contract order.",
+  "properties": {
+    "hermes_function_calling": {
+      "$ref": "#/$defs/M10FrozenInput"
+    },
+    "m2_no_tool_replay": {
+      "$ref": "#/$defs/M10FrozenInput"
+    },
+    "m6_domain_replay": {
+      "$ref": "#/$defs/M10FrozenInput"
+    },
+    "tinyllm_devops": {
+      "$ref": "#/$defs/M10FrozenInput"
+    },
+    "toolace": {
+      "$ref": "#/$defs/M10FrozenInput"
+    }
+  },
+  "required": [
+    "toolace",
+    "hermes_function_calling",
+    "tinyllm_devops",
+    "m6_domain_replay",
+    "m2_no_tool_replay"
+  ],
+  "title": "M10FrozenInputs",
+  "type": "object"
+}

@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "description": "Exact supervised-token budget for one source/language/mode slice.",
+  "properties": {
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "nonthinking",
+        "thinking"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "source_id": {
+      "enum": [
+        "toolace",
+        "hermes_function_calling",
+        "tinyllm_devops",
+        "m6_domain_replay",
+        "m2_no_tool_replay"
+      ],
+      "title": "Source Id",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "source_id",
+    "language",
+    "mode",
+    "supervised_tokens"
+  ],
+  "title": "M10MixtureStratum",
+  "type": "object"
+}

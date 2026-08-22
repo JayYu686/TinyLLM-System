@@ -165,11 +165,13 @@ M10 在既有数据契约上增加 OpenAI 风格 Tool Schema、Assistant Tool Ca
 回答。固定混合、监督掩码、来源身份、去重、密封 Release 边界和训练前闭锁详见
 [`m10_agent_training_contract.md`](m10_agent_training_contract.md)。
 
-M10 配置处于 `preregistered` 时只能执行来源验证与数据构建；五个来源全部冻结、污染检查
-通过并生成不可变 Dataset Manifest 后，才允许转为 `frozen` 并启动正式训练。
+来源预注册配置保持 `preregistered`、`training_permitted=false`，防止历史来源契约被静默
+改写。五个来源全部冻结、污染检查通过并生成不可变 Dataset Manifest 后，由独立 Frozen
+Config 授权正式训练。首个通过门禁的版本为 `m10-agent-sft-v1-4655d3e3`。
 
-导入产物仍不是可训练数据。只有完成规范化、Exact Dedup、分组切分、Tokenization、
-Packing 和注册，并产生最终 Dataset Manifest 后，Trainer 才能读取该版本。
+导入产物仍不是可训练数据。只有完成规范化、Exact/Near Dedup、污染检查、Tokenization、
+精确监督 Token 配平、固定长度序列物化和注册，并产生最终 Dataset Manifest 后，Trainer 才能
+读取该版本。
 
 ## 10. M2.2 规范化契约
 

@@ -1,0 +1,65 @@
+{
+  "additionalProperties": false,
+  "description": "Verified candidate and tokenization facts for one upstream source.",
+  "properties": {
+    "accepted_candidates": {
+      "exclusiveMinimum": 0,
+      "title": "Accepted Candidates",
+      "type": "integer"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "duplicate_rejections": {
+      "minimum": 0,
+      "title": "Duplicate Rejections",
+      "type": "integer"
+    },
+    "input_candidates": {
+      "exclusiveMinimum": 0,
+      "title": "Input Candidates",
+      "type": "integer"
+    },
+    "manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "overlength_rejections": {
+      "minimum": 0,
+      "title": "Overlength Rejections",
+      "type": "integer"
+    },
+    "source_id": {
+      "enum": [
+        "toolace",
+        "hermes_function_calling",
+        "tinyllm_devops",
+        "m6_domain_replay",
+        "m2_no_tool_replay"
+      ],
+      "title": "Source Id",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_id",
+    "version",
+    "content_sha256",
+    "manifest_sha256",
+    "input_candidates",
+    "accepted_candidates",
+    "duplicate_rejections",
+    "overlength_rejections"
+  ],
+  "title": "M10MixtureInputEvidence",
+  "type": "object"
+}

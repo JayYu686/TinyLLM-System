@@ -166,7 +166,7 @@ sequenceDiagram
 | M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
 | M8 DevOps Agent | 已完成 | Tool Calling 8/8；MCP、LangGraph、FTS5 证据检索、显式审批与重启恢复 |
 | M9 Agent 评测 | 已完成 | 240 条 DevOps Agent Suite 冻结；三组父模型基线；BFCL 共 5,520/5,520 条且 0 推理失败 |
-| M10 Agent 后训练 | 进行中 | 数据契约、12,592 条外部 Canonical 记录、2,400 条 DevOps 轨迹及 80 条分层内容审查已完成；完整混合、0.6B Full SFT、8B LoRA 与 Agent Model Gate 待完成 |
+| M10 Agent 后训练 | 进行中 | M10.1 已冻结 1M 监督 Token 五来源混合（70/30 中英、6% Thinking），四类污染为 0；0.6B Full SFT、8B LoRA 与 Agent Model Gate 待完成 |
 
 当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
 详细证据可从以下入口查看：
@@ -222,6 +222,8 @@ sequenceDiagram
 - [M9 评测契约](docs/m9_agent_evaluation.md)、
   [0.6B Agent Dev 基线](reports/m9/agent_dev_production_baseline.md)与
   [M9 总验收](reports/m9/m9_acceptance.md)
+- [M10 Agent 后训练契约](docs/m10_agent_training_contract.md)与
+  [M10.1 Agent 训练混合验收](reports/m10/m10_frozen_mixture.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。

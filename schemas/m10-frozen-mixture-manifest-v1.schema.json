@@ -1,0 +1,328 @@
+{
+  "$defs": {
+    "M10MixtureArtifact": {
+      "additionalProperties": false,
+      "description": "One content-addressed private mixture file.",
+      "properties": {
+        "path": {
+          "const": "sequences.npz",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M10MixtureArtifact",
+      "type": "object"
+    },
+    "M10MixtureInputEvidence": {
+      "additionalProperties": false,
+      "description": "Verified candidate and tokenization facts for one upstream source.",
+      "properties": {
+        "accepted_candidates": {
+          "exclusiveMinimum": 0,
+          "title": "Accepted Candidates",
+          "type": "integer"
+        },
+        "content_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "duplicate_rejections": {
+          "minimum": 0,
+          "title": "Duplicate Rejections",
+          "type": "integer"
+        },
+        "input_candidates": {
+          "exclusiveMinimum": 0,
+          "title": "Input Candidates",
+          "type": "integer"
+        },
+        "manifest_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "overlength_rejections": {
+          "minimum": 0,
+          "title": "Overlength Rejections",
+          "type": "integer"
+        },
+        "source_id": {
+          "enum": [
+            "toolace",
+            "hermes_function_calling",
+            "tinyllm_devops",
+            "m6_domain_replay",
+            "m2_no_tool_replay"
+          ],
+          "title": "Source Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "version",
+        "content_sha256",
+        "manifest_sha256",
+        "input_candidates",
+        "accepted_candidates",
+        "duplicate_rejections",
+        "overlength_rejections"
+      ],
+      "title": "M10MixtureInputEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable training-ready mixture identity and fail-closed evidence.",
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/M10MixtureArtifact"
+    },
+    "build_seed": {
+      "const": 20260822,
+      "title": "Build Seed",
+      "type": "integer"
+    },
+    "contamination_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Contamination Report Sha256",
+      "type": "string"
+    },
+    "contamination_status": {
+      "const": "pass",
+      "title": "Contamination Status",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_name": {
+      "const": "tinyllm-agent-sft",
+      "default": "tinyllm-agent-sft",
+      "title": "Dataset Name",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m10-agent-sft-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "duplicate_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Duplicate Report Sha256",
+      "type": "string"
+    },
+    "exact_duplicate_drops": {
+      "minimum": 0,
+      "title": "Exact Duplicate Drops",
+      "type": "integer"
+    },
+    "frozen_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Frozen Config Sha256",
+      "type": "string"
+    },
+    "input_evidence": {
+      "maxItems": 5,
+      "minItems": 5,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/M10MixtureInputEvidence"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureInputEvidence"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureInputEvidence"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureInputEvidence"
+        },
+        {
+          "$ref": "#/$defs/M10MixtureInputEvidence"
+        }
+      ],
+      "title": "Input Evidence",
+      "type": "array"
+    },
+    "language_supervised_tokens": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Supervised Tokens",
+      "type": "object"
+    },
+    "mode_supervised_tokens": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "nonthinking",
+          "thinking"
+        ]
+      },
+      "title": "Mode Supervised Tokens",
+      "type": "object"
+    },
+    "near_duplicate_drops": {
+      "minimum": 0,
+      "title": "Near Duplicate Drops",
+      "type": "integer"
+    },
+    "partial_sequence_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Partial Sequence Counts",
+      "type": "object"
+    },
+    "reuse_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Reuse Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Count",
+      "type": "integer"
+    },
+    "sequence_length": {
+      "const": 2048,
+      "title": "Sequence Length",
+      "type": "integer"
+    },
+    "source_config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Config Sha256",
+      "type": "string"
+    },
+    "source_supervised_tokens": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "toolace",
+          "hermes_function_calling",
+          "tinyllm_devops",
+          "m6_domain_replay",
+          "m2_no_tool_replay"
+        ]
+      },
+      "title": "Source Supervised Tokens",
+      "type": "object"
+    },
+    "status": {
+      "const": "committed",
+      "default": "committed",
+      "title": "Status",
+      "type": "string"
+    },
+    "stratum_supervised_tokens": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Stratum Supervised Tokens",
+      "type": "object"
+    },
+    "target_supervised_tokens": {
+      "const": 1000000,
+      "title": "Target Supervised Tokens",
+      "type": "integer"
+    },
+    "template_id": {
+      "const": "qwen3-agent-chatml-nonthinking-v1",
+      "title": "Template Id",
+      "type": "string"
+    },
+    "template_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Template Sha256",
+      "type": "string"
+    },
+    "tokenizer_revision": {
+      "const": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "title": "Tokenizer Revision",
+      "type": "string"
+    },
+    "tokenizer_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Tokenizer Sha256",
+      "type": "string"
+    },
+    "training_permitted": {
+      "const": true,
+      "default": true,
+      "title": "Training Permitted",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "dataset_version",
+    "content_sha256",
+    "frozen_config_sha256",
+    "source_config_sha256",
+    "build_seed",
+    "tokenizer_revision",
+    "tokenizer_sha256",
+    "template_id",
+    "template_sha256",
+    "sequence_length",
+    "sequence_count",
+    "target_supervised_tokens",
+    "source_supervised_tokens",
+    "language_supervised_tokens",
+    "mode_supervised_tokens",
+    "stratum_supervised_tokens",
+    "reuse_counts",
+    "partial_sequence_counts",
+    "input_evidence",
+    "exact_duplicate_drops",
+    "near_duplicate_drops",
+    "duplicate_report_sha256",
+    "contamination_report_sha256",
+    "contamination_status",
+    "artifact"
+  ],
+  "title": "M10FrozenMixtureManifest",
+  "type": "object"
+}

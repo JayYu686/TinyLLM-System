@@ -1,0 +1,162 @@
+{
+  "additionalProperties": false,
+  "description": "Content-free public evidence for the final private mixture.",
+  "properties": {
+    "contains_source_or_evaluation_content": {
+      "const": false,
+      "default": false,
+      "title": "Contains Source Or Evaluation Content",
+      "type": "boolean"
+    },
+    "contamination_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Contamination Report Sha256",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "pattern": "^m10-agent-sft-v1-[0-9a-f]{8}$",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "duplicate_report_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Duplicate Report Sha256",
+      "type": "string"
+    },
+    "exact_duplicate_drops": {
+      "minimum": 0,
+      "title": "Exact Duplicate Drops",
+      "type": "integer"
+    },
+    "language_supervised_tokens": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "en",
+          "zh"
+        ]
+      },
+      "title": "Language Supervised Tokens",
+      "type": "object"
+    },
+    "manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "mode_supervised_tokens": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "nonthinking",
+          "thinking"
+        ]
+      },
+      "title": "Mode Supervised Tokens",
+      "type": "object"
+    },
+    "near_duplicate_drops": {
+      "minimum": 0,
+      "title": "Near Duplicate Drops",
+      "type": "integer"
+    },
+    "overlength_rejections": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "toolace",
+          "hermes_function_calling",
+          "tinyllm_devops",
+          "m6_domain_replay",
+          "m2_no_tool_replay"
+        ]
+      },
+      "title": "Overlength Rejections",
+      "type": "object"
+    },
+    "private_artifacts_only": {
+      "const": true,
+      "default": true,
+      "title": "Private Artifacts Only",
+      "type": "boolean"
+    },
+    "report_version": {
+      "const": "m10-frozen-mixture-v1",
+      "default": "m10-frozen-mixture-v1",
+      "title": "Report Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_count": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence Count",
+      "type": "integer"
+    },
+    "source_supervised_tokens": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "toolace",
+          "hermes_function_calling",
+          "tinyllm_devops",
+          "m6_domain_replay",
+          "m2_no_tool_replay"
+        ]
+      },
+      "title": "Source Supervised Tokens",
+      "type": "object"
+    },
+    "status": {
+      "const": "pass",
+      "title": "Status",
+      "type": "string"
+    },
+    "target_supervised_tokens": {
+      "const": 1000000,
+      "title": "Target Supervised Tokens",
+      "type": "integer"
+    },
+    "training_permitted": {
+      "const": true,
+      "title": "Training Permitted",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "status",
+    "dataset_version",
+    "manifest_sha256",
+    "content_sha256",
+    "sequence_count",
+    "target_supervised_tokens",
+    "source_supervised_tokens",
+    "language_supervised_tokens",
+    "mode_supervised_tokens",
+    "overlength_rejections",
+    "exact_duplicate_drops",
+    "near_duplicate_drops",
+    "duplicate_report_sha256",
+    "contamination_report_sha256",
+    "training_permitted"
+  ],
+  "title": "M10FrozenMixtureReport",
+  "type": "object"
+}

@@ -25,8 +25,11 @@ from tinyllm.schemas.base import StrictSchema
 
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
 M9_SUBJECT_PATTERN = r"^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$"
-M10_STAGE_SUBJECT_PATTERN = r"^qwen3-0-6b-m10-full-sft-5m-[0-9a-f]{8}$"
-SUBJECT_PATTERN = r"^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-5m)-[0-9a-f]{8}$"
+M10_STAGE_SUBJECT_PATTERN = r"^qwen3-0-6b-m10-full-sft-(1m|5m)-[0-9a-f]{8}$"
+SUBJECT_PATTERN = (
+    r"^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m))"
+    r"-[0-9a-f]{8}$"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -180,11 +183,16 @@ def m10_stage_evaluation_subject_id(
     checkpoint_manifest_sha256: str,
     environment_sha256: str,
 ) -> str:
-    """Derive one immutable 5M Full-SFT evaluation-only identity."""
+    """Derive one immutable 1M/5M Full-SFT evaluation-only identity."""
+
+    if model.training_tokens not in {1_000_000, 5_000_000}:
+        raise ValueError("M10 evaluation subjects are limited to the 1M/5M stages")
+    stage_label = f"{model.training_tokens // 1_000_000}m"
+    kind = f"m10_full_sft_{stage_label}"
 
     identity = _canonical_sha256(
         {
-            "kind": "m10_full_sft_5m",
+            "kind": kind,
             "model": model.to_dict(),
             "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
             "source_result_sha256": source_result_sha256,
@@ -192,16 +200,16 @@ def m10_stage_evaluation_subject_id(
             "environment_sha256": environment_sha256,
         }
     )
-    return f"qwen3-0-6b-m10-full-sft-5m-{identity[:8]}"
+    return f"qwen3-0-6b-m10-full-sft-{stage_label}-{identity[:8]}"
 
 
 class M10StageEvaluationSubjectRecord(StrictSchema):
-    """Private, immutable 5M Full-SFT stage exposed only to evaluation flows."""
+    """Private, immutable 1M/5M Full-SFT stage exposed only to evaluation flows."""
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["Evaluation"] = "Evaluation"
     subject_id: str = Field(pattern=M10_STAGE_SUBJECT_PATTERN)
-    kind: Literal["m10_full_sft_5m"] = "m10_full_sft_5m"
+    kind: Literal["m10_full_sft_1m", "m10_full_sft_5m"] = "m10_full_sft_5m"
     created_at: datetime
     model: M6ModelIdentity
     model_dir: Path
@@ -250,14 +258,16 @@ class M10StageEvaluationSubjectRecord(StrictSchema):
             raise ValueError("M10 evaluation subject model file set differs")
         if set(self.tokenizer_files) != {"tokenizer.json", "tokenizer_config.json"}:
             raise ValueError("M10 evaluation subject Tokenizer file set differs")
+        expected_tokens = 1_000_000 if self.kind == "m10_full_sft_1m" else 5_000_000
+        expected_checkpoint = f"checkpoint-tokens-{expected_tokens:010d}"
         if (
             self.model.role != "candidate"
             or self.model.repository != "Qwen/Qwen3-0.6B"
             or self.model.adaptation != "full_sft"
-            or self.model.training_checkpoint_id != "checkpoint-tokens-0005000000"
-            or self.model.training_tokens != 5_000_000
+            or self.model.training_checkpoint_id != expected_checkpoint
+            or self.model.training_tokens != expected_tokens
         ):
-            raise ValueError("M10 evaluation subject is not the 5M Full-SFT stage")
+            raise ValueError("M10 evaluation subject stage identity differs")
         if self.model.model_artifact_sha256 != self.model_artifact_sha256:
             raise ValueError("M10 evaluation subject model identity hash differs")
         expected_id = m10_stage_evaluation_subject_id(
@@ -563,7 +573,7 @@ def resolve_serving_model(
 
     if model_ref.startswith("qwen3-8b-m9-"):
         return resolve_evaluation_subject(artifact_root, model_ref, now=now)
-    if model_ref.startswith("qwen3-0-6b-m10-full-sft-5m-"):
+    if model_ref.startswith("qwen3-0-6b-m10-full-sft-"):
         return resolve_m10_stage_evaluation_subject(artifact_root, model_ref, now=now)
     from tinyllm.deployment.registry import resolve_model
 

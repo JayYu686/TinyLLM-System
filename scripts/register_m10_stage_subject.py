@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Register one hash-verified M10 5M Full-SFT evaluation stage."""
+"""Register one hash-verified M10 1M/5M Full-SFT evaluation stage."""
 
 from __future__ import annotations
 
@@ -14,11 +14,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-root", type=Path, default=Path("/data/yujielun/tinyllm"))
     parser.add_argument("--source-run", type=Path, required=True)
+    parser.add_argument(
+        "--stage-tokens", type=int, choices=(1_000_000, 5_000_000), default=5_000_000
+    )
     args = parser.parse_args()
 
     record, record_sha256 = register_m10_stage_evaluation_subject(
         artifact_root=args.artifact_root,
         source_run=args.source_run,
+        stage_tokens=args.stage_tokens,
     )
     print(
         json.dumps(

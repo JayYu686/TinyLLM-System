@@ -1,0 +1,36 @@
+{
+  "models": [
+    {
+      "agent_dev_summary_sha256": "e0b76cc7653343ec8f308cb3a4cf556773d511023d99474c9a1832ffb904380a",
+      "model_id": "qwen3-0-6b-m7-fa678d92",
+      "role": "0.6b_parent",
+      "task_success_basis_points": 2125
+    },
+    {
+      "agent_dev_summary_sha256": "5ef68f77c9075492e82f21ad4844f24f9f5ed7670ad1a57a7fc4a742068c477b",
+      "model_id": "qwen3-0-6b-m10-full-sft-1m-f1797673",
+      "role": "0.6b_full_sft_1m",
+      "task_success_basis_points": 750
+    },
+    {
+      "agent_dev_summary_sha256": "32f1b5fa7a0e9496e0ef4a008e8022b706987ace0842f1fab49001539ed549d1",
+      "model_id": "qwen3-0-6b-m10-full-sft-5m-cf9c3994",
+      "role": "0.6b_full_sft_5m",
+      "task_success_basis_points": 1000
+    },
+    {
+      "agent_dev_summary_sha256": "8a2a7a065ab129c3376659a46e42380fa8a0ee03aeff1de3807748094e639ad9",
+      "model_id": "qwen3-8b-m9-base-90587dd6",
+      "role": "8b_lora_parent",
+      "task_success_basis_points": 4500
+    }
+  ],
+  "protocol": {
+    "agent_suite_version": "tinyllm-devops-agent-dev-v1-f958bcc6",
+    "git_commit": "b5023ab38d3c9773ea9fabd660921834647c642e",
+    "item_count": 80,
+    "openai_tool_name_mapping": "mcp-public-tool-name-v1"
+  },
+  "route_decision": "stop_0.6b_full_sft_and_start_8b_agent_lora",
+  "schema_version": "1.0"
+}

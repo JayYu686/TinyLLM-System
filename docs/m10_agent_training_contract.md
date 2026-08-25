@@ -157,12 +157,17 @@ Supervised Token；1M 和 5M 通过 Exact Resume 延续优化器、RNG 与数据
 5M→10M 启动接口默认拒绝，必须提供通过严格 Schema、阈值计算与阶段血缘校验的 Continuation
 Gate；仅按文件名或人工声明通过不能解除阻断。
 
-真实 1M→5M Exact Resume 已完成。5M Checkpoint 与 Stage Export 通过哈希校验，并注册为独立
-`Evaluation` 身份；该身份明确禁止进入 Candidate/Production Registry。阶段评测复用 M9
+真实 1M→5M Exact Resume 已完成。1M 与 5M Checkpoint/Stage Export 均可注册为独立
+`Evaluation` 身份；该身份明确禁止进入 Candidate/Production Registry。5M 阶段评测复用 M9
 80 条 Agent Dev 和 M6 v7 通用三任务聚合，前者相对父模型至少提升 1pp，后者回退不超过
-2pp。证据组装器会重新校验模型、Suite、配置、Run、Checkpoint 与 Export 血缘，再生成
-Continuation Gate。真实指标与边界见
+2pp。修复训练/Serving Tool Name 映射后，父模型与 5M 模型在同一提交上完成配对重测；5M
+Agent Dev Task Success 下降 11.25pp，M6 回退 1.78pp 单项通过，因此 0.6B 10M 路线正式
+早停。1M 诊断也低于父模型，不能替代或绕过 5M→10M Gate。真实指标与边界见
 [`M10.2 5M 阶段报告`](../reports/m10/m10_full_sft_5m.md)。
+
+同一统一协议下的 Qwen3-8B Base 达到 45.00% Agent Dev Task Success，后续路线因此固定为
+8B Agent LoRA。四个模型阶段的可比结果和早停依据见
+[`M10 Agent 模型路线选择报告`](../reports/m10/m10_route_selection.md)。
 
 8B 父模型固定为 Qwen3-8B Base，执行相同阶段的 BF16 LoRA。历史 M5 Domain Adapter 仅保留
 诊断身份，不作为初始化点。BF16 LoRA 在固定最小配置真实 OOM 后，才创建独立策略身份切换

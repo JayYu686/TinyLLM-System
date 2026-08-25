@@ -1,0 +1,25 @@
+{
+  "agent_dev": {
+    "candidate_summary_sha256": "32f1b5fa7a0e9496e0ef4a008e8022b706987ace0842f1fab49001539ed549d1",
+    "candidate_task_success_basis_points": 1000,
+    "parent_summary_sha256": "e0b76cc7653343ec8f308cb3a4cf556773d511023d99474c9a1832ffb904380a",
+    "parent_task_success_basis_points": 2125,
+    "task_success_improvement_basis_points": -1125
+  },
+  "continuation_gate": {
+    "decision": "rejected",
+    "gate_sha256": "80bf9196e8f3be50d823cab21b6a038938c1749d93e3c8d8f0dcccede41b1c63",
+    "gate_version": "m10-full-sft-continuation-v1"
+  },
+  "m6_general": {
+    "candidate_aggregate_basis_points": 5270,
+    "parent_aggregate_basis_points": 5448,
+    "regression_basis_points": 178
+  },
+  "protocol": {
+    "git_commit": "b5023ab38d3c9773ea9fabd660921834647c642e",
+    "openai_tool_name_mapping": "mcp-public-tool-name-v1"
+  },
+  "schema_version": "1.0",
+  "source_stage_export_sha256": "a8de3e2af57cb34870649c6fb67da225401737cc292bc31096b3e669b692ec1e"
+}

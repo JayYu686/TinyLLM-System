@@ -3,9 +3,9 @@
 ## 结论
 
 Qwen3-8B Agent LoRA 的配置、数据与父模型身份、十步显存 Probe、Adapter-only Checkpoint、
-Exact Resume、阶段 Gate 和 Evaluation Subject 接口已经形成独立实现。当前状态为
-`ENGINEERING_READY`；真实 BF16 显存、速度、Loss 和 Agent Dev 结果均为 `not_evaluated`，
-在 GPU 实测前不声明该配置可完成 1M 训练。
+Exact Resume、阶段 Gate 和 Evaluation Subject 接口已经形成独立实现。10-step BF16 显存
+Probe 已通过，当前状态为 `CUDA_PROBE_PASSED`；1M Loss、完整训练时长和 Agent Dev 仍为
+`not_evaluated`。
 
 ## 固定身份
 
@@ -43,10 +43,22 @@ Alpha 32、Dropout 0.05，并覆盖 `q/k/v/o/gate/up/down_proj`。
 
 | 指标 | 状态 |
 | -- | -- |
-| 10-step Peak Allocated / Reserved | `not_evaluated` |
-| 10-step 时长与 Tokens/s | `not_evaluated` |
+| 10-step Peak Allocated / Reserved | 20.58 / 22.55 GiB |
+| 10-step 时长 | 219.88 秒 |
+| 10-step 监督 Token | 9,496 |
 | 1M Loss、时长与峰值显存 | `not_evaluated` |
 | 1M Agent Dev | `not_evaluated` |
+
+正式 Probe 运行于干净提交 `dbca533f74d5c70a4270e3a0583c756041fd15b1`，结果 SHA256 为
+`2426230da1c33650d8769327ae9e438752787e3770187f924f574552828e9c40`。软件环境哈希为
+`8e62e483b63c38ddef74495b143ad8b7ee24184784361d26b9063f19917bacef`，硬件兼容哈希为
+`5e68c6806e4673ec5a70ba795cb4bce980be86ecf0b8400179b2ab2f77d2f9d2`。原始、无路径结果见
+[`m10_agent_lora_memory_probe.json`](raw/m10_agent_lora_memory_probe.json)。
+
+峰值 Reserved 距 24 GiB 物理显存约保留 1.45 GiB，因此正式训练必须使用无其他显存占用的
+独占 RTX 3090。该结果证明固定 BF16 LoRA 配置可运行，QLoRA 回退条件未触发。首次尝试在
+模型加载前因环境缺少 PEFT 失败，该尝试不计为 CUDA OOM，也没有产生 Probe Artifact；正式
+结果使用固定 PEFT 0.19.1 环境完成。
 
 ## 阶段门禁
 

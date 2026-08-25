@@ -1,0 +1,193 @@
+{
+  "$defs": {
+    "M10LoRACheckpointFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "const": "training_state.pt",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "title": "M10LoRACheckpointFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Atomic Adapter, optimizer, RNG, cursor, and lineage state.",
+  "properties": {
+    "checkpoint_id": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "completed_epochs": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Completed Epochs",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "dataset_manifest_sha256": {
+      "const": "6ec41bdee5d6509cbd04c6f4a0c1c7af2fa0ef116de185d9c43e2076d1ee0490",
+      "title": "Dataset Manifest Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "const": "m10-agent-sft-v1-4655d3e3",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "environment_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
+    "file": {
+      "$ref": "#/$defs/M10LoRACheckpointFile"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "global_step": {
+      "exclusiveMinimum": 0,
+      "title": "Global Step",
+      "type": "integer"
+    },
+    "hardware_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Hardware Sha256",
+      "type": "string"
+    },
+    "memory_probe_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Memory Probe Sha256",
+      "type": "string"
+    },
+    "parent_evaluation_subject": {
+      "const": "qwen3-8b-m9-base-90587dd6",
+      "title": "Parent Evaluation Subject",
+      "type": "string"
+    },
+    "parent_evaluation_subject_sha256": {
+      "const": "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8",
+      "title": "Parent Evaluation Subject Sha256",
+      "type": "string"
+    },
+    "parent_model_artifact_sha256": {
+      "const": "81fec43ab8b1f03a158e39e50ec23d99cf8701144e8678aea3ca656d12d08de0",
+      "title": "Parent Model Artifact Sha256",
+      "type": "string"
+    },
+    "peft_version": {
+      "const": "0.19.1",
+      "title": "Peft Version",
+      "type": "string"
+    },
+    "pin_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "stage",
+            "final"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pin Reason"
+    },
+    "pinned": {
+      "title": "Pinned",
+      "type": "boolean"
+    },
+    "resume_capability": {
+      "const": "exact",
+      "default": "exact",
+      "title": "Resume Capability",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence_cursor": {
+      "const": 0,
+      "title": "Sequence Cursor",
+      "type": "integer"
+    },
+    "strategy": {
+      "const": "single_gpu_bf16_lora",
+      "default": "single_gpu_bf16_lora",
+      "title": "Strategy",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "maximum": 10000000,
+      "minimum": 1000000,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    },
+    "world_size": {
+      "const": 1,
+      "default": 1,
+      "title": "World Size",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "run_id",
+    "global_step",
+    "completed_epochs",
+    "sequence_cursor",
+    "supervised_tokens",
+    "config_sha256",
+    "dataset_version",
+    "dataset_manifest_sha256",
+    "parent_evaluation_subject",
+    "parent_evaluation_subject_sha256",
+    "parent_model_artifact_sha256",
+    "peft_version",
+    "git_commit",
+    "environment_sha256",
+    "hardware_sha256",
+    "memory_probe_sha256",
+    "file",
+    "pinned"
+  ],
+  "title": "M10LoRACheckpointManifest",
+  "type": "object"
+}

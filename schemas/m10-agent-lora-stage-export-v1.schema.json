@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "description": "Immutable Adapter export for one evaluated stage.",
+  "properties": {
+    "adapter_artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Adapter Artifact Sha256",
+      "type": "string"
+    },
+    "adapter_files": {
+      "items": {
+        "enum": [
+          "adapter_config.json",
+          "adapter_model.safetensors"
+        ],
+        "type": "string"
+      },
+      "title": "Adapter Files",
+      "type": "array"
+    },
+    "checkpoint_id": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "enum": [
+        1000000,
+        5000000,
+        10000000
+      ],
+      "title": "Supervised Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "checkpoint_id",
+    "supervised_tokens",
+    "adapter_artifact_sha256",
+    "adapter_files"
+  ],
+  "title": "M10LoRAStageExport",
+  "type": "object"
+}

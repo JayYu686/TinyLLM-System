@@ -1,0 +1,145 @@
+{
+  "additionalProperties": false,
+  "description": "Evidence authorizing 1M\u21925M or 5M\u219210M continuation.",
+  "properties": {
+    "agent_dev_version": {
+      "const": "tinyllm-devops-agent-dev-v1-f958bcc6",
+      "title": "Agent Dev Version",
+      "type": "string"
+    },
+    "candidate_summary_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Summary Sha256",
+      "type": "string"
+    },
+    "candidate_task_success_basis_points": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Candidate Task Success Basis Points",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "gate_version": {
+      "const": "m10-agent-lora-continuation-v1",
+      "default": "m10-agent-lora-continuation-v1",
+      "title": "Gate Version",
+      "type": "string"
+    },
+    "improvement_basis_points": {
+      "maximum": 10000,
+      "minimum": -10000,
+      "title": "Improvement Basis Points",
+      "type": "integer"
+    },
+    "m6_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "M6 Evidence Sha256"
+    },
+    "m6_regression_basis_points": {
+      "anyOf": [
+        {
+          "maximum": 10000,
+          "minimum": -10000,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "M6 Regression Basis Points"
+    },
+    "parent_summary_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Parent Summary Sha256",
+      "type": "string"
+    },
+    "parent_task_success_basis_points": {
+      "const": 4500,
+      "title": "Parent Task Success Basis Points",
+      "type": "integer"
+    },
+    "run_id": {
+      "maxLength": 180,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_adapter_artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Adapter Artifact Sha256",
+      "type": "string"
+    },
+    "source_checkpoint_id": {
+      "pattern": "^checkpoint-tokens-[0-9]{10}$",
+      "title": "Source Checkpoint Id",
+      "type": "string"
+    },
+    "source_stage_tokens": {
+      "enum": [
+        1000000,
+        5000000
+      ],
+      "title": "Source Stage Tokens",
+      "type": "integer"
+    },
+    "target_stage_tokens": {
+      "enum": [
+        5000000,
+        10000000
+      ],
+      "title": "Target Stage Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "evaluated_at",
+    "decision",
+    "run_id",
+    "config_sha256",
+    "source_stage_tokens",
+    "target_stage_tokens",
+    "source_checkpoint_id",
+    "source_adapter_artifact_sha256",
+    "agent_dev_version",
+    "parent_summary_sha256",
+    "candidate_summary_sha256",
+    "parent_task_success_basis_points",
+    "candidate_task_success_basis_points",
+    "improvement_basis_points"
+  ],
+  "title": "M10LoRAContinuationGate",
+  "type": "object"
+}

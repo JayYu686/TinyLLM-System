@@ -1,0 +1,510 @@
+{
+  "$defs": {
+    "M10LoRAAdapterConfig": {
+      "additionalProperties": false,
+      "description": "Frozen PEFT topology.",
+      "properties": {
+        "alpha": {
+          "const": 32,
+          "title": "Alpha",
+          "type": "integer"
+        },
+        "bias": {
+          "const": "none",
+          "title": "Bias",
+          "type": "string"
+        },
+        "dropout": {
+          "exclusiveMaximum": 1.0,
+          "minimum": 0.0,
+          "title": "Dropout",
+          "type": "number"
+        },
+        "rank": {
+          "const": 16,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "target_modules": {
+          "items": {
+            "enum": [
+              "down_proj",
+              "gate_proj",
+              "k_proj",
+              "o_proj",
+              "q_proj",
+              "up_proj",
+              "v_proj"
+            ],
+            "type": "string"
+          },
+          "title": "Target Modules",
+          "type": "array"
+        }
+      },
+      "required": [
+        "rank",
+        "alpha",
+        "dropout",
+        "bias",
+        "target_modules"
+      ],
+      "title": "M10LoRAAdapterConfig",
+      "type": "object"
+    },
+    "M10LoRACheckpointConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "keep_last": {
+          "const": 2,
+          "title": "Keep Last",
+          "type": "integer"
+        },
+        "pin_stage_checkpoints": {
+          "const": true,
+          "title": "Pin Stage Checkpoints",
+          "type": "boolean"
+        },
+        "resume": {
+          "const": "auto",
+          "title": "Resume",
+          "type": "string"
+        },
+        "save_interval_tokens": {
+          "const": 1000000,
+          "title": "Save Interval Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "save_interval_tokens",
+        "keep_last",
+        "resume",
+        "pin_stage_checkpoints"
+      ],
+      "title": "M10LoRACheckpointConfig",
+      "type": "object"
+    },
+    "M10LoRADataConfig": {
+      "additionalProperties": false,
+      "description": "Immutable M10 Agent training array identity.",
+      "properties": {
+        "assistant_only_loss": {
+          "const": true,
+          "title": "Assistant Only Loss",
+          "type": "boolean"
+        },
+        "dataset_version": {
+          "const": "m10-agent-sft-v1-4655d3e3",
+          "title": "Dataset Version",
+          "type": "string"
+        },
+        "language_target": {
+          "const": "en70-zh30",
+          "title": "Language Target",
+          "type": "string"
+        },
+        "manifest_sha256": {
+          "const": "6ec41bdee5d6509cbd04c6f4a0c1c7af2fa0ef116de185d9c43e2076d1ee0490",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "mode_target": {
+          "const": "nonthinking94-thinking6",
+          "title": "Mode Target",
+          "type": "string"
+        },
+        "sequence_length": {
+          "const": 2048,
+          "title": "Sequence Length",
+          "type": "integer"
+        },
+        "target_supervised_tokens_per_epoch": {
+          "const": 1000000,
+          "title": "Target Supervised Tokens Per Epoch",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "dataset_version",
+        "manifest_sha256",
+        "sequence_length",
+        "target_supervised_tokens_per_epoch",
+        "assistant_only_loss",
+        "language_target",
+        "mode_target"
+      ],
+      "title": "M10LoRADataConfig",
+      "type": "object"
+    },
+    "M10LoRAEvaluationConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_dev_version": {
+          "const": "tinyllm-devops-agent-dev-v1-f958bcc6",
+          "title": "Agent Dev Version",
+          "type": "string"
+        },
+        "m6_max_regression_basis_points": {
+          "const": 200,
+          "title": "M6 Max Regression Basis Points",
+          "type": "integer"
+        },
+        "parent_task_success_basis_points": {
+          "const": 4500,
+          "title": "Parent Task Success Basis Points",
+          "type": "integer"
+        },
+        "release_set_access": {
+          "const": "m10_final_gate_only",
+          "title": "Release Set Access",
+          "type": "string"
+        },
+        "stage_min_improvement_basis_points": {
+          "const": 100,
+          "title": "Stage Min Improvement Basis Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent_dev_version",
+        "parent_task_success_basis_points",
+        "stage_min_improvement_basis_points",
+        "m6_max_regression_basis_points",
+        "release_set_access"
+      ],
+      "title": "M10LoRAEvaluationConfig",
+      "type": "object"
+    },
+    "M10LoRAMemoryProbeConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "optimizer_steps": {
+          "const": 10,
+          "title": "Optimizer Steps",
+          "type": "integer"
+        },
+        "required_before_fresh_training": {
+          "const": true,
+          "title": "Required Before Fresh Training",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "optimizer_steps",
+        "required_before_fresh_training"
+      ],
+      "title": "M10LoRAMemoryProbeConfig",
+      "type": "object"
+    },
+    "M10LoRAModelConfig": {
+      "additionalProperties": false,
+      "description": "Pinned Qwen3-8B Base evaluation subject and LoRA identity.",
+      "properties": {
+        "adaptation": {
+          "const": "lora",
+          "title": "Adaptation",
+          "type": "string"
+        },
+        "attention_architecture": {
+          "const": "gqa",
+          "title": "Attention Architecture",
+          "type": "string"
+        },
+        "license": {
+          "const": "Apache-2.0",
+          "title": "License",
+          "type": "string"
+        },
+        "lora": {
+          "$ref": "#/$defs/M10LoRAAdapterConfig"
+        },
+        "model_type": {
+          "const": "qwen3",
+          "title": "Model Type",
+          "type": "string"
+        },
+        "parent_evaluation_subject": {
+          "const": "qwen3-8b-m9-base-90587dd6",
+          "title": "Parent Evaluation Subject",
+          "type": "string"
+        },
+        "parent_evaluation_subject_sha256": {
+          "const": "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8",
+          "title": "Parent Evaluation Subject Sha256",
+          "type": "string"
+        },
+        "parent_model_artifact_sha256": {
+          "const": "81fec43ab8b1f03a158e39e50ec23d99cf8701144e8678aea3ca656d12d08de0",
+          "title": "Parent Model Artifact Sha256",
+          "type": "string"
+        },
+        "parent_tokenizer_artifact_sha256": {
+          "const": "99d4d297ece6cc43fa551987701e4ded4fa5c860d9448965d212508519bfc382",
+          "title": "Parent Tokenizer Artifact Sha256",
+          "type": "string"
+        },
+        "repository": {
+          "const": "Qwen/Qwen3-8B",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "const": "b968826d9c46dd6066d109eabc6255188de91218",
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_remote_code": {
+          "const": false,
+          "title": "Trust Remote Code",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository",
+        "revision",
+        "model_type",
+        "license",
+        "attention_architecture",
+        "adaptation",
+        "trust_remote_code",
+        "parent_evaluation_subject",
+        "parent_evaluation_subject_sha256",
+        "parent_model_artifact_sha256",
+        "parent_tokenizer_artifact_sha256",
+        "lora"
+      ],
+      "title": "M10LoRAModelConfig",
+      "type": "object"
+    },
+    "M10LoRAOptimizationConfig": {
+      "additionalProperties": false,
+      "description": "Single-GPU BF16 LoRA optimization contract.",
+      "properties": {
+        "gradient_accumulation_steps": {
+          "const": 8,
+          "title": "Gradient Accumulation Steps",
+          "type": "integer"
+        },
+        "gradient_checkpointing": {
+          "const": true,
+          "title": "Gradient Checkpointing",
+          "type": "boolean"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "max_grad_norm": {
+          "exclusiveMinimum": 0,
+          "title": "Max Grad Norm",
+          "type": "number"
+        },
+        "max_job_duration_seconds": {
+          "const": 43200,
+          "title": "Max Job Duration Seconds",
+          "type": "integer"
+        },
+        "max_train_tokens": {
+          "const": 10000000,
+          "title": "Max Train Tokens",
+          "type": "integer"
+        },
+        "micro_batch_size": {
+          "const": 1,
+          "title": "Micro Batch Size",
+          "type": "integer"
+        },
+        "stage_tokens": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "const": 1000000,
+              "type": "integer"
+            },
+            {
+              "const": 5000000,
+              "type": "integer"
+            },
+            {
+              "const": 10000000,
+              "type": "integer"
+            }
+          ],
+          "title": "Stage Tokens",
+          "type": "array"
+        },
+        "warmup_tokens": {
+          "const": 100000,
+          "title": "Warmup Tokens",
+          "type": "integer"
+        },
+        "weight_decay": {
+          "minimum": 0,
+          "title": "Weight Decay",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_train_tokens",
+        "stage_tokens",
+        "micro_batch_size",
+        "gradient_accumulation_steps",
+        "learning_rate",
+        "weight_decay",
+        "max_grad_norm",
+        "warmup_tokens",
+        "gradient_checkpointing",
+        "max_job_duration_seconds"
+      ],
+      "title": "M10LoRAOptimizationConfig",
+      "type": "object"
+    },
+    "M10LoRAParallelConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "device_type": {
+          "const": "cuda",
+          "title": "Device Type",
+          "type": "string"
+        },
+        "strategy": {
+          "const": "single",
+          "title": "Strategy",
+          "type": "string"
+        },
+        "world_size": {
+          "const": 1,
+          "title": "World Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "strategy",
+        "device_type",
+        "world_size"
+      ],
+      "title": "M10LoRAParallelConfig",
+      "type": "object"
+    },
+    "M10LoRAPrecisionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_tf32": {
+          "const": true,
+          "title": "Allow Tf32",
+          "type": "boolean"
+        },
+        "dtype": {
+          "const": "bf16",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "qlora_fallback": {
+          "const": "only_after_verified_bf16_oom",
+          "title": "Qlora Fallback",
+          "type": "string"
+        },
+        "use_grad_scaler": {
+          "const": false,
+          "title": "Use Grad Scaler",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dtype",
+        "allow_tf32",
+        "use_grad_scaler",
+        "qlora_fallback"
+      ],
+      "title": "M10LoRAPrecisionConfig",
+      "type": "object"
+    },
+    "M10LoRARunConfig": {
+      "additionalProperties": false,
+      "description": "Stable identity for the single seeded 8B Agent LoRA campaign.",
+      "properties": {
+        "name": {
+          "const": "m10-agent-lora-qwen3-8b-seed42",
+          "title": "Name",
+          "type": "string"
+        },
+        "purpose": {
+          "const": "agent_lora",
+          "title": "Purpose",
+          "type": "string"
+        },
+        "seed": {
+          "const": 42,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "seed",
+        "purpose"
+      ],
+      "title": "M10LoRARunConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete staged Qwen3-8B Agent LoRA configuration.",
+  "properties": {
+    "checkpoint": {
+      "$ref": "#/$defs/M10LoRACheckpointConfig"
+    },
+    "config_kind": {
+      "const": "m10_agent_lora",
+      "title": "Config Kind",
+      "type": "string"
+    },
+    "data": {
+      "$ref": "#/$defs/M10LoRADataConfig"
+    },
+    "evaluation": {
+      "$ref": "#/$defs/M10LoRAEvaluationConfig"
+    },
+    "memory_probe": {
+      "$ref": "#/$defs/M10LoRAMemoryProbeConfig"
+    },
+    "model": {
+      "$ref": "#/$defs/M10LoRAModelConfig"
+    },
+    "optimization": {
+      "$ref": "#/$defs/M10LoRAOptimizationConfig"
+    },
+    "parallel": {
+      "$ref": "#/$defs/M10LoRAParallelConfig"
+    },
+    "precision": {
+      "$ref": "#/$defs/M10LoRAPrecisionConfig"
+    },
+    "run": {
+      "$ref": "#/$defs/M10LoRARunConfig"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "config_kind",
+    "run",
+    "model",
+    "data",
+    "optimization",
+    "precision",
+    "parallel",
+    "checkpoint",
+    "evaluation",
+    "memory_probe"
+  ],
+  "title": "M10LoRAConfig",
+  "type": "object"
+}

@@ -161,61 +161,98 @@
     }
   },
   "additionalProperties": false,
-  "description": "Hash-verified path projection accepted only by serving and evaluation flows.",
+  "description": "Private, immutable M10 Agent LoRA stage for serving and evaluation only.",
   "properties": {
     "adapter_artifact_sha256": {
-      "anyOf": [
-        {
-          "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Adapter Artifact Sha256"
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Adapter Artifact Sha256",
+      "type": "string"
     },
     "adapter_dir": {
-      "anyOf": [
-        {
-          "format": "path",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Adapter Dir"
+      "format": "path",
+      "title": "Adapter Dir",
+      "type": "string"
     },
-    "evaluation_subject_sha256": {
+    "adapter_files": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Adapter Files",
+      "type": "array"
+    },
+    "base_model_artifact_sha256": {
       "pattern": "^[0-9a-f]{64}$",
-      "title": "Evaluation Subject Sha256",
+      "title": "Base Model Artifact Sha256",
+      "type": "string"
+    },
+    "checkpoint_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Checkpoint Manifest Sha256",
+      "type": "string"
+    },
+    "checkpoint_payload_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Checkpoint Payload Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "effective_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Effective Artifact Sha256",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "m10_agent_lora_1m",
+        "m10_agent_lora_5m",
+        "m10_agent_lora_10m"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "memory_probe_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Memory Probe Sha256",
       "type": "string"
     },
     "model": {
       "$ref": "#/$defs/M6ModelIdentity"
-    },
-    "model_artifact_sha256": {
-      "pattern": "^[0-9a-f]{64}$",
-      "title": "Model Artifact Sha256",
-      "type": "string"
     },
     "model_dir": {
       "format": "path",
       "title": "Model Dir",
       "type": "string"
     },
-    "model_version": {
-      "pattern": "^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|qwen3-8b-m10-agent-lora-(1m|5m|10m))-[0-9a-f]{8}$",
-      "title": "Model Version",
+    "model_files": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 7,
+      "minItems": 7,
+      "title": "Model Files",
+      "type": "array"
+    },
+    "parent_evaluation_subject": {
+      "const": "qwen3-8b-m9-base-90587dd6",
+      "title": "Parent Evaluation Subject",
       "type": "string"
     },
-    "requested_ref": {
-      "pattern": "^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|qwen3-8b-m10-agent-lora-(1m|5m|10m))-[0-9a-f]{8}$",
-      "title": "Requested Ref",
+    "parent_evaluation_subject_sha256": {
+      "const": "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8",
+      "title": "Parent Evaluation Subject Sha256",
       "type": "string"
+    },
+    "production_eligible": {
+      "const": false,
+      "default": false,
+      "title": "Production Eligible",
+      "type": "boolean"
     },
     "schema_version": {
       "const": "1.0",
@@ -223,10 +260,25 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "source_result_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Result Sha256",
+      "type": "string"
+    },
+    "source_run_dir": {
+      "format": "path",
+      "title": "Source Run Dir",
+      "type": "string"
+    },
     "status": {
       "const": "Evaluation",
       "default": "Evaluation",
       "title": "Status",
+      "type": "string"
+    },
+    "subject_id": {
+      "pattern": "^qwen3-8b-m10-agent-lora-(1m|5m|10m)-[0-9a-f]{8}$",
+      "title": "Subject Id",
       "type": "string"
     },
     "tokenizer_artifact_sha256": {
@@ -239,23 +291,39 @@
       "title": "Tokenizer Dir",
       "type": "string"
     },
-    "verified_at": {
-      "format": "date-time",
-      "title": "Verified At",
-      "type": "string"
+    "tokenizer_files": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Tokenizer Files",
+      "type": "array"
     }
   },
   "required": [
-    "requested_ref",
-    "model_version",
-    "evaluation_subject_sha256",
+    "subject_id",
+    "kind",
+    "created_at",
     "model",
     "model_dir",
-    "model_artifact_sha256",
+    "model_files",
+    "base_model_artifact_sha256",
     "tokenizer_dir",
+    "tokenizer_files",
     "tokenizer_artifact_sha256",
-    "verified_at"
+    "adapter_dir",
+    "adapter_files",
+    "adapter_artifact_sha256",
+    "effective_artifact_sha256",
+    "source_run_dir",
+    "source_result_sha256",
+    "checkpoint_manifest_sha256",
+    "checkpoint_payload_sha256",
+    "memory_probe_sha256",
+    "parent_evaluation_subject",
+    "parent_evaluation_subject_sha256"
   ],
-  "title": "ResolvedEvaluationSubject",
+  "title": "M10LoRAStageEvaluationSubjectRecord",
   "type": "object"
 }

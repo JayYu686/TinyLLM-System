@@ -1,0 +1,99 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "config_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "dataset_version": {
+      "const": "m10-agent-sft-v1-4655d3e3",
+      "title": "Dataset Version",
+      "type": "string"
+    },
+    "duration_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "git_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Git Commit",
+      "type": "string"
+    },
+    "git_dirty": {
+      "const": false,
+      "title": "Git Dirty",
+      "type": "boolean"
+    },
+    "gpu_name": {
+      "const": "NVIDIA GeForce RTX 3090",
+      "title": "Gpu Name",
+      "type": "string"
+    },
+    "optimizer_steps": {
+      "const": 10,
+      "title": "Optimizer Steps",
+      "type": "integer"
+    },
+    "parent_evaluation_subject": {
+      "const": "qwen3-8b-m9-base-90587dd6",
+      "title": "Parent Evaluation Subject",
+      "type": "string"
+    },
+    "peak_allocated_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Allocated Bytes",
+      "type": "integer"
+    },
+    "peak_reserved_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Peak Reserved Bytes",
+      "type": "integer"
+    },
+    "physical_gpu_index": {
+      "minimum": 0,
+      "title": "Physical Gpu Index",
+      "type": "integer"
+    },
+    "probe_version": {
+      "const": "m10-agent-lora-memory-v1",
+      "default": "m10-agent-lora-memory-v1",
+      "title": "Probe Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "succeeded",
+      "default": "succeeded",
+      "title": "Status",
+      "type": "string"
+    },
+    "supervised_tokens": {
+      "exclusiveMinimum": 0,
+      "title": "Supervised Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "config_sha256",
+    "git_commit",
+    "git_dirty",
+    "dataset_version",
+    "parent_evaluation_subject",
+    "physical_gpu_index",
+    "gpu_name",
+    "optimizer_steps",
+    "supervised_tokens",
+    "peak_allocated_bytes",
+    "peak_reserved_bytes",
+    "duration_seconds"
+  ],
+  "title": "M10LoRAMemoryProbeResult",
+  "type": "object"
+}

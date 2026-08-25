@@ -1,4 +1,4 @@
-"""Immutable M9-only model subjects for measured baseline comparisons."""
+"""Immutable evaluation-only model subjects for measured comparisons."""
 
 from __future__ import annotations
 
@@ -24,7 +24,9 @@ from tinyllm.evaluation.m6_schema import M6ModelIdentity
 from tinyllm.schemas.base import StrictSchema
 
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
-SUBJECT_PATTERN = r"^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$"
+M9_SUBJECT_PATTERN = r"^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$"
+M10_STAGE_SUBJECT_PATTERN = r"^qwen3-0-6b-m10-full-sft-5m-[0-9a-f]{8}$"
+SUBJECT_PATTERN = r"^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-5m)-[0-9a-f]{8}$"
 
 
 def _canonical_sha256(value: object) -> str:
@@ -83,7 +85,7 @@ class M9EvaluationSubjectRecord(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["Evaluation"] = "Evaluation"
-    subject_id: str = Field(pattern=SUBJECT_PATTERN)
+    subject_id: str = Field(pattern=M9_SUBJECT_PATTERN)
     kind: Literal["base", "historical_lora"]
     created_at: datetime
     model: M6ModelIdentity
@@ -167,6 +169,106 @@ class M9EvaluationSubjectRecord(StrictSchema):
                 raise ValueError("historical LoRA subject requires an Adapter Artifact")
             if self.model.adapter_sha256 != self.adapter_artifact_sha256:
                 raise ValueError("historical LoRA identity and Adapter hash differ")
+        return self
+
+
+def m10_stage_evaluation_subject_id(
+    *,
+    model: M6ModelIdentity,
+    tokenizer_artifact_sha256: str,
+    source_result_sha256: str,
+    checkpoint_manifest_sha256: str,
+    environment_sha256: str,
+) -> str:
+    """Derive one immutable 5M Full-SFT evaluation-only identity."""
+
+    identity = _canonical_sha256(
+        {
+            "kind": "m10_full_sft_5m",
+            "model": model.to_dict(),
+            "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
+            "source_result_sha256": source_result_sha256,
+            "checkpoint_manifest_sha256": checkpoint_manifest_sha256,
+            "environment_sha256": environment_sha256,
+        }
+    )
+    return f"qwen3-0-6b-m10-full-sft-5m-{identity[:8]}"
+
+
+class M10StageEvaluationSubjectRecord(StrictSchema):
+    """Private, immutable 5M Full-SFT stage exposed only to evaluation flows."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["Evaluation"] = "Evaluation"
+    subject_id: str = Field(pattern=M10_STAGE_SUBJECT_PATTERN)
+    kind: Literal["m10_full_sft_5m"] = "m10_full_sft_5m"
+    created_at: datetime
+    model: M6ModelIdentity
+    model_dir: Path
+    model_files: tuple[str, ...] = Field(min_length=3, max_length=3)
+    model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    tokenizer_dir: Path
+    tokenizer_files: tuple[str, ...] = Field(min_length=2, max_length=2)
+    tokenizer_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_run_dir: Path
+    source_result_sha256: str = Field(pattern=SHA256_PATTERN)
+    checkpoint_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    checkpoint_payload_sha256: str = Field(pattern=SHA256_PATTERN)
+    environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    production_eligible: Literal[False] = False
+
+    @field_validator("model_files", "tokenizer_files", mode="before")
+    @classmethod
+    def freeze_files(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("model_files", "tokenizer_files")
+    @classmethod
+    def validate_file_names(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if len(value) != len(set(value)) or tuple(sorted(value)) != value:
+            raise ValueError("M10 evaluation subject file names must be unique and sorted")
+        if any(Path(name).name != name or name in {".", ".."} for name in value):
+            raise ValueError("M10 evaluation subject accepts top-level file names only")
+        return value
+
+    @field_validator("model_dir", "tokenizer_dir", "source_run_dir")
+    @classmethod
+    def require_absolute_paths(cls, value: Path) -> Path:
+        if not value.is_absolute():
+            raise ValueError("M10 evaluation subject paths must be absolute")
+        return value
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> M10StageEvaluationSubjectRecord:
+        if self.created_at.tzinfo is None:
+            raise ValueError("M10 evaluation subject timestamp must be timezone-aware")
+        if set(self.model_files) != {
+            "config.json",
+            "generation_config.json",
+            "model.safetensors",
+        }:
+            raise ValueError("M10 evaluation subject model file set differs")
+        if set(self.tokenizer_files) != {"tokenizer.json", "tokenizer_config.json"}:
+            raise ValueError("M10 evaluation subject Tokenizer file set differs")
+        if (
+            self.model.role != "candidate"
+            or self.model.repository != "Qwen/Qwen3-0.6B"
+            or self.model.adaptation != "full_sft"
+            or self.model.training_checkpoint_id != "checkpoint-tokens-0005000000"
+            or self.model.training_tokens != 5_000_000
+        ):
+            raise ValueError("M10 evaluation subject is not the 5M Full-SFT stage")
+        if self.model.model_artifact_sha256 != self.model_artifact_sha256:
+            raise ValueError("M10 evaluation subject model identity hash differs")
+        expected_id = m10_stage_evaluation_subject_id(
+            model=self.model,
+            tokenizer_artifact_sha256=self.tokenizer_artifact_sha256,
+            source_result_sha256=self.source_result_sha256,
+            checkpoint_manifest_sha256=self.checkpoint_manifest_sha256,
+            environment_sha256=self.environment_sha256,
+        )
+        if self.subject_id != expected_id:
+            raise ValueError("M10 evaluation subject ID differs from immutable inputs")
         return self
 
 
@@ -255,6 +357,25 @@ def _validate_contained_paths(artifact_root: Path, record: M9EvaluationSubjectRe
         ) from exc
 
 
+def _validate_m10_contained_paths(
+    artifact_root: Path, record: M10StageEvaluationSubjectRecord
+) -> None:
+    try:
+        root = artifact_root.resolve(strict=True)
+        for directory in (record.model_dir, record.tokenizer_dir, record.source_run_dir):
+            resolved = directory.resolve(strict=True)
+            if directory.is_symlink() or not resolved.is_relative_to(root):
+                raise DeploymentError(
+                    DeploymentErrorCode.UNSAFE_ARTIFACT,
+                    "M10 evaluation subject Artifact escapes the Artifact Store",
+                )
+    except (FileNotFoundError, OSError) as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.NOT_FOUND,
+            "M10 evaluation subject Artifact directory is unavailable",
+        ) from exc
+
+
 def publish_evaluation_subject(
     artifact_root: Path, record: M9EvaluationSubjectRecord
 ) -> tuple[M9EvaluationSubjectRecord, str]:
@@ -290,6 +411,41 @@ def publish_evaluation_subject(
     return record, hashlib.sha256(payload).hexdigest()
 
 
+def publish_m10_stage_evaluation_subject(
+    artifact_root: Path, record: M10StageEvaluationSubjectRecord
+) -> tuple[M10StageEvaluationSubjectRecord, str]:
+    """Idempotently publish one M10 stage outside Candidate/Production Registry."""
+
+    if not artifact_root.is_absolute() or artifact_root.is_symlink():
+        raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
+    try:
+        record = M10StageEvaluationSubjectRecord.model_validate_json(record.model_dump_json())
+    except ValueError as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "M10 evaluation subject record is invalid"
+        ) from exc
+    _validate_m10_contained_paths(artifact_root, record)
+    target = artifact_root / "registry" / "evaluation-subjects" / record.subject_id / "model.json"
+    if target.exists():
+        try:
+            payload = target.read_bytes()
+            existing = M10StageEvaluationSubjectRecord.model_validate_json(payload)
+        except (OSError, ValueError) as exc:
+            raise DeploymentError(
+                DeploymentErrorCode.INVALID_INPUT, "M10 evaluation subject record is invalid"
+            ) from exc
+        existing_identity = existing.model_dump(mode="json", exclude={"created_at"})
+        requested_identity = record.model_dump(mode="json", exclude={"created_at"})
+        if existing_identity != requested_identity:
+            raise DeploymentError(
+                DeploymentErrorCode.CONFLICT, "M10 evaluation subject already exists with drift"
+            )
+        return existing, hashlib.sha256(payload).hexdigest()
+    _atomic_json(target, record.to_dict())
+    payload = target.read_bytes()
+    return record, hashlib.sha256(payload).hexdigest()
+
+
 def resolve_evaluation_subject(
     artifact_root: Path, subject_id: str, *, now: datetime | None = None
 ) -> ResolvedEvaluationSubject:
@@ -297,7 +453,7 @@ def resolve_evaluation_subject(
 
     if not artifact_root.is_absolute() or artifact_root.is_symlink():
         raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
-    if re.fullmatch(SUBJECT_PATTERN, subject_id) is None:
+    if re.fullmatch(M9_SUBJECT_PATTERN, subject_id) is None:
         raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Evaluation subject ID is invalid")
     path = artifact_root / "registry" / "evaluation-subjects" / subject_id / "model.json"
     try:
@@ -348,13 +504,67 @@ def resolve_evaluation_subject(
     )
 
 
+def resolve_m10_stage_evaluation_subject(
+    artifact_root: Path, subject_id: str, *, now: datetime | None = None
+) -> ResolvedEvaluationSubject:
+    """Resolve one M10 stage and fail closed on metadata or Artifact drift."""
+
+    if not artifact_root.is_absolute() or artifact_root.is_symlink():
+        raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
+    if re.fullmatch(M10_STAGE_SUBJECT_PATTERN, subject_id) is None:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "M10 evaluation subject ID is invalid"
+        )
+    path = artifact_root / "registry" / "evaluation-subjects" / subject_id / "model.json"
+    try:
+        payload = path.read_bytes()
+        record = M10StageEvaluationSubjectRecord.model_validate_json(payload)
+    except FileNotFoundError as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.NOT_FOUND, "M10 evaluation subject is missing"
+        ) from exc
+    except (OSError, ValueError) as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "M10 evaluation subject is invalid"
+        ) from exc
+    if record.subject_id != subject_id:
+        raise DeploymentError(
+            DeploymentErrorCode.HASH_MISMATCH, "M10 evaluation subject identity differs"
+        )
+    _validate_m10_contained_paths(artifact_root, record)
+    record_sha256 = hashlib.sha256(payload).hexdigest()
+    actual_model = _artifact_set_sha256(record.model_dir, record.model_files)
+    actual_tokenizer = _artifact_set_sha256(record.tokenizer_dir, record.tokenizer_files)
+    if (
+        actual_model != record.model_artifact_sha256
+        or actual_tokenizer != record.tokenizer_artifact_sha256
+    ):
+        raise DeploymentError(
+            DeploymentErrorCode.HASH_MISMATCH, "M10 evaluation subject Artifact hash differs"
+        )
+    _validate_model_configuration(record.model_dir, record.tokenizer_dir)
+    return ResolvedEvaluationSubject(
+        requested_ref=subject_id,
+        model_version=subject_id,
+        evaluation_subject_sha256=record_sha256,
+        model=record.model,
+        model_dir=record.model_dir,
+        model_artifact_sha256=record.model_artifact_sha256,
+        tokenizer_dir=record.tokenizer_dir,
+        tokenizer_artifact_sha256=record.tokenizer_artifact_sha256,
+        verified_at=now or datetime.now(UTC),
+    )
+
+
 def resolve_serving_model(
     artifact_root: Path, model_ref: str, *, now: datetime | None = None
 ) -> ServingModel:
-    """Resolve a deployable M6/M7 model or an explicit M9 Evaluation subject."""
+    """Resolve a deployable M6/M7 model or an explicit evaluation-only subject."""
 
     if model_ref.startswith("qwen3-8b-m9-"):
         return resolve_evaluation_subject(artifact_root, model_ref, now=now)
+    if model_ref.startswith("qwen3-0-6b-m10-full-sft-5m-"):
+        return resolve_m10_stage_evaluation_subject(artifact_root, model_ref, now=now)
     from tinyllm.deployment.registry import resolve_model
 
     return resolve_model(artifact_root, model_ref, now=now)

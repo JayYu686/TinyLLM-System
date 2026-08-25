@@ -32,8 +32,10 @@ formal serving matrix, recovery, rollback, and security gates, promoting
 M8 then completed its clean-commit 8/8 OpenAI Tool Calling matrix, bounded MCP tools, durable
 approval/restart recovery, FTS5 grounding, and sandbox-only idempotent write contract. The runtime
 is complete. M9 subsequently froze the 80/160 Dev/Release split, completed three real Agent Dev
-baselines, and ran 5,520/5,520 BFCL Core items with zero inference failures. Agent model quality
-and Production eligibility remain gated by M10.
+baselines, and ran 5,520/5,520 BFCL Core items with zero inference failures. M10 then froze its
+five-source training mixture and completed real 0.6B Full-SFT and 8B LoRA routes. Both routes were
+stopped by their preregistered Agent Dev continuation gates, so M7 Production remains unchanged
+and the project publishes `v1.0.0-rc.1` without an Agent-model Production claim.
 
 ## Agent release train
 
@@ -42,11 +44,17 @@ and Production eligibility remain gated by M10.
 | Weeks 1–2 | M7 | vLLM serving, authenticated Gateway, real inference benchmark, recovery/rollback, Production Gate | `v0.7.0` |
 | Week 3 | M8 | Qwen tool calling, MCP client/reference server, LangGraph DevOps agent, approval and evidence retrieval | `v0.8.0-beta.1` |
 | Week 4 | M9 | BFCL v1.3 Offline Core Profile plus frozen public/hidden DevOps Agent Evaluation | `v0.9.0-rc.1` |
-| Weeks 5–6 | M10 | 0.6B Agent Full SFT, 8B Agent LoRA, unified model/serving/agent gate | `v1.0.0` or `v1.0.0-rc.1` |
+| Weeks 5–6 | M10 | 0.6B Agent Full SFT, 8B Agent LoRA, fail-closed model selection | `v1.0.0-rc.1` |
 
 M7 Production proves model quality, lineage, serving correctness, performance, recovery and
 rollback. M9/M10 add an independent Agent capability gate; an M7 Production model cannot claim
 Agent readiness from serving evidence alone.
+
+M10 is closed under its registered failure branch. The 0.6B 5M stage scored 10.00% against its
+21.25% parent, and the 8B LoRA 1M stage scored 32.50% against its 45.00% parent. Neither model
+advanced to the sealed Release suite or the unified Production gate. A future data revision may
+target final-answer grounding, irrelevance boundaries, and failure recovery without rewriting
+these results.
 
 ## Frozen experiment targets
 

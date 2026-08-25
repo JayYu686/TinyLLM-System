@@ -77,7 +77,8 @@ TinyLLM-System 在 M7–M10 增加一个边界明确的 DevOps 诊断单 Agent�
 [M6 验收报告](../reports/m6/m6_acceptance.md)，在线推理和 Production 证据见
 [M7 验收报告](../reports/m7/m7_acceptance.md)，Tool Calling、MCP 和 Agent Runtime 证据见
 [M8 验收报告](../reports/m8/m8_acceptance.md)，Agent Dev 与 BFCL 父模型基线见
-[M9 验收报告](../reports/m9/m9_acceptance.md)。
+[M9 验收报告](../reports/m9/m9_acceptance.md)，Agent Full SFT/LoRA 的真实训练、早停与模型
+选择见 [M10 总验收](../reports/m10/m10_acceptance.md)。
 
 ## 4. 对外发布原则
 

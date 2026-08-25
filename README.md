@@ -166,7 +166,7 @@ sequenceDiagram
 | M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
 | M8 DevOps Agent | 已完成 | Tool Calling 8/8；MCP、LangGraph、FTS5 证据检索、显式审批与重启恢复 |
 | M9 Agent 评测 | 已完成 | 240 条 DevOps Agent Suite 冻结；三组父模型基线；BFCL 共 5,520/5,520 条且 0 推理失败 |
-| M10 Agent 后训练 | 进行中 | M10.1 已冻结 1M 监督 Token 五来源混合；M10.2 单卡 0.6B Full SFT、阶段 Checkpoint/Resume 与真实 Preflight 已就绪，GPU 训练指标尚未评测 |
+| M10 Agent 后训练 | 已收尾（模型门禁拒绝） | 0.6B Full SFT 在 5M、8B LoRA 在 1M 按真实 Agent Dev 早停；M7 Production 保持不变 |
 
 当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
 详细证据可从以下入口查看：
@@ -224,7 +224,10 @@ sequenceDiagram
   [M9 总验收](reports/m9/m9_acceptance.md)
 - [M10 Agent 后训练契约](docs/m10_agent_training_contract.md)与
   [M10.1 Agent 训练混合验收](reports/m10/m10_frozen_mixture.md)、
-  [M10.2 Full SFT 工程就绪报告](reports/m10/m10_full_sft_readiness.md)
+  [M10.2 Full SFT 5M 阶段报告](reports/m10/m10_full_sft_5m.md)、
+  [M10.3 Agent LoRA 1M 阶段报告](reports/m10/m10_agent_lora_1m.md)、
+  [M10 路线选择](reports/m10/m10_route_selection.md)与
+  [M10 总验收](reports/m10/m10_acceptance.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -409,7 +412,7 @@ TinyLLM-System/
 | M7 | vLLM 服务和真实推理门禁 | `v0.7.0` Production 版本 |
 | M8 | Tool Calling、MCP 与 DevOps 单 Agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL 与 DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
-| M10 | Agent SFT/LoRA 与统一门禁 | `v1.0.0` 或 `v1.0.0-rc.1` |
+| M10 | Agent SFT/LoRA 与统一门禁 | `v1.0.0-rc.1`：两条训练路线保留拒绝证据 |
 
 Training Planner、ZeRO-3、MLflow、V100 兼容验证和 TinyGPT-350M 按核心链路依赖与资源条件
 进入增强迭代。完整安排见[版本发布路线](docs/release_roadmap.md)。
@@ -461,11 +464,24 @@ M9 在训练前冻结 80 条公开 Dev、160 条密封 Release 和 1,840 条固�
 0%。这些结果用于冻结 M10 的父模型起点和数据重点，不表示 Agent Candidate 已通过门禁。
 完整分类结果、失败边界和原始哈希见 [M9 总验收](reports/m9/m9_acceptance.md)。
 
+### Agent 后训练结果
+
+M10 在冻结的 1M 监督 Token 五来源混合上执行了两条真实路线。0.6B Full SFT 通过 Exact
+Resume 训练到 5M，但同协议 Agent Dev 从父模型 21.25% 降至 10.00%；8B BF16 LoRA 在单张
+RTX 3090 上完成 1M，Peak Reserved 为 22.55 GiB，Task Success 从父模型 45.00% 降至
+32.50%。两条 Continuation Gate 均拒绝，因此未消费密封 Release，也没有将失败模型晋级。
+
+8B LoRA 的 Tool Selection 从 82.50% 提升到 88.75%，Schema Valid 和 Grounding 保持
+100%，但模板化最终回答与无关请求上的错误检索使端到端成功率下降。这一结果展示了为何 Agent
+训练需要同时评估工具轨迹和最终任务状态，训练 Loss 或局部协议指标不能替代能力门禁。M7
+`qwen3-0-6b-m7-fa678d92` 继续作为 Production；详细证据见
+[M10 总验收](reports/m10/m10_acceptance.md)。
+
 ## 核心边界与后续研究
 
-当前已完成版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、Candidate 晋级、
-在线推理、Production 门禁、能力受限的 DevOps Agent 和训练前 Agent Evaluation。M10 继续
-交付 Agent 后训练与独立能力门禁。
+当前版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、Candidate 晋级、在线
+推理、Production 门禁、能力受限的 DevOps Agent、Agent Evaluation 和带失败早停的 Agent
+后训练。`v1.0.0-rc.1` 保留完整系统能力，同时明确 Agent 训练模型尚未通过 Production 门禁。
 以下方向位于后续研究清单：
 
 - MoE、Pipeline Parallel 和多节点训练；

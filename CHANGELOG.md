@@ -5,6 +5,8 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+## 1.0.0-rc.1 - 2026-08-25
+
 - preregistered the M10 Agent training mixture, language and supervision policy, fixed external
   revisions, replay lineage, deduplication, sealed-Release contamination boundary, and fail-closed
   training-readiness contract;
@@ -19,6 +21,16 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
   full M10 mixture and training remain blocked.
 - canonicalized all 13,193 pinned ToolACE/Hermes rows into strict assistant-only supervision
   records, accepting 12,592 and isolating 601 under stable reasons with atomic private artifacts.
+- froze the final five-source M10 mixture at exactly 1,000,000 supervised tokens with exact
+  30/20/20/20/10 source and 70/30 language ratios and zero measured Dev/Release/BFCL/M6
+  contamination;
+- completed the real single-RTX-3090 Qwen3-8B Agent LoRA 1M stage in 22,486.93 seconds with
+  Adapter-only Checkpoint/export, 22.55 GiB peak reserved memory, and complete evaluation lineage;
+- rejected both Agent training routes under their preregistered continuation gates: 0.6B Full SFT
+  reached 10.00% versus its 21.25% parent at 5M, while 8B LoRA reached 32.50% versus its 45.00%
+  parent at 1M; M7 Production remains unchanged;
+- made LoRA export explicitly skip unchanged embedding layers, preventing PEFT from probing the
+  remote Base configuration during an otherwise local Adapter export.
 
 ## 0.9.0-rc.1 - 2026-08-20
 

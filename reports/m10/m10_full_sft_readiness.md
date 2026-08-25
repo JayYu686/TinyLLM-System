@@ -4,7 +4,7 @@
 
 M10.2 的单卡训练接口、阶段 Checkpoint、Exact Resume、父模型解析和数据 Preflight 已完成。
 本报告保留启动前工程状态；后续 1M→5M 真实 GPU 阶段已经完成，最新训练、显存和恢复证据见
-[`M10.2 5M 阶段报告`](m10_full_sft_5m.md)。10M 收敛与 Agent 能力仍须通过阶段门禁后实测。
+[`M10.2 5M 阶段报告`](m10_full_sft_5m.md)。5M Agent Dev 未通过阶段门禁，10M 已正式停止。
 
 ## 已冻结身份
 
@@ -54,15 +54,15 @@ Fresh → 1M Stage Export
 - 全量 CPU/Mock 回归为 `1162 passed, 2 deselected`，分支覆盖率为 `85.18%`；受保护的
   CUDA Worker 延续项目既有 GPU Workflow 策略，在真实 RTX 3090 Smoke 中单独验收。
 
-## 尚未评测
+## 后续实测状态
 
-以下项目必须等待真实 RTX 3090 运行，当前统一记为 `not_evaluated`：
+启动前列出的 GPU 验收项现已得到以下真实结果：
 
-- 1M 阶段 Loss、时长、峰值显存和 Stage Export；
-- 真实中断后的 GPU Exact Resume；
-- Agent Dev 相对 M7 Production 的变化；
-- M6 领域与通用能力回归；
-- 是否允许从 5M 继续到 10M；
-- Release、BFCL、Serving 和最终 Agent Model Gate。
+- 1M 和 5M 阶段训练、峰值显存、Checkpoint 与 Stage Export 已完成；
+- 1M→5M 使用全新进程完成 GPU Exact Resume；
+- 同协议 Agent Dev 相对父模型下降 11.25pp；
+- M6 通用聚合回退 1.78pp，单项满足阈值；
+- Continuation Gate 决策为 `rejected`，10M 保持阻断；
+- 未通过开发门禁的模型不执行 Release、BFCL、Serving 和最终 Agent Model Gate。
 
-M10.2 的下一步是选择一张独占空闲 RTX 3090，先执行 Preflight，再启动 1M Token 阶段。
+本路线已经收尾，完整结论纳入 [`M10 总验收`](m10_acceptance.md)。

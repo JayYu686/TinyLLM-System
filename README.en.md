@@ -180,7 +180,7 @@ sequenceDiagram
 | M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
 | M8 DevOps agent | Complete | Tool calling 8/8; MCP, LangGraph, FTS5 retrieval, explicit approval, and restart recovery |
 | M9 agent evaluation | Complete | Frozen 240-task DevOps Agent Suite; three parent baselines; 5,520/5,520 BFCL items with zero inference failures |
-| M10 agent post-training | In progress | M10.1 froze the five-source 1M supervised-token mixture; M10.2 single-GPU 0.6B Full SFT, staged Checkpoint/Resume, and real preflight are ready, while GPU training metrics remain unevaluated |
+| M10 agent post-training | Closed (model gates rejected) | 0.6B Full SFT stopped at 5M and 8B LoRA at 1M after real Agent Dev gates; M7 Production remains unchanged |
 
 Milestone status represents a combined gate across implementation, tests, smoke runs,
 failure paths, real reports, and documentation. Evidence entry points:
@@ -231,7 +231,9 @@ failure paths, real reports, and documentation. Evidence entry points:
   [M9 acceptance report (Chinese)](reports/m9/m9_acceptance.md)
 - [M10 Agent post-training contract (Chinese)](docs/m10_agent_training_contract.md) and
   [M10.1 frozen mixture acceptance (Chinese)](reports/m10/m10_frozen_mixture.md), and
-  [M10.2 Full-SFT readiness (Chinese)](reports/m10/m10_full_sft_readiness.md)
+  [M10.2 Full-SFT 5M report (Chinese)](reports/m10/m10_full_sft_5m.md),
+  [M10.3 Agent LoRA 1M report (Chinese)](reports/m10/m10_agent_lora_1m.md), and
+  [M10 acceptance (Chinese)](reports/m10/m10_acceptance.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -422,7 +424,7 @@ system capability:
 | M7 | vLLM serving and measured inference gate | `v0.7.0` Production release |
 | M8 | Tool calling, MCP, and a single DevOps agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL and DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
-| M10 | Agent SFT/LoRA and unified gates | `v1.0.0` or `v1.0.0-rc.1` |
+| M10 | Agent SFT/LoRA and unified gates | `v1.0.0-rc.1`: both training routes retain rejection evidence |
 
 The Training Planner, ZeRO-3, MLflow, V100 compatibility, and TinyGPT-350M enter enhancement
 iterations according to lifecycle dependencies and resource availability. See the
@@ -479,12 +481,27 @@ parent baselines, not an Agent Candidate pass. See the
 [M9 acceptance report](reports/m9/m9_acceptance.md) for category scores, evidence boundaries, and
 artifact hashes.
 
+### Agent post-training result
+
+M10 ran two real routes on the frozen five-source, 1M-supervised-token mixture. The 0.6B Full-SFT
+run resumed exactly to 5M, but protocol-matched Agent Dev fell from its 21.25% parent to 10.00%.
+The 8B BF16 LoRA run completed 1M tokens on one RTX 3090 with 22.55 GiB peak reserved memory, but
+Task Success fell from 45.00% to 32.50%. Both continuation gates rejected, so the sealed Release
+suite was not consumed and neither trained model was promoted.
+
+The 8B adapter improved Tool Selection from 82.50% to 88.75% while retaining 100% schema validity
+and grounding. Template-like final answers and unnecessary retrieval on irrelevant requests still
+reduced end-to-end success, demonstrating why training loss and local protocol metrics cannot
+replace an Agent task gate. M7 `qwen3-0-6b-m7-fa678d92` remains Production. See the
+[M10 acceptance report](reports/m10/m10_acceptance.md).
+
 ## Core boundary and future research
 
-The completed release covers single-host single/multi-GPU training, data versioning,
-checkpointing, automated evaluation, Candidate promotion, serving, Production, and a bounded
-DevOps agent, plus pre-training Agent Evaluation. M10 delivers Agent post-training and its
-independent capability gate. The following directions live in the future research queue:
+The release covers single-host single/multi-GPU training, data versioning, checkpointing,
+automated evaluation, Candidate promotion, serving, Production, a bounded DevOps agent, Agent
+Evaluation, and Agent post-training with fail-closed early stopping. `v1.0.0-rc.1` retains the
+complete system while explicitly recording that the trained Agent models did not pass Production
+gates. The following directions live in the future research queue:
 
 - MoE, pipeline parallelism, and multi-node training;
 - custom KV cache, tensor parallelism, FlashAttention, and CUDA kernels;

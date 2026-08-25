@@ -256,8 +256,15 @@ def test_checkpoint_rejects_cursor_and_resume_drift(tmp_path: Path) -> None:
 class _ExportableAdapter:
     peft_config: dict[str, Any] = {}
 
-    def save_pretrained(self, root: Path, *, safe_serialization: bool) -> None:
+    def save_pretrained(
+        self,
+        root: Path,
+        *,
+        safe_serialization: bool,
+        save_embedding_layers: bool,
+    ) -> None:
         assert safe_serialization is True
+        assert save_embedding_layers is False
         (root / "adapter_config.json").write_text("{}\n", encoding="utf-8")
         (root / "adapter_model.safetensors").write_bytes(b"adapter")
 

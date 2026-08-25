@@ -457,7 +457,11 @@ def export_m10_lora_stage(model: Any, root: Path, checkpoint_id: str) -> M10LoRA
         if peft_config is not None:
             peft_config.base_model_name_or_path = "Qwen/Qwen3-8B"
             peft_config.revision = "b968826d9c46dd6066d109eabc6255188de91218"
-        model.save_pretrained(adapter_root, safe_serialization=True)
+        model.save_pretrained(
+            adapter_root,
+            safe_serialization=True,
+            save_embedding_layers=False,
+        )
         if any(not (adapter_root / name).is_file() for name in _ADAPTER_FILES):
             raise M10LoRAError("M10 Agent LoRA Adapter export is incomplete")
         digest = evaluation_artifact_sha256(adapter_root, _ADAPTER_FILES)

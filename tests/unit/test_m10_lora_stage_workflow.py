@@ -39,6 +39,7 @@ from tinyllm.training.m10_lora_schema import (
     M10_LORA_PARENT_SUBJECT,
     M10_LORA_PARENT_TOKENIZER_SHA256,
     M10LoRAGeneralPassSummary,
+    M10LoRAMemoryProbeResult,
     M10LoRARunResult,
     M10LoRAStageExport,
 )
@@ -93,7 +94,25 @@ def _prepare_stage(
 
     probe_path = root / "memory-probes" / "m10" / "probe.json"
     probe_path.parent.mkdir(parents=True)
-    probe_path.write_bytes(b"reviewed-real-probe-fixture\n")
+    probe_path.write_text(
+        M10LoRAMemoryProbeResult(
+            config_sha256=config_sha256,
+            git_commit="a" * 40,
+            git_dirty=False,
+            dataset_version=M10_DATASET_VERSION,
+            parent_evaluation_subject=M10_LORA_PARENT_SUBJECT,
+            environment_sha256="b" * 64,
+            hardware_compatibility_sha256="c" * 64,
+            physical_gpu_index=4,
+            gpu_name="NVIDIA GeForce RTX 3090",
+            optimizer_steps=10,
+            supervised_tokens=10_000,
+            peak_allocated_bytes=10,
+            peak_reserved_bytes=20,
+            duration_seconds=1.0,
+        ).model_dump_json(),
+        encoding="utf-8",
+    )
     probe_sha256 = hashlib.sha256(probe_path.read_bytes()).hexdigest()
 
     parameter = torch.nn.Parameter(torch.tensor([1.0]))

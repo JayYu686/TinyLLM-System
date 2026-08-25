@@ -363,6 +363,8 @@ def test_memory_probe_and_run_result_require_lineage(tmp_path: Path) -> None:
         git_dirty=False,
         dataset_version=M10_DATASET_VERSION,
         parent_evaluation_subject=M10_LORA_PARENT_SUBJECT,
+        environment_sha256="c" * 64,
+        hardware_compatibility_sha256="d" * 64,
         physical_gpu_index=4,
         gpu_name="NVIDIA GeForce RTX 3090",
         optimizer_steps=10,

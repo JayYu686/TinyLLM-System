@@ -82,5 +82,13 @@ Wrong-tool/Irrelevance 边界；5M 模型在这些任务上出现不必要的证
 但不能用于评价修复后的统一协议；父模型与 5M 模型必须在同一修复提交上重新配对评测，新的
 Gate 也必须形成独立证据，不能覆盖本节结果。
 
-为区分早期有效学习与多轮重复训练造成的策略偏置，已保存的 1M Export 将使用同一冻结 Agent
-Dev 单独复评。该诊断不会解锁 10M；只有形成新的、预注册的数据或训练策略后才能启动后续训练。
+统一协议提交 `b5023ab38d3c9773ea9fabd660921834647c642e` 上的配对重测已经完成：父模型为
+21.25%（17/80），5M 为 10.00%（8/80），变化为 -11.25pp；M6 回退仍为 1.78pp。新的
+Continuation Gate 再次给出 `rejected`，证明 0.6B 失败不能归因于工具名映射这一单点缺陷。
+0.6B Full SFT 在 5M 正式早停，10M 不再执行。统一协议事实源见
+[`m10_full_sft_5m_gate_protocol_v2.json`](raw/m10_full_sft_5m_gate_protocol_v2.json)。
+
+为区分早期有效学习与多轮重复训练造成的策略偏置，已保存的 1M Export 也使用同一冻结 Agent
+Dev 完成统一协议复评，其 Task Success 为 7.50%（6/80），同样低于父模型。该诊断不会
+解锁 10M；M10 后续转入预注册的 Qwen3-8B Agent LoRA 路线，路线比较见
+[`M10 Agent 模型路线选择报告`](m10_route_selection.md)。

@@ -171,6 +171,8 @@ def run_m10_lora_memory_probe(
 
     torch.backends.cuda.matmul.allow_tf32 = config.precision.allow_tf32
     torch.backends.cudnn.allow_tf32 = config.precision.allow_tf32
+    _, environment_sha256 = collect_m10_lora_environment()
+    _, hardware_sha256 = collect_m10_lora_hardware(physical_gpu_index)
     seed_everything(config.run.seed, deterministic_algorithms=False)
     dataset = M10FrozenDataset(mixture_root)
     model, trainable, _, _ = _build_model(config, model_dir=parent.model_dir, device=device)
@@ -209,6 +211,8 @@ def run_m10_lora_memory_probe(
         git_dirty=False,
         dataset_version=M10_DATASET_VERSION,
         parent_evaluation_subject=M10_LORA_PARENT_SUBJECT,
+        environment_sha256=environment_sha256,
+        hardware_compatibility_sha256=hardware_sha256,
         physical_gpu_index=physical_gpu_index,
         gpu_name=cast(Literal["NVIDIA GeForce RTX 3090"], torch.cuda.get_device_name(device)),
         optimizer_steps=10,
@@ -288,7 +292,7 @@ def run_m10_lora(
         or any(path is not None and not path.is_relative_to(root) for path in checked_paths)
     ):
         raise M10LoRAError("M10 Agent LoRA Run paths must stay inside the Artifact Store")
-    _, memory_probe_sha256 = load_m10_lora_memory_probe(
+    memory_probe, memory_probe_sha256 = load_m10_lora_memory_probe(
         memory_probe_path,
         config_sha256=config_sha256,
         git_commit=git_commit,
@@ -305,6 +309,11 @@ def run_m10_lora(
 
     environment, environment_sha256 = collect_m10_lora_environment()
     hardware, hardware_sha256 = collect_m10_lora_hardware(physical_gpu_index)
+    if (
+        memory_probe.environment_sha256 != environment_sha256
+        or memory_probe.hardware_compatibility_sha256 != hardware_sha256
+    ):
+        raise M10LoRAError("M10 Agent LoRA Probe and training runtime differ")
     torch.backends.cuda.matmul.allow_tf32 = config.precision.allow_tf32
     torch.backends.cudnn.allow_tf32 = config.precision.allow_tf32
     seed_everything(config.run.seed, deterministic_algorithms=False)

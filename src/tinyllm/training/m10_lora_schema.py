@@ -409,6 +409,8 @@ class M10LoRAMemoryProbeResult(StrictSchema):
     git_dirty: Literal[False]
     dataset_version: Literal["m10-agent-sft-v1-4655d3e3"]
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
+    environment_sha256: str = Field(pattern=SHA256_PATTERN)
+    hardware_compatibility_sha256: str = Field(pattern=SHA256_PATTERN)
     physical_gpu_index: int = Field(ge=0)
     gpu_name: Literal["NVIDIA GeForce RTX 3090"]
     optimizer_steps: Literal[10]

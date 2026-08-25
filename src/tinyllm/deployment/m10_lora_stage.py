@@ -27,7 +27,7 @@ from tinyllm.training.m10_lora import (
     export_m10_lora_stage,
     load_m10_lora_config,
 )
-from tinyllm.training.m10_lora_schema import M10LoRARunResult
+from tinyllm.training.m10_lora_schema import M10LoRAMemoryProbeResult, M10LoRARunResult
 
 MODEL_FILES = (
     "config.json",
@@ -181,7 +181,22 @@ def build_m10_lora_stage_evaluation_subject(
         raise M10LoRAStageRegistrationError(
             "M10 Agent LoRA stage lineage is incomplete or inconsistent"
         )
-    _find_probe(root, result.memory_probe_sha256)
+    probe_path = _find_probe(root, result.memory_probe_sha256)
+    try:
+        probe = M10LoRAMemoryProbeResult.model_validate_json(probe_path.read_bytes())
+    except (OSError, ValidationError, ValueError) as exc:
+        raise M10LoRAStageRegistrationError("M10 Agent LoRA memory Probe is invalid") from exc
+    if (
+        probe.config_sha256 != result.config_sha256
+        or probe.git_commit != result.git_commit
+        or probe.dataset_version != result.dataset_version
+        or probe.parent_evaluation_subject != result.parent_evaluation_subject
+        or probe.environment_sha256 != checkpoint.environment_sha256
+        or probe.hardware_compatibility_sha256 != checkpoint.hardware_sha256
+    ):
+        raise M10LoRAStageRegistrationError(
+            "M10 Agent LoRA Probe and Checkpoint lineage is inconsistent"
+        )
 
     model = M6ModelIdentity(
         role="candidate",

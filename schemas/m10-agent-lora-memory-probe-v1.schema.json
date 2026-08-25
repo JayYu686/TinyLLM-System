@@ -16,6 +16,11 @@
       "title": "Duration Seconds",
       "type": "number"
     },
+    "environment_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Environment Sha256",
+      "type": "string"
+    },
     "git_commit": {
       "pattern": "^[0-9a-f]{40}$",
       "title": "Git Commit",
@@ -29,6 +34,11 @@
     "gpu_name": {
       "const": "NVIDIA GeForce RTX 3090",
       "title": "Gpu Name",
+      "type": "string"
+    },
+    "hardware_compatibility_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Hardware Compatibility Sha256",
       "type": "string"
     },
     "optimizer_steps": {
@@ -86,6 +96,8 @@
     "git_dirty",
     "dataset_version",
     "parent_evaluation_subject",
+    "environment_sha256",
+    "hardware_compatibility_sha256",
     "physical_gpu_index",
     "gpu_name",
     "optimizer_steps",

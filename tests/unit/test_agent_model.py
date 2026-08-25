@@ -69,7 +69,7 @@ def test_gateway_agent_model_maps_openai_tool_call_to_local_authority() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         payload = __import__("json").loads(request.content)
         assert payload["tool_choice"] == "auto"
-        assert payload["tools"][0]["function"]["name"] == ("tinyllm_devops__search_evidence")
+        assert payload["tools"][0]["function"]["name"] == "search_evidence"
         return httpx.Response(
             200,
             json={
@@ -83,7 +83,7 @@ def test_gateway_agent_model_maps_openai_tool_call_to_local_authority() -> None:
                                     "id": "call_search_1",
                                     "type": "function",
                                     "function": {
-                                        "name": "tinyllm_devops__search_evidence",
+                                        "name": "search_evidence",
                                         "arguments": '{"query":"failure"}',
                                     },
                                 }
@@ -235,7 +235,7 @@ def test_gateway_agent_model_repairs_leading_text_tool_markup() -> None:
                     {
                         "message": {
                             "content": (
-                                '<tool_call>\n{"name":"tinyllm_devops__search_evidence",'
+                                '<tool_call>\n{"name":"search_evidence",'
                                 '"arguments":{"query":"M7"}}\n'
                                 "<证据>fabricated content must be ignored"
                             )
@@ -369,29 +369,28 @@ def test_gateway_agent_model_closes_only_owned_http_client() -> None:
 
 
 def test_function_encoding_and_text_parser_are_bounded() -> None:
-    oversized = AgentToolDefinition(
-        server_id="s" * 64,
+    definition = AgentToolDefinition(
+        server_id="server",
         tool_name="t" * 64,
         input_schema={"type": "object"},
     )
-    with pytest.raises(AgentModelError, match="exceeds"):
-        _function_name(oversized)
+    assert _function_name(definition) == "t" * 64
 
-    encoded = {"tinyllm_devops__search_evidence": ("tinyllm-devops", "search_evidence")}
+    encoded = {"search_evidence": ("tinyllm-devops", "search_evidence")}
     assert _parse_text_tool_calls("ordinary answer", encoded) == ()
     for content, pattern in (
         ("<tool_call>{", "malformed"),
         ('<tool_call>{"name":"x"}', "unsupported"),
         ('<tool_call>{"name":"unknown","arguments":{}}', "unknown"),
         (
-            '<tool_call>{"name":"tinyllm_devops__search_evidence","arguments":[]}',
+            '<tool_call>{"name":"search_evidence","arguments":[]}',
             "JSON object",
         ),
     ):
         with pytest.raises(AgentModelError, match=pattern):
             _parse_text_tool_calls(content, encoded)
 
-    one = '<tool_call>{"name":"tinyllm_devops__search_evidence","arguments":{}}'
+    one = '<tool_call>{"name":"search_evidence","arguments":{}}'
     with pytest.raises(AgentModelError, match="too many"):
         _parse_text_tool_calls(one * 9, encoded)
 
@@ -433,6 +432,44 @@ def test_gateway_agent_model_rejects_allowed_tool_drift() -> None:
                 allowed_tools=("tinyllm-devops.search_evidence", "tinyllm-devops.shell"),
             )
         )
+
+
+def test_gateway_agent_model_rejects_duplicate_openai_names_across_servers() -> None:
+    class DuplicateClient:
+        def __init__(self, server_id: str) -> None:
+            self.server_id = server_id
+
+        async def discover_tools(self) -> tuple[AgentToolDefinition, ...]:
+            return (
+                AgentToolDefinition(
+                    server_id=self.server_id,
+                    tool_name="search_evidence",
+                    input_schema={"type": "object"},
+                ),
+            )
+
+    model = GatewayAgentModel(
+        base_url="http://127.0.0.1:8000",
+        bearer_token=TOKEN,
+        model="production",
+        clients={
+            "server-one": DuplicateClient("server-one"),
+            "server-two": DuplicateClient("server-two"),
+        },  # type: ignore[dict-item]
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _request: httpx.Response(500))
+        ),
+    )
+    with pytest.raises(AgentModelError, match="collide"):
+        asyncio.run(
+            model.decide(
+                messages=(AgentMessage(role="user", content="x"),),
+                observations=(),
+                mode="nonthinking",
+                allowed_tools=("server-one.search_evidence",),
+            )
+        )
+    asyncio.run(model.close())
 
 
 @pytest.mark.parametrize(
@@ -487,7 +524,7 @@ def test_gateway_agent_model_maps_transport_and_json_errors(response: httpx.Resp
                 {
                     "id": "call_1",
                     "function": {
-                        "name": "tinyllm_devops__search_evidence",
+                        "name": "search_evidence",
                         "arguments": "[]",
                     },
                 }

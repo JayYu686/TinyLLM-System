@@ -73,6 +73,10 @@ LangGraph 使用每个 Run 独立的 SQLite Checkpointer。服务重启后，`cr
 返回的 Annotation、描述和检索内容均视为不可信数据，不授予权限；最终权限由本地 Allowlist
 决定。
 
+发送到 OpenAI Tool Calling 接口的函数名保持 MCP Tool 的公开 `tool_name`，并在本地映射回
+`server_id + tool_name` 权限身份。训练轨迹、Gateway Tool Schema 与模型输出由此使用同一
+名称；多个已注册 Server 暴露同名 Tool 时启动失败，不通过添加私有前缀静默改写模型协议。
+
 参考 `tinyllm-devops` stdio Server 暴露：
 
 | 工具 | 权限 | 主要边界 |

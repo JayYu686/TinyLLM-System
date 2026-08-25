@@ -35,7 +35,7 @@ class AgentModelError(RuntimeError):
 
 
 def _function_name(definition: AgentToolDefinition) -> str:
-    value = f"{definition.server_id.replace('-', '_')}__{definition.tool_name}"
+    value = definition.tool_name
     if FUNCTION_NAME.fullmatch(value) is None:
         raise AgentModelError("encoded Agent tool name exceeds the OpenAI function contract")
     return value
@@ -180,7 +180,7 @@ class GatewayAgentModel:
                 discovered.extend(await self.clients[server_id].discover_tools())
             names = tuple(_function_name(item) for item in discovered)
             if len(names) != len(set(names)):
-                raise AgentModelError("encoded Agent tool names collide")
+                raise AgentModelError("MCP tool names collide across registered servers")
             self._definitions = tuple(discovered)
         return self._definitions
 

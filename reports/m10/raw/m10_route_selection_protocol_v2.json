@@ -23,14 +23,21 @@
       "model_id": "qwen3-8b-m9-base-90587dd6",
       "role": "8b_lora_parent",
       "task_success_basis_points": 4500
+    },
+    {
+      "agent_dev_summary_sha256": "58b4610e2cac5d572a859f8bdfe055865bd84e43f61758a8cbb6640774cc10b2",
+      "model_id": "qwen3-8b-m10-agent-lora-1m-8c51da63",
+      "role": "8b_agent_lora_1m",
+      "task_success_basis_points": 3250
     }
   ],
   "protocol": {
     "agent_suite_version": "tinyllm-devops-agent-dev-v1-f958bcc6",
+    "candidate_git_commit": "dbca533f74d5c70a4270e3a0583c756041fd15b1",
     "git_commit": "b5023ab38d3c9773ea9fabd660921834647c642e",
     "item_count": 80,
     "openai_tool_name_mapping": "mcp-public-tool-name-v1"
   },
-  "route_decision": "stop_0.6b_full_sft_and_start_8b_agent_lora",
+  "route_decision": "retain_m7_production_and_release_v1.0.0-rc.1",
   "schema_version": "1.0"
 }

@@ -151,9 +151,10 @@ M10.1 已完成上述七项门禁。最终版本 `m10-agent-sft-v1-4655d3e3` 包
 M10.2 使用同一冻结配置和同一 Run 依次完成三个阶段。每个逻辑 Epoch 精确消费 1M
 Supervised Token；1M 和 5M 通过 Exact Resume 延续优化器、RNG 与数据进度，不能通过修改
 `max_train_tokens` 创建新的配置身份。阶段 Checkpoint 与 Safetensors Export 分离，1M、5M、
-10M 三个边界永久 Pin。当前训练接口与真实数据/Production 父模型 Preflight 已通过，真实 GPU
-训练指标仍为 `not_evaluated`，详见
-[`M10.2 Full SFT 工程就绪报告`](../reports/m10/m10_full_sft_readiness.md)。
+10M 三个边界永久 Pin。训练接口、真实数据/Production 父模型 Preflight 和 1M→5M GPU
+训练均已完成，详见
+[`M10.2 Full SFT 工程就绪报告`](../reports/m10/m10_full_sft_readiness.md)与
+[`M10.2 5M 阶段报告`](../reports/m10/m10_full_sft_5m.md)。
 5M→10M 启动接口默认拒绝，必须提供通过严格 Schema、阈值计算与阶段血缘校验的 Continuation
 Gate；仅按文件名或人工声明通过不能解除阻断。
 
@@ -192,6 +193,16 @@ Candidate/Production Registry。5M 的 M6 配对证据使用独立的
 Base 伪装成历史 M6 Candidate。工程就绪边界见
 [`M10.3 Agent LoRA 工程就绪报告`](../reports/m10/m10_agent_lora_readiness.md)。
 
+真实 1M BF16 LoRA 已在单张 RTX 3090 上完成，Peak Reserved 为 22.55 GiB，1M Adapter 与
+Checkpoint 血缘校验通过。候选 Agent Dev Task Success 为 32.50%，相对 8B Base 的 45.00%
+下降 12.50pp，因此 1M→5M Gate 正式拒绝；5M/10M 不执行。训练与失败差分见
+[`M10.3 1M 阶段报告`](../reports/m10/m10_agent_lora_1m.md)。
+
 最终选择严格使用 M10 预注册 Gate：Release、父模型配对 Bootstrap、Schema、No-tool、工具
 幻觉、Grounding、失败恢复、安全、BFCL、M6 和 M7 Serving 证据必须同时通过。门禁失败时
 保留 M7 Production，并将 M10 Candidate 保持在 Development 状态。
+
+M10 的两条路线均已触发该失败分支：0.6B Full SFT 在 5M 早停，8B Agent LoRA 在 1M
+早停。密封 Release、BFCL 和 Serving Gate 未被未通过开发门禁的模型消费，M7 Production
+Alias 保持不变。项目以 `v1.0.0-rc.1` 记录完整系统能力与未通过的 Agent 模型门禁，详见
+[`M10 总验收`](../reports/m10/m10_acceptance.md)。

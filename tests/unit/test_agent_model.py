@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -452,10 +452,13 @@ def test_gateway_agent_model_rejects_duplicate_openai_names_across_servers() -> 
         base_url="http://127.0.0.1:8000",
         bearer_token=TOKEN,
         model="production",
-        clients={
-            "server-one": DuplicateClient("server-one"),
-            "server-two": DuplicateClient("server-two"),
-        },  # type: ignore[dict-item]
+        clients=cast(
+            Any,
+            {
+                "server-one": DuplicateClient("server-one"),
+                "server-two": DuplicateClient("server-two"),
+            },
+        ),
         http_client=httpx.AsyncClient(
             transport=httpx.MockTransport(lambda _request: httpx.Response(500))
         ),

@@ -251,6 +251,36 @@ class M10ContinuationGate(StrictSchema):
         return self
 
 
+class M10M6RegressionEvidence(StrictSchema):
+    """Paired M6 general-capability evidence used only by the 5M continuation gate."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    evidence_version: Literal["m10-m6-general-regression-v1"] = "m10-m6-general-regression-v1"
+    evaluated_at: datetime
+    protocol_version: Literal["m6-release-v7"]
+    parent_model_version: Literal["qwen3-0-6b-m7-fa678d92"]
+    parent_model_artifact_sha256: Literal[
+        "63db3b5f6ce0f12224167635fc8d67c53c32d7922caba3d65ac20c950f07dde6"
+    ]
+    parent_summary_sha256: str = Field(pattern=SHA256_PATTERN)
+    parent_aggregate_basis_points: int = Field(ge=0, le=10_000)
+    candidate_subject_id: str = Field(pattern=r"^qwen3-0-6b-m10-full-sft-5m-[0-9a-f]{8}$")
+    candidate_evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
+    candidate_model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    candidate_summary_sha256: str = Field(pattern=SHA256_PATTERN)
+    candidate_aggregate_basis_points: int = Field(ge=0, le=10_000)
+    regression_basis_points: int = Field(ge=-10_000, le=10_000)
+
+    @model_validator(mode="after")
+    def validate_regression(self) -> M10M6RegressionEvidence:
+        if self.evaluated_at.tzinfo is None:
+            raise ValueError("M10 M6 regression timestamp must be timezone-aware")
+        observed = self.parent_aggregate_basis_points - self.candidate_aggregate_basis_points
+        if self.regression_basis_points != observed:
+            raise ValueError("M10 M6 regression differs from paired summaries")
+        return self
+
+
 class M10FullSFTRunResult(StrictSchema):
     """Path-free result for one fresh or resumed M10 stage attempt."""
 

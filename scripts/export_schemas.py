@@ -192,6 +192,7 @@ from tinyllm.deployment import (
     M7ServingHardware,
     M7VulnerabilityAssessment,
     M9EvaluationSubjectRecord,
+    M10StageEvaluationSubjectRecord,
     ResolvedEvaluationSubject,
     ResolvedModel,
 )
@@ -314,6 +315,7 @@ from tinyllm.training.m10_sft_schema import (
     M10ContinuationGate,
     M10FullSFTConfig,
     M10FullSFTRunResult,
+    M10M6RegressionEvidence,
     M10StageExport,
 )
 from tinyllm.training.metrics import TrainerState, TrainingStepMetrics
@@ -360,6 +362,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-full-sft-continuation-gate-v1.schema.json": M10ContinuationGate,
     "m10-full-sft-config-v1.schema.json": M10FullSFTConfig,
     "m10-full-sft-run-result-v1.schema.json": M10FullSFTRunResult,
+    "m10-m6-general-regression-evidence-v1.schema.json": M10M6RegressionEvidence,
     "m10-full-sft-stage-export-v1.schema.json": M10StageExport,
     "m10-mixture-artifact-v1.schema.json": M10MixtureArtifact,
     "m10-mixture-input-evidence-v1.schema.json": M10MixtureInputEvidence,
@@ -585,6 +588,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m7-version-response-v1.schema.json": VersionResponse,
     "m9-evaluation-subject-record-v1.schema.json": M9EvaluationSubjectRecord,
     "m9-resolved-evaluation-subject-v1.schema.json": ResolvedEvaluationSubject,
+    "m10-stage-evaluation-subject-record-v1.schema.json": M10StageEvaluationSubjectRecord,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,
     "pipeline-rejected-record-v1.schema.json": PipelineRejectedRecord,

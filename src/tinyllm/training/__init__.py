@@ -132,6 +132,7 @@ from tinyllm.training.m10_sft_schema import (
     M10ContinuationGate,
     M10FullSFTConfig,
     M10FullSFTRunResult,
+    M10M6RegressionEvidence,
     M10StageExport,
 )
 from tinyllm.training.metrics import InMemoryMetricSink, TrainerState, TrainingStepMetrics
@@ -229,6 +230,7 @@ __all__ = [
     "M10ContinuationGate",
     "M10FullSFTConfig",
     "M10FullSFTRunResult",
+    "M10M6RegressionEvidence",
     "M10StageExport",
     "M4QwenApiEvidence",
     "M4RegisteredDatasetView",

@@ -429,6 +429,7 @@ def agent_eval(
 
         eval_config = load_agent_eval_config(config)
         resolved = resolve_serving_model(artifact_root, model)
+        eval_config = eval_config.model_copy(update={"model": resolved.model_version})
         summary = asyncio.run(
             run_agent_evaluation(
                 suite_directory=suite,

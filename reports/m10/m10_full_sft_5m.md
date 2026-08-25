@@ -3,9 +3,10 @@
 ## 结论
 
 Qwen3-0.6B Agent Full SFT 已通过同一 Run 的 1M→5M Exact Resume，5M 阶段 Checkpoint、
-Safetensors Export、数据身份、配置身份和父 Production 身份均通过哈希校验。该结果允许进入
-Agent Dev 与 M6 通用能力回归评测；在 Continuation Gate 生成并接受前，不允许继续训练到
-10M，也不产生新的 Candidate 或 Production 声明。
+Safetensors Export、数据身份、配置身份和父 Production 身份均通过哈希校验。真实
+Continuation Gate 已执行并拒绝继续训练：M6 通用能力回退满足阈值，但 Agent Dev Task
+Success 相对父模型下降 8.75pp。0.6B 10M 路线保持阻断，不产生新的 Candidate 或 Production
+声明。
 
 ## 不可变身份
 
@@ -56,7 +57,7 @@ Agent Dev 与 M6 通用能力回归评测；在 Continuation Gate 生成并接�
 - 5M Safetensors Export 与训练 Checkpoint 分离，Export 只用于 Serving/Evaluation；
 - 10M Resume 必须引用同时绑定 Run、配置、5M Export、Agent Dev 和 M6 证据的已接受 Gate。
 
-## 下一门禁
+## Continuation Gate 结果
 
 阶段评测使用两个互相独立的证据：
 
@@ -64,5 +65,17 @@ Agent Dev 与 M6 通用能力回归评测；在 Continuation Gate 生成并接�
    1pp；父模型已测基线为 20.00%，所以 80 条离散任务中至少需要达到 17/80，即 21.25%。
 2. 冻结的 M6 ARC-Easy、HellaSwag、PIQA 等权聚合：相对父模型 54.48% 的回退不超过 2pp。
 
-两个条件同时满足时，系统生成 `accepted` Continuation Gate；任一条件失败时保留 5M
-Development 结果并停止 0.6B 10M 路线，不能通过手工改写状态绕过门禁。
+真实结果如下：
+
+| 门禁项 | 父模型 | 5M 模型 | 变化 | 判定 |
+|---|---:|---:|---:|---|
+| Agent Dev Task Success | 20.00% | 11.25% | -8.75pp | 失败 |
+| M6 通用任务聚合 | 54.48% | 52.70% | -1.78pp | 通过 |
+
+最终决策为 `rejected`。配对诊断显示净减少的 7 个成功任务全部来自 No-tool 与
+Wrong-tool/Irrelevance 边界；5M 模型在这些任务上出现不必要的证据检索和配置修改提议，工具类
+任务则没有新增成功。训练 Loss 持续下降，因此该结果属于能力门禁失败，不能由 Loss 趋势替代。
+脱敏事实源见 [`m10_full_sft_5m_gate.json`](raw/m10_full_sft_5m_gate.json)。
+
+为区分早期有效学习与多轮重复训练造成的策略偏置，已保存的 1M Export 将使用同一冻结 Agent
+Dev 单独复评。该诊断不会解锁 10M；只有形成新的、预注册的数据或训练策略后才能启动后续训练。

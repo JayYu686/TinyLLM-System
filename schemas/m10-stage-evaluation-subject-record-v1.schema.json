@@ -161,7 +161,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "Private, immutable 5M Full-SFT stage exposed only to evaluation flows.",
+  "description": "Private, immutable 1M/5M Full-SFT stage exposed only to evaluation flows.",
   "properties": {
     "checkpoint_manifest_sha256": {
       "pattern": "^[0-9a-f]{64}$",
@@ -184,8 +184,11 @@
       "type": "string"
     },
     "kind": {
-      "const": "m10_full_sft_5m",
       "default": "m10_full_sft_5m",
+      "enum": [
+        "m10_full_sft_1m",
+        "m10_full_sft_5m"
+      ],
       "title": "Kind",
       "type": "string"
     },
@@ -240,7 +243,7 @@
       "type": "string"
     },
     "subject_id": {
-      "pattern": "^qwen3-0-6b-m10-full-sft-5m-[0-9a-f]{8}$",
+      "pattern": "^qwen3-0-6b-m10-full-sft-(1m|5m)-[0-9a-f]{8}$",
       "title": "Subject Id",
       "type": "string"
     },

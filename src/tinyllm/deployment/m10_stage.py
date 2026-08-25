@@ -1,4 +1,4 @@
-"""Validated registration of the M10 5M Full-SFT evaluation stage."""
+"""Validated registration of M10 1M/5M Full-SFT evaluation stages."""
 
 from __future__ import annotations
 
@@ -28,10 +28,11 @@ from tinyllm.training.m10_sft_schema import M10FullSFTRunResult, M10StageExport
 MODEL_FILES = ("config.json", "generation_config.json", "model.safetensors")
 TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json")
 MODEL_PARAMETERS = 596_049_920
+M10_EVALUATION_STAGE_TOKENS = (1_000_000, 5_000_000)
 
 
 class M10StageRegistrationError(RuntimeError):
-    """Raised when the completed 5M stage has incomplete or drifting lineage."""
+    """Raised when a completed evaluation stage has incomplete or drifting lineage."""
 
 
 def _sha256_file(path: Path) -> str:
@@ -56,8 +57,12 @@ def build_m10_stage_evaluation_subject(
     *,
     artifact_root: Path,
     source_run: Path,
+    stage_tokens: int = 5_000_000,
 ) -> M10StageEvaluationSubjectRecord:
-    """Verify every durable 5M boundary and construct its evaluation-only record."""
+    """Verify one durable 1M/5M boundary and construct its evaluation-only record."""
+
+    if stage_tokens not in M10_EVALUATION_STAGE_TOKENS:
+        raise M10StageRegistrationError("M10 evaluation stage must be 1M or 5M Tokens")
 
     if (
         not artifact_root.is_absolute()
@@ -74,40 +79,46 @@ def build_m10_stage_evaluation_subject(
     if not run.is_relative_to(root):
         raise M10StageRegistrationError("M10 stage Run escapes the Artifact Store")
 
-    result_path = run / "result.json"
+    checkpoint_id = f"checkpoint-tokens-{stage_tokens:010d}"
+    if stage_tokens == 1_000_000:
+        result_path = run / "attempts" / "fresh-stage_completed-tokens-0001000000.json"
+        expected_mode = "fresh"
+        expected_resumed_from: int | None = None
+    else:
+        result_path = run / "result.json"
+        expected_mode = "exact_resume"
+        expected_resumed_from = 1_000_000
     config_path = run / "config.original.yaml"
     environment_path = run / "environment.json"
-    checkpoint_dir = run / "checkpoints" / "checkpoint-tokens-0005000000"
+    checkpoint_dir = run / "checkpoints" / checkpoint_id
     checkpoint_manifest_path = checkpoint_dir / "manifest.json"
-    export_dir = run / "exports" / "checkpoint-tokens-0005000000"
+    export_dir = run / "exports" / checkpoint_id
     export_manifest_path = export_dir / "stage_export.json"
     model_dir = export_dir / "model"
     try:
         result = M10FullSFTRunResult.model_validate_json(result_path.read_bytes())
         config = load_m10_full_sft_config(config_path)
-        checkpoint = M10CheckpointStore(run / "checkpoints").validate(
-            "checkpoint-tokens-0005000000"
-        )
+        checkpoint = M10CheckpointStore(run / "checkpoints").validate(checkpoint_id)
         export_bytes = export_manifest_path.read_bytes()
         export = M10StageExport.model_validate_json(export_bytes)
         production = resolve_model(root, config.model.parent_model_ref)
     except (OSError, ValidationError, ValueError, DeploymentError, M10FullSFTError) as exc:
-        raise M10StageRegistrationError("M10 5M stage metadata is invalid") from exc
+        raise M10StageRegistrationError("M10 evaluation stage metadata is invalid") from exc
 
     try:
         model_sha256 = evaluation_artifact_sha256(model_dir, MODEL_FILES)
         tokenizer_sha256 = evaluation_artifact_sha256(production.tokenizer_dir, TOKENIZER_FILES)
     except DeploymentError as exc:
-        raise M10StageRegistrationError("M10 5M stage Artifact set is invalid") from exc
+        raise M10StageRegistrationError("M10 evaluation stage Artifact set is invalid") from exc
     config_sha256 = canonical_config_hash(config)
     export_marker = _load_marker(export_dir / "COMMITTED")
     identities = (
         (result.status, "stage_completed"),
-        (result.mode, "exact_resume"),
+        (result.mode, expected_mode),
         (result.run_id, run.name),
         (result.config_sha256, config_sha256),
-        (result.supervised_tokens, 5_000_000),
-        (result.resumed_from_tokens, 1_000_000),
+        (result.supervised_tokens, stage_tokens),
+        (result.resumed_from_tokens, expected_resumed_from),
         (result.latest_checkpoint, checkpoint.checkpoint_id),
         (result.stage_export, export),
         (result.stage_export.export_sha256, model_sha256),
@@ -128,7 +139,9 @@ def build_m10_stage_evaluation_subject(
         ),
     )
     if any(actual != expected for actual, expected in identities):
-        raise M10StageRegistrationError("M10 5M stage lineage is incomplete or inconsistent")
+        raise M10StageRegistrationError(
+            "M10 evaluation stage lineage is incomplete or inconsistent"
+        )
 
     model = M6ModelIdentity(
         role="candidate",
@@ -157,6 +170,7 @@ def build_m10_stage_evaluation_subject(
     )
     return M10StageEvaluationSubjectRecord(
         subject_id=subject_id,
+        kind="m10_full_sft_1m" if stage_tokens == 1_000_000 else "m10_full_sft_5m",
         created_at=datetime.now(UTC),
         model=model,
         model_dir=model_dir,
@@ -174,13 +188,17 @@ def build_m10_stage_evaluation_subject(
 
 
 def register_m10_stage_evaluation_subject(
-    *, artifact_root: Path, source_run: Path
+    *,
+    artifact_root: Path,
+    source_run: Path,
+    stage_tokens: int = 5_000_000,
 ) -> tuple[M10StageEvaluationSubjectRecord, str]:
-    """Build and atomically publish one verified M10 5M stage record."""
+    """Build and atomically publish one verified M10 1M/5M stage record."""
 
     record = build_m10_stage_evaluation_subject(
         artifact_root=artifact_root,
         source_run=source_run,
+        stage_tokens=stage_tokens,
     )
     try:
         return publish_m10_stage_evaluation_subject(artifact_root, record)

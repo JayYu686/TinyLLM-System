@@ -276,3 +276,90 @@ def test_build_m10_stage_subject_validates_run_lineage(
     assert published.subject_id == record.subject_id
     assert repeated == published
     assert repeated_sha == record_sha
+
+    one_million_model_dir, one_million_model_sha = _write_model(
+        run / "exports" / "checkpoint-tokens-0001000000" / "model"
+    )
+    one_million_checkpoint_dir = run / "checkpoints" / "checkpoint-tokens-0001000000"
+    one_million_checkpoint_dir.mkdir(parents=True)
+    one_million_state = one_million_checkpoint_dir / "training_state.pt"
+    one_million_state.write_bytes(b"one-million-state")
+    one_million_checkpoint = M10CheckpointManifest(
+        checkpoint_id="checkpoint-tokens-0001000000",
+        run_id=RUN_ID,
+        global_step=1008,
+        completed_epochs=1,
+        sequence_cursor=0,
+        supervised_tokens=1_000_000,
+        config_sha256=config_sha,
+        dataset_version=config.data.dataset_version,
+        dataset_manifest_sha256=config.data.manifest_sha256,
+        parent_production_version=config.model.parent_production_version,
+        parent_production_record_sha256=config.model.parent_production_record_sha256,
+        parent_model_artifact_sha256=config.model.parent_model_artifact_sha256,
+        git_commit="b" * 40,
+        file=M10CheckpointFile(
+            path="training_state.pt",
+            size_bytes=one_million_state.stat().st_size,
+            sha256=hashlib.sha256(one_million_state.read_bytes()).hexdigest(),
+        ),
+        pinned=True,
+        pin_reason="stage",
+    )
+    one_million_checkpoint_bytes = _json_bytes(one_million_checkpoint.to_dict())
+    (one_million_checkpoint_dir / "manifest.json").write_bytes(one_million_checkpoint_bytes)
+    (one_million_checkpoint_dir / "COMMITTED").write_bytes(
+        _json_bytes({"manifest_sha256": hashlib.sha256(one_million_checkpoint_bytes).hexdigest()})
+    )
+    one_million_export = M10StageExport(
+        checkpoint_id="checkpoint-tokens-0001000000",
+        supervised_tokens=1_000_000,
+        export_sha256=one_million_model_sha,
+    )
+    one_million_export_dir = one_million_model_dir.parent
+    one_million_export_bytes = _json_bytes(one_million_export.to_dict())
+    (one_million_export_dir / "stage_export.json").write_bytes(one_million_export_bytes)
+    (one_million_export_dir / "COMMITTED").write_bytes(
+        _json_bytes({"manifest_sha256": hashlib.sha256(one_million_export_bytes).hexdigest()})
+    )
+    one_million_result = M10FullSFTRunResult(
+        status="stage_completed",
+        mode="fresh",
+        run_id=RUN_ID,
+        config_sha256=config_sha,
+        git_commit="b" * 40,
+        git_dirty=False,
+        dataset_version=config.data.dataset_version,
+        dataset_manifest_sha256=config.data.manifest_sha256,
+        parent_production_version=config.model.parent_production_version,
+        parent_production_record_sha256=config.model.parent_production_record_sha256,
+        parent_model_artifact_sha256=config.model.parent_model_artifact_sha256,
+        attention_architecture="gqa",
+        seed=42,
+        physical_gpu_index=4,
+        gpu_name="NVIDIA GeForce RTX 3090",
+        global_step=1008,
+        completed_epochs=1,
+        supervised_tokens=1_000_000,
+        initial_loss=1.0,
+        final_loss=0.9,
+        duration_seconds=1.0,
+        peak_allocated_bytes=2,
+        peak_reserved_bytes=3,
+        latest_checkpoint="checkpoint-tokens-0001000000",
+        stage_export=one_million_export,
+    )
+    attempt = run / "attempts" / "fresh-stage_completed-tokens-0001000000.json"
+    attempt.parent.mkdir()
+    attempt.write_bytes(_json_bytes(one_million_result.to_dict()))
+
+    one_million_record = build_m10_stage_evaluation_subject(
+        artifact_root=root,
+        source_run=run,
+        stage_tokens=1_000_000,
+    )
+
+    assert one_million_record.kind == "m10_full_sft_1m"
+    assert one_million_record.model_dir == one_million_model_dir
+    assert one_million_record.model.training_tokens == 1_000_000
+    assert one_million_record.subject_id.startswith("qwen3-0-6b-m10-full-sft-1m-")

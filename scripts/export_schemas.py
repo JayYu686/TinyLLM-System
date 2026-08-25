@@ -192,6 +192,7 @@ from tinyllm.deployment import (
     M7ServingHardware,
     M7VulnerabilityAssessment,
     M9EvaluationSubjectRecord,
+    M10LoRAStageEvaluationSubjectRecord,
     M10StageEvaluationSubjectRecord,
     ResolvedEvaluationSubject,
     ResolvedModel,
@@ -310,6 +311,16 @@ from tinyllm.training.m5_lora_schema import (
     M5LoRAHardware,
     M5LoRARunResult,
 )
+from tinyllm.training.m10_lora_schema import (
+    M10LoRACheckpointManifest,
+    M10LoRAConfig,
+    M10LoRAContinuationGate,
+    M10LoRAGeneralPassSummary,
+    M10LoRAM6RegressionEvidence,
+    M10LoRAMemoryProbeResult,
+    M10LoRARunResult,
+    M10LoRAStageExport,
+)
 from tinyllm.training.m10_sft_schema import (
     M10CheckpointManifest,
     M10ContinuationGate,
@@ -364,6 +375,14 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-full-sft-run-result-v1.schema.json": M10FullSFTRunResult,
     "m10-m6-general-regression-evidence-v1.schema.json": M10M6RegressionEvidence,
     "m10-full-sft-stage-export-v1.schema.json": M10StageExport,
+    "m10-agent-lora-checkpoint-manifest-v1.schema.json": M10LoRACheckpointManifest,
+    "m10-agent-lora-config-v1.schema.json": M10LoRAConfig,
+    "m10-agent-lora-continuation-gate-v1.schema.json": M10LoRAContinuationGate,
+    "m10-agent-lora-general-pass-summary-v1.schema.json": M10LoRAGeneralPassSummary,
+    "m10-agent-lora-m6-regression-evidence-v1.schema.json": M10LoRAM6RegressionEvidence,
+    "m10-agent-lora-memory-probe-v1.schema.json": M10LoRAMemoryProbeResult,
+    "m10-agent-lora-run-result-v1.schema.json": M10LoRARunResult,
+    "m10-agent-lora-stage-export-v1.schema.json": M10LoRAStageExport,
     "m10-mixture-artifact-v1.schema.json": M10MixtureArtifact,
     "m10-mixture-input-evidence-v1.schema.json": M10MixtureInputEvidence,
     "m10-mixture-stratum-v1.schema.json": M10MixtureStratum,
@@ -588,6 +607,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m7-version-response-v1.schema.json": VersionResponse,
     "m9-evaluation-subject-record-v1.schema.json": M9EvaluationSubjectRecord,
     "m9-resolved-evaluation-subject-v1.schema.json": ResolvedEvaluationSubject,
+    "m10-agent-lora-stage-evaluation-subject-record-v1.schema.json": (
+        M10LoRAStageEvaluationSubjectRecord
+    ),
     "m10-stage-evaluation-subject-record-v1.schema.json": M10StageEvaluationSubjectRecord,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,

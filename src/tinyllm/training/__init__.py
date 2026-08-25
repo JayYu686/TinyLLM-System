@@ -126,6 +126,16 @@ from tinyllm.training.m5_lora_schema import (
     M5LoRAMemory,
     M5LoRARunResult,
 )
+from tinyllm.training.m10_lora_schema import (
+    M10LoRACheckpointManifest,
+    M10LoRAConfig,
+    M10LoRAContinuationGate,
+    M10LoRAGeneralPassSummary,
+    M10LoRAM6RegressionEvidence,
+    M10LoRAMemoryProbeResult,
+    M10LoRARunResult,
+    M10LoRAStageExport,
+)
 from tinyllm.training.m10_sft_schema import (
     M10CheckpointFile,
     M10CheckpointManifest,
@@ -232,6 +242,14 @@ __all__ = [
     "M10FullSFTRunResult",
     "M10M6RegressionEvidence",
     "M10StageExport",
+    "M10LoRACheckpointManifest",
+    "M10LoRAConfig",
+    "M10LoRAContinuationGate",
+    "M10LoRAGeneralPassSummary",
+    "M10LoRAM6RegressionEvidence",
+    "M10LoRAMemoryProbeResult",
+    "M10LoRARunResult",
+    "M10LoRAStageExport",
     "M4QwenApiEvidence",
     "M4RegisteredDatasetView",
     "M4TorchApiEvidence",

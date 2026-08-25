@@ -173,6 +173,25 @@ Agent Dev Task Success 下降 11.25pp，M6 回退 1.78pp 单项通过，因此 0
 诊断身份，不作为初始化点。BF16 LoRA 在固定最小配置真实 OOM 后，才创建独立策略身份切换
 到 NF4 QLoRA。
 
+M10.3 的正式父模型身份固定为 `qwen3-8b-m9-base-90587dd6`，配置哈希固定为
+`2a47b09ed960150d6d38103e4218734e72d8f10b9d5731392a6c72fa3bf50cd9`。训练使用
+Sequence Length 2048、Micro Batch 1、Gradient Accumulation 8、Rank 16、Alpha 32、Dropout
+0.05，并覆盖 Attention/MLP Linear。正式 1M 启动前必须完成同一配置、同一提交上的十个真实
+Optimizer Step 显存 Probe；Probe OOM 是 QLoRA 策略回退的必要证据，静态估算不能触发回退。
+
+1M、5M、10M 均以 Adapter-only Checkpoint 保存 LoRA、Optimizer、Scheduler 位置、RNG、数据
+Cursor、配置、Git、环境、兼容硬件身份与 Probe 哈希，不重复保存 8B Base 权重。中间逻辑 Epoch
+可以保存未 Pin 的恢复点；1M/5M/10M 评测边界永久 Pin。恢复点可能位于 2M–4M 或 6M–9M，
+Continuation Gate 始终绑定最近一次已评测的 1M 或 5M Adapter，二者不能混为同一身份。
+
+1M 相对 8B Base 的 Agent Dev Task Success 至少提升 1pp 后才允许进入 5M。5M 进入 10M
+同时要求相对父模型至少提升 1pp 且 M6 通用聚合回退不超过 2pp。每个阶段先注册独立
+`Evaluation` Subject；该记录可由 Gateway/vLLM 加载 Base + Adapter，但禁止直接进入
+Candidate/Production Registry。5M 的 M6 配对证据使用独立的
+`M10LoRAGeneralPassSummary`，分别绑定 8B Base Evaluation Subject 与 5M LoRA Subject，避免将
+Base 伪装成历史 M6 Candidate。工程就绪边界见
+[`M10.3 Agent LoRA 工程就绪报告`](../reports/m10/m10_agent_lora_readiness.md)。
+
 最终选择严格使用 M10 预注册 Gate：Release、父模型配对 Bootstrap、Schema、No-tool、工具
 幻觉、Grounding、失败恢复、安全、BFCL、M6 和 M7 Serving 证据必须同时通过。门禁失败时
 保留 M7 Production，并将 M10 Candidate 保持在 Development 状态。

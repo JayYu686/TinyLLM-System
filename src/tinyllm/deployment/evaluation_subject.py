@@ -26,8 +26,10 @@ from tinyllm.schemas.base import StrictSchema
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
 M9_SUBJECT_PATTERN = r"^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$"
 M10_STAGE_SUBJECT_PATTERN = r"^qwen3-0-6b-m10-full-sft-(1m|5m)-[0-9a-f]{8}$"
+M10_LORA_STAGE_SUBJECT_PATTERN = r"^qwen3-8b-m10-agent-lora-(1m|5m|10m)-[0-9a-f]{8}$"
 SUBJECT_PATTERN = (
-    r"^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m))"
+    r"^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|"
+    r"qwen3-8b-m10-agent-lora-(1m|5m|10m))"
     r"-[0-9a-f]{8}$"
 )
 
@@ -282,6 +284,129 @@ class M10StageEvaluationSubjectRecord(StrictSchema):
         return self
 
 
+def m10_lora_stage_evaluation_subject_id(
+    *,
+    model: M6ModelIdentity,
+    base_model_artifact_sha256: str,
+    tokenizer_artifact_sha256: str,
+    adapter_artifact_sha256: str,
+    source_result_sha256: str,
+    checkpoint_manifest_sha256: str,
+    memory_probe_sha256: str,
+) -> str:
+    """Derive one immutable M10 Agent LoRA stage identity."""
+
+    if model.training_tokens not in {1_000_000, 5_000_000, 10_000_000}:
+        raise ValueError("M10 Agent LoRA subjects are limited to 1M/5M/10M stages")
+    stage_label = f"{model.training_tokens // 1_000_000}m"
+    identity = _canonical_sha256(
+        {
+            "kind": f"m10_agent_lora_{stage_label}",
+            "model": model.to_dict(),
+            "base_model_artifact_sha256": base_model_artifact_sha256,
+            "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
+            "adapter_artifact_sha256": adapter_artifact_sha256,
+            "source_result_sha256": source_result_sha256,
+            "checkpoint_manifest_sha256": checkpoint_manifest_sha256,
+            "memory_probe_sha256": memory_probe_sha256,
+        }
+    )
+    return f"qwen3-8b-m10-agent-lora-{stage_label}-{identity[:8]}"
+
+
+class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
+    """Private, immutable M10 Agent LoRA stage for serving and evaluation only."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["Evaluation"] = "Evaluation"
+    subject_id: str = Field(pattern=M10_LORA_STAGE_SUBJECT_PATTERN)
+    kind: Literal["m10_agent_lora_1m", "m10_agent_lora_5m", "m10_agent_lora_10m"]
+    created_at: datetime
+    model: M6ModelIdentity
+    model_dir: Path
+    model_files: tuple[str, ...] = Field(min_length=7, max_length=7)
+    base_model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    tokenizer_dir: Path
+    tokenizer_files: tuple[str, ...] = Field(min_length=2, max_length=2)
+    tokenizer_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    adapter_dir: Path
+    adapter_files: tuple[str, ...] = Field(min_length=2, max_length=2)
+    adapter_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    effective_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    source_run_dir: Path
+    source_result_sha256: str = Field(pattern=SHA256_PATTERN)
+    checkpoint_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    checkpoint_payload_sha256: str = Field(pattern=SHA256_PATTERN)
+    memory_probe_sha256: str = Field(pattern=SHA256_PATTERN)
+    parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
+    parent_evaluation_subject_sha256: Literal[
+        "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
+    ]
+    production_eligible: Literal[False] = False
+
+    @field_validator("model_files", "tokenizer_files", "adapter_files", mode="before")
+    @classmethod
+    def freeze_files(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("model_files", "tokenizer_files", "adapter_files")
+    @classmethod
+    def validate_file_names(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if len(value) != len(set(value)) or tuple(sorted(value)) != value:
+            raise ValueError("M10 Agent LoRA file names must be unique and sorted")
+        if any(Path(name).name != name or name in {".", ".."} for name in value):
+            raise ValueError("M10 Agent LoRA subjects accept top-level file names only")
+        return value
+
+    @field_validator("model_dir", "tokenizer_dir", "adapter_dir", "source_run_dir")
+    @classmethod
+    def require_absolute_paths(cls, value: Path) -> Path:
+        if not value.is_absolute():
+            raise ValueError("M10 Agent LoRA subject paths must be absolute")
+        return value
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> M10LoRAStageEvaluationSubjectRecord:
+        if self.created_at.tzinfo is None:
+            raise ValueError("M10 Agent LoRA subject timestamp must be timezone-aware")
+        if set(self.tokenizer_files) != {"tokenizer.json", "tokenizer_config.json"}:
+            raise ValueError("M10 Agent LoRA Tokenizer file set differs")
+        if set(self.adapter_files) != {"adapter_config.json", "adapter_model.safetensors"}:
+            raise ValueError("M10 Agent LoRA Adapter file set differs")
+        expected_tokens = {
+            "m10_agent_lora_1m": 1_000_000,
+            "m10_agent_lora_5m": 5_000_000,
+            "m10_agent_lora_10m": 10_000_000,
+        }[self.kind]
+        expected_checkpoint = f"checkpoint-tokens-{expected_tokens:010d}"
+        expected_effective = effective_artifact_sha256(
+            self.base_model_artifact_sha256, self.adapter_artifact_sha256
+        )
+        if (
+            self.model.role != "candidate"
+            or self.model.repository != "Qwen/Qwen3-8B"
+            or self.model.adaptation != "lora"
+            or self.model.adapter_sha256 != self.adapter_artifact_sha256
+            or self.model.training_checkpoint_id != expected_checkpoint
+            or self.model.training_tokens != expected_tokens
+            or self.effective_artifact_sha256 != expected_effective
+            or self.model.model_artifact_sha256 != expected_effective
+        ):
+            raise ValueError("M10 Agent LoRA subject stage identity differs")
+        expected_id = m10_lora_stage_evaluation_subject_id(
+            model=self.model,
+            base_model_artifact_sha256=self.base_model_artifact_sha256,
+            tokenizer_artifact_sha256=self.tokenizer_artifact_sha256,
+            adapter_artifact_sha256=self.adapter_artifact_sha256,
+            source_result_sha256=self.source_result_sha256,
+            checkpoint_manifest_sha256=self.checkpoint_manifest_sha256,
+            memory_probe_sha256=self.memory_probe_sha256,
+        )
+        if self.subject_id != expected_id:
+            raise ValueError("M10 Agent LoRA subject ID differs from immutable inputs")
+        return self
+
+
 class ResolvedEvaluationSubject(StrictSchema):
     """Hash-verified path projection accepted only by serving and evaluation flows."""
 
@@ -386,6 +511,30 @@ def _validate_m10_contained_paths(
         ) from exc
 
 
+def _validate_m10_lora_contained_paths(
+    artifact_root: Path, record: M10LoRAStageEvaluationSubjectRecord
+) -> None:
+    try:
+        root = artifact_root.resolve(strict=True)
+        for directory in (
+            record.model_dir,
+            record.tokenizer_dir,
+            record.adapter_dir,
+            record.source_run_dir,
+        ):
+            resolved = directory.resolve(strict=True)
+            if directory.is_symlink() or not resolved.is_relative_to(root):
+                raise DeploymentError(
+                    DeploymentErrorCode.UNSAFE_ARTIFACT,
+                    "M10 Agent LoRA Artifact escapes the Artifact Store",
+                )
+    except (FileNotFoundError, OSError) as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.NOT_FOUND,
+            "M10 Agent LoRA Artifact directory is unavailable",
+        ) from exc
+
+
 def publish_evaluation_subject(
     artifact_root: Path, record: M9EvaluationSubjectRecord
 ) -> tuple[M9EvaluationSubjectRecord, str]:
@@ -449,6 +598,41 @@ def publish_m10_stage_evaluation_subject(
         if existing_identity != requested_identity:
             raise DeploymentError(
                 DeploymentErrorCode.CONFLICT, "M10 evaluation subject already exists with drift"
+            )
+        return existing, hashlib.sha256(payload).hexdigest()
+    _atomic_json(target, record.to_dict())
+    payload = target.read_bytes()
+    return record, hashlib.sha256(payload).hexdigest()
+
+
+def publish_m10_lora_stage_evaluation_subject(
+    artifact_root: Path, record: M10LoRAStageEvaluationSubjectRecord
+) -> tuple[M10LoRAStageEvaluationSubjectRecord, str]:
+    """Idempotently publish one Agent LoRA stage outside Candidate/Production."""
+
+    if not artifact_root.is_absolute() or artifact_root.is_symlink():
+        raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
+    try:
+        record = M10LoRAStageEvaluationSubjectRecord.model_validate_json(record.model_dump_json())
+    except ValueError as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "M10 Agent LoRA subject record is invalid"
+        ) from exc
+    _validate_m10_lora_contained_paths(artifact_root, record)
+    target = artifact_root / "registry" / "evaluation-subjects" / record.subject_id / "model.json"
+    if target.exists():
+        try:
+            payload = target.read_bytes()
+            existing = M10LoRAStageEvaluationSubjectRecord.model_validate_json(payload)
+        except (OSError, ValueError) as exc:
+            raise DeploymentError(
+                DeploymentErrorCode.INVALID_INPUT, "M10 Agent LoRA subject record is invalid"
+            ) from exc
+        existing_identity = existing.model_dump(mode="json", exclude={"created_at"})
+        requested_identity = record.model_dump(mode="json", exclude={"created_at"})
+        if existing_identity != requested_identity:
+            raise DeploymentError(
+                DeploymentErrorCode.CONFLICT, "M10 Agent LoRA subject already exists with drift"
             )
         return existing, hashlib.sha256(payload).hexdigest()
     _atomic_json(target, record.to_dict())
@@ -566,6 +750,64 @@ def resolve_m10_stage_evaluation_subject(
     )
 
 
+def resolve_m10_lora_stage_evaluation_subject(
+    artifact_root: Path, subject_id: str, *, now: datetime | None = None
+) -> ResolvedEvaluationSubject:
+    """Resolve one M10 Agent LoRA stage and fail closed on Artifact drift."""
+
+    if not artifact_root.is_absolute() or artifact_root.is_symlink():
+        raise DeploymentError(DeploymentErrorCode.INVALID_INPUT, "Artifact root must be absolute")
+    if re.fullmatch(M10_LORA_STAGE_SUBJECT_PATTERN, subject_id) is None:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "M10 Agent LoRA subject ID is invalid"
+        )
+    path = artifact_root / "registry" / "evaluation-subjects" / subject_id / "model.json"
+    try:
+        payload = path.read_bytes()
+        record = M10LoRAStageEvaluationSubjectRecord.model_validate_json(payload)
+    except FileNotFoundError as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.NOT_FOUND, "M10 Agent LoRA subject is missing"
+        ) from exc
+    except (OSError, ValueError) as exc:
+        raise DeploymentError(
+            DeploymentErrorCode.INVALID_INPUT, "M10 Agent LoRA subject is invalid"
+        ) from exc
+    if record.subject_id != subject_id:
+        raise DeploymentError(
+            DeploymentErrorCode.HASH_MISMATCH, "M10 Agent LoRA subject identity differs"
+        )
+    _validate_m10_lora_contained_paths(artifact_root, record)
+    record_sha256 = hashlib.sha256(payload).hexdigest()
+    actual_model = _artifact_set_sha256(record.model_dir, record.model_files)
+    actual_tokenizer = _artifact_set_sha256(record.tokenizer_dir, record.tokenizer_files)
+    actual_adapter = _artifact_set_sha256(record.adapter_dir, record.adapter_files)
+    if (
+        actual_model != record.base_model_artifact_sha256
+        or actual_tokenizer != record.tokenizer_artifact_sha256
+        or actual_adapter != record.adapter_artifact_sha256
+        or effective_artifact_sha256(actual_model, actual_adapter)
+        != record.effective_artifact_sha256
+    ):
+        raise DeploymentError(
+            DeploymentErrorCode.HASH_MISMATCH, "M10 Agent LoRA Artifact hash differs"
+        )
+    _validate_model_configuration(record.model_dir, record.tokenizer_dir)
+    return ResolvedEvaluationSubject(
+        requested_ref=subject_id,
+        model_version=subject_id,
+        evaluation_subject_sha256=record_sha256,
+        model=record.model,
+        model_dir=record.model_dir,
+        model_artifact_sha256=record.effective_artifact_sha256,
+        tokenizer_dir=record.tokenizer_dir,
+        tokenizer_artifact_sha256=record.tokenizer_artifact_sha256,
+        adapter_dir=record.adapter_dir,
+        adapter_artifact_sha256=record.adapter_artifact_sha256,
+        verified_at=now or datetime.now(UTC),
+    )
+
+
 def resolve_serving_model(
     artifact_root: Path, model_ref: str, *, now: datetime | None = None
 ) -> ServingModel:
@@ -575,6 +817,8 @@ def resolve_serving_model(
         return resolve_evaluation_subject(artifact_root, model_ref, now=now)
     if model_ref.startswith("qwen3-0-6b-m10-full-sft-"):
         return resolve_m10_stage_evaluation_subject(artifact_root, model_ref, now=now)
+    if model_ref.startswith("qwen3-8b-m10-agent-lora-"):
+        return resolve_m10_lora_stage_evaluation_subject(artifact_root, model_ref, now=now)
     from tinyllm.deployment.registry import resolve_model
 
     return resolve_model(artifact_root, model_ref, now=now)

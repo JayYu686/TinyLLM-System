@@ -7,7 +7,7 @@
       "type": "string"
     },
     "dataset_version": {
-      "const": "m10-agent-sft-v1-4655d3e3",
+      "pattern": "^m10-agent-sft-v[12]-[0-9a-f]{8}$",
       "title": "Dataset Version",
       "type": "string"
     },

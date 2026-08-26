@@ -73,9 +73,9 @@ class M10FrozenMixtureConfig(StrictSchema):
     """Exact build recipe for the one-million supervised-token logical epoch."""
 
     schema_version: Literal["1.0"]
-    config_version: Literal["m10-agent-frozen-mixture-v1"]
+    config_version: Literal["m10-agent-frozen-mixture-v1", "m10-agent-frozen-mixture-v2"]
     source_config_sha256: str = Field(pattern=SHA256_PATTERN)
-    build_seed: Literal[20260822]
+    build_seed: Literal[20260822, 20260825]
     dataset_name: Literal["tinyllm-agent-sft"]
     target_supervised_tokens: Literal[1_000_000]
     sequence_length: Literal[2048]
@@ -105,16 +105,31 @@ class M10FrozenMixtureConfig(StrictSchema):
     @model_validator(mode="after")
     def validate_exact_budget(self) -> M10FrozenMixtureConfig:
         expected = (
-            ("toolace", "en", "nonthinking", 300_000),
-            ("hermes_function_calling", "en", "nonthinking", 200_000),
-            ("tinyllm_devops", "en", "nonthinking", 80_000),
-            ("tinyllm_devops", "zh", "nonthinking", 120_000),
-            ("m6_domain_replay", "en", "nonthinking", 70_000),
-            ("m6_domain_replay", "en", "thinking", 30_000),
-            ("m6_domain_replay", "zh", "nonthinking", 70_000),
-            ("m6_domain_replay", "zh", "thinking", 30_000),
-            ("m2_no_tool_replay", "en", "nonthinking", 20_000),
-            ("m2_no_tool_replay", "zh", "nonthinking", 80_000),
+            (
+                ("toolace", "en", "nonthinking", 300_000),
+                ("hermes_function_calling", "en", "nonthinking", 200_000),
+                ("tinyllm_devops", "en", "nonthinking", 80_000),
+                ("tinyllm_devops", "zh", "nonthinking", 120_000),
+                ("m6_domain_replay", "en", "nonthinking", 70_000),
+                ("m6_domain_replay", "en", "thinking", 30_000),
+                ("m6_domain_replay", "zh", "nonthinking", 70_000),
+                ("m6_domain_replay", "zh", "thinking", 30_000),
+                ("m2_no_tool_replay", "en", "nonthinking", 20_000),
+                ("m2_no_tool_replay", "zh", "nonthinking", 80_000),
+            )
+            if self.config_version == "m10-agent-frozen-mixture-v1"
+            else (
+                ("toolace", "en", "nonthinking", 200_000),
+                ("hermes_function_calling", "en", "nonthinking", 100_000),
+                ("tinyllm_devops", "en", "nonthinking", 280_000),
+                ("tinyllm_devops", "zh", "nonthinking", 120_000),
+                ("m6_domain_replay", "en", "nonthinking", 70_000),
+                ("m6_domain_replay", "en", "thinking", 30_000),
+                ("m6_domain_replay", "zh", "nonthinking", 70_000),
+                ("m6_domain_replay", "zh", "thinking", 30_000),
+                ("m2_no_tool_replay", "en", "nonthinking", 20_000),
+                ("m2_no_tool_replay", "zh", "nonthinking", 80_000),
+            )
         )
         observed = tuple(
             (item.source_id, item.language, item.mode, item.supervised_tokens)
@@ -165,11 +180,11 @@ class M10FrozenMixtureManifest(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     dataset_name: Literal["tinyllm-agent-sft"] = "tinyllm-agent-sft"
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v1-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
     content_sha256: str = Field(pattern=SHA256_PATTERN)
     frozen_config_sha256: str = Field(pattern=SHA256_PATTERN)
     source_config_sha256: str = Field(pattern=SHA256_PATTERN)
-    build_seed: Literal[20260822]
+    build_seed: Literal[20260822, 20260825]
     tokenizer_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     tokenizer_sha256: str = Field(pattern=SHA256_PATTERN)
     template_id: Literal["qwen3-agent-chatml-nonthinking-v1"]
@@ -206,14 +221,16 @@ class M10FrozenMixtureManifest(StrictSchema):
 
     @model_validator(mode="after")
     def validate_manifest(self) -> M10FrozenMixtureManifest:
+        repair = self.dataset_version.startswith("m10-agent-sft-v2-")
         expected_sources = {
-            "toolace": 300_000,
-            "hermes_function_calling": 200_000,
-            "tinyllm_devops": 200_000,
+            "toolace": 200_000 if repair else 300_000,
+            "hermes_function_calling": 100_000 if repair else 200_000,
+            "tinyllm_devops": 400_000 if repair else 200_000,
             "m6_domain_replay": 200_000,
             "m2_no_tool_replay": 100_000,
         }
-        if self.dataset_version != f"m10-agent-sft-v1-{self.content_sha256[:8]}":
+        expected_version = f"m10-agent-sft-v{'2' if repair else '1'}-{self.content_sha256[:8]}"
+        if self.dataset_version != expected_version:
             raise ValueError("M10 dataset version differs from its content hash")
         if self.source_supervised_tokens != expected_sources:
             raise ValueError("M10 source supervised-token counts differ")
@@ -238,9 +255,11 @@ class M10FrozenMixtureReport(StrictSchema):
     """Content-free public evidence for the final private mixture."""
 
     schema_version: Literal["1.0"] = "1.0"
-    report_version: Literal["m10-frozen-mixture-v1"] = "m10-frozen-mixture-v1"
+    report_version: Literal["m10-frozen-mixture-v1", "m10-frozen-mixture-v2"] = (
+        "m10-frozen-mixture-v1"
+    )
     status: Literal["pass"]
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v1-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
     manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     content_sha256: str = Field(pattern=SHA256_PATTERN)
     sequence_count: int = Field(gt=0)

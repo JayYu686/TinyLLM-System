@@ -178,7 +178,7 @@ class M10AgentDataConfig(StrictSchema):
     """Preregistered M10 mixture contract; it is not trainable until frozen."""
 
     schema_version: Literal["1.0"]
-    config_version: Literal["m10-agent-data-v1"]
+    config_version: Literal["m10-agent-data-v1", "m10-agent-data-v2"]
     status: Literal["preregistered", "frozen"]
     training_permitted: bool
     dataset_name: Literal["tinyllm-agent-sft"]
@@ -211,7 +211,11 @@ class M10AgentDataConfig(StrictSchema):
             "m6_domain_replay",
             "m2_no_tool_replay",
         )
-        expected_weights = (3000, 2000, 2000, 2000, 1000)
+        expected_weights = (
+            (3000, 2000, 2000, 2000, 1000)
+            if self.config_version == "m10-agent-data-v1"
+            else (2000, 1000, 4000, 2000, 1000)
+        )
         if tuple(item.source_id for item in self.sources) != expected_ids:
             raise ValueError("M10 sources must use the frozen order")
         if tuple(item.mixture_basis_points for item in self.sources) != expected_weights:

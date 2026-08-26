@@ -135,6 +135,16 @@ def assemble_m10_lora_stage_gate(
         for actual, expected in (*parent_identities, *candidate_identities, *source_identities)
     ):
         raise M10LoRAStageGateError("M10 Agent LoRA Gate lineage or protocol differs")
+    expected_protocol = (
+        "m10-agent-scoring-v2"
+        if result.dataset_version.startswith("m10-agent-sft-v2-")
+        else "m9-agent-scoring-v1"
+    )
+    if (
+        parent_agent.scoring_protocol != expected_protocol
+        or candidate_agent.scoring_protocol != expected_protocol
+    ):
+        raise M10LoRAStageGateError("M10 Agent LoRA scoring protocol differs from its Dataset")
 
     evaluated_at = datetime.now(UTC)
     m6_evidence: M10LoRAM6RegressionEvidence | None = None
@@ -198,6 +208,7 @@ def assemble_m10_lora_stage_gate(
     gate = M10LoRAContinuationGate(
         evaluated_at=evaluated_at,
         decision="accepted" if accepted else "rejected",
+        scoring_protocol=expected_protocol,
         run_id=result.run_id,
         config_sha256=result.config_sha256,
         source_stage_tokens=cast(Literal[1_000_000, 5_000_000], source_tokens),
@@ -207,7 +218,7 @@ def assemble_m10_lora_stage_gate(
         agent_dev_version="tinyllm-devops-agent-dev-v1-f958bcc6",
         parent_summary_sha256=_sha256_file(parent_agent_summary_path),
         candidate_summary_sha256=_sha256_file(candidate_agent_summary_path),
-        parent_task_success_basis_points=4500,
+        parent_task_success_basis_points=(parent_agent.metrics.task_success_rate_basis_points),
         candidate_task_success_basis_points=(
             candidate_agent.metrics.task_success_rate_basis_points
         ),

@@ -206,3 +206,10 @@ M10 的两条路线均已触发该失败分支：0.6B Full SFT 在 5M 早停，8
 早停。密封 Release、BFCL 和 Serving Gate 未被未通过开发门禁的模型消费，M7 Production
 Alias 保持不变。项目以 `v1.0.0-rc.1` 记录完整系统能力与未通过的 Agent 模型门禁，详见
 [`M10 总验收`](../reports/m10/m10_acceptance.md)。
+
+## 10. M10.5 能力修复
+
+`v1.0.0-rc.1` 的拒绝结论和全部历史证据保持不可变。后续 M10.5 使用新数据身份、新评分协议
+和新训练 Run 修复首轮数据语义错位，不续训已退化 Adapter，也不降低 M9 冻结的最终门禁。
+具体数据分布、评分边界、学习率和验收顺序见
+[`M10.5 Agent 能力修复契约`](m10_5_agent_repair_contract.md)。

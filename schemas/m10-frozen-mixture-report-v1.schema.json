@@ -19,7 +19,7 @@
       "type": "string"
     },
     "dataset_version": {
-      "pattern": "^m10-agent-sft-v1-[0-9a-f]{8}$",
+      "pattern": "^m10-agent-sft-v[12]-[0-9a-f]{8}$",
       "title": "Dataset Version",
       "type": "string"
     },
@@ -92,8 +92,11 @@
       "type": "boolean"
     },
     "report_version": {
-      "const": "m10-frozen-mixture-v1",
       "default": "m10-frozen-mixture-v1",
+      "enum": [
+        "m10-frozen-mixture-v1",
+        "m10-frozen-mixture-v2"
+      ],
       "title": "Report Version",
       "type": "string"
     },

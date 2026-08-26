@@ -163,6 +163,94 @@ def test_frozen_config_rejects_silent_ratio_drift() -> None:
         M10FrozenMixtureConfig.model_validate(value)
 
 
+def test_repair_config_increases_grounded_devops_supervision() -> None:
+    value = yaml.safe_load(Path("configs/data/m10_agent_frozen.yaml").read_text(encoding="utf-8"))
+    value["config_version"] = "m10-agent-frozen-mixture-v2"
+    value["build_seed"] = 20260825
+    value["strata"] = [
+        {
+            "source_id": "toolace",
+            "language": "en",
+            "mode": "nonthinking",
+            "supervised_tokens": 200000,
+        },
+        {
+            "source_id": "hermes_function_calling",
+            "language": "en",
+            "mode": "nonthinking",
+            "supervised_tokens": 100000,
+        },
+        {
+            "source_id": "tinyllm_devops",
+            "language": "en",
+            "mode": "nonthinking",
+            "supervised_tokens": 280000,
+        },
+        {
+            "source_id": "tinyllm_devops",
+            "language": "zh",
+            "mode": "nonthinking",
+            "supervised_tokens": 120000,
+        },
+        {
+            "source_id": "m6_domain_replay",
+            "language": "en",
+            "mode": "nonthinking",
+            "supervised_tokens": 70000,
+        },
+        {
+            "source_id": "m6_domain_replay",
+            "language": "en",
+            "mode": "thinking",
+            "supervised_tokens": 30000,
+        },
+        {
+            "source_id": "m6_domain_replay",
+            "language": "zh",
+            "mode": "nonthinking",
+            "supervised_tokens": 70000,
+        },
+        {
+            "source_id": "m6_domain_replay",
+            "language": "zh",
+            "mode": "thinking",
+            "supervised_tokens": 30000,
+        },
+        {
+            "source_id": "m2_no_tool_replay",
+            "language": "en",
+            "mode": "nonthinking",
+            "supervised_tokens": 20000,
+        },
+        {
+            "source_id": "m2_no_tool_replay",
+            "language": "zh",
+            "mode": "nonthinking",
+            "supervised_tokens": 80000,
+        },
+    ]
+
+    config = M10FrozenMixtureConfig.model_validate(value)
+    source_counts = {
+        source: sum(item.supervised_tokens for item in config.strata if item.source_id == source)
+        for source in (
+            "toolace",
+            "hermes_function_calling",
+            "tinyllm_devops",
+            "m6_domain_replay",
+            "m2_no_tool_replay",
+        )
+    }
+
+    assert source_counts == {
+        "toolace": 200_000,
+        "hermes_function_calling": 100_000,
+        "tinyllm_devops": 400_000,
+        "m6_domain_replay": 200_000,
+        "m2_no_tool_replay": 100_000,
+    }
+
+
 def test_agent_renderer_supervises_calls_and_final_without_visible_cot() -> None:
     text, spans = render_agent_conversation(_candidate("toolace", "toolace-fixture"))
 

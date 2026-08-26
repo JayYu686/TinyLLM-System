@@ -166,7 +166,7 @@ sequenceDiagram
 | M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
 | M8 DevOps Agent | 已完成 | Tool Calling 8/8；MCP、LangGraph、FTS5 证据检索、显式审批与重启恢复 |
 | M9 Agent 评测 | 已完成 | 240 条 DevOps Agent Suite 冻结；三组父模型基线；BFCL 共 5,520/5,520 条且 0 推理失败 |
-| M10 Agent 后训练 | 已收尾（模型门禁拒绝） | 0.6B Full SFT 在 5M、8B LoRA 在 1M 按真实 Agent Dev 早停；M7 Production 保持不变 |
+| M10 Agent 后训练 | M10.5 修复实验就绪 | 首轮两条路线的拒绝证据保持不可变；评分协议 v2、Grounded DevOps 数据 v2、80 条人工审查和 1M Token 冻结混合均已通过，等待 8B LoRA 复训 |
 
 当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
 详细证据可从以下入口查看：
@@ -227,7 +227,9 @@ sequenceDiagram
   [M10.2 Full SFT 5M 阶段报告](reports/m10/m10_full_sft_5m.md)、
   [M10.3 Agent LoRA 1M 阶段报告](reports/m10/m10_agent_lora_1m.md)、
   [M10 路线选择](reports/m10/m10_route_selection.md)与
-  [M10 总验收](reports/m10/m10_acceptance.md)
+  [M10 总验收](reports/m10/m10_acceptance.md)、
+  [M10.5 修复契约](docs/m10_5_agent_repair_contract.md)与
+  [M10.5 修复就绪报告](reports/m10/m10_5_repair_readiness.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -413,6 +415,7 @@ TinyLLM-System/
 | M8 | Tool Calling、MCP 与 DevOps 单 Agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL 与 DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
 | M10 | Agent SFT/LoRA 与统一门禁 | `v1.0.0-rc.1`：两条训练路线保留拒绝证据 |
+| M10.5 | Grounded Agent 数据、评分协议与 8B LoRA 修复 | 通过全部 Agent Gate 后发布 `v1.0.0` |
 
 Training Planner、ZeRO-3、MLflow、V100 兼容验证和 TinyGPT-350M 按核心链路依赖与资源条件
 进入增强迭代。完整安排见[版本发布路线](docs/release_roadmap.md)。

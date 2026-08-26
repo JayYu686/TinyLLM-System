@@ -197,12 +197,18 @@
   "description": "Exact build recipe for the one-million supervised-token logical epoch.",
   "properties": {
     "build_seed": {
-      "const": 20260822,
+      "enum": [
+        20260822,
+        20260825
+      ],
       "title": "Build Seed",
       "type": "integer"
     },
     "config_version": {
-      "const": "m10-agent-frozen-mixture-v1",
+      "enum": [
+        "m10-agent-frozen-mixture-v1",
+        "m10-agent-frozen-mixture-v2"
+      ],
       "title": "Config Version",
       "type": "string"
     },

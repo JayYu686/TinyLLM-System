@@ -83,12 +83,12 @@
       "title": "Continuation Gate Sha256"
     },
     "dataset_manifest_sha256": {
-      "const": "6ec41bdee5d6509cbd04c6f4a0c1c7af2fa0ef116de185d9c43e2076d1ee0490",
+      "pattern": "^[a-f0-9]{64}$",
       "title": "Dataset Manifest Sha256",
       "type": "string"
     },
     "dataset_version": {
-      "const": "m10-agent-sft-v1-4655d3e3",
+      "pattern": "^m10-agent-sft-v[12]-[0-9a-f]{8}$",
       "title": "Dataset Version",
       "type": "string"
     },

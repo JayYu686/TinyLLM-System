@@ -35,6 +35,7 @@ from tinyllm.data.m10_devops_schema import (
 )
 
 M10_DEVOPS_SEED: Final = 20260820
+M10_DEVOPS_REPAIR_SEED: Final = 20260825
 CATEGORY_COUNTS: Final[dict[AgentEvalCategory, int]] = {
     "single_tool": 360,
     "no_tool": 360,
@@ -46,6 +47,17 @@ CATEGORY_COUNTS: Final[dict[AgentEvalCategory, int]] = {
     "grounding_approval_security": 240,
 }
 LANGUAGE_COUNTS: Final[dict[AgentEvalLanguage, int]] = {"en": 1680, "zh": 720}
+REPAIR_CATEGORY_COUNTS: Final[dict[AgentEvalCategory, int]] = {
+    "single_tool": 360,
+    "no_tool": 240,
+    "wrong_tool_irrelevance": 480,
+    "missing_argument_clarification": 240,
+    "sequential_multi_step": 480,
+    "parallel_independent_tools": 120,
+    "tool_failure_recovery": 360,
+    "grounding_approval_security": 120,
+}
+REPAIR_LANGUAGE_COUNTS: Final[dict[AgentEvalLanguage, int]] = {"en": 1680, "zh": 720}
 _SERVICES: Final = (
     "artifact-registry",
     "batch-scheduler",
@@ -963,6 +975,15 @@ def build_manifest(
 
     if len(samples) != 2400:
         raise M10DevOpsDataError("M10 authored dataset must contain exactly 2,400 samples")
+    revisions = {item.source_revision for item in samples}
+    if len(revisions) != 1:
+        raise M10DevOpsDataError("M10 authored dataset cannot mix source revisions")
+    revision = revisions.pop()
+    repair = revision == "m10-devops-training-v2"
+    category_counts = REPAIR_CATEGORY_COUNTS if repair else CATEGORY_COUNTS
+    language_counts = REPAIR_LANGUAGE_COUNTS if repair else LANGUAGE_COUNTS
+    seed = M10_DEVOPS_REPAIR_SEED if repair else M10_DEVOPS_SEED
+    generator_contract = "m10-devops-generator-v2" if repair else "m10-devops-generator-v1"
     items_sha = hashlib.sha256(render_samples(samples)).hexdigest()
     content_sha = canonical_json_sha256([item.content_sha256 for item in samples])
     tools_hash = samples[0].tool_schema_sha256
@@ -972,17 +993,19 @@ def build_manifest(
     masked = sum(not message.supervised for sample in samples for message in sample.messages)
     calls = sum(len(message.tool_calls) for sample in samples for message in sample.messages)
     generator_config = {
-        "generator_contract_version": "m10-devops-generator-v1",
-        "seed": M10_DEVOPS_SEED,
-        "category_counts": CATEGORY_COUNTS,
-        "language_counts": LANGUAGE_COUNTS,
+        "generator_contract_version": generator_contract,
+        "seed": seed,
+        "category_counts": category_counts,
+        "language_counts": language_counts,
         "template_family_counts": _TEMPLATE_FAMILY_COUNTS,
         "mode": "nonthinking",
         "tool_catalog_sha256": tools_hash,
     }
     return M10DevOpsDatasetManifest.model_validate(
         {
-            "dataset_version": f"m10-devops-training-v1-{content_sha[:8]}",
+            "dataset_version": f"{revision}-{content_sha[:8]}",
+            "source_revision": revision,
+            "seed": seed,
             "category_counts": dict(Counter(item.category for item in samples)),
             "language_counts": dict(Counter(item.language for item in samples)),
             "supervised_message_count": supervised,
@@ -1165,7 +1188,11 @@ def scan_contamination(
     )
     payload: dict[str, Any] = {
         "schema_version": "1.0",
-        "scan_version": "m10-devops-contamination-v1",
+        "scan_version": (
+            "m10-devops-contamination-v2"
+            if manifest.source_revision == "m10-devops-training-v2"
+            else "m10-devops-contamination-v1"
+        ),
         "algorithm": "minhash-5gram-lsh-v1",
         "permutation_count": 128,
         "threshold_basis_points": 8500,
@@ -1215,14 +1242,19 @@ def render_review_packet(
                     if len(category_selection) == 5:
                         break
             selected.extend(category_selection)
+    repair = manifest.source_revision == "m10-devops-training-v2"
     lines = [
-        "# M10 DevOps 训练轨迹内容审查包",
+        "# M10.5 DevOps Repair 训练轨迹内容审查包" if repair else "# M10 DevOps 训练轨迹内容审查包",
         "",
         f"- 数据版本：`{manifest.dataset_version}`",
         f"- 完整样本：{manifest.item_count} 条；本包分层抽样：{len(selected)} 条",
         "- 抽样方式：每个类别、每种语言固定抽取 5 条，共 8 × 2 × 5",
         "- 当前状态：分层审查草案，尚未获得维护者内容确认，`training_permitted=false`",
-        "- 审查重点：任务是否自然、工具选择是否必要、参数是否完整、工具结果与结论是否一致、安全边界是否正确",
+        (
+            "- 审查重点：最终答案是否复述 Tool Result 的实际状态、数值或故障；无关请求是否拒绝；失败恢复是否由运行时单调用重试；安全边界是否正确"
+            if repair
+            else "- 审查重点：任务是否自然、工具选择是否必要、参数是否完整、工具结果与结论是否一致、安全边界是否正确"
+        ),
         "",
     ]
     for index, sample in enumerate(selected, start=1):

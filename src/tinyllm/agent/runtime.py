@@ -56,6 +56,7 @@ class _GraphState(TypedDict, total=False):
     approval_id: str
     answer: str
     failed: bool
+    retry_model: bool
 
 
 class AgentRuntime:
@@ -100,6 +101,7 @@ class AgentRuntime:
             {
                 "tool": "validate_tool_schema",
                 "final": "complete_message",
+                "model": "model_decision",
                 "end": END,
             },
         )
@@ -232,9 +234,49 @@ class AgentRuntime:
             status="running",
             steps_completed=record.steps_completed + 1,
         )
+        observations = list(state.get("observations", []))
+        pending: list[dict[str, Any]] = []
+        duplicate_observations: list[dict[str, object]] = []
+        for call in decision.tool_calls:
+            signature = self._signature(call)
+            succeeded = next(
+                (
+                    item
+                    for item in reversed(observations)
+                    if "result" in item and self._signature_from_event(item) == signature
+                ),
+                None,
+            )
+            if succeeded is None:
+                pending.append(call.to_dict())
+                continue
+            already_suppressed = any(
+                item.get("duplicate_suppressed") is True
+                and self._signature_from_event(item) == signature
+                for item in observations
+            )
+            if already_suppressed:
+                self._fail(run_id, "AGENT_TOOL_LOOP")
+                return {"failed": True, "pending_calls": [], "retry_model": False}
+            duplicate_observations.append(
+                {
+                    "call_id": call.call_id,
+                    "server_id": call.server_id,
+                    "tool_name": call.tool_name,
+                    "arguments": call.arguments,
+                    "result": {
+                        "schema_version": "1.0",
+                        "status": "already_succeeded",
+                        "instruction": "Do not repeat this call; answer from the existing result.",
+                    },
+                    "duplicate_suppressed": True,
+                }
+            )
         return {
             "decision": decision.to_dict(),
-            "pending_calls": [item.to_dict() for item in decision.tool_calls],
+            "pending_calls": pending,
+            "observations": [*observations, *duplicate_observations],
+            "retry_model": bool(duplicate_observations and not pending),
         }
 
     async def _validate_tool_schema(self, state: _GraphState) -> _GraphState:
@@ -380,6 +422,8 @@ class AgentRuntime:
     def _route_decision(self, state: _GraphState) -> str:
         if state.get("failed"):
             return "end"
+        if state.get("retry_model"):
+            return "model"
         decision = AgentModelDecision.model_validate(state["decision"])
         return "tool" if decision.tool_calls else "final"
 

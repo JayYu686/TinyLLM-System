@@ -200,7 +200,7 @@ def test_v3_recovery_does_not_require_undisclosed_optional_defaults() -> None:
                 attempts=2,
             ),
         ),
-        final_answer=f"Recovered {task.final_assertions.required_terms[0]}",
+        final_answer="The bounded retry recovered and returned evidence.",
         evidence_citations=("call_retry",),
         scoring_protocol="m10-agent-scoring-v3",
     )

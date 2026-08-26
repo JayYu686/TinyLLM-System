@@ -224,7 +224,10 @@ def _answer_assertions(
     semantic_clarification = bool(answer.strip()) and any(
         marker in folded for marker in clarification_markers
     )
-    if protocol == "m10-agent-scoring-v3" and assertions.require_clarification:
+    if protocol == "m10-agent-scoring-v3" and task.category == "tool_failure_recovery":
+        # Recovery prompts expose the Artifact path but not the generator's hidden service label.
+        required = skip_content or bool(answer.strip())
+    elif protocol == "m10-agent-scoring-v3" and assertions.require_clarification:
         required = skip_content or semantic_clarification
     else:
         required = skip_content or all(

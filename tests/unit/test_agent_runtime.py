@@ -170,6 +170,35 @@ def test_runtime_stops_repeated_identical_tool_loop(tmp_path: Path) -> None:
     assert record.error_code == "AGENT_TOOL_LOOP"
 
 
+def test_runtime_suppresses_one_duplicate_successful_call_and_reprompts(
+    tmp_path: Path,
+) -> None:
+    store, run_id, messages = _run(tmp_path)
+    client = _Client()
+    repeated = _decision("search_evidence", {"query": "same"})
+    runtime = AgentRuntime(
+        config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
+        store=store,
+        model=_Model(
+            [
+                repeated,
+                repeated,
+                AgentModelDecision(message="done [evidence:call_one]"),
+            ]
+        ),
+        clients={"tinyllm-devops": client},  # type: ignore[dict-item]
+    )
+
+    answer = asyncio.run(runtime.run(run_id, messages=messages))
+
+    assert answer == "done [evidence:call_one]"
+    assert store.load(run_id).status == "succeeded"
+    assert client.calls == [("search_evidence", {"query": "same"})]
+    events = store.events_after(run_id)
+    assert sum(event.event_type == "tool.started" for event in events) == 1
+    assert sum(event.event_type == "tool.completed" for event in events) == 1
+
+
 def test_runtime_attaches_actual_evidence_identity_when_model_omits_citation(
     tmp_path: Path,
 ) -> None:

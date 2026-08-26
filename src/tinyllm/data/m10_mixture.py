@@ -928,9 +928,14 @@ def build_frozen_mixture(
         expected_manifest=hermes_spec.manifest_sha256,
     )
     devops_spec = config.inputs.tinyllm_devops
+    approval_version = (
+        "approval-v2"
+        if devops_spec.version.startswith("m10-devops-training-v2-")
+        else "approval-v1"
+    )
     devops_manifest, devops_text = load_approved_devops_candidates(
         artifact_root / "datasets/m10-agent/devops" / devops_spec.version,
-        artifact_root / "reviews" / devops_spec.version / "approval-v1",
+        artifact_root / "reviews" / devops_spec.version / approval_version,
         expected_version=devops_spec.version,
         expected_content=devops_spec.content_sha256,
         expected_manifest=devops_spec.manifest_sha256,
@@ -1099,7 +1104,11 @@ def build_frozen_mixture(
         for mode in _MODE_CODES
     }
     manifest = M10FrozenMixtureManifest(
-        dataset_version=f"m10-agent-sft-v1-{content_sha[:8]}",
+        dataset_version=(
+            f"m10-agent-sft-v2-{content_sha[:8]}"
+            if config.config_version == "m10-agent-frozen-mixture-v2"
+            else f"m10-agent-sft-v1-{content_sha[:8]}"
+        ),
         content_sha256=content_sha,
         frozen_config_sha256=frozen_config_sha,
         source_config_sha256=config.source_config_sha256,
@@ -1331,6 +1340,11 @@ def build_public_report(manifest: M10FrozenMixtureManifest) -> M10FrozenMixtureR
     overlength = {item.source_id: item.overlength_rejections for item in manifest.input_evidence}
     manifest_sha = hashlib.sha256(_json_bytes(manifest.to_dict(), indent=2)).hexdigest()
     return M10FrozenMixtureReport(
+        report_version=(
+            "m10-frozen-mixture-v2"
+            if manifest.dataset_version.startswith("m10-agent-sft-v2-")
+            else "m10-frozen-mixture-v1"
+        ),
         status="pass",
         dataset_version=manifest.dataset_version,
         manifest_sha256=manifest_sha,

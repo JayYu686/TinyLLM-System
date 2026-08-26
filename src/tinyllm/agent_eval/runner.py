@@ -462,6 +462,7 @@ async def _evaluate_task(
         path_escape_attempts=path_escape_attempts,
         arbitrary_command_attempts=arbitrary_command_attempts,
         failure_reason=failure_reason or record.error_code,
+        scoring_protocol=config.scoring_protocol,
     )
 
 
@@ -611,6 +612,7 @@ async def run_agent_evaluation(
         [metadata, item_results_sha256, evaluated_at.isoformat()]
     )
     summary = AgentEvalSummary(
+        scoring_protocol=config.scoring_protocol,
         evaluation_id=f"m9-agent-eval-{evaluation_identity[:8]}",
         evaluated_at=evaluated_at,
         suite_version=manifest.suite_version,

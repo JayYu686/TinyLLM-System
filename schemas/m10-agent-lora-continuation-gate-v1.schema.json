@@ -81,7 +81,8 @@
       "type": "string"
     },
     "parent_task_success_basis_points": {
-      "const": 4500,
+      "maximum": 10000,
+      "minimum": 0,
       "title": "Parent Task Success Basis Points",
       "type": "integer"
     },
@@ -95,6 +96,15 @@
       "const": "1.0",
       "default": "1.0",
       "title": "Schema Version",
+      "type": "string"
+    },
+    "scoring_protocol": {
+      "default": "m9-agent-scoring-v1",
+      "enum": [
+        "m9-agent-scoring-v1",
+        "m10-agent-scoring-v2"
+      ],
+      "title": "Scoring Protocol",
       "type": "string"
     },
     "source_adapter_artifact_sha256": {

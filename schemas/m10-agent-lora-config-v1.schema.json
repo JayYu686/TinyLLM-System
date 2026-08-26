@@ -95,7 +95,7 @@
           "type": "boolean"
         },
         "dataset_version": {
-          "const": "m10-agent-sft-v1-4655d3e3",
+          "pattern": "^m10-agent-sft-v[12]-[0-9a-f]{8}$",
           "title": "Dataset Version",
           "type": "string"
         },
@@ -105,7 +105,7 @@
           "type": "string"
         },
         "manifest_sha256": {
-          "const": "6ec41bdee5d6509cbd04c6f4a0c1c7af2fa0ef116de185d9c43e2076d1ee0490",
+          "pattern": "^[a-f0-9]{64}$",
           "title": "Manifest Sha256",
           "type": "string"
         },
@@ -151,7 +151,8 @@
           "type": "integer"
         },
         "parent_task_success_basis_points": {
-          "const": 4500,
+          "maximum": 10000,
+          "minimum": 0,
           "title": "Parent Task Success Basis Points",
           "type": "integer"
         },
@@ -159,6 +160,19 @@
           "const": "m10_final_gate_only",
           "title": "Release Set Access",
           "type": "string"
+        },
+        "scoring_protocol": {
+          "anyOf": [
+            {
+              "const": "m10-agent-scoring-v2",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scoring Protocol"
         },
         "stage_min_improvement_basis_points": {
           "const": 100,
@@ -427,7 +441,10 @@
       "description": "Stable identity for the single seeded 8B Agent LoRA campaign.",
       "properties": {
         "name": {
-          "const": "m10-agent-lora-qwen3-8b-seed42",
+          "enum": [
+            "m10-agent-lora-qwen3-8b-seed42",
+            "m10-5-agent-repair-lora-qwen3-8b-seed42"
+          ],
           "title": "Name",
           "type": "string"
         },

@@ -24,6 +24,7 @@ AgentEvalCategory = Literal[
 ]
 AgentEvalLanguage = Literal["en", "zh"]
 AgentEvalSplit = Literal["dev", "release"]
+AgentScoringProtocol = Literal["m9-agent-scoring-v1", "m10-agent-scoring-v2"]
 BFCLCategory = Literal[
     "simple",
     "multiple",
@@ -260,7 +261,8 @@ class AgentEvalRunConfig(StrictSchema):
     """Bounded runtime configuration for one resumable Agent suite evaluation."""
 
     schema_version: Literal["1.0"] = "1.0"
-    config_id: str = Field(pattern=r"^m9-agent-eval-[a-z0-9-]{3,80}$")
+    config_id: str = Field(pattern=r"^m(?:9|10)-agent-eval-[a-z0-9-]{3,80}$")
+    scoring_protocol: AgentScoringProtocol = "m9-agent-scoring-v1"
     gateway_base_url: str = Field(max_length=256)
     bearer_token_env: str = Field(pattern=r"^TINYLLM_[A-Z0-9_]{3,100}$")
     model: str = Field(default="production", min_length=1, max_length=180)
@@ -297,6 +299,7 @@ class AgentEvalItemResult(StrictSchema):
     """Machine-readable task-level Agent evaluation result."""
 
     schema_version: Literal["1.0"] = "1.0"
+    scoring_protocol: AgentScoringProtocol = "m9-agent-scoring-v1"
     task_id: str = Field(pattern=r"^m9-(?:dev|release)-(?:en|zh)-[a-z0-9-]+-[0-9]{3}$")
     cluster_id: str = Field(pattern=r"^cluster-[a-z0-9-]{3,80}$")
     category: AgentEvalCategory
@@ -356,6 +359,7 @@ class AgentEvalSummary(StrictSchema):
     """Complete lineage-bound result for one Dev or sealed Release evaluation."""
 
     schema_version: Literal["1.0"] = "1.0"
+    scoring_protocol: AgentScoringProtocol = "m9-agent-scoring-v1"
     evaluation_id: str = Field(pattern=r"^m9-agent-eval-[0-9a-f]{8}$")
     evaluated_at: datetime
     suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$")

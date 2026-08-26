@@ -252,6 +252,15 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "scoring_protocol": {
+      "default": "m9-agent-scoring-v1",
+      "enum": [
+        "m9-agent-scoring-v1",
+        "m10-agent-scoring-v2"
+      ],
+      "title": "Scoring Protocol",
+      "type": "string"
+    },
     "suite_content_sha256": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Suite Content Sha256",

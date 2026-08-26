@@ -1,0 +1,31 @@
+{
+  "category_counts": {
+    "grounding_approval_security": 120,
+    "missing_argument_clarification": 240,
+    "no_tool": 240,
+    "parallel_independent_tools": 120,
+    "sequential_multi_step": 480,
+    "single_tool": 360,
+    "tool_failure_recovery": 360,
+    "wrong_tool_irrelevance": 480
+  },
+  "contains_source_or_evaluation_content": false,
+  "contamination_report_sha256": "0b9d9bdd809fe30fbe3ffb69425aef2043c6753c5833d6e445ae0e260901e3b2",
+  "contamination_status": "pass",
+  "content_sha256": "8461493c1eac99c3a2dc481a25ec2d9674598145669da1baa24b58f2fd929c6a",
+  "dataset_version": "m10-devops-training-v2-8461493c",
+  "duplicate_report_sha256": "a45429bd552e3d6f8e0bac37256fda9d0aab99e731a934c560c45e4bec0db39e",
+  "duplicate_status": "pass",
+  "item_count": 2400,
+  "items_sha256": "2c4a9e4f0d359392bb9cdffeb92f1a40eed66639d7fb814253502239092f4da6",
+  "language_counts": {
+    "en": 1680,
+    "zh": 720
+  },
+  "manifest_sha256": "6042bbbe111c2d267e74588d33c201d7a4503a8732e68f983634afc5f84a0d6e",
+  "private_artifacts_only": true,
+  "review_status": "approved",
+  "schema_version": "1.0",
+  "status": "ready",
+  "training_permitted": true
+}

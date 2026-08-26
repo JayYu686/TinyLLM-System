@@ -1,0 +1,35 @@
+{
+  "approved_manifest_sha256": "6042bbbe111c2d267e74588d33c201d7a4503a8732e68f983634afc5f84a0d6e",
+  "authored_source_authorized": true,
+  "category_counts": {
+    "grounding_approval_security": 10,
+    "missing_argument_clarification": 10,
+    "no_tool": 10,
+    "parallel_independent_tools": 10,
+    "sequential_multi_step": 10,
+    "single_tool": 10,
+    "tool_failure_recovery": 10,
+    "wrong_tool_irrelevance": 10
+  },
+  "full_m10_mixture_authorized": false,
+  "language_counts": {
+    "en": 40,
+    "zh": 40
+  },
+  "m10_training_authorized": false,
+  "passed_items": 80,
+  "rejected_items": 0,
+  "review_version": "m10-devops-content-review-v2",
+  "reviewed_at": "2026-08-26T06:19:09Z",
+  "reviewed_items": 80,
+  "reviewer_role": "maintainer",
+  "schema_version": "1.0",
+  "source_contamination_report_sha256": "0b9d9bdd809fe30fbe3ffb69425aef2043c6753c5833d6e445ae0e260901e3b2",
+  "source_content_sha256": "8461493c1eac99c3a2dc481a25ec2d9674598145669da1baa24b58f2fd929c6a",
+  "source_dataset_version": "m10-devops-training-v2-8461493c",
+  "source_duplicate_report_sha256": "a45429bd552e3d6f8e0bac37256fda9d0aab99e731a934c560c45e4bec0db39e",
+  "source_items_sha256": "2c4a9e4f0d359392bb9cdffeb92f1a40eed66639d7fb814253502239092f4da6",
+  "source_pending_manifest_sha256": "d01e53dfa1d70b59b0a10a68df76fb9de3f8ddfe0778879b6f18479d885e2022",
+  "source_review_packet_sha256": "e1bf195c46c39d564a1d7c2df85f072836946229013a8d0aae8fb58620d8563c",
+  "status": "approved"
+}

@@ -8,7 +8,7 @@
       "type": "string"
     },
     "config_id": {
-      "pattern": "^m9-agent-eval-[a-z0-9-]{3,80}$",
+      "pattern": "^m(?:9|10)-agent-eval-[a-z0-9-]{3,80}$",
       "title": "Config Id",
       "type": "string"
     },
@@ -64,6 +64,15 @@
       "const": "1.0",
       "default": "1.0",
       "title": "Schema Version",
+      "type": "string"
+    },
+    "scoring_protocol": {
+      "default": "m9-agent-scoring-v1",
+      "enum": [
+        "m9-agent-scoring-v1",
+        "m10-agent-scoring-v2"
+      ],
+      "title": "Scoring Protocol",
       "type": "string"
     },
     "seed": {

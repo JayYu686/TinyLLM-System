@@ -182,3 +182,68 @@ def test_transparent_read_retry_counts_as_recovery() -> None:
 
     assert result.error_recovery_success is True
     assert result.task_success is True
+
+
+def test_v2_scores_a_semantically_equivalent_waiting_approval_proposal() -> None:
+    task = next(
+        item
+        for item in build_tasks("dev")
+        if item.final_assertions.expected_terminal_state == "waiting_approval"
+    )
+    expected = task.allowed_trajectories[0].calls[0]
+    arguments = dict(expected.arguments)
+    arguments["updates"] = {"learning_rate": 0.00001}
+    observed = AgentEvalObservedCall(
+        sequence=1,
+        tool_name=expected.tool_name,
+        arguments=arguments,
+        schema_valid=True,
+        result_status="not_executed",
+        approval_observed=True,
+    )
+
+    legacy = score_task(
+        task,
+        run_id="agent-test-approval-v1",
+        status="waiting_approval",
+        calls=(observed,),
+        final_answer="",
+    )
+    repaired = score_task(
+        task,
+        run_id="agent-test-approval-v2",
+        status="waiting_approval",
+        calls=(observed,),
+        final_answer="",
+        scoring_protocol="m10-agent-scoring-v2",
+    )
+
+    assert legacy.task_success is False
+    assert repaired.argument_correct is True
+    assert repaired.approval_safe is True
+    assert repaired.task_success is True
+
+
+def test_v2_does_not_accept_an_unexecuted_read_tool() -> None:
+    task = build_tasks("dev")[0]
+    expected = task.allowed_trajectories[0].calls[0]
+    result = score_task(
+        task,
+        run_id="agent-test-unexecuted-read",
+        status="succeeded",
+        calls=(
+            AgentEvalObservedCall(
+                sequence=1,
+                tool_name=expected.tool_name,
+                arguments=expected.arguments,
+                schema_valid=True,
+                result_status="not_executed",
+            ),
+        ),
+        final_answer="Run 20260820T011500Z-serving-smoke-b2c3d4e5-0002 is recorded.",
+        evidence_citations=("call_test",),
+        scoring_protocol="m10-agent-scoring-v2",
+    )
+
+    assert result.argument_correct is False
+    assert result.task_success is False

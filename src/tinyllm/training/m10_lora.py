@@ -30,8 +30,6 @@ from tinyllm.deployment.evaluation_subject import (
 )
 from tinyllm.deployment.registry import DeploymentError
 from tinyllm.training.m10_lora_schema import (
-    M10_DATASET_MANIFEST_SHA256,
-    M10_DATASET_VERSION,
     M10_LORA_PARENT_MODEL_SHA256,
     M10_LORA_PARENT_RECORD_SHA256,
     M10_LORA_PARENT_SUBJECT,
@@ -254,8 +252,8 @@ class M10LoRACheckpointStore:
                     "rng": _capture_rng(),
                     "config": config.to_dict(),
                     "config_sha256": config_sha256,
-                    "dataset_version": M10_DATASET_VERSION,
-                    "dataset_manifest_sha256": M10_DATASET_MANIFEST_SHA256,
+                    "dataset_version": config.data.dataset_version,
+                    "dataset_manifest_sha256": config.data.manifest_sha256,
                     "parent_evaluation_subject": M10_LORA_PARENT_SUBJECT,
                     "parent_evaluation_subject_sha256": M10_LORA_PARENT_RECORD_SHA256,
                     "parent_model_artifact_sha256": M10_LORA_PARENT_MODEL_SHA256,
@@ -284,8 +282,8 @@ class M10LoRACheckpointStore:
                 sequence_cursor=0,
                 supervised_tokens=progress.supervised_tokens,
                 config_sha256=config_sha256,
-                dataset_version=M10_DATASET_VERSION,
-                dataset_manifest_sha256=M10_DATASET_MANIFEST_SHA256,
+                dataset_version=config.data.dataset_version,
+                dataset_manifest_sha256=config.data.manifest_sha256,
                 parent_evaluation_subject=M10_LORA_PARENT_SUBJECT,
                 parent_evaluation_subject_sha256=M10_LORA_PARENT_RECORD_SHA256,
                 parent_model_artifact_sha256=M10_LORA_PARENT_MODEL_SHA256,
@@ -360,6 +358,8 @@ class M10LoRACheckpointStore:
     ) -> tuple[dict[str, Any], M10LoRAProgress]:
         identities = (
             (manifest.config_sha256, config_sha256),
+            (manifest.dataset_version, config.data.dataset_version),
+            (manifest.dataset_manifest_sha256, config.data.manifest_sha256),
             (manifest.git_commit, git_commit),
             (manifest.environment_sha256, environment_sha256),
             (manifest.hardware_sha256, hardware_sha256),
@@ -379,8 +379,8 @@ class M10LoRACheckpointStore:
             if (
                 payload["config"] != config.to_dict()
                 or payload["config_sha256"] != config_sha256
-                or payload["dataset_version"] != M10_DATASET_VERSION
-                or payload["dataset_manifest_sha256"] != M10_DATASET_MANIFEST_SHA256
+                or payload["dataset_version"] != config.data.dataset_version
+                or payload["dataset_manifest_sha256"] != config.data.manifest_sha256
                 or payload["parent_evaluation_subject"] != M10_LORA_PARENT_SUBJECT
                 or payload["parent_evaluation_subject_sha256"] != M10_LORA_PARENT_RECORD_SHA256
                 or payload["parent_model_artifact_sha256"] != M10_LORA_PARENT_MODEL_SHA256

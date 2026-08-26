@@ -101,7 +101,10 @@
       "$ref": "#/$defs/M10MixtureArtifact"
     },
     "build_seed": {
-      "const": 20260822,
+      "enum": [
+        20260822,
+        20260825
+      ],
       "title": "Build Seed",
       "type": "integer"
     },
@@ -127,7 +130,7 @@
       "type": "string"
     },
     "dataset_version": {
-      "pattern": "^m10-agent-sft-v1-[0-9a-f]{8}$",
+      "pattern": "^m10-agent-sft-v[12]-[0-9a-f]{8}$",
       "title": "Dataset Version",
       "type": "string"
     },

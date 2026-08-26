@@ -263,8 +263,11 @@
       "type": "string"
     },
     "source_revision": {
-      "const": "m10-devops-training-v1",
       "default": "m10-devops-training-v1",
+      "enum": [
+        "m10-devops-training-v1",
+        "m10-devops-training-v2"
+      ],
       "title": "Source Revision",
       "type": "string"
     },

@@ -419,7 +419,10 @@
   "description": "Preregistered M10 mixture contract; it is not trainable until frozen.",
   "properties": {
     "config_version": {
-      "const": "m10-agent-data-v1",
+      "enum": [
+        "m10-agent-data-v1",
+        "m10-agent-data-v2"
+      ],
       "title": "Config Version",
       "type": "string"
     },

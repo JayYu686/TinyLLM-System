@@ -46,6 +46,7 @@ from tinyllm.data.m10_agent_schema import (
 )
 
 CONFIG = Path("configs/data/m10_agent.yaml")
+REPAIR_CONFIG = Path("configs/data/m10_agent_repair.yaml")
 
 
 def _sha256(path: Path) -> str:
@@ -129,6 +130,22 @@ def test_m10_config_freezes_mix_masks_and_sealed_release() -> None:
     assert config.contamination.targets[1].target_id == "m9_release"
     assert config.contamination.targets[1].visibility == "sealed_private"
     assert len(m10_agent_data_config_sha256(config)) == 64
+
+
+def test_m10_repair_config_increases_grounded_devops_supervision() -> None:
+    config = load_m10_agent_data_config(REPAIR_CONFIG)
+
+    assert config.config_version == "m10-agent-data-v2"
+    assert config.status == "preregistered"
+    assert config.training_permitted is False
+    assert [source.mixture_basis_points for source in config.sources] == [
+        2000,
+        1000,
+        4000,
+        2000,
+        1000,
+    ]
+    assert config.sources[2].revision == "m10-devops-training-v2-8461493c"
 
 
 def test_m10_config_rejects_unknown_fields_and_premature_ready_state(tmp_path: Path) -> None:

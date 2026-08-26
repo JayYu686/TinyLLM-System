@@ -180,7 +180,7 @@ sequenceDiagram
 | M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
 | M8 DevOps agent | Complete | Tool calling 8/8; MCP, LangGraph, FTS5 retrieval, explicit approval, and restart recovery |
 | M9 agent evaluation | Complete | Frozen 240-task DevOps Agent Suite; three parent baselines; 5,520/5,520 BFCL items with zero inference failures |
-| M10 agent post-training | Closed (model gates rejected) | 0.6B Full SFT stopped at 5M and 8B LoRA at 1M after real Agent Dev gates; M7 Production remains unchanged |
+| M10 agent post-training | M10.5 repair experiment ready | First-campaign rejection evidence remains immutable; scoring v2, grounded DevOps data v2, the 80-item human review, and the frozen 1M-token mixture passed, pending 8B LoRA retraining |
 
 Milestone status represents a combined gate across implementation, tests, smoke runs,
 failure paths, real reports, and documentation. Evidence entry points:
@@ -233,7 +233,9 @@ failure paths, real reports, and documentation. Evidence entry points:
   [M10.1 frozen mixture acceptance (Chinese)](reports/m10/m10_frozen_mixture.md), and
   [M10.2 Full-SFT 5M report (Chinese)](reports/m10/m10_full_sft_5m.md),
   [M10.3 Agent LoRA 1M report (Chinese)](reports/m10/m10_agent_lora_1m.md), and
-  [M10 acceptance (Chinese)](reports/m10/m10_acceptance.md)
+  [M10 acceptance (Chinese)](reports/m10/m10_acceptance.md),
+  [M10.5 repair contract (Chinese)](docs/m10_5_agent_repair_contract.md), and
+  [M10.5 repair readiness (Chinese)](reports/m10/m10_5_repair_readiness.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -425,6 +427,7 @@ system capability:
 | M8 | Tool calling, MCP, and a single DevOps agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL and DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
 | M10 | Agent SFT/LoRA and unified gates | `v1.0.0-rc.1`: both training routes retain rejection evidence |
+| M10.5 | Grounded Agent data, scoring protocol, and 8B LoRA repair | Publish `v1.0.0` only after every Agent gate passes |
 
 The Training Planner, ZeRO-3, MLflow, V100 compatibility, and TinyGPT-350M enter enhancement
 iterations according to lifecycle dependencies and resource availability. See the

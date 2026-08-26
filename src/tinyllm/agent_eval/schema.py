@@ -24,7 +24,11 @@ AgentEvalCategory = Literal[
 ]
 AgentEvalLanguage = Literal["en", "zh"]
 AgentEvalSplit = Literal["dev", "release"]
-AgentScoringProtocol = Literal["m9-agent-scoring-v1", "m10-agent-scoring-v2"]
+AgentScoringProtocol = Literal[
+    "m9-agent-scoring-v1",
+    "m10-agent-scoring-v2",
+    "m10-agent-scoring-v3",
+]
 BFCLCategory = Literal[
     "simple",
     "multiple",

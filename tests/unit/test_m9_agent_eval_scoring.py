@@ -181,6 +181,50 @@ def test_transparent_read_retry_counts_as_recovery() -> None:
     )
 
     assert result.error_recovery_success is True
+
+
+def test_v3_recovery_does_not_require_undisclosed_optional_defaults() -> None:
+    task = next(item for item in build_tasks("dev") if item.category == "tool_failure_recovery")
+    expected = task.allowed_trajectories[0].calls[0]
+    result = score_task(
+        task,
+        run_id="agent-test-v3-recovery",
+        status="succeeded",
+        calls=(
+            AgentEvalObservedCall(
+                sequence=1,
+                tool_name=expected.tool_name,
+                arguments={"relative_path": expected.arguments["relative_path"]},
+                schema_valid=True,
+                result_status="succeeded",
+                attempts=2,
+            ),
+        ),
+        final_answer=f"Recovered {task.final_assertions.required_terms[0]}",
+        evidence_citations=("call_retry",),
+        scoring_protocol="m10-agent-scoring-v3",
+    )
+
+    assert result.argument_correct is True
+    assert result.error_recovery_success is True
+    assert result.task_success is True
+
+
+def test_v3_clarification_accepts_a_semantic_request_without_magic_keyword() -> None:
+    task = next(
+        item for item in build_tasks("dev") if item.category == "missing_argument_clarification"
+    )
+    result = score_task(
+        task,
+        run_id="agent-test-v3-clarification",
+        status="succeeded",
+        calls=(),
+        final_answer="Please provide the exact Run ID or allowlisted configuration location.",
+        scoring_protocol="m10-agent-scoring-v3",
+    )
+
+    assert result.tool_selection_correct is True
+    assert result.argument_correct is True
     assert result.task_success is True
 
 

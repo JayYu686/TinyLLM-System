@@ -199,6 +199,38 @@ def test_runtime_suppresses_one_duplicate_successful_call_and_reprompts(
     assert sum(event.event_type == "tool.completed" for event in events) == 1
 
 
+def test_runtime_deduplicates_identical_calls_within_one_model_decision(
+    tmp_path: Path,
+) -> None:
+    store, run_id, messages = _run(tmp_path)
+    client = _Client()
+    duplicated = AgentModelDecision.model_validate(
+        {
+            "tool_calls": [
+                {
+                    "call_id": f"call_{index}",
+                    "server_id": "tinyllm-devops",
+                    "tool_name": "search_evidence",
+                    "arguments": {"query": "same"},
+                }
+                for index in (1, 2)
+            ]
+        }
+    )
+    runtime = AgentRuntime(
+        config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
+        store=store,
+        model=_Model([duplicated, AgentModelDecision(message="done [evidence:call_1]")]),
+        clients={"tinyllm-devops": client},  # type: ignore[dict-item]
+    )
+
+    answer = asyncio.run(runtime.run(run_id, messages=messages))
+
+    assert answer == "done [evidence:call_1]"
+    assert store.load(run_id).status == "succeeded"
+    assert client.calls == [("search_evidence", {"query": "same"})]
+
+
 def test_runtime_attaches_actual_evidence_identity_when_model_omits_citation(
     tmp_path: Path,
 ) -> None:

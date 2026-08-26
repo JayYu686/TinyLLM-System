@@ -236,9 +236,12 @@ class AgentRuntime:
         )
         observations = list(state.get("observations", []))
         pending: list[dict[str, Any]] = []
+        pending_signatures: set[str] = set()
         duplicate_observations: list[dict[str, object]] = []
         for call in decision.tool_calls:
             signature = self._signature(call)
+            if signature in pending_signatures:
+                continue
             succeeded = next(
                 (
                     item
@@ -249,6 +252,7 @@ class AgentRuntime:
             )
             if succeeded is None:
                 pending.append(call.to_dict())
+                pending_signatures.add(signature)
                 continue
             already_suppressed = any(
                 item.get("duplicate_suppressed") is True

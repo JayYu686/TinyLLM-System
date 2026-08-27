@@ -929,9 +929,13 @@ def build_frozen_mixture(
     )
     devops_spec = config.inputs.tinyllm_devops
     approval_version = (
-        "approval-v2"
-        if devops_spec.version.startswith("m10-devops-training-v2-")
-        else "approval-v1"
+        "approval-v3"
+        if devops_spec.version.startswith("m10-devops-training-v3-")
+        else (
+            "approval-v2"
+            if devops_spec.version.startswith("m10-devops-training-v2-")
+            else "approval-v1"
+        )
     )
     devops_manifest, devops_text = load_approved_devops_candidates(
         artifact_root / "datasets/m10-agent/devops" / devops_spec.version,

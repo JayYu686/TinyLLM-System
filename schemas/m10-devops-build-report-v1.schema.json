@@ -46,7 +46,7 @@
       "type": "string"
     },
     "dataset_version": {
-      "pattern": "^m10-devops-training-v[12]-[0-9a-f]{8}$",
+      "pattern": "^m10-devops-training-v[123]-[0-9a-f]{8}$",
       "title": "Dataset Version",
       "type": "string"
     },

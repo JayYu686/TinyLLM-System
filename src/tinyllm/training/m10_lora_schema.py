@@ -49,6 +49,7 @@ class M10LoRARunConfig(StrictSchema):
     name: Literal[
         "m10-agent-lora-qwen3-8b-seed42",
         "m10-5-agent-repair-lora-qwen3-8b-seed42",
+        "m10-5-agent-repair-v3-lora-qwen3-8b-seed42",
     ]
     seed: Literal[42]
     purpose: Literal["agent_lora"]
@@ -167,7 +168,7 @@ class M10LoRAEvaluationConfig(StrictSchema):
     stage_min_improvement_basis_points: Literal[100]
     m6_max_regression_basis_points: Literal[200]
     release_set_access: Literal["m10_final_gate_only"]
-    scoring_protocol: Literal["m10-agent-scoring-v2"] | None = None
+    scoring_protocol: Literal["m10-agent-scoring-v2", "m10-agent-scoring-v3"] | None = None
 
 
 class M10LoRAMemoryProbeConfig(StrictSchema):
@@ -192,8 +193,20 @@ class M10LoRAConfig(StrictSchema):
 
     @model_validator(mode="after")
     def validate_campaign_identity(self) -> M10LoRAConfig:
-        repair = self.run.name.startswith("m10-5-agent-repair-")
-        if repair:
+        repair_v3 = self.run.name.startswith("m10-5-agent-repair-v3-")
+        repair_v2 = self.run.name.startswith("m10-5-agent-repair-") and not repair_v3
+        if repair_v3:
+            if (
+                not self.data.dataset_version.startswith("m10-agent-sft-v2-")
+                or self.optimization.learning_rate != 1e-5
+                or self.evaluation.scoring_protocol != "m10-agent-scoring-v3"
+                or self.evaluation.parent_task_success_basis_points != 4875
+            ):
+                raise ValueError(
+                    "M10.5 v3 repair requires Dataset v2, LR 1e-5, scoring v3, and its "
+                    "frozen parent baseline"
+                )
+        elif repair_v2:
             if (
                 not self.data.dataset_version.startswith("m10-agent-sft-v2-")
                 or self.optimization.learning_rate != 5e-5
@@ -298,7 +311,11 @@ class M10LoRAContinuationGate(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     gate_version: Literal["m10-agent-lora-continuation-v1"] = "m10-agent-lora-continuation-v1"
-    scoring_protocol: Literal["m9-agent-scoring-v1", "m10-agent-scoring-v2"] = "m9-agent-scoring-v1"
+    scoring_protocol: Literal[
+        "m9-agent-scoring-v1",
+        "m10-agent-scoring-v2",
+        "m10-agent-scoring-v3",
+    ] = "m9-agent-scoring-v1"
     evaluated_at: datetime
     decision: Literal["accepted", "rejected"]
     run_id: str = Field(min_length=1, max_length=180)
@@ -330,7 +347,11 @@ class M10LoRAContinuationGate(StrictSchema):
         observed = self.candidate_task_success_basis_points - self.parent_task_success_basis_points
         if self.improvement_basis_points != observed:
             raise ValueError("M10 LoRA Gate improvement differs from evidence")
-        expected_parent = 4750 if self.scoring_protocol == "m10-agent-scoring-v2" else 4500
+        expected_parent = {
+            "m9-agent-scoring-v1": 4500,
+            "m10-agent-scoring-v2": 4750,
+            "m10-agent-scoring-v3": 4875,
+        }[self.scoring_protocol]
         if self.parent_task_success_basis_points != expected_parent:
             raise ValueError("M10 LoRA Gate parent score differs from its scoring protocol")
         if self.source_stage_tokens == 1_000_000:

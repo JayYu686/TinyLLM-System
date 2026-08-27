@@ -36,6 +36,7 @@ from tinyllm.data.m10_devops_schema import (
 
 M10_DEVOPS_SEED: Final = 20260820
 M10_DEVOPS_REPAIR_SEED: Final = 20260825
+M10_DEVOPS_REPAIR_V3_SEED: Final = 20260827
 CATEGORY_COUNTS: Final[dict[AgentEvalCategory, int]] = {
     "single_tool": 360,
     "no_tool": 360,
@@ -979,11 +980,19 @@ def build_manifest(
     if len(revisions) != 1:
         raise M10DevOpsDataError("M10 authored dataset cannot mix source revisions")
     revision = revisions.pop()
-    repair = revision == "m10-devops-training-v2"
+    repair = revision in {"m10-devops-training-v2", "m10-devops-training-v3"}
     category_counts = REPAIR_CATEGORY_COUNTS if repair else CATEGORY_COUNTS
     language_counts = REPAIR_LANGUAGE_COUNTS if repair else LANGUAGE_COUNTS
-    seed = M10_DEVOPS_REPAIR_SEED if repair else M10_DEVOPS_SEED
-    generator_contract = "m10-devops-generator-v2" if repair else "m10-devops-generator-v1"
+    seed = {
+        "m10-devops-training-v1": M10_DEVOPS_SEED,
+        "m10-devops-training-v2": M10_DEVOPS_REPAIR_SEED,
+        "m10-devops-training-v3": M10_DEVOPS_REPAIR_V3_SEED,
+    }[revision]
+    generator_contract = {
+        "m10-devops-training-v1": "m10-devops-generator-v1",
+        "m10-devops-training-v2": "m10-devops-generator-v2",
+        "m10-devops-training-v3": "m10-devops-generator-v3",
+    }[revision]
     items_sha = hashlib.sha256(render_samples(samples)).hexdigest()
     content_sha = canonical_json_sha256([item.content_sha256 for item in samples])
     tools_hash = samples[0].tool_schema_sha256
@@ -1188,11 +1197,11 @@ def scan_contamination(
     )
     payload: dict[str, Any] = {
         "schema_version": "1.0",
-        "scan_version": (
-            "m10-devops-contamination-v2"
-            if manifest.source_revision == "m10-devops-training-v2"
-            else "m10-devops-contamination-v1"
-        ),
+        "scan_version": {
+            "m10-devops-training-v1": "m10-devops-contamination-v1",
+            "m10-devops-training-v2": "m10-devops-contamination-v2",
+            "m10-devops-training-v3": "m10-devops-contamination-v3",
+        }[manifest.source_revision],
         "algorithm": "minhash-5gram-lsh-v1",
         "permutation_count": 128,
         "threshold_basis_points": 8500,
@@ -1242,7 +1251,7 @@ def render_review_packet(
                     if len(category_selection) == 5:
                         break
             selected.extend(category_selection)
-    repair = manifest.source_revision == "m10-devops-training-v2"
+    repair = manifest.source_revision in {"m10-devops-training-v2", "m10-devops-training-v3"}
     lines = [
         "# M10.5 DevOps Repair 训练轨迹内容审查包" if repair else "# M10 DevOps 训练轨迹内容审查包",
         "",

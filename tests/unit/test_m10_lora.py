@@ -105,6 +105,25 @@ def test_m10_lora_repair_campaign_requires_v2_data_lr_and_scoring() -> None:
         M10LoRAConfig.model_validate(value)
 
 
+def test_m10_lora_v3_repair_freezes_low_lr_and_migrated_scoring() -> None:
+    value: dict[str, Any] = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
+    value["run"]["name"] = "m10-5-agent-repair-v3-lora-qwen3-8b-seed42"
+    value["data"]["dataset_version"] = "m10-agent-sft-v2-12345678"
+    value["data"]["manifest_sha256"] = "a" * 64
+    value["optimization"]["learning_rate"] = 1e-5
+    value["evaluation"]["parent_task_success_basis_points"] = 4875
+    value["evaluation"]["scoring_protocol"] = "m10-agent-scoring-v3"
+
+    config = M10LoRAConfig.model_validate(value)
+
+    assert config.optimization.learning_rate == 1e-5
+    assert config.evaluation.scoring_protocol == "m10-agent-scoring-v3"
+
+    value["optimization"]["learning_rate"] = 5e-5
+    with pytest.raises(ValueError, match="M10.5 v3 repair"):
+        M10LoRAConfig.model_validate(value)
+
+
 def _resolved_parent() -> ResolvedEvaluationSubject:
     return cast(
         ResolvedEvaluationSubject,
@@ -358,6 +377,17 @@ def test_continuation_gate_freezes_both_stage_policies(tmp_path: Path) -> None:
     repair["improvement_basis_points"] = 350
     with pytest.raises(ValueError, match="parent score"):
         M10LoRAContinuationGate.model_validate(repair)
+
+    migrated = _gate_mapping()
+    migrated.update(
+        {
+            "scoring_protocol": "m10-agent-scoring-v3",
+            "parent_task_success_basis_points": 4875,
+            "candidate_task_success_basis_points": 6250,
+            "improvement_basis_points": 1375,
+        }
+    )
+    assert M10LoRAContinuationGate.model_validate(migrated).decision == "accepted"
 
     with pytest.raises(ValueError, match="must not consume M6"):
         M10LoRAContinuationGate.model_validate(

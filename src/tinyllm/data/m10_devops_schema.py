@@ -16,7 +16,11 @@ from tinyllm.schemas.run import SHA256_PATTERN
 
 M10DevOpsCategory = AgentEvalCategory
 M10DevOpsLanguage = AgentEvalLanguage
-M10DevOpsRevision = Literal["m10-devops-training-v1", "m10-devops-training-v2"]
+M10DevOpsRevision = Literal[
+    "m10-devops-training-v1",
+    "m10-devops-training-v2",
+    "m10-devops-training-v3",
+]
 
 
 def canonical_json_sha256(value: object) -> str:
@@ -174,10 +178,10 @@ class M10DevOpsDatasetManifest(StrictSchema):
     """Immutable authored-source identity and aggregate validation evidence."""
 
     schema_version: Literal["1.0"] = "1.0"
-    dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-devops-training-v[123]-[0-9a-f]{8}$")
     source_revision: M10DevOpsRevision = "m10-devops-training-v1"
     license: Literal["Apache-2.0"] = "Apache-2.0"
-    seed: Literal[20260820, 20260825] = 20260820
+    seed: Literal[20260820, 20260825, 20260827] = 20260820
     item_count: Literal[2400] = 2400
     category_counts: dict[M10DevOpsCategory, int]
     language_counts: dict[M10DevOpsLanguage, int]
@@ -280,13 +284,15 @@ class M10DevOpsContaminationReport(StrictSchema):
     """Content-free four-boundary evaluation contamination report."""
 
     schema_version: Literal["1.0"] = "1.0"
-    scan_version: Literal["m10-devops-contamination-v1", "m10-devops-contamination-v2"] = (
-        "m10-devops-contamination-v1"
-    )
+    scan_version: Literal[
+        "m10-devops-contamination-v1",
+        "m10-devops-contamination-v2",
+        "m10-devops-contamination-v3",
+    ] = "m10-devops-contamination-v1"
     algorithm: Literal["minhash-5gram-lsh-v1"] = "minhash-5gram-lsh-v1"
     permutation_count: Literal[128] = 128
     threshold_basis_points: Literal[8500] = 8500
-    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[123]-[0-9a-f]{8}$")
     source_content_sha256: str = Field(pattern=SHA256_PATTERN)
     source_items: Literal[2400] = 2400
     targets: tuple[
@@ -329,7 +335,7 @@ class M10DevOpsBuildReport(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["review_pending", "ready"]
-    dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-devops-training-v[123]-[0-9a-f]{8}$")
     manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     items_sha256: str = Field(pattern=SHA256_PATTERN)
     content_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -363,13 +369,15 @@ class M10DevOpsContentReviewResult(StrictSchema):
     """Path-free maintainer approval bound to one immutable review packet."""
 
     schema_version: Literal["1.0"] = "1.0"
-    review_version: Literal["m10-devops-content-review-v1", "m10-devops-content-review-v2"] = (
-        "m10-devops-content-review-v1"
-    )
+    review_version: Literal[
+        "m10-devops-content-review-v1",
+        "m10-devops-content-review-v2",
+        "m10-devops-content-review-v3",
+    ] = "m10-devops-content-review-v1"
     reviewed_at: datetime
     status: Literal["approved"] = "approved"
     reviewer_role: Literal["maintainer"] = "maintainer"
-    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[123]-[0-9a-f]{8}$")
     source_pending_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     source_items_sha256: str = Field(pattern=SHA256_PATTERN)
     source_content_sha256: str = Field(pattern=SHA256_PATTERN)

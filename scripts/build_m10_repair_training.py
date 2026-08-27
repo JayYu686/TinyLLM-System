@@ -19,12 +19,18 @@ from tinyllm.data.m10_devops import (
     scan_contamination,
     write_dataset,
 )
-from tinyllm.data.m10_repair import build_repair_samples, validate_repair_samples
+from tinyllm.data.m10_repair import (
+    build_repair_samples,
+    build_repair_v3_samples,
+    validate_repair_samples,
+    validate_repair_v3_samples,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-root", type=Path, required=True)
+    parser.add_argument("--source-version", choices=("v2", "v3"), default="v2")
     parser.add_argument("--m9-dev-dir", type=Path, default=Path("evals/agent/dev/v1"))
     parser.add_argument("--m9-release-dir", type=Path, required=True)
     parser.add_argument("--bfcl-data-root", type=Path, required=True)
@@ -52,8 +58,12 @@ def _atomic_text(path: Path, value: str) -> None:
 def main() -> int:
     args = _parser().parse_args()
     try:
-        samples = build_repair_samples()
-        quality = validate_repair_samples(samples)
+        if args.source_version == "v3":
+            samples = build_repair_v3_samples()
+            quality = validate_repair_v3_samples(samples)
+        else:
+            samples = build_repair_samples()
+            quality = validate_repair_samples(samples)
         manifest = build_manifest(samples, review_status="pending")
         duplicate_report = scan_authored_duplicates(samples)
         targets = (

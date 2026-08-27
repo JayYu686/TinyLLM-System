@@ -6,6 +6,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal, cast
 
 from pydantic import ValidationError
 
@@ -88,10 +89,17 @@ def finalize_m10_devops_content_review(
 
         timestamp = datetime.now(UTC) if reviewed_at is None else reviewed_at
         result = M10DevOpsContentReviewResult(
-            review_version=(
-                "m10-devops-content-review-v2"
-                if pending_manifest.source_revision == "m10-devops-training-v2"
-                else "m10-devops-content-review-v1"
+            review_version=cast(
+                Literal[
+                    "m10-devops-content-review-v1",
+                    "m10-devops-content-review-v2",
+                    "m10-devops-content-review-v3",
+                ],
+                {
+                    "m10-devops-training-v1": "m10-devops-content-review-v1",
+                    "m10-devops-training-v2": "m10-devops-content-review-v2",
+                    "m10-devops-training-v3": "m10-devops-content-review-v3",
+                }[pending_manifest.source_revision],
             ),
             reviewed_at=timestamp,
             source_dataset_version=pending_manifest.dataset_version,

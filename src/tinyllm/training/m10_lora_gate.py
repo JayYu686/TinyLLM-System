@@ -135,13 +135,14 @@ def assemble_m10_lora_stage_gate(
         for actual, expected in (*parent_identities, *candidate_identities, *source_identities)
     ):
         raise M10LoRAStageGateError("M10 Agent LoRA Gate lineage or protocol differs")
-    expected_protocol = (
-        "m10-agent-scoring-v2"
+    expected_protocol = parent_agent.scoring_protocol
+    allowed_protocols = (
+        {"m10-agent-scoring-v2", "m10-agent-scoring-v3"}
         if result.dataset_version.startswith("m10-agent-sft-v2-")
-        else "m9-agent-scoring-v1"
+        else {"m9-agent-scoring-v1"}
     )
     if (
-        parent_agent.scoring_protocol != expected_protocol
+        expected_protocol not in allowed_protocols
         or candidate_agent.scoring_protocol != expected_protocol
     ):
         raise M10LoRAStageGateError("M10 Agent LoRA scoring protocol differs from its Dataset")

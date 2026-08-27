@@ -42,6 +42,7 @@ from tinyllm.training.m10_lora_schema import (
 )
 
 CONFIG = Path("configs/sft/m10_agent_lora_qwen3_8b.yaml")
+REPAIR_V3_CONFIG = Path("configs/sft/m10_5_agent_repair_v3_lora_qwen3_8b.yaml")
 
 
 def test_m10_lora_config_freezes_parent_data_adapter_and_stages() -> None:
@@ -122,6 +123,17 @@ def test_m10_lora_v3_repair_freezes_low_lr_and_migrated_scoring() -> None:
     value["optimization"]["learning_rate"] = 5e-5
     with pytest.raises(ValueError, match="M10.5 v3 repair"):
         M10LoRAConfig.model_validate(value)
+
+
+def test_m10_lora_v3_repair_file_binds_frozen_mixture() -> None:
+    config = load_m10_lora_config(REPAIR_V3_CONFIG)
+
+    assert config.data.dataset_version == "m10-agent-sft-v2-435b9fbc"
+    assert config.data.manifest_sha256 == (
+        "e7b7943e3dddee9cad3403e22e26de4c65c92d063efa15b2d4c168d29afe21d2"
+    )
+    assert config.optimization.learning_rate == 1e-5
+    assert config.evaluation.parent_task_success_basis_points == 4875
 
 
 def _resolved_parent() -> ResolvedEvaluationSubject:

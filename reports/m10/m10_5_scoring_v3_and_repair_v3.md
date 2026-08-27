@@ -52,5 +52,10 @@ Qwen3-8B Base 重新开始 1M 阶段。
 - 所有需要工具的最终答案必须引用实际 Tool Result；
 - Dev、隐藏 Release、BFCL Core 和 M6 Domain 四边界污染扫描必须为 0。
 
-机器检查已经通过；新版本仍等待维护者完成 80 条分层内容审查，在审批前保持
-`training_permitted=false`。
+机器检查已经通过；维护者于 2026-08-27 确认 80/80 条分层轨迹，审批 SHA256 为
+`236085a8327243cf048bc2af3a302020c7f9df05d2840c61b479ebd67f994bc7`。
+
+审批后冻结得到训练混合 `m10-agent-sft-v2-435b9fbc`：共 7,985 个序列，精确包含
+1,000,000 supervised tokens；英文/中文为 70/30，Non-thinking/Thinking 为 94/6，污染扫描
+继续为 `pass`。冻结 Manifest SHA256 为
+`e7b7943e3dddee9cad3403e22e26de4c65c92d063efa15b2d4c168d29afe21d2`，该混合已允许训练。

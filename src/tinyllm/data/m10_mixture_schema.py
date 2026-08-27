@@ -75,7 +75,7 @@ class M10FrozenMixtureConfig(StrictSchema):
     schema_version: Literal["1.0"]
     config_version: Literal["m10-agent-frozen-mixture-v1", "m10-agent-frozen-mixture-v2"]
     source_config_sha256: str = Field(pattern=SHA256_PATTERN)
-    build_seed: Literal[20260822, 20260825]
+    build_seed: Literal[20260822, 20260825, 20260827]
     dataset_name: Literal["tinyllm-agent-sft"]
     target_supervised_tokens: Literal[1_000_000]
     sequence_length: Literal[2048]
@@ -184,7 +184,7 @@ class M10FrozenMixtureManifest(StrictSchema):
     content_sha256: str = Field(pattern=SHA256_PATTERN)
     frozen_config_sha256: str = Field(pattern=SHA256_PATTERN)
     source_config_sha256: str = Field(pattern=SHA256_PATTERN)
-    build_seed: Literal[20260822, 20260825]
+    build_seed: Literal[20260822, 20260825, 20260827]
     tokenizer_revision: Literal["c1899de289a04d12100db370d81485cdf75e47ca"]
     tokenizer_sha256: str = Field(pattern=SHA256_PATTERN)
     template_id: Literal["qwen3-agent-chatml-nonthinking-v1"]

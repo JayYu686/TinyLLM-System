@@ -103,7 +103,8 @@
     "build_seed": {
       "enum": [
         20260822,
-        20260825
+        20260825,
+        20260827
       ],
       "title": "Build Seed",
       "type": "integer"

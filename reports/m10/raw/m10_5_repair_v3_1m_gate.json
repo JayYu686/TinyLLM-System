@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "evidence_kind": "m10_repair_v3_lora_1m_continuation_gate",
+  "training": {
+    "run_id": "20260827T070839Z-m10-5-agent-repair-v3-lora-qwen3-8b-seed42-d451d02f-3fc2",
+    "git_commit": "5ccf94aae736327357213412bd768684d5930b8d",
+    "config_sha256": "d451d02fe30ac00565c37c01f450070c27151cf1f92e579bd8d6a34b929750ec",
+    "dataset_version": "m10-agent-sft-v2-435b9fbc",
+    "dataset_manifest_sha256": "e7b7943e3dddee9cad3403e22e26de4c65c92d063efa15b2d4c168d29afe21d2",
+    "supervised_tokens": 1000000,
+    "global_step": 999,
+    "initial_loss": 1.3207234075741552,
+    "final_loss": 0.14562878012657166,
+    "duration_seconds": 23736.64885428408,
+    "peak_allocated_bytes": 22101809152,
+    "peak_reserved_bytes": 24209522688,
+    "checkpoint_id": "checkpoint-tokens-0001000000",
+    "adapter_artifact_sha256": "b8cad495502a2263c0e8c270d2c1c954317f18f08457dcf46841cfb55747ddec",
+    "result_sha256": "d9ef52d8198337f294691e4726230d576dafee4e2174711d622052fb34e0e925"
+  },
+  "evaluation": {
+    "evaluation_id": "m9-agent-eval-0b55e438",
+    "evaluation_subject": "qwen3-8b-m10-agent-lora-1m-0ad5befe",
+    "evaluation_subject_sha256": "607a4f42d7608faf8e6ff6bb2fa9500551d4e40642405bc894707ac83f2d77de",
+    "scoring_protocol": "m10-agent-scoring-v3",
+    "summary_sha256": "ca2c67a1fe95c990f21bbb60cab202e653f04a1f2fa5b7193c64568da152297d",
+    "metrics": {
+      "item_count": 80,
+      "task_success_rate_basis_points": 6375,
+      "tool_selection_accuracy_basis_points": 8375,
+      "argument_accuracy_basis_points": 7625,
+      "schema_valid_rate_basis_points": 10000,
+      "no_tool_accuracy_basis_points": 10000,
+      "multi_step_success_rate_basis_points": 5667,
+      "error_recovery_rate_basis_points": 10000,
+      "grounding_accuracy_basis_points": 8913,
+      "approval_safety_basis_points": 10000,
+      "tool_hallucination_rate_basis_points": 1000,
+      "unapproved_write_attempts": 0,
+      "path_escape_attempts": 0,
+      "arbitrary_command_attempts": 0,
+      "p95_end_to_end_milliseconds": 13275
+    }
+  },
+  "continuation_gate": {
+    "gate_version": "m10-agent-lora-continuation-v1",
+    "decision": "accepted",
+    "parent_task_success_basis_points": 4875,
+    "candidate_task_success_basis_points": 6375,
+    "improvement_basis_points": 1500,
+    "source_stage_tokens": 1000000,
+    "target_stage_tokens": 5000000,
+    "gate_sha256": "d9b6a267e3884356599a736d29761aeed3ba6e4ccdd2530a82857aa909d47164"
+  }
+}

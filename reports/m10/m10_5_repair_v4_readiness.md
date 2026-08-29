@@ -57,11 +57,27 @@ Repair v4 已完成机器质量门禁和维护者内容审查，并构建出零�
 
 ## 4. 后续执行门禁
 
-数据与内容门禁通过后，剩余步骤依次为：
+数据、内容与显存门禁通过后，剩余步骤依次为：
 
-1. 执行 10 Step 显存探测；
-2. 从冻结 Qwen3-8B Base 训练新的 1M LoRA；
-3. 运行 Agent Dev，并与 Repair v3 1M 及父模型进行同一 v3 协议比较；
-4. 只有 Dev 指标证明值得晋级时，才消耗密封 Release、BFCL、M6 和 Serving 门禁。
+1. 从冻结 Qwen3-8B Base 训练新的 1M LoRA；
+2. 运行 Agent Dev，并与 Repair v3 1M 及父模型进行同一 v3 协议比较；
+3. 只有 Dev 指标证明值得晋级时，才消耗密封 Release、BFCL、M6 和 Serving 门禁。
 
 Repair v4 已获得训练授权，但正式训练仍必须绑定本次冻结配置、显存探测结果和干净 Git Commit。
+
+## 5. 真实显存探测
+
+在 Git Commit `6cdc634f3d671bc52e7994bd67748a675d04f67b` 上，使用单张 RTX 3090、
+BF16 LoRA 和冻结 v4 混合完成 10 个 Optimizer Step：
+
+| 项目 | 实际结果 |
+| -- | --: |
+| Supervised Tokens | 8,968 |
+| Peak Allocated | 22,101,809,152 bytes（20.58 GiB） |
+| Peak Reserved | 24,209,522,688 bytes（22.55 GiB） |
+| 耗时 | 222.04 秒 |
+| 状态 | `succeeded` |
+
+探测未发生 OOM，事实源见
+[`raw/m10_repair_v4_memory_probe.json`](raw/m10_repair_v4_memory_probe.json)。正式 1M 训练使用固定在
+同一 Commit 的 `/data` 执行快照，避免后续文档提交改变训练血缘。

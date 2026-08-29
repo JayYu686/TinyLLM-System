@@ -1,0 +1,19 @@
+{
+  "config_sha256": "561d59cf80fd13bf37ca64b12c3b6d586082c56a9d6a549353fe112efde04740",
+  "dataset_version": "m10-agent-sft-v3-7aa779bf",
+  "duration_seconds": 222.03784494684078,
+  "environment_sha256": "8e62e483b63c38ddef74495b143ad8b7ee24184784361d26b9063f19917bacef",
+  "git_commit": "6cdc634f3d671bc52e7994bd67748a675d04f67b",
+  "git_dirty": false,
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "hardware_compatibility_sha256": "5e68c6806e4673ec5a70ba795cb4bce980be86ecf0b8400179b2ab2f77d2f9d2",
+  "optimizer_steps": 10,
+  "parent_evaluation_subject": "qwen3-8b-m9-base-90587dd6",
+  "peak_allocated_bytes": 22101809152,
+  "peak_reserved_bytes": 24209522688,
+  "physical_gpu_index": 7,
+  "probe_version": "m10-agent-lora-memory-v1",
+  "schema_version": "1.0",
+  "status": "succeeded",
+  "supervised_tokens": 8968
+}

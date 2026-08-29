@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -13,10 +14,6 @@ from typing import cast
 
 import torch
 
-from tinyllm.deployment.evaluation_subject import (
-    effective_artifact_sha256,
-    evaluation_artifact_sha256,
-)
 from tinyllm.evaluation.baseline import load_baseline_config
 from tinyllm.evaluation.baseline_run import run_general_evaluation
 from tinyllm.evaluation.baseline_schema import GeneralBaselineSummary
@@ -35,6 +32,40 @@ from tinyllm.schemas import canonical_config_hash
 
 class M6GeneralError(RuntimeError):
     """Raised when formal M6 general-regression execution fails closed."""
+
+
+def evaluation_artifact_sha256(root: Path, names: tuple[str, ...]) -> str:
+    """Hash an explicit Adapter file set without importing the deployment layer."""
+
+    if not root.is_absolute() or not root.is_dir() or root.is_symlink():
+        raise M6GeneralError("M6 LoRA Adapter directory is unsafe")
+    paths = tuple(sorted((root / name for name in names), key=lambda path: path.name))
+    if any(not path.is_file() or path.is_symlink() for path in paths):
+        raise M6GeneralError("M6 LoRA Adapter file set is incomplete or unsafe")
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(path.name.encode())
+        digest.update(str(path.stat().st_size).encode())
+        digest.update(sha256_file(path).encode())
+    return digest.hexdigest()
+
+
+def effective_artifact_sha256(
+    base_model_artifact_sha256: str,
+    adapter_artifact_sha256: str,
+) -> str:
+    """Identify one effective Base-plus-Adapter weight set."""
+
+    payload = json.dumps(
+        {
+            "base_model_artifact_sha256": base_model_artifact_sha256,
+            "adapter_artifact_sha256": adapter_artifact_sha256,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _atomic_json(path: Path, value: object) -> None:

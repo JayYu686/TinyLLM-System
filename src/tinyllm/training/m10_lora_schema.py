@@ -266,7 +266,7 @@ class M10LoRACheckpointManifest(StrictSchema):
     sequence_cursor: Literal[0]
     supervised_tokens: int = Field(ge=1_000_000, le=10_000_000)
     config_sha256: str = Field(pattern=SHA256_PATTERN)
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     dataset_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[
@@ -473,7 +473,7 @@ class M10LoRAMemoryProbeResult(StrictSchema):
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     environment_sha256: str = Field(pattern=SHA256_PATTERN)
     hardware_compatibility_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -502,7 +502,7 @@ class M10LoRARunResult(StrictSchema):
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     dataset_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[

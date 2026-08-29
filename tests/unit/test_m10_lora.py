@@ -43,6 +43,7 @@ from tinyllm.training.m10_lora_schema import (
 
 CONFIG = Path("configs/sft/m10_agent_lora_qwen3_8b.yaml")
 REPAIR_V3_CONFIG = Path("configs/sft/m10_5_agent_repair_v3_lora_qwen3_8b.yaml")
+REPAIR_V4_CONFIG = Path("configs/sft/m10_5_agent_repair_v4_lora_qwen3_8b.yaml")
 
 
 def test_m10_lora_config_freezes_parent_data_adapter_and_stages() -> None:
@@ -134,6 +135,35 @@ def test_m10_lora_v3_repair_file_binds_frozen_mixture() -> None:
     )
     assert config.optimization.learning_rate == 1e-5
     assert config.evaluation.parent_task_success_basis_points == 4875
+
+
+def test_m10_lora_v4_repair_file_binds_zero_reuse_mixture() -> None:
+    config = load_m10_lora_config(REPAIR_V4_CONFIG)
+
+    assert config.data.dataset_version == "m10-agent-sft-v3-7aa779bf"
+    assert config.data.manifest_sha256 == (
+        "da18eedacf417bf70d55b46ef0fba2244367197f52588a5979ac804608929e52"
+    )
+    assert config.optimization.learning_rate == 1e-5
+    assert config.evaluation.scoring_protocol == "m10-agent-scoring-v3"
+
+    probe = M10LoRAMemoryProbeResult(
+        config_sha256="a" * 64,
+        git_commit="b" * 40,
+        git_dirty=False,
+        dataset_version=config.data.dataset_version,
+        parent_evaluation_subject=M10_LORA_PARENT_SUBJECT,
+        environment_sha256="c" * 64,
+        hardware_compatibility_sha256="d" * 64,
+        physical_gpu_index=4,
+        gpu_name="NVIDIA GeForce RTX 3090",
+        optimizer_steps=10,
+        supervised_tokens=10_000,
+        peak_allocated_bytes=10,
+        peak_reserved_bytes=20,
+        duration_seconds=1.0,
+    )
+    assert probe.dataset_version == config.data.dataset_version
 
 
 def _resolved_parent() -> ResolvedEvaluationSubject:

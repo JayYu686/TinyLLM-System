@@ -1,0 +1,39 @@
+{
+  "contains_source_or_evaluation_content": false,
+  "contamination_report_sha256": "80774ae5e1f4e49e953fab82c263c30a945de4e3953095f414ce2d7a11270aea",
+  "content_sha256": "7aa779bf53eb9f71b4ae4a1063170d2aded83f9dab97b9c39da9e40248b9f230",
+  "dataset_version": "m10-agent-sft-v3-7aa779bf",
+  "duplicate_report_sha256": "aca3619d77349d5e1c9f465e2ccbb1f03b3b397a0bde189ab2c72ac2e24aeb1a",
+  "exact_duplicate_drops": 3,
+  "language_supervised_tokens": {
+    "en": 700000,
+    "zh": 300000
+  },
+  "manifest_sha256": "da18eedacf417bf70d55b46ef0fba2244367197f52588a5979ac804608929e52",
+  "mode_supervised_tokens": {
+    "nonthinking": 940000,
+    "thinking": 60000
+  },
+  "near_duplicate_drops": 0,
+  "overlength_rejections": {
+    "hermes_function_calling": 1094,
+    "m2_no_tool_replay": 3,
+    "m6_domain_replay": 0,
+    "tinyllm_devops": 0,
+    "toolace": 81
+  },
+  "private_artifacts_only": true,
+  "report_version": "m10-frozen-mixture-v3",
+  "schema_version": "1.0",
+  "sequence_count": 8701,
+  "source_supervised_tokens": {
+    "hermes_function_calling": 50000,
+    "m2_no_tool_replay": 50000,
+    "m6_domain_replay": 150000,
+    "tinyllm_devops": 700000,
+    "toolace": 50000
+  },
+  "status": "pass",
+  "target_supervised_tokens": 1000000,
+  "training_permitted": true
+}

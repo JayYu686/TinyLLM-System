@@ -1,0 +1,74 @@
+schema_version: "1.0"
+config_kind: m10_agent_lora
+run:
+  name: m10-5-agent-repair-v4-lora-qwen3-8b-seed42
+  seed: 42
+  purpose: agent_lora
+model:
+  repository: Qwen/Qwen3-8B
+  revision: b968826d9c46dd6066d109eabc6255188de91218
+  model_type: qwen3
+  license: Apache-2.0
+  attention_architecture: gqa
+  adaptation: lora
+  trust_remote_code: false
+  parent_evaluation_subject: qwen3-8b-m9-base-90587dd6
+  parent_evaluation_subject_sha256: 9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8
+  parent_model_artifact_sha256: 81fec43ab8b1f03a158e39e50ec23d99cf8701144e8678aea3ca656d12d08de0
+  parent_tokenizer_artifact_sha256: 99d4d297ece6cc43fa551987701e4ded4fa5c860d9448965d212508519bfc382
+  lora:
+    rank: 16
+    alpha: 32
+    dropout: 0.05
+    bias: none
+    target_modules:
+      - down_proj
+      - gate_proj
+      - k_proj
+      - o_proj
+      - q_proj
+      - up_proj
+      - v_proj
+data:
+  dataset_version: m10-agent-sft-v3-7aa779bf
+  manifest_sha256: da18eedacf417bf70d55b46ef0fba2244367197f52588a5979ac804608929e52
+  sequence_length: 2048
+  target_supervised_tokens_per_epoch: 1000000
+  assistant_only_loss: true
+  language_target: en70-zh30
+  mode_target: nonthinking94-thinking6
+optimization:
+  max_train_tokens: 10000000
+  stage_tokens: [1000000, 5000000, 10000000]
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.00001
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  warmup_tokens: 100000
+  gradient_checkpointing: true
+  max_job_duration_seconds: 43200
+precision:
+  dtype: bf16
+  allow_tf32: true
+  use_grad_scaler: false
+  qlora_fallback: only_after_verified_bf16_oom
+parallel:
+  strategy: single
+  device_type: cuda
+  world_size: 1
+checkpoint:
+  save_interval_tokens: 1000000
+  keep_last: 2
+  resume: auto
+  pin_stage_checkpoints: true
+evaluation:
+  agent_dev_version: tinyllm-devops-agent-dev-v1-f958bcc6
+  scoring_protocol: m10-agent-scoring-v3
+  parent_task_success_basis_points: 4875
+  stage_min_improvement_basis_points: 100
+  m6_max_regression_basis_points: 200
+  release_set_access: m10_final_gate_only
+memory_probe:
+  optimizer_steps: 10
+  required_before_fresh_training: true

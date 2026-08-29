@@ -112,7 +112,7 @@ Repair v4 将 DevOps 训练源扩展到 9,600 条唯一上下文，类别比例�
 32、精确重复和跨组近重复为零，并继续要求与 Agent Dev、密封 Release、BFCL Core 和 M6 数据
 污染为零。
 
-Repair v4 的正式混合必须证明所有来源样本复用计数为零。内容审查前保持
-`training_permitted=false`；维护者确认 80 条分层样本后才能生成 `approval-v4` 与冻结混合。新实验
-重新从 Qwen3-8B Base 开始，在 1M Token 处先做 Agent Dev 门禁，避免再次用重复 Epoch 掩盖
-能力退化。
+Repair v4 的正式混合必须证明所有来源样本复用计数为零。80 条分层样本已由维护者全部确认，
+`approval-v4` 与 `m10-agent-sft-v3-7aa779bf` 冻结混合已经生成；10 个 Stratum 的样本复用计数
+均为零。新实验重新从 Qwen3-8B Base 开始，在 1M Token 处先做 Agent Dev 门禁，避免再次用
+重复 Epoch 掩盖能力退化。

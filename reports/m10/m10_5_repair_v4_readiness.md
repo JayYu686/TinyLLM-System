@@ -26,7 +26,7 @@ Repair v3 的 1M Checkpoint 是当前最佳候选。继续在同一份 1M Token 
 
 ## 3. Repair v4 数据准备
 
-Repair v4 已完成机器质量门禁，尚未通过维护者内容审查。
+Repair v4 已完成机器质量门禁和维护者内容审查，并构建出零样本复用的冻结训练混合。
 
 | 检查项 | 实际结果 |
 | -- | --: |
@@ -42,22 +42,26 @@ Repair v4 已完成机器质量门禁，尚未通过维护者内容审查。
 | Missing Argument 轨迹 | 960 |
 | 精确重复 / 跨组近重复 | 0 / 0 |
 | Dev、Release、BFCL、M6 污染 | 0 |
-| 当前状态 | `review_pending` |
+| 维护者抽样审查 | 80/80 通过 |
+| 冻结混合 | `m10-agent-sft-v3-7aa779bf` |
+| 训练 Token | 精确 1,000,000 |
+| 全部 Stratum 样本复用 | 0 |
+| 当前状态 | `training_permitted=true` |
 
 机器门禁证据见
 [`raw/m10_repair_v4_training_build.json`](raw/m10_repair_v4_training_build.json) 和
 [`raw/m10_repair_v4_content_quality.json`](raw/m10_repair_v4_content_quality.json)。完整 9,600 条轨迹
-保留在私有 Artifact Store；维护者只需审查按类别和语言分层抽取的 80 条内容。
+保留在私有 Artifact Store。内容审批事实源为
+[`raw/m10_repair_v4_content_review.json`](raw/m10_repair_v4_content_review.json)，冻结混合证据为
+[`raw/m10_repair_v4_frozen_mixture.json`](raw/m10_repair_v4_frozen_mixture.json)。
 
 ## 4. 后续执行门禁
 
-维护者确认 80 条抽样轨迹后，依次执行：
+数据与内容门禁通过后，剩余步骤依次为：
 
-1. 生成不可变的 `approval-v4` 内容审查记录；
-2. 构建无样本复用的 1M Supervised Token Repair v4 混合，并验证所有来源的复用计数；
-3. 执行 10 Step 显存探测；
-4. 从冻结 Qwen3-8B Base 训练新的 1M LoRA；
-5. 运行 Agent Dev，并与 Repair v3 1M 及父模型进行同一 v3 协议比较；
-6. 只有 Dev 指标证明值得晋级时，才消耗密封 Release、BFCL、M6 和 Serving 门禁。
+1. 执行 10 Step 显存探测；
+2. 从冻结 Qwen3-8B Base 训练新的 1M LoRA；
+3. 运行 Agent Dev，并与 Repair v3 1M 及父模型进行同一 v3 协议比较；
+4. 只有 Dev 指标证明值得晋级时，才消耗密封 Release、BFCL、M6 和 Serving 门禁。
 
-在内容确认与冻结混合生成前，Repair v4 保持 `training_permitted=false`，不启动 GPU 训练。
+Repair v4 已获得训练授权，但正式训练仍必须绑定本次冻结配置、显存探测结果和干净 Git Commit。

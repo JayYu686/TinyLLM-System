@@ -42,10 +42,14 @@
   "decision": "replace_repeated_epochs_with_unique_runtime_aligned_training_data",
   "continue_existing_run_to_10000000_tokens": false,
   "repair_v4": {
+    "approval_sha256": "38cd6a394ca5082f76324cf439cfbfc53eba881778af39425c6b12c10df73609",
+    "frozen_dataset_manifest_sha256": "da18eedacf417bf70d55b46ef0fba2244367197f52588a5979ac804608929e52",
+    "frozen_dataset_version": "m10-agent-sft-v3-7aa779bf",
     "source_config_sha256": "09257f5438f64b102184a44edcdbaf7f8e461ae6388d2071cfca0165d130a2a6",
     "source_dataset_version": "m10-devops-training-v4-f13ae053",
     "source_item_count": 9600,
-    "review_status": "pending",
-    "training_permitted": false
+    "review_status": "approved",
+    "training_permitted": true,
+    "zero_reuse_verified": true
   }
 }

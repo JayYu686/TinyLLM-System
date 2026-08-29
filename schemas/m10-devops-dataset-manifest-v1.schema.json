@@ -33,7 +33,7 @@
       "type": "string"
     },
     "dataset_version": {
-      "pattern": "^m10-devops-training-v[123]-[0-9a-f]{8}$",
+      "pattern": "^m10-devops-training-v[1234]-[0-9a-f]{8}$",
       "title": "Dataset Version",
       "type": "string"
     },
@@ -43,8 +43,11 @@
       "type": "string"
     },
     "item_count": {
-      "const": 2400,
       "default": 2400,
+      "enum": [
+        2400,
+        9600
+      ],
       "title": "Item Count",
       "type": "integer"
     },
@@ -96,7 +99,8 @@
       "enum": [
         20260820,
         20260825,
-        20260827
+        20260827,
+        20260829
       ],
       "title": "Seed",
       "type": "integer"
@@ -106,7 +110,8 @@
       "enum": [
         "m10-devops-training-v1",
         "m10-devops-training-v2",
-        "m10-devops-training-v3"
+        "m10-devops-training-v3",
+        "m10-devops-training-v4"
       ],
       "title": "Source Revision",
       "type": "string"

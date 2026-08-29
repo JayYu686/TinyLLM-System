@@ -14,7 +14,7 @@ from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 import yaml
@@ -929,12 +929,16 @@ def build_frozen_mixture(
     )
     devops_spec = config.inputs.tinyllm_devops
     approval_version = (
-        "approval-v3"
-        if devops_spec.version.startswith("m10-devops-training-v3-")
+        "approval-v4"
+        if devops_spec.version.startswith("m10-devops-training-v4-")
         else (
-            "approval-v2"
-            if devops_spec.version.startswith("m10-devops-training-v2-")
-            else "approval-v1"
+            "approval-v3"
+            if devops_spec.version.startswith("m10-devops-training-v3-")
+            else (
+                "approval-v2"
+                if devops_spec.version.startswith("m10-devops-training-v2-")
+                else "approval-v1"
+            )
         )
     )
     devops_manifest, devops_text = load_approved_devops_candidates(
@@ -1109,9 +1113,7 @@ def build_frozen_mixture(
     }
     manifest = M10FrozenMixtureManifest(
         dataset_version=(
-            f"m10-agent-sft-v2-{content_sha[:8]}"
-            if config.config_version == "m10-agent-frozen-mixture-v2"
-            else f"m10-agent-sft-v1-{content_sha[:8]}"
+            f"m10-agent-sft-v{config.config_version.rsplit('-v', maxsplit=1)[1]}-{content_sha[:8]}"
         ),
         content_sha256=content_sha,
         frozen_config_sha256=frozen_config_sha,
@@ -1344,10 +1346,13 @@ def build_public_report(manifest: M10FrozenMixtureManifest) -> M10FrozenMixtureR
     overlength = {item.source_id: item.overlength_rejections for item in manifest.input_evidence}
     manifest_sha = hashlib.sha256(_json_bytes(manifest.to_dict(), indent=2)).hexdigest()
     return M10FrozenMixtureReport(
-        report_version=(
-            "m10-frozen-mixture-v2"
-            if manifest.dataset_version.startswith("m10-agent-sft-v2-")
-            else "m10-frozen-mixture-v1"
+        report_version=cast(
+            Literal[
+                "m10-frozen-mixture-v1",
+                "m10-frozen-mixture-v2",
+                "m10-frozen-mixture-v3",
+            ],
+            f"m10-frozen-mixture-v{manifest.dataset_version.split('-', maxsplit=4)[3][1:]}",
         ),
         status="pass",
         dataset_version=manifest.dataset_version,

@@ -94,11 +94,13 @@ def finalize_m10_devops_content_review(
                     "m10-devops-content-review-v1",
                     "m10-devops-content-review-v2",
                     "m10-devops-content-review-v3",
+                    "m10-devops-content-review-v4",
                 ],
                 {
                     "m10-devops-training-v1": "m10-devops-content-review-v1",
                     "m10-devops-training-v2": "m10-devops-content-review-v2",
                     "m10-devops-training-v3": "m10-devops-content-review-v3",
+                    "m10-devops-training-v4": "m10-devops-content-review-v4",
                 }[pending_manifest.source_revision],
             ),
             reviewed_at=timestamp,

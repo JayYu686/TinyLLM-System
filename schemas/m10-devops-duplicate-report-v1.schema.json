@@ -24,8 +24,11 @@
       "type": "integer"
     },
     "item_count": {
-      "const": 2400,
       "default": 2400,
+      "enum": [
+        2400,
+        9600
+      ],
       "title": "Item Count",
       "type": "integer"
     },

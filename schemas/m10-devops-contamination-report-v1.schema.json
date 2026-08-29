@@ -97,7 +97,8 @@
       "enum": [
         "m10-devops-contamination-v1",
         "m10-devops-contamination-v2",
-        "m10-devops-contamination-v3"
+        "m10-devops-contamination-v3",
+        "m10-devops-contamination-v4"
       ],
       "title": "Scan Version",
       "type": "string"
@@ -120,13 +121,16 @@
       "type": "string"
     },
     "source_dataset_version": {
-      "pattern": "^m10-devops-training-v[123]-[0-9a-f]{8}$",
+      "pattern": "^m10-devops-training-v[1234]-[0-9a-f]{8}$",
       "title": "Source Dataset Version",
       "type": "string"
     },
     "source_items": {
-      "const": 2400,
       "default": 2400,
+      "enum": [
+        2400,
+        9600
+      ],
       "title": "Source Items",
       "type": "integer"
     },

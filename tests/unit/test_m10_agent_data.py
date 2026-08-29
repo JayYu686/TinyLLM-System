@@ -48,6 +48,7 @@ from tinyllm.data.m10_agent_schema import (
 CONFIG = Path("configs/data/m10_agent.yaml")
 REPAIR_CONFIG = Path("configs/data/m10_agent_repair.yaml")
 REPAIR_V3_CONFIG = Path("configs/data/m10_agent_repair_v3.yaml")
+REPAIR_V4_CONFIG = Path("configs/data/m10_agent_repair_v4.yaml")
 
 
 def _sha256(path: Path) -> str:
@@ -161,6 +162,21 @@ def test_m10_repair_v3_config_preserves_mix_with_new_authored_identity() -> None
         1000,
     ]
     assert config.sources[2].revision == "m10-devops-training-v3-a5645bc5"
+    assert config.sources[2].readiness == "pending_build"
+
+
+def test_m10_repair_v4_config_focuses_approved_runtime_aligned_source() -> None:
+    config = load_m10_agent_data_config(REPAIR_V4_CONFIG)
+
+    assert config.config_version == "m10-agent-data-v3"
+    assert [source.mixture_basis_points for source in config.sources] == [
+        500,
+        500,
+        7000,
+        1500,
+        500,
+    ]
+    assert config.sources[2].revision == "m10-devops-training-v4-f13ae053"
     assert config.sources[2].readiness == "pending_build"
 
 

@@ -6,6 +6,8 @@ from datetime import UTC, datetime
 from tinyllm.data.m10_devops import (
     REPAIR_CATEGORY_COUNTS,
     REPAIR_LANGUAGE_COUNTS,
+    REPAIR_V4_CATEGORY_COUNTS,
+    REPAIR_V4_LANGUAGE_COUNTS,
     build_manifest,
     render_samples,
     scan_authored_duplicates,
@@ -14,8 +16,10 @@ from tinyllm.data.m10_devops_schema import M10DevOpsContentReviewResult
 from tinyllm.data.m10_repair import (
     build_repair_samples,
     build_repair_v3_samples,
+    build_repair_v4_samples,
     validate_repair_samples,
     validate_repair_v3_samples,
+    validate_repair_v4_samples,
 )
 
 
@@ -102,4 +106,20 @@ def test_repair_v3_manifest_has_a_new_immutable_identity() -> None:
     assert manifest.dataset_version.startswith("m10-devops-training-v3-")
     assert manifest.source_revision == "m10-devops-training-v3"
     assert manifest.seed == 20260827
+    assert manifest.training_permitted is False
+
+
+def test_repair_v4_source_expands_unique_runtime_aligned_coverage() -> None:
+    samples = build_repair_v4_samples()
+    quality = validate_repair_v4_samples(samples)
+    manifest = build_manifest(samples)
+
+    assert Counter(item.category for item in samples) == Counter(REPAIR_V4_CATEGORY_COUNTS)
+    assert Counter(item.language for item in samples) == Counter(REPAIR_V4_LANGUAGE_COUNTS)
+    assert quality["status"] == "pass"
+    assert quality["item_count"] == 9600
+    assert quality["sequential_two_step_samples"] == 1920
+    assert quality["parallel_two_call_samples"] == 480
+    assert manifest.dataset_version.startswith("m10-devops-training-v4-")
+    assert manifest.seed == 20260829
     assert manifest.training_permitted is False

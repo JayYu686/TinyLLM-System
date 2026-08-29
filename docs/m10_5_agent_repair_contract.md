@@ -98,3 +98,21 @@ Dataset v2、训练配置、Memory Probe、Run、Checkpoint、Adapter Export、�
 Release、BFCL、M6 与 Serving 结果均使用独立内容哈希。若修复候选仍未通过最终门禁，M7
 Production Alias 保持不变，项目发布新的 RC 并保留可复现的失败分析；只有全部门禁通过时才
 发布 `v1.0.0`。
+
+## 8. Repair v4：唯一轨迹扩容与阶段停止规则
+
+Repair v3 的 1M、3M、4M 和 5M Checkpoint 使用同一 Agent Dev 与评分协议 v3 进行对照。
+1M 的 Task Success 为 63.75%、Grounding 为 89.13%；3M、4M、5M 的 Task Success 分别为
+52.50%、50.00%、56.25%，Grounding 分别为 47.83%、58.70%、76.09%。因此现有 Run 在
+5M 停止，不继续到 10M，也不将降低工具幻觉率单独视为晋级依据。
+
+Repair v4 将 DevOps 训练源扩展到 9,600 条唯一上下文，类别比例保持与修复目标一致，英文/中文
+保持 70/30。训练 System Policy 与 M9/M10 Agent Runtime 的工具权限、证据引用、审批、安全边界
+和原始 CoT 隐藏规则对齐。机器质量门禁要求至少 8,600 个唯一最终回答、单一最终回答频次不超过
+32、精确重复和跨组近重复为零，并继续要求与 Agent Dev、密封 Release、BFCL Core 和 M6 数据
+污染为零。
+
+Repair v4 的正式混合必须证明所有来源样本复用计数为零。内容审查前保持
+`training_permitted=false`；维护者确认 80 条分层样本后才能生成 `approval-v4` 与冻结混合。新实验
+重新从 Qwen3-8B Base 开始，在 1M Token 处先做 Agent Dev 门禁，避免再次用重复 Epoch 掩盖
+能力退化。

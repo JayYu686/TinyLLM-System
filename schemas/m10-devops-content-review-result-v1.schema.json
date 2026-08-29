@@ -74,7 +74,8 @@
       "enum": [
         "m10-devops-content-review-v1",
         "m10-devops-content-review-v2",
-        "m10-devops-content-review-v3"
+        "m10-devops-content-review-v3",
+        "m10-devops-content-review-v4"
       ],
       "title": "Review Version",
       "type": "string"
@@ -113,7 +114,7 @@
       "type": "string"
     },
     "source_dataset_version": {
-      "pattern": "^m10-devops-training-v[123]-[0-9a-f]{8}$",
+      "pattern": "^m10-devops-training-v[1234]-[0-9a-f]{8}$",
       "title": "Source Dataset Version",
       "type": "string"
     },

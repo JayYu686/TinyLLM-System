@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "diagnostic_version": "m10-repair-v4-stage-diagnostic-v1",
+  "scoring_protocol": "m10-agent-scoring-v3",
+  "evaluated_stages": [
+    {
+      "supervised_tokens": 1000000,
+      "evaluation_subject": "qwen3-8b-m10-agent-lora-1m-0ad5befe",
+      "task_success_basis_points": 6375,
+      "grounding_accuracy_basis_points": 8913,
+      "tool_hallucination_rate_basis_points": 1000,
+      "summary_sha256": "ca2c67a1fe95c990f21bbb60cab202e653f04a1f2fa5b7193c64568da152297d"
+    },
+    {
+      "supervised_tokens": 3000000,
+      "evaluation_subject": "qwen3-8b-m9-historical-lora-eb9b3c68",
+      "evaluation_subject_record_sha256": "53a8af2e255cc2aca99a15dbc2e44d4f9987290fca8755f437517aa653e57986",
+      "task_success_basis_points": 5250,
+      "grounding_accuracy_basis_points": 4783,
+      "tool_hallucination_rate_basis_points": 125,
+      "summary_sha256": "d4b2dc41ac25d5fd1f8c5624f00661ab6245bd124431288f5af5b33c620d315f"
+    },
+    {
+      "supervised_tokens": 4000000,
+      "evaluation_subject": "qwen3-8b-m9-historical-lora-556cec8c",
+      "evaluation_subject_record_sha256": "63381c0c9e8970b77b6b2c9eb699a22a385dcd3f79e5f80e0cbd2a01c7c135fe",
+      "task_success_basis_points": 5000,
+      "grounding_accuracy_basis_points": 5870,
+      "tool_hallucination_rate_basis_points": 125,
+      "summary_sha256": "904f16c2f6a15c32f67c8d946a89a92ef001aec02f0dc600707edcce22fd7fbb"
+    },
+    {
+      "supervised_tokens": 5000000,
+      "evaluation_subject": "qwen3-8b-m10-agent-lora-5m-dbc6f4b7",
+      "task_success_basis_points": 5625,
+      "grounding_accuracy_basis_points": 7609,
+      "tool_hallucination_rate_basis_points": 125,
+      "summary_sha256": "0606adb9f86796eb4cb61f0906e429ebf417dee0f134d952a65bff83b28326d0"
+    }
+  ],
+  "best_stage_supervised_tokens": 1000000,
+  "decision": "replace_repeated_epochs_with_unique_runtime_aligned_training_data",
+  "continue_existing_run_to_10000000_tokens": false,
+  "repair_v4": {
+    "source_config_sha256": "09257f5438f64b102184a44edcdbaf7f8e461ae6388d2071cfca0165d130a2a6",
+    "source_dataset_version": "m10-devops-training-v4-f13ae053",
+    "source_item_count": 9600,
+    "review_status": "pending",
+    "training_permitted": false
+  }
+}

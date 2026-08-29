@@ -50,6 +50,7 @@ class M10LoRARunConfig(StrictSchema):
         "m10-agent-lora-qwen3-8b-seed42",
         "m10-5-agent-repair-lora-qwen3-8b-seed42",
         "m10-5-agent-repair-v3-lora-qwen3-8b-seed42",
+        "m10-5-agent-repair-v4-lora-qwen3-8b-seed42",
     ]
     seed: Literal[42]
     purpose: Literal["agent_lora"]
@@ -105,7 +106,7 @@ class M10LoRAModelConfig(StrictSchema):
 class M10LoRADataConfig(StrictSchema):
     """Immutable M10 Agent training array identity."""
 
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     sequence_length: Literal[2048]
     target_supervised_tokens_per_epoch: Literal[1_000_000]
@@ -193,9 +194,23 @@ class M10LoRAConfig(StrictSchema):
 
     @model_validator(mode="after")
     def validate_campaign_identity(self) -> M10LoRAConfig:
+        repair_v4 = self.run.name.startswith("m10-5-agent-repair-v4-")
         repair_v3 = self.run.name.startswith("m10-5-agent-repair-v3-")
-        repair_v2 = self.run.name.startswith("m10-5-agent-repair-") and not repair_v3
-        if repair_v3:
+        repair_v2 = (
+            self.run.name.startswith("m10-5-agent-repair-") and not repair_v3 and not repair_v4
+        )
+        if repair_v4:
+            if (
+                not self.data.dataset_version.startswith("m10-agent-sft-v3-")
+                or self.optimization.learning_rate != 1e-5
+                or self.evaluation.scoring_protocol != "m10-agent-scoring-v3"
+                or self.evaluation.parent_task_success_basis_points != 4875
+            ):
+                raise ValueError(
+                    "M10.5 v4 repair requires Dataset v3, LR 1e-5, scoring v3, and its "
+                    "frozen parent baseline"
+                )
+        elif repair_v3:
             if (
                 not self.data.dataset_version.startswith("m10-agent-sft-v2-")
                 or self.optimization.learning_rate != 1e-5

@@ -22,15 +22,17 @@ from tinyllm.data.m10_devops import (
 from tinyllm.data.m10_repair import (
     build_repair_samples,
     build_repair_v3_samples,
+    build_repair_v4_samples,
     validate_repair_samples,
     validate_repair_v3_samples,
+    validate_repair_v4_samples,
 )
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact-root", type=Path, required=True)
-    parser.add_argument("--source-version", choices=("v2", "v3"), default="v2")
+    parser.add_argument("--source-version", choices=("v2", "v3", "v4"), default="v2")
     parser.add_argument("--m9-dev-dir", type=Path, default=Path("evals/agent/dev/v1"))
     parser.add_argument("--m9-release-dir", type=Path, required=True)
     parser.add_argument("--bfcl-data-root", type=Path, required=True)
@@ -58,7 +60,10 @@ def _atomic_text(path: Path, value: str) -> None:
 def main() -> int:
     args = _parser().parse_args()
     try:
-        if args.source_version == "v3":
+        if args.source_version == "v4":
+            samples = build_repair_v4_samples()
+            quality = validate_repair_v4_samples(samples)
+        elif args.source_version == "v3":
             samples = build_repair_v3_samples()
             quality = validate_repair_v3_samples(samples)
         else:

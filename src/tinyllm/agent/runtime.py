@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable, Sequence
 from typing import Any, Protocol, TypedDict, cast
 
@@ -44,6 +45,83 @@ ApprovalIDFactory = Callable[[AgentToolCall], str]
 
 def deterministic_approval_id(call: AgentToolCall) -> str:
     return f"approval-{agent_tool_call_sha256(call)[:12]}"
+
+
+def _latest_user_text(messages: Sequence[AgentMessage]) -> str:
+    return next(
+        (
+            message.content
+            for message in reversed(messages)
+            if message.role == "user" and isinstance(message.content, str)
+        ),
+        "",
+    )
+
+
+def _normalize_tool_call(call: AgentToolCall, *, user_text: str) -> AgentToolCall:
+    """Repair only a safe representation mismatch backed by the user's exact Run ID."""
+
+    if call.tool_name != "get_run":
+        return call
+    arguments = dict(call.arguments)
+    run_id = arguments.get("run_id")
+    if not isinstance(run_id, str) or "/" not in run_id:
+        return call
+    candidate = run_id.rsplit("/", 1)[-1]
+    if (
+        candidate not in user_text
+        or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{2,180}", candidate) is None
+    ):
+        return call
+    arguments["run_id"] = candidate
+    return call.model_copy(update={"arguments": arguments})
+
+
+def _call_position(call: AgentToolCall, *, user_text: str, fallback: int) -> tuple[int, int]:
+    """Order a same-decision call batch by explicit resource appearance in the request."""
+
+    candidates: list[str] = []
+    for key in ("relative_path", "run_id", "query"):
+        value = call.arguments.get(key)
+        if not isinstance(value, str) or not value:
+            continue
+        candidates.append(value)
+        if key == "query":
+            candidates.extend(part for part in value.split() if len(part) >= 3)
+    positions = [user_text.find(value) for value in candidates]
+    present = [position for position in positions if position >= 0]
+    return (min(present) if present else len(user_text) + fallback, fallback)
+
+
+def _normalize_tool_calls(
+    calls: Sequence[AgentToolCall], *, messages: Sequence[AgentMessage]
+) -> tuple[AgentToolCall, ...]:
+    user_text = _latest_user_text(messages)
+    normalized = tuple(_normalize_tool_call(call, user_text=user_text) for call in calls)
+    indexed = tuple(enumerate(normalized))
+    return tuple(
+        call
+        for _, call in sorted(
+            indexed,
+            key=lambda item: _call_position(item[1], user_text=user_text, fallback=item[0]),
+        )
+    )
+
+
+def _evidence_subject(observation: dict[str, object]) -> str | None:
+    arguments = observation.get("arguments")
+    if not isinstance(arguments, dict):
+        return None
+    keys = (
+        ("source_relative_path",)
+        if observation.get("tool_name") == "apply_sandbox_config_patch"
+        else ("relative_path", "run_id", "query")
+    )
+    for key in keys:
+        value = arguments.get(key)
+        if isinstance(value, str) and value:
+            return re.sub(r"[^A-Za-z0-9._/@:-]", "_", value)[:240]
+    return None
 
 
 class _GraphState(TypedDict, total=False):
@@ -229,6 +307,10 @@ class AgentRuntime:
             mode=record.mode,
             allowed_tools=self._allowed_tools(record.mcp_server_ids),
         )
+        if decision.tool_calls:
+            decision = decision.model_copy(
+                update={"tool_calls": _normalize_tool_calls(decision.tool_calls, messages=messages)}
+            )
         self.store.transition(
             run_id,
             status="running",
@@ -409,14 +491,22 @@ class AgentRuntime:
         assert decision.message is not None
         observations = state.get("observations", [])
         answer = decision.message
-        evidence_ids = tuple(
-            item["call_id"]
+        evidence = tuple(
+            item
             for item in observations
-            if isinstance(item.get("call_id"), str) and "result" in item
+            if isinstance(item.get("call_id"), str)
+            and "result" in item
+            and item.get("duplicate_suppressed") is not True
         )
-        if evidence_ids and not any(f"[evidence:{call_id}]" in answer for call_id in evidence_ids):
-            citations = " ".join(f"[evidence:{call_id}]" for call_id in evidence_ids)
-            answer = f"{answer.rstrip()}\n\nEvidence: {citations}"
+        if evidence:
+            trace: list[str] = []
+            for item in evidence:
+                call_id = str(item["call_id"])
+                tool_name = str(item.get("tool_name", "tool"))
+                subject = _evidence_subject(item)
+                identity = f"{tool_name}: {subject}" if subject else tool_name
+                trace.append(f"{identity} [evidence:{call_id}]")
+            answer = f"{answer.rstrip()}\n\nEvidence trace: {'; '.join(trace)}"
         self.store.append_event(run_id, "model.delta", {"content": answer})
         self.store.append_event(run_id, "message.completed", {"content": answer})
         self.store.append_event(run_id, "run.completed", {"status": "succeeded"})

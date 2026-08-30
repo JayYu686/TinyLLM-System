@@ -54,12 +54,15 @@ def test_gateway_agent_model_forwards_optional_evaluation_seed() -> None:
         assert payload["seed"] == 20260820
         policy = payload["messages"][0]["content"]
         assert "Follow this decision order before every tool call" in policy
+        assert "JSON Schema's required array" in policy
+        assert "sufficient authorization for a read" in policy
         assert "ask one concise clarification and make no tool call" in policy
-        assert "incident/reference ID as a path" in policy
+        assert "incident/reference ID is metadata" in policy
         assert "emit all independent calls together" in policy
+        assert "call only the first operation" in policy
         assert "retries are performed by the runtime" in policy
         assert "explicitly repeat the user-requested subject" in policy
-        assert "or entity and cite supporting calls" in policy
+        assert "or entity and cite every supporting call" in policy
         return httpx.Response(200, json={"choices": [{"message": {"content": "done"}}]})
 
     decision = asyncio.run(

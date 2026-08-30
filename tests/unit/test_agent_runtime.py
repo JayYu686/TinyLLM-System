@@ -43,7 +43,13 @@ class _Policy:
 class _Client:
     def __init__(self, *, approval_required: bool = False) -> None:
         self.approval_required = approval_required
-        self.tool_names = ("search_evidence", "apply_sandbox_config_patch")
+        self.tool_names = (
+            "search_evidence",
+            "get_run",
+            "read_log_excerpt",
+            "query_metrics",
+            "apply_sandbox_config_patch",
+        )
         self.calls: list[tuple[str, dict[str, Any]]] = []
 
     def policy(self, name: str) -> _Policy:
@@ -100,7 +106,9 @@ def test_runtime_executes_read_tool_then_returns_grounded_answer(tmp_path: Path)
 
     answer = asyncio.run(runtime.run(run_id, messages=messages))
 
-    assert answer == "ok [evidence:call_one]"
+    assert answer == (
+        "ok [evidence:call_one]\n\nEvidence trace: search_evidence: failure [evidence:call_one]"
+    )
     assert store.load(run_id).status == "succeeded"
     assert client.calls == [("search_evidence", {"query": "failure"})]
     assert [event.event_type for event in store.events_after(run_id)] == [
@@ -148,7 +156,10 @@ def test_runtime_suspends_write_and_resumes_only_after_approval(tmp_path: Path) 
 
     answer = asyncio.run(runtime.resume_after_approval(run_id, messages=messages))
 
-    assert answer == "patched [evidence:call_one]"
+    assert answer == (
+        "patched [evidence:call_one]\n\n"
+        "Evidence trace: apply_sandbox_config_patch [evidence:call_one]"
+    )
     assert store.load(run_id).status == "succeeded"
     assert client.calls[0][1]["run_id"] == run_id
     assert client.calls[0][1]["approval_id"] == waiting.pending_approval_id
@@ -191,7 +202,9 @@ def test_runtime_suppresses_one_duplicate_successful_call_and_reprompts(
 
     answer = asyncio.run(runtime.run(run_id, messages=messages))
 
-    assert answer == "done [evidence:call_one]"
+    assert answer == (
+        "done [evidence:call_one]\n\nEvidence trace: search_evidence: same [evidence:call_one]"
+    )
     assert store.load(run_id).status == "succeeded"
     assert client.calls == [("search_evidence", {"query": "same"})]
     events = store.events_after(run_id)
@@ -226,7 +239,9 @@ def test_runtime_deduplicates_identical_calls_within_one_model_decision(
 
     answer = asyncio.run(runtime.run(run_id, messages=messages))
 
-    assert answer == "done [evidence:call_1]"
+    assert answer == (
+        "done [evidence:call_1]\n\nEvidence trace: search_evidence: same [evidence:call_1]"
+    )
     assert store.load(run_id).status == "succeeded"
     assert client.calls == [("search_evidence", {"query": "same"})]
 
@@ -247,4 +262,61 @@ def test_runtime_attaches_actual_evidence_identity_when_model_omits_citation(
     answer = asyncio.run(runtime.run(run_id, messages=messages))
     record = store.load(run_id)
     assert record.status == "succeeded"
-    assert answer == "ok\n\nEvidence: [evidence:call_one]"
+    assert answer == "ok\n\nEvidence trace: search_evidence: failure [evidence:call_one]"
+
+
+def test_runtime_normalizes_run_id_and_orders_same_decision_by_request(
+    tmp_path: Path,
+) -> None:
+    store, run_id, _ = _run(tmp_path)
+    run_identifier = "20260820T010000Z-agent-eval-a1b2c3d4-0001"
+    log_path = f"runs/m9/{run_identifier}/logs/trainer.log"
+    metrics_path = f"runs/m9/{run_identifier}/metrics.jsonl"
+    messages = (
+        AgentMessage(
+            role="user",
+            content=(
+                f"Read Run {run_identifier}. Then read {log_path}, then query {metrics_path}."
+            ),
+        ),
+    )
+    decision = AgentModelDecision.model_validate(
+        {
+            "tool_calls": [
+                {
+                    "call_id": "call_metrics",
+                    "server_id": "tinyllm-devops",
+                    "tool_name": "query_metrics",
+                    "arguments": {"relative_path": metrics_path},
+                },
+                {
+                    "call_id": "call_log",
+                    "server_id": "tinyllm-devops",
+                    "tool_name": "read_log_excerpt",
+                    "arguments": {"relative_path": log_path},
+                },
+                {
+                    "call_id": "call_run",
+                    "server_id": "tinyllm-devops",
+                    "tool_name": "get_run",
+                    "arguments": {"run_id": f"runs/m9/{run_identifier}"},
+                },
+            ]
+        }
+    )
+    client = _Client()
+    runtime = AgentRuntime(
+        config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
+        store=store,
+        model=_Model([decision, AgentModelDecision(message="done")]),
+        clients={"tinyllm-devops": client},  # type: ignore[dict-item]
+    )
+
+    answer = asyncio.run(runtime.run(run_id, messages=messages))
+
+    assert [name for name, _ in client.calls] == ["get_run", "read_log_excerpt", "query_metrics"]
+    assert client.calls[0][1] == {"run_id": run_identifier}
+    assert answer is not None
+    assert answer.count("[evidence:") == 3
+    assert log_path in answer
+    assert metrics_path in answer

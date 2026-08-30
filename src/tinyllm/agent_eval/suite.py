@@ -12,7 +12,7 @@ import json
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, Literal
 
 from pydantic import ValidationError
 
@@ -57,6 +57,7 @@ LANGUAGE_COUNTS: Final[dict[AgentEvalSplit, dict[AgentEvalLanguage, int]]] = {
     "release": {"en": 112, "zh": 48},
 }
 M9_SUITE_SEED: Final = 20260820
+M9_RELEASE_V2_SEED: Final = 20260831
 _CATEGORY_TEMPLATE_COUNTS: Final[dict[AgentEvalCategory, int]] = {
     "single_tool": 5,
     "no_tool": 2,
@@ -84,6 +85,23 @@ _RUN_IDS: Final = (
     "20260820T013000Z-domain-eval-c3d4e5f6-0003",
     "20260820T014500Z-recovery-smoke-d4e5f6a7-0004",
 )
+_RELEASE_V2_SERVICES: Final = (
+    "data-loader",
+    "nccl-worker",
+    "tokenizer",
+    "checkpoint-loader",
+    "serving-router",
+    "metric-exporter",
+    "lineage-index",
+    "mcp-client",
+)
+_RELEASE_V2_RUN_IDS: Final = (
+    "20260831T010000Z-loader-smoke-e5f6a7b8-1001",
+    "20260831T011500Z-nccl-smoke-f6a7b8c9-1002",
+    "20260831T013000Z-tokenizer-eval-a7b8c9d0-1003",
+    "20260831T014500Z-registry-recovery-b8c9d0e1-1004",
+)
+SuiteGeneration = Literal["v1", "v2"]
 
 
 def _object_schema(
@@ -200,7 +218,12 @@ def _call(
 
 
 def _prompt_and_reference(
-    *, category: AgentEvalCategory, language: AgentEvalLanguage, ordinal: int
+    *,
+    category: AgentEvalCategory,
+    language: AgentEvalLanguage,
+    ordinal: int,
+    services: Sequence[str] = _SERVICES,
+    run_ids: Sequence[str] = _RUN_IDS,
 ) -> tuple[
     str,
     tuple[AgentEvalAllowedTrajectory, ...],
@@ -208,8 +231,8 @@ def _prompt_and_reference(
     AgentEvalFinalAssertions,
     AgentEvalFailureInjection | None,
 ]:
-    service = _SERVICES[ordinal % len(_SERVICES)]
-    run_id = _RUN_IDS[ordinal % len(_RUN_IDS)]
+    service = services[ordinal % len(services)]
+    run_id = run_ids[ordinal % len(run_ids)]
     log_path = f"runs/m9/{run_id}/logs/{service}.log"
     metrics_path = f"runs/m9/{run_id}/metrics.jsonl"
     config_path = f"runs/m9/{run_id}/config.original.yaml"
@@ -550,22 +573,49 @@ def _task(
     category_ordinal: int,
     global_ordinal: int,
     tools: tuple[AgentToolDefinition, ...],
+    generation: SuiteGeneration,
 ) -> AgentEvalTask:
+    services = _RELEASE_V2_SERVICES if generation == "v2" else _SERVICES
+    run_ids = _RELEASE_V2_RUN_IDS if generation == "v2" else _RUN_IDS
     prompt, trajectories, transitions, assertions, failure = _prompt_and_reference(
-        category=category, language=language, ordinal=global_ordinal
+        category=category,
+        language=language,
+        ordinal=global_ordinal,
+        services=services,
+        run_ids=run_ids,
     )
-    incident_id = f"M9{'D' if split == 'dev' else 'R'}-{global_ordinal:04d}"
-    prompt += (
-        f"\n评测环境事件编号：{incident_id}。"
-        if language == "zh"
-        else f"\nEvaluation fixture incident ID: {incident_id}."
+    incident_id = (
+        f"M10R2-{global_ordinal:04d}"
+        if generation == "v2"
+        else f"M9{'D' if split == 'dev' else 'R'}-{global_ordinal:04d}"
     )
+    if generation == "v2":
+        prompt += (
+            f"\n密封评测 v2 环境事件编号：{incident_id}。"
+            if language == "zh"
+            else f"\nSealed evaluation v2 fixture incident ID: {incident_id}."
+        )
+    else:
+        prompt += (
+            f"\n评测环境事件编号：{incident_id}。"
+            if language == "zh"
+            else f"\nEvaluation fixture incident ID: {incident_id}."
+        )
     messages = (AgentMessage(role="user", content=prompt),)
-    initial_state = (
+    base_initial_state = (
         AgentEvalStateEntry(key="environment.artifact-snapshot", value="m9-fixture-v1"),
         AgentEvalStateEntry(key="environment.network", value="disabled"),
         AgentEvalStateEntry(key="policy.arbitrary-shell", value="denied"),
         AgentEvalStateEntry(key="policy.write-approval", value="required"),
+    )
+    initial_state = (
+        base_initial_state
+        if generation == "v1"
+        else (
+            base_initial_state[0],
+            AgentEvalStateEntry(key="environment.suite-generation", value=generation),
+            *base_initial_state[1:],
+        )
     )
     cluster_family = global_ordinal % _CATEGORY_TEMPLATE_COUNTS[category] + 1
     task_id = f"m9-{split}-{language}-{category.replace('_', '-')}-{category_ordinal:03d}"
@@ -594,8 +644,13 @@ def _task(
     )
 
 
-def build_tasks(split: AgentEvalSplit) -> tuple[AgentEvalTask, ...]:
+def build_tasks(
+    split: AgentEvalSplit, *, generation: SuiteGeneration = "v1"
+) -> tuple[AgentEvalTask, ...]:
     """Build one split with exact frozen category and 70/30 language counts."""
+
+    if split == "dev" and generation != "v1":
+        raise ValueError("the public Dev suite remains frozen at v1")
 
     counts = DEV_CATEGORY_COUNTS if split == "dev" else RELEASE_CATEGORY_COUNTS
     language_target = LANGUAGE_COUNTS[split]
@@ -623,6 +678,7 @@ def build_tasks(split: AgentEvalSplit) -> tuple[AgentEvalTask, ...]:
                     category_ordinal=category_ordinal,
                     global_ordinal=global_ordinal,
                     tools=tools,
+                    generation=generation,
                 )
             )
     actual_languages = Counter(task.language for task in tasks)
@@ -654,12 +710,28 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
     items_bytes = render_items(tasks)
     items_sha256 = hashlib.sha256(items_bytes).hexdigest()
     content_sha256 = canonical_json_sha256([task.to_dict() for task in tasks])
+    generations = {
+        entry.value
+        for task in tasks
+        for entry in task.initial_state
+        if entry.key == "environment.suite-generation"
+    }
+    if not generations:
+        generation: SuiteGeneration = "v1"
+    elif generations == {"v1"}:
+        generation = "v1"
+    elif generations == {"v2"}:
+        generation = "v2"
+    else:
+        raise ValueError("Agent evaluation suite mixes generation identities")
+    if split == "dev" and generation != "v1":
+        raise ValueError("the public Dev suite remains frozen at v1")
     return AgentEvalSuiteManifest(
-        suite_version=f"tinyllm-devops-agent-{split}-v1-{content_sha256[:8]}",
+        suite_version=f"tinyllm-devops-agent-{split}-{generation}-{content_sha256[:8]}",
         split=split,
         visibility="public" if split == "dev" else "private",
         license="Apache-2.0",
-        seed=M9_SUITE_SEED,
+        seed=M9_RELEASE_V2_SEED if generation == "v2" else M9_SUITE_SEED,
         item_count=len(tasks),
         category_counts=dict(Counter(task.category for task in tasks)),
         language_counts=dict(Counter(task.language for task in tasks)),
@@ -671,6 +743,8 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
             "TinyLLM-authored public Dev split; Apache-2.0 redistribution allowed."
             if split == "dev"
             else "TinyLLM-authored sealed Release split; excluded from training and public Git."
+            if generation == "v1"
+            else "TinyLLM-authored sealed Release v2 split; excluded from training and public Git."
         ),
     )
 

@@ -230,7 +230,7 @@ class AgentEvalSuiteManifest(StrictSchema):
     """Immutable identity and distribution summary for one M9 suite split."""
 
     schema_version: Literal["1.0"] = "1.0"
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[12]-[0-9a-f]{8}$")
     split: AgentEvalSplit
     visibility: Literal["public", "private"]
     license: Literal["Apache-2.0"]

@@ -55,6 +55,28 @@ def test_dev_and_release_content_is_deterministic_and_disjoint() -> None:
     assert build_manifest(dev_first).content_sha256 != build_manifest(release).content_sha256
 
 
+def test_release_v2_is_deterministic_sealed_and_disjoint_from_v1() -> None:
+    release_v1 = build_tasks("release")
+    release_v2_first = build_tasks("release", generation="v2")
+    release_v2_second = build_tasks("release", generation="v2")
+    manifest = build_manifest(release_v2_first)
+
+    assert render_items(release_v2_first) == render_items(release_v2_second)
+    assert {task.prompt_sha256 for task in release_v1}.isdisjoint(
+        task.prompt_sha256 for task in release_v2_first
+    )
+    assert manifest.suite_version.startswith("tinyllm-devops-agent-release-v2-")
+    assert manifest.seed == 20260831
+    assert manifest.visibility == "private"
+    assert manifest.release_content_sealed is True
+    assert manifest.excluded_from_training is True
+
+
+def test_dev_rejects_release_v2_generation() -> None:
+    with pytest.raises(ValueError, match="Dev suite remains frozen"):
+        build_tasks("dev", generation="v2")
+
+
 def test_bootstrap_clusters_group_one_trajectory_family() -> None:
     families: dict[str, set[tuple[str, ...]]] = {}
     for task in build_tasks("release"):

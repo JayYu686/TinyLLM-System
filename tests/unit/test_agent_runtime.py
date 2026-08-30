@@ -320,3 +320,44 @@ def test_runtime_normalizes_run_id_and_orders_same_decision_by_request(
     assert answer.count("[evidence:") == 3
     assert log_path in answer
     assert metrics_path in answer
+
+
+def test_runtime_repairs_only_file_type_incompatible_read_routes(tmp_path: Path) -> None:
+    store, run_id, _ = _run(tmp_path)
+    log_path = "runs/m9/run-one/logs/trainer.log"
+    metrics_path = "runs/m9/run-one/metrics.jsonl"
+    messages = (
+        AgentMessage(
+            role="user",
+            content=f"Read {log_path} and query {metrics_path}.",
+        ),
+    )
+    decision = AgentModelDecision.model_validate(
+        {
+            "tool_calls": [
+                {
+                    "call_id": "call_log",
+                    "server_id": "tinyllm-devops",
+                    "tool_name": "inspect_config",
+                    "arguments": {"relative_path": log_path},
+                },
+                {
+                    "call_id": "call_metrics",
+                    "server_id": "tinyllm-devops",
+                    "tool_name": "read_log_excerpt",
+                    "arguments": {"relative_path": metrics_path},
+                },
+            ]
+        }
+    )
+    client = _Client()
+    runtime = AgentRuntime(
+        config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
+        store=store,
+        model=_Model([decision, AgentModelDecision(message="done")]),
+        clients={"tinyllm-devops": client},  # type: ignore[dict-item]
+    )
+
+    asyncio.run(runtime.run(run_id, messages=messages))
+
+    assert [name for name, _ in client.calls] == ["read_log_excerpt", "query_metrics"]

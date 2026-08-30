@@ -59,11 +59,20 @@ def _latest_user_text(messages: Sequence[AgentMessage]) -> str:
 
 
 def _normalize_tool_call(call: AgentToolCall, *, user_text: str) -> AgentToolCall:
-    """Repair only a safe representation mismatch backed by the user's exact Run ID."""
+    """Repair only safe representation or file-type routing mismatches."""
 
+    arguments = dict(call.arguments)
+    relative_path = arguments.get("relative_path")
+    if isinstance(relative_path, str):
+        lowered = relative_path.casefold()
+        if lowered.endswith((".log", ".txt")) and call.tool_name == "inspect_config":
+            return call.model_copy(update={"tool_name": "read_log_excerpt"})
+        if (
+            lowered.endswith("/metrics.jsonl") or lowered.endswith("/summary.json")
+        ) and call.tool_name in {"inspect_config", "read_log_excerpt"}:
+            return call.model_copy(update={"tool_name": "query_metrics"})
     if call.tool_name != "get_run":
         return call
-    arguments = dict(call.arguments)
     run_id = arguments.get("run_id")
     if not isinstance(run_id, str) or "/" not in run_id:
         return call

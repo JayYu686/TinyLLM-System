@@ -58,8 +58,11 @@ def test_gateway_agent_model_forwards_optional_evaluation_seed() -> None:
         assert "sufficient authorization for a read" in policy
         assert "ask one concise clarification and make no tool call" in policy
         assert "incident/reference ID is metadata" in policy
-        assert "emit all independent calls together" in policy
-        assert "call only the first operation" in policy
+        assert "search_evidence: policy, documentation, or evidence search" in policy
+        assert "read_log_excerpt: .log/.txt log inspection" in policy
+        assert "literal Run ID or relative path" in policy
+        assert "independent or parallel operations, emit all calls together" in policy
+        assert "emit all calls in the requested order" in policy
         assert "retries are performed by the runtime" in policy
         assert "explicitly repeat the user-requested subject" in policy
         assert "or entity and cite every supporting call" in policy

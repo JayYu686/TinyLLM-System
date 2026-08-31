@@ -24,6 +24,7 @@ from tinyllm.agent_eval.schema import (
     BFCLCategorySpec,
     BFCLCoreProfileConfig,
     BFCLCoreProfileSummary,
+    M10ServingLineageEvidence,
     canonical_json_sha256,
 )
 from tinyllm.agent_eval.scoring import aggregate_results, score_task
@@ -53,6 +54,7 @@ __all__ = [
     "BFCLCategorySpec",
     "BFCLCoreProfileConfig",
     "BFCLCoreProfileSummary",
+    "M10ServingLineageEvidence",
     "canonical_json_sha256",
     "aggregate_results",
     "score_task",

@@ -157,6 +157,15 @@ def assemble_agent_gate(
         raise AgentGateError("Agent gate requires the same sealed 160-task Release suite")
     if not candidate_summary.completed or not parent_summary.completed:
         raise AgentGateError("Agent gate requires complete Candidate and parent evaluations")
+    if (
+        not candidate_bfcl.completed
+        or not parent_bfcl.completed
+        or candidate_bfcl.model_id != candidate_summary.model_id
+        or candidate_bfcl.model_artifact_sha256 != candidate_summary.model_artifact_sha256
+        or parent_bfcl.model_id != parent_summary.model_id
+        or parent_bfcl.model_artifact_sha256 != parent_summary.model_artifact_sha256
+    ):
+        raise AgentGateError("BFCL evidence does not match the Agent evaluation subjects")
     if candidate_summary.git_dirty or parent_summary.git_dirty:
         raise AgentGateError("Agent gate rejects dirty evaluation lineage")
     candidate_items, candidate_items_sha = _load_items(candidate_items_path)
@@ -257,6 +266,8 @@ def assemble_agent_gate(
     parent_categories = {
         item.category: item.accuracy_basis_points for item in parent_bfcl.categories
     }
+    if {item.category for item in candidate_bfcl.categories} != set(parent_categories):
+        raise AgentGateError("Candidate and parent BFCL categories differ")
     category_regressions = [
         item.accuracy_basis_points - parent_categories[item.category]
         for item in candidate_bfcl.categories

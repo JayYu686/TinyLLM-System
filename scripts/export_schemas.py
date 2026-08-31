@@ -50,6 +50,7 @@ from tinyllm.agent_eval import (
     BFCLCategorySpec,
     BFCLCoreProfileConfig,
     BFCLCoreProfileSummary,
+    M10ServingLineageEvidence,
 )
 from tinyllm.benchmark import (
     BenchmarkProfileAggregate,
@@ -407,6 +408,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-agent-gate-check-v1.schema.json": AgentGateCheck,
     "m10-agent-gate-config-v1.schema.json": AgentGateConfig,
     "m10-agent-gate-result-v1.schema.json": AgentGateResult,
+    "m10-serving-lineage-evidence-v1.schema.json": M10ServingLineageEvidence,
     "m8-agent-contract-evidence-v1.schema.json": M8AgentContractEvidence,
     "m8-agent-approval-decision-v1.schema.json": AgentApprovalDecision,
     "m8-agent-approval-request-v1.schema.json": AgentApprovalRequest,

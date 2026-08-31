@@ -1,0 +1,144 @@
+{
+  "additionalProperties": false,
+  "description": "Bind one M10 Candidate to the qualified Gateway and exact-model service runs.",
+  "properties": {
+    "agent_runtime_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Agent Runtime Version",
+      "type": "string"
+    },
+    "bfcl_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Bfcl Summary Sha256",
+      "type": "string"
+    },
+    "candidate_evaluation_subject_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Evaluation Subject Sha256",
+      "type": "string"
+    },
+    "candidate_model_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Model Artifact Sha256",
+      "type": "string"
+    },
+    "candidate_subject_id": {
+      "pattern": "^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$",
+      "title": "Candidate Subject Id",
+      "type": "string"
+    },
+    "dev_evaluation_id": {
+      "pattern": "^m9-agent-eval-[0-9a-f]{8}$",
+      "title": "Dev Evaluation Id",
+      "type": "string"
+    },
+    "dev_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dev Summary Sha256",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "evidence_version": {
+      "const": "m10-serving-lineage-v1",
+      "default": "m10-serving-lineage-v1",
+      "title": "Evidence Version",
+      "type": "string"
+    },
+    "exact_model_serving_valid": {
+      "const": true,
+      "default": true,
+      "title": "Exact Model Serving Valid",
+      "type": "boolean"
+    },
+    "gateway_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Gateway Version",
+      "type": "string"
+    },
+    "platform_gate_id": {
+      "pattern": "^m7-production-gate-[0-9a-f]{8}$",
+      "title": "Platform Gate Id",
+      "type": "string"
+    },
+    "platform_gate_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Platform Gate Sha256",
+      "type": "string"
+    },
+    "platform_gate_status": {
+      "const": "accepted",
+      "default": "accepted",
+      "title": "Platform Gate Status",
+      "type": "string"
+    },
+    "platform_production_eligible": {
+      "const": true,
+      "default": true,
+      "title": "Platform Production Eligible",
+      "type": "boolean"
+    },
+    "release_evaluation_id": {
+      "pattern": "^m9-agent-eval-[0-9a-f]{8}$",
+      "title": "Release Evaluation Id",
+      "type": "string"
+    },
+    "release_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Release Summary Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "accepted",
+      "default": "accepted",
+      "title": "Status",
+      "type": "string"
+    },
+    "validated_bfcl_items": {
+      "const": 1840,
+      "default": 1840,
+      "title": "Validated Bfcl Items",
+      "type": "integer"
+    },
+    "validated_dev_tasks": {
+      "const": 80,
+      "default": 80,
+      "title": "Validated Dev Tasks",
+      "type": "integer"
+    },
+    "validated_release_tasks": {
+      "const": 160,
+      "default": 160,
+      "title": "Validated Release Tasks",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "evaluated_at",
+    "candidate_subject_id",
+    "candidate_evaluation_subject_sha256",
+    "candidate_model_artifact_sha256",
+    "platform_gate_id",
+    "platform_gate_sha256",
+    "dev_evaluation_id",
+    "dev_summary_sha256",
+    "release_evaluation_id",
+    "release_summary_sha256",
+    "bfcl_summary_sha256",
+    "gateway_version",
+    "agent_runtime_version"
+  ],
+  "title": "M10ServingLineageEvidence",
+  "type": "object"
+}

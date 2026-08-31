@@ -164,6 +164,19 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _normalized_adapter_config(path: Path) -> dict[str, object]:
+    """Load PEFT metadata while normalizing unordered target-module serialization."""
+
+    value: object = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise M10LoRAStageRegistrationError("M10 LoRA Adapter configuration is invalid")
+    normalized = dict(value)
+    target_modules = normalized.get("target_modules")
+    if isinstance(target_modules, list) and all(isinstance(item, str) for item in target_modules):
+        normalized["target_modules"] = sorted(target_modules)
+    return normalized
+
+
 def _load_marker(path: Path) -> dict[str, object]:
     try:
         value: object = json.loads(path.read_text(encoding="utf-8"))
@@ -598,7 +611,7 @@ def create_m10_lora_interpolated_adapter(
         )
     early_config = early.adapter_dir / "adapter_config.json"
     late_config = late.adapter_dir / "adapter_config.json"
-    if early_config.read_bytes() != late_config.read_bytes():
+    if _normalized_adapter_config(early_config) != _normalized_adapter_config(late_config):
         raise M10LoRAStageRegistrationError("M10 LoRA interpolation Adapter configs differ")
 
     temporary = output_parent / f".{output_directory.name}.tmp-{uuid.uuid4().hex}"
@@ -688,9 +701,9 @@ def build_m10_lora_interpolated_evaluation_subject(
             late_weight_basis_points=evidence.late_weight_basis_points,
         )
         observed_state = load_file(adapter_dir / "adapter_model.safetensors", device="cpu")
-        early_config = (early.adapter_dir / "adapter_config.json").read_bytes()
-        late_config = (late.adapter_dir / "adapter_config.json").read_bytes()
-        interpolated_config = (adapter_dir / "adapter_config.json").read_bytes()
+        early_config = _normalized_adapter_config(early.adapter_dir / "adapter_config.json")
+        late_config = _normalized_adapter_config(late.adapter_dir / "adapter_config.json")
+        interpolated_config = _normalized_adapter_config(adapter_dir / "adapter_config.json")
     except (
         OSError,
         UnicodeError,

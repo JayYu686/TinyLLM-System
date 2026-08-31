@@ -79,8 +79,8 @@ class M10LoRAAdapterCalibrationEvidence(StrictSchema):
     calibrated_adapter_weights_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     rank: Literal[16] = 16
     source_alpha: Literal[32] = 32
-    calibrated_alpha: Literal[8, 16]
-    relative_scale_basis_points: Literal[2500, 5000]
+    calibrated_alpha: Literal[4, 8, 16]
+    relative_scale_basis_points: Literal[1250, 2500, 5000]
     selection_inputs: Literal["public_dev_and_public_bfcl"] = "public_dev_and_public_bfcl"
 
     @property

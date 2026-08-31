@@ -49,6 +49,14 @@ def test_lora_calibration_evidence_requires_unchanged_weights_and_exact_scale() 
     }
     evidence = M10LoRAAdapterCalibrationEvidence.model_validate(payload)
     assert evidence.expected_scale_basis_points == 5000
+    quarter_strength = M10LoRAAdapterCalibrationEvidence.model_validate(
+        {**payload, "calibrated_alpha": 8, "relative_scale_basis_points": 2500}
+    )
+    assert quarter_strength.expected_scale_basis_points == 2500
+    eighth_strength = M10LoRAAdapterCalibrationEvidence.model_validate(
+        {**payload, "calibrated_alpha": 4, "relative_scale_basis_points": 1250}
+    )
+    assert eighth_strength.expected_scale_basis_points == 1250
     with pytest.raises(ValueError, match="must not change Adapter weights"):
         M10LoRAAdapterCalibrationEvidence.model_validate(
             {**payload, "calibrated_adapter_weights_sha256": "e" * 64}

@@ -106,7 +106,7 @@ def test_m10_lora_general_pass_binds_parent_and_candidate_lineage(
         device_count=lambda: 1,
         get_device_name=lambda _: "NVIDIA GeForce RTX 3090",
     )
-    monkeypatch.setattr(general_module.torch, "cuda", cuda)
+    monkeypatch.setattr("tinyllm.training.m10_lora_general.torch.cuda", cuda)
     monkeypatch.setattr(general_module, "read_git_identity", lambda _: ("a" * 40, False))
     monkeypatch.setattr(general_module, "_resolve_subject", lambda *_: subject)
     monkeypatch.setattr(general_module, "run_general_evaluation", run_general)

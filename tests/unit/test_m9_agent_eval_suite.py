@@ -111,12 +111,11 @@ def test_release_v4_is_deterministic_sealed_and_disjoint_from_prior_generations(
 
 
 def test_release_v5_is_deterministic_sealed_and_disjoint_from_prior_generations() -> None:
-    prior = tuple(
-        task
-        for generation in ("v1", "v2", "v3", "v4")
-        for task in build_tasks(
-            "release", **({} if generation == "v1" else {"generation": generation})
-        )
+    prior = (
+        *build_tasks("release"),
+        *build_tasks("release", generation="v2"),
+        *build_tasks("release", generation="v3"),
+        *build_tasks("release", generation="v4"),
     )
     release_v5_first = build_tasks("release", generation="v5")
     release_v5_second = build_tasks("release", generation="v5")

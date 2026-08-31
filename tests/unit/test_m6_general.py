@@ -214,7 +214,9 @@ def test_m6_general_pass_forwards_verified_lora_adapter(
 
     def run_general(*_args: object, **kwargs: object) -> GeneralBaselineSummary:
         observed.update(kwargs)
-        raw = kwargs["output_path"] / "raw/model"
+        output_path = kwargs["output_path"]
+        assert isinstance(output_path, Path)
+        raw = output_path / "raw/model"
         raw.mkdir(parents=True)
         (raw / "results.json").write_text("{}\n", encoding="utf-8")
         return _general_summary()

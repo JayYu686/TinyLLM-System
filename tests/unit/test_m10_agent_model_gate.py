@@ -5,6 +5,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Final
 
 from tests.unit.test_deployment_registry import _artifact_root, _gate
 from tests.unit.test_m9_agent_gate import _bfcl, _items, _jsonl, _summary
@@ -16,12 +17,12 @@ from tinyllm.agent_eval.schema import AgentEvalSummary, M10ServingLineageEvidenc
 from tinyllm.training.m10_lora_schema import M10LoRAM6RegressionEvidence
 
 NOW = datetime(2026, 8, 31, tzinfo=UTC)
-CANDIDATE = "qwen3-8b-m10-agent-lora-5m-1234abcd"
-PARENT = "qwen3-8b-m9-base-90587dd6"
+CANDIDATE: Final = "qwen3-8b-m10-agent-lora-5m-1234abcd"
+PARENT: Final = "qwen3-8b-m9-base-90587dd6"
 CANDIDATE_ARTIFACT = "c" * 64
 CANDIDATE_RECORD = "e" * 64
-PARENT_ARTIFACT = "81fec43ab8b1f03a158e39e50ec23d99cf8701144e8678aea3ca656d12d08de0"
-PARENT_RECORD = "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
+PARENT_ARTIFACT: Final = "81fec43ab8b1f03a158e39e50ec23d99cf8701144e8678aea3ca656d12d08de0"
+PARENT_RECORD: Final = "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
 
 
 def _write(path: Path, value: object) -> str:

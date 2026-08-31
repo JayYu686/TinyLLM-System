@@ -511,23 +511,24 @@ class AgentRuntime:
         messages = tuple(AgentMessage.model_validate(item) for item in state["messages"])
         observations = list(state.get("observations", []))
         allowed_tools = self._allowed_tools(record.mcp_server_ids)
-        explicit_plan = _explicit_read_plan(messages=messages, allowed_tools=allowed_tools)
-        missing_planned_calls = tuple(
-            call for call in explicit_plan if not _planned_call_observed(call, observations)
+        decision = await self.model.decide(
+            messages=messages,
+            observations=tuple(observations),
+            mode=record.mode,
+            allowed_tools=allowed_tools,
         )
-        if missing_planned_calls:
-            decision = AgentModelDecision(tool_calls=missing_planned_calls)
-        else:
-            decision = await self.model.decide(
-                messages=messages,
-                observations=tuple(observations),
-                mode=record.mode,
-                allowed_tools=allowed_tools,
-            )
         if decision.tool_calls:
             decision = decision.model_copy(
                 update={"tool_calls": _normalize_tool_calls(decision.tool_calls, messages=messages)}
             )
+            explicit_plan = _explicit_read_plan(messages=messages, allowed_tools=allowed_tools)
+            expected_tool_names = {call.tool_name for call in explicit_plan}
+            selected_tool_names = {call.tool_name for call in decision.tool_calls}
+            missing_planned_calls = tuple(
+                call for call in explicit_plan if not _planned_call_observed(call, observations)
+            )
+            if missing_planned_calls and expected_tool_names & selected_tool_names:
+                decision = decision.model_copy(update={"tool_calls": missing_planned_calls})
         self.store.transition(
             run_id,
             status="running",

@@ -358,7 +358,12 @@ def test_runtime_executes_explicit_read_plan_before_model_decision(tmp_path: Pat
     runtime = AgentRuntime(
         config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
         store=store,
-        model=_Model([AgentModelDecision(message="done")]),
+        model=_Model(
+            [
+                _decision("read_log_excerpt", {"relative_path": log_path}),
+                AgentModelDecision(message="done"),
+            ]
+        ),
         clients={"tinyllm-devops": client},  # type: ignore[dict-item]
     )
 
@@ -379,6 +384,30 @@ def test_runtime_executes_explicit_read_plan_before_model_decision(tmp_path: Pat
     assert answer.count("[evidence:") == 3
     assert log_path in answer
     assert metrics_path in answer
+
+
+def test_runtime_does_not_replace_a_model_final_answer_with_explicit_reads(
+    tmp_path: Path,
+) -> None:
+    store, run_id, _ = _run(tmp_path)
+    messages = (
+        AgentMessage(
+            role="user",
+            content="Read runs/m9/run-one/logs/trainer.log and summarize it.",
+        ),
+    )
+    client = _Client()
+    runtime = AgentRuntime(
+        config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
+        store=store,
+        model=_Model([AgentModelDecision(message="I cannot verify the log.")]),
+        clients={"tinyllm-devops": client},  # type: ignore[dict-item]
+    )
+
+    answer = asyncio.run(runtime.run(run_id, messages=messages))
+
+    assert answer == "I cannot verify the log."
+    assert client.calls == []
 
 
 def test_explicit_read_plan_rejects_unrequested_negated_and_write_paths() -> None:

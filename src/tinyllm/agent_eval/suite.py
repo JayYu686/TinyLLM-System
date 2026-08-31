@@ -62,6 +62,7 @@ M9_RELEASE_V3_SEED: Final = 20260901
 M9_RELEASE_V4_SEED: Final = 2026083104
 M9_RELEASE_V5_SEED: Final = 2026083105
 M9_RELEASE_V6_SEED: Final = 2026083106
+M9_RELEASE_V7_SEED: Final = 2026083107
 _CATEGORY_TEMPLATE_COUNTS: Final[dict[AgentEvalCategory, int]] = {
     "single_tool": 5,
     "no_tool": 2,
@@ -169,7 +170,23 @@ _RELEASE_V6_RUN_IDS: Final = (
     "20260831T163000Z-token-audit-e3f4a5b6-5003",
     "20260831T164500Z-attestation-audit-f4a5b6c7-5004",
 )
-SuiteGeneration = Literal["v1", "v2", "v3", "v4", "v5", "v6"]
+_RELEASE_V7_SERVICES: Final = (
+    "gradient-auditor",
+    "numa-prober",
+    "rng-custodian",
+    "checkpoint-committer",
+    "queue-governor",
+    "approval-broker",
+    "trace-linker",
+    "lineage-notary",
+)
+_RELEASE_V7_RUN_IDS: Final = (
+    "20260831T180000Z-gradient-audit-a5b6c7d8-6001",
+    "20260831T181500Z-numa-probe-b6c7d8e9-6002",
+    "20260831T183000Z-rng-audit-c7d8e9f0-6003",
+    "20260831T184500Z-lineage-audit-d8e9f0a1-6004",
+)
+SuiteGeneration = Literal["v1", "v2", "v3", "v4", "v5", "v6", "v7"]
 
 
 def _object_schema(
@@ -654,6 +671,8 @@ def _task(
         if generation == "v5"
         else _RELEASE_V6_SERVICES
         if generation == "v6"
+        else _RELEASE_V7_SERVICES
+        if generation == "v7"
         else _SERVICES
     )
     run_ids = (
@@ -667,6 +686,8 @@ def _task(
         if generation == "v5"
         else _RELEASE_V6_RUN_IDS
         if generation == "v6"
+        else _RELEASE_V7_RUN_IDS
+        if generation == "v7"
         else _RUN_IDS
     )
     prompt, trajectories, transitions, assertions, failure = _prompt_and_reference(
@@ -687,6 +708,8 @@ def _task(
         if generation == "v5"
         else f"M10R6-{global_ordinal:04d}"
         if generation == "v6"
+        else f"M10R7-{global_ordinal:04d}"
+        if generation == "v7"
         else f"M9{'D' if split == 'dev' else 'R'}-{global_ordinal:04d}"
     )
     if generation == "v2":
@@ -718,6 +741,12 @@ def _task(
             f"\n独立密封评测 v6 取证编号：{incident_id}。"
             if language == "zh"
             else f"\nIndependent sealed Release v6 evidence ID: {incident_id}."
+        )
+    elif generation == "v7":
+        prompt += (
+            f"\n独立密封评测 v7 验证编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v7 verification ID: {incident_id}."
         )
     else:
         prompt += (
@@ -854,6 +883,8 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
         generation = "v5"
     elif generations == {"v6"}:
         generation = "v6"
+    elif generations == {"v7"}:
+        generation = "v7"
     else:
         raise ValueError("Agent evaluation suite mixes generation identities")
     if split == "dev" and generation != "v1":
@@ -870,6 +901,7 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
             "v4": M9_RELEASE_V4_SEED,
             "v5": M9_RELEASE_V5_SEED,
             "v6": M9_RELEASE_V6_SEED,
+            "v7": M9_RELEASE_V7_SEED,
         }[generation],
         item_count=len(tasks),
         category_counts=dict(Counter(task.category for task in tasks)),

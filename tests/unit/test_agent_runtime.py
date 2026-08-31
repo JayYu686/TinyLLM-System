@@ -123,6 +123,37 @@ def test_runtime_executes_read_tool_then_returns_grounded_answer(tmp_path: Path)
     ]
 
 
+def test_strict_runtime_reprompts_without_tools_when_intent_is_not_explicit(
+    tmp_path: Path,
+) -> None:
+    store, run_id, _ = _run(tmp_path)
+    messages = (
+        AgentMessage(
+            role="user",
+            content="Explain DDP and FSDP2 in two sentences; do not use tools.",
+        ),
+    )
+    client = _Client()
+    config = load_agent_config(Path("configs/agent/m10_devops_strict.yaml"))
+    runtime = AgentRuntime(
+        config=config,
+        store=store,
+        model=_Model(
+            [
+                _decision("search_evidence", {"query": "DDP"}),
+                AgentModelDecision(message="DDP replicates; FSDP2 shards."),
+            ]
+        ),
+        clients={"tinyllm-devops": client},  # type: ignore[dict-item]
+    )
+
+    answer = asyncio.run(runtime.run(run_id, messages=messages))
+
+    assert answer == "DDP replicates; FSDP2 shards."
+    assert client.calls == []
+    assert all(event.event_type != "tool.call.proposed" for event in store.events_after(run_id))
+
+
 def test_runtime_suspends_write_and_resumes_only_after_approval(tmp_path: Path) -> None:
     store, run_id, messages = _run(tmp_path)
     client = _Client()
@@ -518,3 +549,29 @@ def test_explicit_read_plan_rejects_unrequested_negated_and_write_paths() -> Non
     )
 
     assert _explicit_read_plan(messages=messages, allowed_tools=allowed) == ()
+
+
+def test_explicit_plan_compiles_only_sandbox_scoped_config_write() -> None:
+    path = "runs/m9/run-one/config.original.yaml"
+    messages = (
+        AgentMessage(
+            role="user",
+            content=(
+                f"Change learning_rate in {path} to 1e-5, writing only an Agent sandbox copy."
+            ),
+        ),
+    )
+    plan = _explicit_read_plan(
+        messages=messages,
+        allowed_tools=("tinyllm-devops.apply_sandbox_config_patch",),
+    )
+
+    assert [(call.tool_name, call.arguments) for call in plan] == [
+        (
+            "apply_sandbox_config_patch",
+            {
+                "source_relative_path": path,
+                "updates": {"learning_rate": "1e-5"},
+            },
+        )
+    ]

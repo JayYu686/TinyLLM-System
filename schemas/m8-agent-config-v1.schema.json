@@ -204,6 +204,11 @@
       "title": "Read Retry Delays Ms",
       "type": "array"
     },
+    "require_explicit_tool_intent": {
+      "default": false,
+      "title": "Require Explicit Tool Intent",
+      "type": "boolean"
+    },
     "run_timeout_seconds": {
       "default": 120.0,
       "exclusiveMinimum": 0,

@@ -289,6 +289,33 @@ def _explicit_metric_arguments(text: str) -> dict[str, object]:
     return arguments
 
 
+def _explicit_patch_arguments(text: str, path: str) -> dict[str, object] | None:
+    """Compile one literal config update only when sandbox scope is explicit."""
+
+    folded = text.casefold()
+    if "sandbox" not in folded and "沙箱" not in text:
+        return None
+    escaped_path = re.escape(path)
+    match = re.search(
+        rf"(?:change|update|set)\s+([A-Za-z_][A-Za-z0-9_.-]*)\s+in\s+"
+        rf"{escaped_path}\s+to\s+([^\s,;]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if match is None:
+        match = re.search(
+            rf"(?:将|把)\s*{escaped_path}\s*(?:中|里的)\s*"
+            rf"([A-Za-z_][A-Za-z0-9_.-]*)\s*(?:改为|设为)\s*([^\s，。；]+)",
+            text,
+        )
+    if match is None:
+        return None
+    return {
+        "source_relative_path": path,
+        "updates": {match.group(1): match.group(2).rstrip(".,。")},
+    }
+
+
 def _explicit_read_plan(
     *, messages: Sequence[AgentMessage], allowed_tools: Sequence[str]
 ) -> tuple[AgentToolCall, ...]:
@@ -348,12 +375,30 @@ def _explicit_read_plan(
     bounds = _explicit_line_bounds(user_text)
     metric_arguments = _explicit_metric_arguments(user_text)
     for match in _RESOURCE_PATH.finditer(user_text):
-        if not _explicit_read_requested(user_text, match.start()):
-            continue
         path = match.group(0).rstrip(".,;:!?)]}，。；：！？）】")
         lowered = path.casefold()
         selected_tool_name: str | None = None
         arguments: dict[str, Any] = {"relative_path": path}
+        patch_server_id = tool_servers.get("apply_sandbox_config_patch")
+        patch_arguments = (
+            _explicit_patch_arguments(user_text, path)
+            if write_request and lowered.endswith((".yaml", ".yml", ".toml", "/config.json"))
+            else None
+        )
+        if patch_server_id is not None and patch_arguments is not None:
+            positioned.append(
+                (
+                    match.start(),
+                    _planned_call(
+                        server_id=patch_server_id,
+                        tool_name="apply_sandbox_config_patch",
+                        arguments=patch_arguments,
+                    ),
+                )
+            )
+            continue
+        if not _explicit_read_requested(user_text, match.start()):
+            continue
         if lowered.endswith((".log", ".txt")):
             selected_tool_name = "read_log_excerpt"
             if bounds is not None:
@@ -596,10 +641,23 @@ class AgentRuntime:
             decision = decision.model_copy(
                 update={"tool_calls": _normalize_tool_calls(decision.tool_calls, messages=messages)}
             )
-            expected_tool_names = {call.tool_name for call in explicit_plan}
-            selected_tool_names = {call.tool_name for call in decision.tool_calls}
-            if missing_planned_calls and expected_tool_names & selected_tool_names:
+            if self.config.require_explicit_tool_intent and missing_planned_calls:
                 decision = decision.model_copy(update={"tool_calls": missing_planned_calls})
+            elif self.config.require_explicit_tool_intent:
+                decision = await self.model.decide(
+                    messages=messages,
+                    observations=tuple(observations),
+                    mode=record.mode,
+                    allowed_tools=(),
+                )
+                if decision.tool_calls:
+                    self._fail(run_id, "AGENT_EXPLICIT_INTENT_REQUIRED")
+                    return {"failed": True}
+            else:
+                expected_tool_names = {call.tool_name for call in explicit_plan}
+                selected_tool_names = {call.tool_name for call in decision.tool_calls}
+                if missing_planned_calls and expected_tool_names & selected_tool_names:
+                    decision = decision.model_copy(update={"tool_calls": missing_planned_calls})
         elif missing_planned_calls:
             decision = AgentModelDecision(tool_calls=missing_planned_calls)
         if decision.tool_calls and _unsafe_tool_calls(decision.tool_calls):

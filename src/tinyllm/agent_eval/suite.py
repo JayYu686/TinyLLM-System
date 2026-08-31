@@ -58,6 +58,7 @@ LANGUAGE_COUNTS: Final[dict[AgentEvalSplit, dict[AgentEvalLanguage, int]]] = {
 }
 M9_SUITE_SEED: Final = 20260820
 M9_RELEASE_V2_SEED: Final = 20260831
+M9_RELEASE_V3_SEED: Final = 20260901
 _CATEGORY_TEMPLATE_COUNTS: Final[dict[AgentEvalCategory, int]] = {
     "single_tool": 5,
     "no_tool": 2,
@@ -101,7 +102,23 @@ _RELEASE_V2_RUN_IDS: Final = (
     "20260831T013000Z-tokenizer-eval-a7b8c9d0-1003",
     "20260831T014500Z-registry-recovery-b8c9d0e1-1004",
 )
-SuiteGeneration = Literal["v1", "v2"]
+_RELEASE_V3_SERVICES: Final = (
+    "gradient-accumulator",
+    "shard-coordinator",
+    "batch-sampler",
+    "checkpoint-verifier",
+    "request-scheduler",
+    "tool-policy",
+    "trace-exporter",
+    "artifact-resolver",
+)
+_RELEASE_V3_RUN_IDS: Final = (
+    "20260901T020000Z-gradient-audit-c9d0e1f2-2001",
+    "20260901T021500Z-shard-audit-d0e1f2a3-2002",
+    "20260901T023000Z-sampler-audit-e1f2a3b4-2003",
+    "20260901T024500Z-artifact-audit-f2a3b4c5-2004",
+)
+SuiteGeneration = Literal["v1", "v2", "v3"]
 
 
 def _object_schema(
@@ -575,8 +592,20 @@ def _task(
     tools: tuple[AgentToolDefinition, ...],
     generation: SuiteGeneration,
 ) -> AgentEvalTask:
-    services = _RELEASE_V2_SERVICES if generation == "v2" else _SERVICES
-    run_ids = _RELEASE_V2_RUN_IDS if generation == "v2" else _RUN_IDS
+    services = (
+        _RELEASE_V2_SERVICES
+        if generation == "v2"
+        else _RELEASE_V3_SERVICES
+        if generation == "v3"
+        else _SERVICES
+    )
+    run_ids = (
+        _RELEASE_V2_RUN_IDS
+        if generation == "v2"
+        else _RELEASE_V3_RUN_IDS
+        if generation == "v3"
+        else _RUN_IDS
+    )
     prompt, trajectories, transitions, assertions, failure = _prompt_and_reference(
         category=category,
         language=language,
@@ -587,6 +616,8 @@ def _task(
     incident_id = (
         f"M10R2-{global_ordinal:04d}"
         if generation == "v2"
+        else f"M10R3-{global_ordinal:04d}"
+        if generation == "v3"
         else f"M9{'D' if split == 'dev' else 'R'}-{global_ordinal:04d}"
     )
     if generation == "v2":
@@ -594,6 +625,12 @@ def _task(
             f"\n密封评测 v2 环境事件编号：{incident_id}。"
             if language == "zh"
             else f"\nSealed evaluation v2 fixture incident ID: {incident_id}."
+        )
+    elif generation == "v3":
+        prompt += (
+            f"\n独立密封评测 v3 审计编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v3 audit ID: {incident_id}."
         )
     else:
         prompt += (
@@ -722,6 +759,8 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
         generation = "v1"
     elif generations == {"v2"}:
         generation = "v2"
+    elif generations == {"v3"}:
+        generation = "v3"
     else:
         raise ValueError("Agent evaluation suite mixes generation identities")
     if split == "dev" and generation != "v1":
@@ -731,7 +770,13 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
         split=split,
         visibility="public" if split == "dev" else "private",
         license="Apache-2.0",
-        seed=M9_RELEASE_V2_SEED if generation == "v2" else M9_SUITE_SEED,
+        seed=(
+            M9_RELEASE_V2_SEED
+            if generation == "v2"
+            else M9_RELEASE_V3_SEED
+            if generation == "v3"
+            else M9_SUITE_SEED
+        ),
         item_count=len(tasks),
         category_counts=dict(Counter(task.category for task in tasks)),
         language_counts=dict(Counter(task.language for task in tasks)),
@@ -744,7 +789,10 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
             if split == "dev"
             else "TinyLLM-authored sealed Release split; excluded from training and public Git."
             if generation == "v1"
-            else "TinyLLM-authored sealed Release v2 split; excluded from training and public Git."
+            else (
+                f"TinyLLM-authored sealed Release {generation} split; excluded from training "
+                "and public Git."
+            )
         ),
     )
 

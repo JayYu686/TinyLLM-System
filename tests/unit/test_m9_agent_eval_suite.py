@@ -72,9 +72,27 @@ def test_release_v2_is_deterministic_sealed_and_disjoint_from_v1() -> None:
     assert manifest.excluded_from_training is True
 
 
-def test_dev_rejects_release_v2_generation() -> None:
+def test_release_v3_is_deterministic_sealed_and_disjoint_from_prior_generations() -> None:
+    release_v1 = build_tasks("release")
+    release_v2 = build_tasks("release", generation="v2")
+    release_v3_first = build_tasks("release", generation="v3")
+    release_v3_second = build_tasks("release", generation="v3")
+    manifest = build_manifest(release_v3_first)
+
+    assert render_items(release_v3_first) == render_items(release_v3_second)
+    prior_hashes = {task.prompt_sha256 for task in (*release_v1, *release_v2)}
+    assert prior_hashes.isdisjoint(task.prompt_sha256 for task in release_v3_first)
+    assert manifest.suite_version.startswith("tinyllm-devops-agent-release-v3-")
+    assert manifest.seed == 20260901
+    assert manifest.visibility == "private"
+    assert manifest.release_content_sealed is True
+    assert manifest.excluded_from_training is True
+
+
+@pytest.mark.parametrize("generation", ["v2", "v3"])
+def test_dev_rejects_release_only_generation(generation: str) -> None:
     with pytest.raises(ValueError, match="Dev suite remains frozen"):
-        build_tasks("dev", generation="v2")
+        build_tasks("dev", generation=generation)  # type: ignore[arg-type]
 
 
 def test_bootstrap_clusters_group_one_trajectory_family() -> None:

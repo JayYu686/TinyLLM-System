@@ -21,7 +21,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--release-generation",
-        choices=("v1", "v2"),
+        choices=("v1", "v2", "v3"),
         default="v1",
         help="Versioned private Release content generation.",
     )

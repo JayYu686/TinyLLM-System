@@ -295,6 +295,7 @@ def m10_lora_stage_evaluation_subject_id(
     memory_probe_sha256: str,
     checkpoint_export_evidence_sha256: str | None = None,
     adapter_calibration_evidence_sha256: str | None = None,
+    adapter_interpolation_evidence_sha256: str | None = None,
 ) -> str:
     """Derive one immutable M10 Agent LoRA stage identity."""
 
@@ -321,6 +322,8 @@ def m10_lora_stage_evaluation_subject_id(
         inputs["checkpoint_export_evidence_sha256"] = checkpoint_export_evidence_sha256
     if adapter_calibration_evidence_sha256 is not None:
         inputs["adapter_calibration_evidence_sha256"] = adapter_calibration_evidence_sha256
+    if adapter_interpolation_evidence_sha256 is not None:
+        inputs["adapter_interpolation_evidence_sha256"] = adapter_interpolation_evidence_sha256
     identity = _canonical_sha256(inputs)
     return f"qwen3-8b-m10-agent-lora-{stage_label}-{identity[:8]}"
 
@@ -357,6 +360,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
     memory_probe_sha256: str = Field(pattern=SHA256_PATTERN)
     checkpoint_export_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     adapter_calibration_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_interpolation_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[
         "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
@@ -405,6 +409,13 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             raise ValueError(
                 "intermediate M10 Agent LoRA subjects require checkpoint export evidence"
             )
+        if (
+            self.adapter_calibration_evidence_sha256 is not None
+            and self.adapter_interpolation_evidence_sha256 is not None
+        ):
+            raise ValueError("M10 Agent LoRA subject cannot combine Adapter derivations")
+        if self.adapter_interpolation_evidence_sha256 is not None and expected_tokens != 5_000_000:
+            raise ValueError("M10 Agent LoRA interpolation must derive a 5M subject")
         expected_checkpoint = f"checkpoint-tokens-{expected_tokens:010d}"
         expected_effective = effective_artifact_sha256(
             self.base_model_artifact_sha256, self.adapter_artifact_sha256
@@ -430,6 +441,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             memory_probe_sha256=self.memory_probe_sha256,
             checkpoint_export_evidence_sha256=self.checkpoint_export_evidence_sha256,
             adapter_calibration_evidence_sha256=self.adapter_calibration_evidence_sha256,
+            adapter_interpolation_evidence_sha256=self.adapter_interpolation_evidence_sha256,
         )
         if self.subject_id != expected_id:
             raise ValueError("M10 Agent LoRA subject ID differs from immutable inputs")

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 import pytest
+import torch
 
 from tinyllm.deployment import (
     DeploymentError,
@@ -16,7 +17,12 @@ from tinyllm.deployment import (
     resolve_m10_lora_stage_evaluation_subject,
     resolve_serving_model,
 )
-from tinyllm.deployment.m10_lora_stage import M10LoRAAdapterCalibrationEvidence
+from tinyllm.deployment.m10_lora_stage import (
+    M10LoRAAdapterCalibrationEvidence,
+    M10LoRAAdapterInterpolationEvidence,
+    M10LoRAStageRegistrationError,
+    _interpolate_adapter_states,
+)
 from tinyllm.evaluation import M6ModelIdentity
 
 NOW = datetime(2026, 8, 25, tzinfo=UTC)
@@ -65,6 +71,34 @@ def test_lora_calibration_evidence_requires_unchanged_weights_and_exact_scale() 
         M10LoRAAdapterCalibrationEvidence.model_validate(
             {**payload, "relative_scale_basis_points": 2500}
         )
+
+
+def test_lora_interpolation_evidence_and_tensor_math_are_exact() -> None:
+    payload = {
+        "early_subject_id": "qwen3-8b-m10-agent-lora-1m-1234abcd",
+        "early_evaluation_subject_sha256": "a" * 64,
+        "early_adapter_artifact_sha256": "b" * 64,
+        "late_subject_id": "qwen3-8b-m10-agent-lora-5m-2345bcde",
+        "late_evaluation_subject_sha256": "c" * 64,
+        "late_adapter_artifact_sha256": "d" * 64,
+        "training_run_id": "m10-lora-unit-run",
+        "early_weight_basis_points": 2500,
+        "late_weight_basis_points": 7500,
+        "interpolated_adapter_artifact_sha256": "e" * 64,
+    }
+    evidence = M10LoRAAdapterInterpolationEvidence.model_validate(payload)
+    assert evidence.early_weight_basis_points + evidence.late_weight_basis_points == 10_000
+    with pytest.raises(ValueError, match="must sum to 10000"):
+        M10LoRAAdapterInterpolationEvidence.model_validate(
+            {**payload, "late_weight_basis_points": 2500}
+        )
+
+    early = {"layer": torch.tensor([0.0, 4.0], dtype=torch.bfloat16)}
+    late = {"layer": torch.tensor([4.0, 8.0], dtype=torch.bfloat16)}
+    interpolated = _interpolate_adapter_states(early, late, late_weight_basis_points=7500)
+    assert torch.equal(interpolated["layer"], torch.tensor([3.0, 7.0], dtype=torch.bfloat16))
+    with pytest.raises(M10LoRAStageRegistrationError, match="inputs are incompatible"):
+        _interpolate_adapter_states(early, {}, late_weight_basis_points=7500)
 
 
 def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluationSubjectRecord:

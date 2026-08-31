@@ -195,6 +195,19 @@
       "title": "Adapter Files",
       "type": "array"
     },
+    "adapter_interpolation_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Interpolation Evidence Sha256"
+    },
     "base_model_artifact_sha256": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Base Model Artifact Sha256",

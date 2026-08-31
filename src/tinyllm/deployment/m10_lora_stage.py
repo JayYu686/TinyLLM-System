@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shutil
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
+import torch
 from pydantic import Field, ValidationError, model_validator
+from torch import Tensor
 
 from tinyllm.deployment.evaluation_subject import (
     M9EvaluationSubjectRecord,
@@ -96,8 +101,59 @@ class M10LoRAAdapterCalibrationEvidence(StrictSchema):
         return self
 
 
+class M10LoRAAdapterInterpolationEvidence(StrictSchema):
+    """Lineage for one weight-space interpolation of same-Run LoRA checkpoints."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    interpolation_version: Literal["m10-lora-checkpoint-interpolation-v1"] = (
+        "m10-lora-checkpoint-interpolation-v1"
+    )
+    early_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-1m-[0-9a-f]{8}$")
+    early_evaluation_subject_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    early_adapter_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    late_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$")
+    late_evaluation_subject_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    late_adapter_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    training_run_id: str = Field(min_length=1, max_length=200)
+    early_weight_basis_points: Literal[2500, 5000, 7500]
+    late_weight_basis_points: Literal[2500, 5000, 7500]
+    interpolation_dtype: Literal["float32_accumulation_source_dtype_output"] = (
+        "float32_accumulation_source_dtype_output"
+    )
+    interpolated_adapter_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    selection_inputs: Literal["public_dev_and_public_bfcl"] = "public_dev_and_public_bfcl"
+
+    @model_validator(mode="after")
+    def validate_weights(self) -> M10LoRAAdapterInterpolationEvidence:
+        if self.early_weight_basis_points + self.late_weight_basis_points != 10_000:
+            raise ValueError("M10 LoRA interpolation weights must sum to 10000 basis points")
+        return self
+
+
 class M10LoRAStageRegistrationError(RuntimeError):
     """Raised when one LoRA stage has incomplete or drifting lineage."""
+
+
+def _interpolate_adapter_states(
+    early: dict[str, Tensor], late: dict[str, Tensor], *, late_weight_basis_points: int
+) -> dict[str, Tensor]:
+    """Interpolate identical Adapter state dictionaries with float32 accumulation."""
+
+    if late_weight_basis_points not in {2500, 5000, 7500} or set(early) != set(late):
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation inputs are incompatible")
+    early_weight = 10_000 - late_weight_basis_points
+    result: dict[str, Tensor] = {}
+    for key in sorted(early):
+        early_tensor = early[key]
+        late_tensor = late[key]
+        if early_tensor.shape != late_tensor.shape or early_tensor.dtype != late_tensor.dtype:
+            raise M10LoRAStageRegistrationError("M10 LoRA interpolation tensor topology differs")
+        result[key] = (
+            early_tensor.float()
+            .mul(early_weight / 10_000)
+            .add(late_tensor.float(), alpha=late_weight_basis_points / 10_000)
+        ).to(dtype=early_tensor.dtype)
+    return result
 
 
 def _sha256_file(path: Path) -> str:
@@ -491,6 +547,241 @@ def register_m10_lora_checkpoint_evaluation_subject(
         ) from exc
 
 
+def create_m10_lora_interpolated_adapter(
+    *,
+    artifact_root: Path,
+    early_subject_id: str,
+    late_subject_id: str,
+    output_directory: Path,
+    late_weight_basis_points: Literal[2500, 5000, 7500],
+) -> M10LoRAAdapterInterpolationEvidence:
+    """Create one content-addressable same-Run checkpoint interpolation artifact."""
+
+    from safetensors.torch import load_file, save_file  # type: ignore[import-not-found]
+
+    if (
+        not artifact_root.is_absolute()
+        or artifact_root.is_symlink()
+        or not output_directory.is_absolute()
+        or output_directory.is_symlink()
+        or output_directory.exists()
+    ):
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation paths are unsafe")
+    try:
+        root = artifact_root.resolve(strict=True)
+        output_parent = output_directory.parent.resolve(strict=True)
+        early_path = root / "registry" / "evaluation-subjects" / early_subject_id / "model.json"
+        late_path = root / "registry" / "evaluation-subjects" / late_subject_id / "model.json"
+        early_payload = early_path.read_bytes()
+        late_payload = late_path.read_bytes()
+        early = M10LoRAStageEvaluationSubjectRecord.model_validate_json(early_payload)
+        late = M10LoRAStageEvaluationSubjectRecord.model_validate_json(late_payload)
+        resolve_m10_lora_stage_evaluation_subject(root, early_subject_id)
+        resolve_m10_lora_stage_evaluation_subject(root, late_subject_id)
+    except (OSError, ValidationError, ValueError, DeploymentError) as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation sources are invalid") from exc
+    if not output_parent.is_relative_to(root):
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation escapes the Artifact Store")
+    if (
+        early.kind != "m10_agent_lora_1m"
+        or late.kind != "m10_agent_lora_5m"
+        or early.model.training_run_id is None
+        or early.model.training_run_id != late.model.training_run_id
+        or early.model.training_config_sha256 != late.model.training_config_sha256
+        or early.model.dataset_version != late.model.dataset_version
+        or early.model.dataset_manifest_sha256 != late.model.dataset_manifest_sha256
+        or early.base_model_artifact_sha256 != late.base_model_artifact_sha256
+        or early.tokenizer_artifact_sha256 != late.tokenizer_artifact_sha256
+    ):
+        raise M10LoRAStageRegistrationError(
+            "M10 LoRA interpolation requires compatible 1M and 5M same-Run sources"
+        )
+    early_config = early.adapter_dir / "adapter_config.json"
+    late_config = late.adapter_dir / "adapter_config.json"
+    if early_config.read_bytes() != late_config.read_bytes():
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation Adapter configs differ")
+
+    temporary = output_parent / f".{output_directory.name}.tmp-{uuid.uuid4().hex}"
+    temporary.mkdir()
+    try:
+        shutil.copyfile(late_config, temporary / "adapter_config.json")
+        interpolated = _interpolate_adapter_states(
+            load_file(early.adapter_dir / "adapter_model.safetensors", device="cpu"),
+            load_file(late.adapter_dir / "adapter_model.safetensors", device="cpu"),
+            late_weight_basis_points=late_weight_basis_points,
+        )
+        save_file(
+            interpolated,
+            temporary / "adapter_model.safetensors",
+            metadata={"format": "pt"},
+        )
+        adapter_sha256 = evaluation_artifact_sha256(temporary, ADAPTER_FILES)
+        evidence = M10LoRAAdapterInterpolationEvidence(
+            early_subject_id=early.subject_id,
+            early_evaluation_subject_sha256=hashlib.sha256(early_payload).hexdigest(),
+            early_adapter_artifact_sha256=early.adapter_artifact_sha256,
+            late_subject_id=late.subject_id,
+            late_evaluation_subject_sha256=hashlib.sha256(late_payload).hexdigest(),
+            late_adapter_artifact_sha256=late.adapter_artifact_sha256,
+            training_run_id=late.model.training_run_id,
+            early_weight_basis_points=cast(
+                Literal[2500, 5000, 7500], 10_000 - late_weight_basis_points
+            ),
+            late_weight_basis_points=late_weight_basis_points,
+            interpolated_adapter_artifact_sha256=adapter_sha256,
+        )
+        (temporary / "interpolation.json").write_text(
+            json.dumps(
+                evidence.to_dict(),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, output_directory)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    return evidence
+
+
+def build_m10_lora_interpolated_evaluation_subject(
+    *, artifact_root: Path, interpolated_adapter_dir: Path
+) -> M10LoRAStageEvaluationSubjectRecord:
+    """Validate and bind one same-Run checkpoint interpolation as an Evaluation subject."""
+
+    from safetensors.torch import load_file
+
+    if (
+        not artifact_root.is_absolute()
+        or artifact_root.is_symlink()
+        or not interpolated_adapter_dir.is_absolute()
+        or interpolated_adapter_dir.is_symlink()
+    ):
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation registration paths are unsafe")
+    try:
+        root = artifact_root.resolve(strict=True)
+        adapter_dir = interpolated_adapter_dir.resolve(strict=True)
+        evidence_path = adapter_dir / "interpolation.json"
+        evidence = M10LoRAAdapterInterpolationEvidence.model_validate_json(
+            evidence_path.read_bytes()
+        )
+        evidence_sha256 = _sha256_file(evidence_path)
+        early_path = (
+            root / "registry" / "evaluation-subjects" / evidence.early_subject_id / "model.json"
+        )
+        late_path = (
+            root / "registry" / "evaluation-subjects" / evidence.late_subject_id / "model.json"
+        )
+        early_payload = early_path.read_bytes()
+        late_payload = late_path.read_bytes()
+        early = M10LoRAStageEvaluationSubjectRecord.model_validate_json(early_payload)
+        late = M10LoRAStageEvaluationSubjectRecord.model_validate_json(late_payload)
+        early_resolved = resolve_m10_lora_stage_evaluation_subject(root, early.subject_id)
+        late_resolved = resolve_m10_lora_stage_evaluation_subject(root, late.subject_id)
+        interpolated_sha256 = evaluation_artifact_sha256(adapter_dir, ADAPTER_FILES)
+        expected_state = _interpolate_adapter_states(
+            load_file(early.adapter_dir / "adapter_model.safetensors", device="cpu"),
+            load_file(late.adapter_dir / "adapter_model.safetensors", device="cpu"),
+            late_weight_basis_points=evidence.late_weight_basis_points,
+        )
+        observed_state = load_file(adapter_dir / "adapter_model.safetensors", device="cpu")
+        early_config = (early.adapter_dir / "adapter_config.json").read_bytes()
+        late_config = (late.adapter_dir / "adapter_config.json").read_bytes()
+        interpolated_config = (adapter_dir / "adapter_config.json").read_bytes()
+    except (
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        ValidationError,
+        ValueError,
+        DeploymentError,
+        RuntimeError,
+    ) as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation evidence is invalid") from exc
+    if not adapter_dir.is_relative_to(root):
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation escapes the Artifact Store")
+    identities = (
+        (early.subject_id, evidence.early_subject_id),
+        (late.subject_id, evidence.late_subject_id),
+        (hashlib.sha256(early_payload).hexdigest(), evidence.early_evaluation_subject_sha256),
+        (hashlib.sha256(late_payload).hexdigest(), evidence.late_evaluation_subject_sha256),
+        (early.adapter_artifact_sha256, evidence.early_adapter_artifact_sha256),
+        (late.adapter_artifact_sha256, evidence.late_adapter_artifact_sha256),
+        (late.model.training_run_id, evidence.training_run_id),
+        (interpolated_sha256, evidence.interpolated_adapter_artifact_sha256),
+        (early_resolved.model_artifact_sha256, early.effective_artifact_sha256),
+        (late_resolved.model_artifact_sha256, late.effective_artifact_sha256),
+        (early_config, late_config),
+        (late_config, interpolated_config),
+    )
+    if any(actual != expected for actual, expected in identities):
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation lineage differs")
+    if set(expected_state) != set(observed_state) or any(
+        not torch.equal(expected_state[key], observed_state[key]) for key in expected_state
+    ):
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolated weights differ from evidence")
+
+    effective_sha256 = effective_artifact_sha256(
+        late.base_model_artifact_sha256, interpolated_sha256
+    )
+    model = late.model.model_copy(
+        update={
+            "model_artifact_sha256": effective_sha256,
+            "adapter_sha256": interpolated_sha256,
+        }
+    )
+    subject_id = m10_lora_stage_evaluation_subject_id(
+        model=model,
+        base_model_artifact_sha256=late.base_model_artifact_sha256,
+        tokenizer_artifact_sha256=late.tokenizer_artifact_sha256,
+        adapter_artifact_sha256=interpolated_sha256,
+        source_result_sha256=late.source_result_sha256,
+        checkpoint_manifest_sha256=late.checkpoint_manifest_sha256,
+        memory_probe_sha256=late.memory_probe_sha256,
+        adapter_interpolation_evidence_sha256=evidence_sha256,
+    )
+    return M10LoRAStageEvaluationSubjectRecord(
+        **late.model_dump(
+            mode="python",
+            exclude={
+                "subject_id",
+                "created_at",
+                "model",
+                "adapter_dir",
+                "adapter_artifact_sha256",
+                "effective_artifact_sha256",
+                "adapter_calibration_evidence_sha256",
+                "adapter_interpolation_evidence_sha256",
+            },
+        ),
+        subject_id=subject_id,
+        created_at=datetime.now(UTC),
+        model=model,
+        adapter_dir=adapter_dir,
+        adapter_artifact_sha256=interpolated_sha256,
+        effective_artifact_sha256=effective_sha256,
+        adapter_interpolation_evidence_sha256=evidence_sha256,
+    )
+
+
+def register_m10_lora_interpolated_evaluation_subject(
+    *, artifact_root: Path, interpolated_adapter_dir: Path
+) -> tuple[M10LoRAStageEvaluationSubjectRecord, str]:
+    """Validate and atomically publish one interpolated M10 Agent LoRA subject."""
+
+    record = build_m10_lora_interpolated_evaluation_subject(
+        artifact_root=artifact_root,
+        interpolated_adapter_dir=interpolated_adapter_dir,
+    )
+    try:
+        return publish_m10_lora_stage_evaluation_subject(artifact_root, record)
+    except DeploymentError as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA interpolation registration failed") from exc
+
+
 def build_m10_lora_calibrated_evaluation_subject(
     *, artifact_root: Path, source_subject_id: str, calibrated_adapter_dir: Path
 ) -> M10LoRAStageEvaluationSubjectRecord:
@@ -625,11 +916,15 @@ def register_m10_lora_calibrated_evaluation_subject(
 __all__ = [
     "M10LoRACheckpointExportEvidence",
     "M10LoRAAdapterCalibrationEvidence",
+    "M10LoRAAdapterInterpolationEvidence",
     "M10LoRAStageRegistrationError",
     "build_m10_lora_checkpoint_evaluation_subject",
     "build_m10_lora_calibrated_evaluation_subject",
+    "build_m10_lora_interpolated_evaluation_subject",
+    "create_m10_lora_interpolated_adapter",
     "build_m10_lora_stage_evaluation_subject",
     "register_m10_lora_checkpoint_evaluation_subject",
     "register_m10_lora_calibrated_evaluation_subject",
+    "register_m10_lora_interpolated_evaluation_subject",
     "register_m10_lora_stage_evaluation_subject",
 ]

@@ -366,7 +366,7 @@ class AgentEvalSummary(StrictSchema):
     scoring_protocol: AgentScoringProtocol = "m9-agent-scoring-v1"
     evaluation_id: str = Field(pattern=r"^m9-agent-eval-[0-9a-f]{8}$")
     evaluated_at: datetime
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[12]-[0-9a-f]{8}$")
     suite_content_sha256: str = Field(pattern=SHA256_PATTERN)
     model_id: str = Field(min_length=1, max_length=180)
     model_revision: str = Field(min_length=7, max_length=180)

@@ -8,9 +8,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
-from pydantic import ValidationError
+from pydantic import Field, ValidationError
 
 from tinyllm.deployment.evaluation_subject import (
+    M9EvaluationSubjectRecord,
     M10LoRAStageEvaluationSubjectRecord,
     effective_artifact_sha256,
     evaluation_artifact_sha256,
@@ -21,6 +22,7 @@ from tinyllm.deployment.evaluation_subject import (
 from tinyllm.deployment.registry import DeploymentError
 from tinyllm.evaluation.m6_schema import M6ModelIdentity
 from tinyllm.schemas import canonical_config_hash
+from tinyllm.schemas.base import StrictSchema
 from tinyllm.training.m10_lora import (
     M10LoRACheckpointStore,
     M10LoRAError,
@@ -42,6 +44,25 @@ TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json")
 ADAPTER_FILES = ("adapter_config.json", "adapter_model.safetensors")
 MODEL_PARAMETERS = 8_234_382_336
 EVALUATION_STAGES = (1_000_000, 5_000_000, 10_000_000)
+INTERMEDIATE_CHECKPOINT_STAGES = (3_000_000, 4_000_000)
+
+
+class M10LoRACheckpointExportEvidence(StrictSchema):
+    """Content-free evidence for a PEFT Adapter exported from a saved checkpoint."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: Literal["diagnostic_only"] = "diagnostic_only"
+    adapter_serialization: Literal["peft_safetensors"] = "peft_safetensors"
+    adapter_safetensors_metadata: dict[Literal["format"], Literal["pt"]]
+    checkpoint_id: str = Field(pattern=r"^checkpoint-tokens-[0-9]{10}$")
+    checkpoint_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    checkpoint_payload_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    config_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    dataset_version: str = Field(min_length=1, max_length=200)
+    dataset_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    run_id: str = Field(min_length=1, max_length=200)
+    supervised_tokens: Literal[3_000_000, 4_000_000]
+    source_diagnostic_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class M10LoRAStageRegistrationError(RuntimeError):
@@ -270,8 +291,180 @@ def register_m10_lora_stage_evaluation_subject(
         raise M10LoRAStageRegistrationError("M10 Agent LoRA registration failed") from exc
 
 
+def build_m10_lora_checkpoint_evaluation_subject(
+    *,
+    artifact_root: Path,
+    source_run: Path,
+    checkpoint_export_directory: Path,
+    historical_subject_id: str,
+) -> M10LoRAStageEvaluationSubjectRecord:
+    """Promote a Dev-selected saved checkpoint into an immutable evaluation subject."""
+
+    paths = (artifact_root, source_run, checkpoint_export_directory)
+    if any(not path.is_absolute() or path.is_symlink() for path in paths):
+        raise M10LoRAStageRegistrationError(
+            "M10 Agent LoRA checkpoint paths must be absolute non-symlinks"
+        )
+    try:
+        root = artifact_root.resolve(strict=True)
+        run = source_run.resolve(strict=True)
+        export_root = checkpoint_export_directory.resolve(strict=True)
+    except (OSError, FileNotFoundError) as exc:
+        raise M10LoRAStageRegistrationError(
+            "M10 Agent LoRA checkpoint paths are unavailable"
+        ) from exc
+    if not run.is_relative_to(root) or not export_root.is_relative_to(root):
+        raise M10LoRAStageRegistrationError(
+            "M10 Agent LoRA checkpoint Artifact escapes the Artifact Store"
+        )
+
+    diagnostic_path = export_root / "diagnostic.json"
+    adapter_dir = export_root / "adapter"
+    historical_record_path = (
+        root / "registry" / "evaluation-subjects" / historical_subject_id / "model.json"
+    )
+    result_path = run / "result.json"
+    config_path = run / "config.original.yaml"
+    try:
+        diagnostic = M10LoRACheckpointExportEvidence.model_validate_json(
+            diagnostic_path.read_bytes()
+        )
+        diagnostic_sha256 = _sha256_file(diagnostic_path)
+        historical = M9EvaluationSubjectRecord.model_validate_json(
+            historical_record_path.read_bytes()
+        )
+        result = M10LoRARunResult.model_validate_json(result_path.read_bytes())
+        config = load_m10_lora_config(config_path)
+        checkpoint = M10LoRACheckpointStore(run / "checkpoints").validate(diagnostic.checkpoint_id)
+        parent = resolve_evaluation_subject(root, config.model.parent_evaluation_subject)
+        adapter_sha256 = evaluation_artifact_sha256(adapter_dir, ADAPTER_FILES)
+    except (
+        OSError,
+        ValidationError,
+        ValueError,
+        DeploymentError,
+        M10LoRAError,
+    ) as exc:
+        raise M10LoRAStageRegistrationError(
+            "M10 Agent LoRA checkpoint evidence is invalid"
+        ) from exc
+
+    stage_tokens = diagnostic.supervised_tokens
+    if stage_tokens not in INTERMEDIATE_CHECKPOINT_STAGES:
+        raise M10LoRAStageRegistrationError("M10 Agent LoRA checkpoint stage is unsupported")
+    effective_sha256 = effective_artifact_sha256(parent.model_artifact_sha256, adapter_sha256)
+    identities = (
+        (historical.subject_id, historical_subject_id),
+        (historical.kind, "historical_lora"),
+        (historical.source_evidence_sha256, diagnostic_sha256),
+        (historical.adapter_dir, adapter_dir),
+        (historical.adapter_artifact_sha256, adapter_sha256),
+        (historical.effective_artifact_sha256, effective_sha256),
+        (historical.model.training_tokens, stage_tokens),
+        (historical.model.training_checkpoint_id, diagnostic.checkpoint_id),
+        (historical.model.training_run_id, run.name),
+        (historical.model.training_config_sha256, diagnostic.config_sha256),
+        (historical.model.dataset_version, diagnostic.dataset_version),
+        (historical.model.dataset_manifest_sha256, diagnostic.dataset_manifest_sha256),
+        (diagnostic.run_id, run.name),
+        (
+            diagnostic.checkpoint_manifest_sha256,
+            _sha256_file(run / "checkpoints" / diagnostic.checkpoint_id / "manifest.json"),
+        ),
+        (diagnostic.checkpoint_payload_sha256, checkpoint.file.sha256),
+        (checkpoint.supervised_tokens, stage_tokens),
+        (checkpoint.config_sha256, diagnostic.config_sha256),
+        (checkpoint.dataset_version, diagnostic.dataset_version),
+        (checkpoint.dataset_manifest_sha256, diagnostic.dataset_manifest_sha256),
+        (checkpoint.parent_evaluation_subject, result.parent_evaluation_subject),
+        (checkpoint.parent_evaluation_subject_sha256, result.parent_evaluation_subject_sha256),
+        (checkpoint.parent_model_artifact_sha256, result.parent_model_artifact_sha256),
+        (checkpoint.memory_probe_sha256, result.memory_probe_sha256),
+        (canonical_config_hash(config), diagnostic.config_sha256),
+        (result.run_id, run.name),
+        (result.config_sha256, diagnostic.config_sha256),
+        (result.dataset_version, diagnostic.dataset_version),
+        (result.dataset_manifest_sha256, diagnostic.dataset_manifest_sha256),
+        (parent.model_version, result.parent_evaluation_subject),
+        (parent.evaluation_subject_sha256, result.parent_evaluation_subject_sha256),
+        (parent.model_artifact_sha256, result.parent_model_artifact_sha256),
+    )
+    if any(actual != expected for actual, expected in identities):
+        raise M10LoRAStageRegistrationError(
+            "M10 Agent LoRA checkpoint lineage is incomplete or inconsistent"
+        )
+    _find_probe(root, checkpoint.memory_probe_sha256)
+
+    model = historical.model
+    result_sha256 = _sha256_file(result_path)
+    subject_id = m10_lora_stage_evaluation_subject_id(
+        model=model,
+        base_model_artifact_sha256=parent.model_artifact_sha256,
+        tokenizer_artifact_sha256=parent.tokenizer_artifact_sha256,
+        adapter_artifact_sha256=adapter_sha256,
+        source_result_sha256=result_sha256,
+        checkpoint_manifest_sha256=diagnostic.checkpoint_manifest_sha256,
+        memory_probe_sha256=checkpoint.memory_probe_sha256,
+        checkpoint_export_evidence_sha256=diagnostic_sha256,
+    )
+    stage_label = f"{stage_tokens // 1_000_000}m"
+    return M10LoRAStageEvaluationSubjectRecord(
+        subject_id=subject_id,
+        kind=cast(
+            Literal["m10_agent_lora_3m", "m10_agent_lora_4m"],
+            f"m10_agent_lora_{stage_label}",
+        ),
+        created_at=datetime.now(UTC),
+        model=model,
+        model_dir=parent.model_dir,
+        model_files=MODEL_FILES,
+        base_model_artifact_sha256=parent.model_artifact_sha256,
+        tokenizer_dir=parent.tokenizer_dir,
+        tokenizer_files=TOKENIZER_FILES,
+        tokenizer_artifact_sha256=parent.tokenizer_artifact_sha256,
+        adapter_dir=adapter_dir,
+        adapter_files=ADAPTER_FILES,
+        adapter_artifact_sha256=adapter_sha256,
+        effective_artifact_sha256=effective_sha256,
+        source_run_dir=run,
+        source_result_sha256=result_sha256,
+        checkpoint_manifest_sha256=diagnostic.checkpoint_manifest_sha256,
+        checkpoint_payload_sha256=checkpoint.file.sha256,
+        memory_probe_sha256=checkpoint.memory_probe_sha256,
+        checkpoint_export_evidence_sha256=diagnostic_sha256,
+        parent_evaluation_subject="qwen3-8b-m9-base-90587dd6",
+        parent_evaluation_subject_sha256=result.parent_evaluation_subject_sha256,
+    )
+
+
+def register_m10_lora_checkpoint_evaluation_subject(
+    *,
+    artifact_root: Path,
+    source_run: Path,
+    checkpoint_export_directory: Path,
+    historical_subject_id: str,
+) -> tuple[M10LoRAStageEvaluationSubjectRecord, str]:
+    """Validate and atomically publish one selected intermediate checkpoint."""
+
+    record = build_m10_lora_checkpoint_evaluation_subject(
+        artifact_root=artifact_root,
+        source_run=source_run,
+        checkpoint_export_directory=checkpoint_export_directory,
+        historical_subject_id=historical_subject_id,
+    )
+    try:
+        return publish_m10_lora_stage_evaluation_subject(artifact_root, record)
+    except DeploymentError as exc:
+        raise M10LoRAStageRegistrationError(
+            "M10 Agent LoRA checkpoint registration failed"
+        ) from exc
+
+
 __all__ = [
+    "M10LoRACheckpointExportEvidence",
     "M10LoRAStageRegistrationError",
+    "build_m10_lora_checkpoint_evaluation_subject",
     "build_m10_lora_stage_evaluation_subject",
+    "register_m10_lora_checkpoint_evaluation_subject",
     "register_m10_lora_stage_evaluation_subject",
 ]

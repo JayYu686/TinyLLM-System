@@ -83,11 +83,22 @@ def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluat
         source_result_sha256=source_result_sha256,
         checkpoint_manifest_sha256=checkpoint_manifest_sha256,
         memory_probe_sha256=memory_probe_sha256,
+        checkpoint_export_evidence_sha256=(
+            "1" * 64 if stage_tokens in {3_000_000, 4_000_000} else None
+        ),
     )
     kind = cast(
-        Literal["m10_agent_lora_1m", "m10_agent_lora_5m", "m10_agent_lora_10m"],
+        Literal[
+            "m10_agent_lora_1m",
+            "m10_agent_lora_3m",
+            "m10_agent_lora_4m",
+            "m10_agent_lora_5m",
+            "m10_agent_lora_10m",
+        ],
         {
             1_000_000: "m10_agent_lora_1m",
+            3_000_000: "m10_agent_lora_3m",
+            4_000_000: "m10_agent_lora_4m",
             5_000_000: "m10_agent_lora_5m",
             10_000_000: "m10_agent_lora_10m",
         }[stage_tokens],
@@ -112,6 +123,9 @@ def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluat
         checkpoint_manifest_sha256=checkpoint_manifest_sha256,
         checkpoint_payload_sha256="f" * 64,
         memory_probe_sha256=memory_probe_sha256,
+        checkpoint_export_evidence_sha256=(
+            "1" * 64 if stage_tokens in {3_000_000, 4_000_000} else None
+        ),
         parent_evaluation_subject="qwen3-8b-m9-base-90587dd6",
         parent_evaluation_subject_sha256=(
             "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
@@ -119,7 +133,7 @@ def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluat
     )
 
 
-@pytest.mark.parametrize("stage_tokens", [1_000_000, 5_000_000, 10_000_000])
+@pytest.mark.parametrize("stage_tokens", [1_000_000, 3_000_000, 4_000_000, 5_000_000, 10_000_000])
 def test_publish_resolve_and_route_lora_subject(tmp_path: Path, stage_tokens: int) -> None:
     root = tmp_path.resolve()
     record = _record(root, stage_tokens=stage_tokens)

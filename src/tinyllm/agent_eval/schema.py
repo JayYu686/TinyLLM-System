@@ -230,7 +230,7 @@ class AgentEvalSuiteManifest(StrictSchema):
     """Immutable identity and distribution summary for one M9 suite split."""
 
     schema_version: Literal["1.0"] = "1.0"
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-5]-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-6]-[0-9a-f]{8}$")
     split: AgentEvalSplit
     visibility: Literal["public", "private"]
     license: Literal["Apache-2.0"]
@@ -366,7 +366,7 @@ class AgentEvalSummary(StrictSchema):
     scoring_protocol: AgentScoringProtocol = "m9-agent-scoring-v1"
     evaluation_id: str = Field(pattern=r"^m9-agent-eval-[0-9a-f]{8}$")
     evaluated_at: datetime
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-5]-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-6]-[0-9a-f]{8}$")
     suite_content_sha256: str = Field(pattern=SHA256_PATTERN)
     model_id: str = Field(min_length=1, max_length=180)
     model_revision: str = Field(min_length=7, max_length=180)
@@ -581,7 +581,7 @@ class M10ServingLineageEvidence(StrictSchema):
     schema_version: Literal["1.0"] = "1.0"
     evidence_version: Literal["m10-serving-lineage-v1"] = "m10-serving-lineage-v1"
     evaluated_at: datetime
-    candidate_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$")
+    candidate_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-(3m|4m|5m)-[0-9a-f]{8}$")
     candidate_evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
     candidate_model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
     platform_gate_id: str = Field(pattern=r"^m7-production-gate-[0-9a-f]{8}$")

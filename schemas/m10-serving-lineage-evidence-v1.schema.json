@@ -24,7 +24,7 @@
       "type": "string"
     },
     "candidate_subject_id": {
-      "pattern": "^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$",
+      "pattern": "^qwen3-8b-m10-agent-lora-(3m|4m|5m)-[0-9a-f]{8}$",
       "title": "Candidate Subject Id",
       "type": "string"
     },

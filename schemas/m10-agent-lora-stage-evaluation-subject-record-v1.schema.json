@@ -187,6 +187,19 @@
       "title": "Base Model Artifact Sha256",
       "type": "string"
     },
+    "checkpoint_export_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checkpoint Export Evidence Sha256"
+    },
     "checkpoint_manifest_sha256": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Checkpoint Manifest Sha256",
@@ -210,6 +223,8 @@
     "kind": {
       "enum": [
         "m10_agent_lora_1m",
+        "m10_agent_lora_3m",
+        "m10_agent_lora_4m",
         "m10_agent_lora_5m",
         "m10_agent_lora_10m"
       ],
@@ -277,7 +292,7 @@
       "type": "string"
     },
     "subject_id": {
-      "pattern": "^qwen3-8b-m10-agent-lora-(1m|5m|10m)-[0-9a-f]{8}$",
+      "pattern": "^qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m)-[0-9a-f]{8}$",
       "title": "Subject Id",
       "type": "string"
     },

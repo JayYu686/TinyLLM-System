@@ -90,7 +90,7 @@
       "type": "string"
     },
     "suite_version": {
-      "pattern": "^tinyllm-devops-agent-(?:dev|release)-v[1-5]-[0-9a-f]{8}$",
+      "pattern": "^tinyllm-devops-agent-(?:dev|release)-v[1-6]-[0-9a-f]{8}$",
       "title": "Suite Version",
       "type": "string"
     },

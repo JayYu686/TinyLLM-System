@@ -208,12 +208,12 @@
       "type": "string"
     },
     "model_version": {
-      "pattern": "^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|qwen3-8b-m10-agent-lora-(1m|5m|10m))-[0-9a-f]{8}$",
+      "pattern": "^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m))-[0-9a-f]{8}$",
       "title": "Model Version",
       "type": "string"
     },
     "requested_ref": {
-      "pattern": "^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|qwen3-8b-m10-agent-lora-(1m|5m|10m))-[0-9a-f]{8}$",
+      "pattern": "^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m))-[0-9a-f]{8}$",
       "title": "Requested Ref",
       "type": "string"
     },

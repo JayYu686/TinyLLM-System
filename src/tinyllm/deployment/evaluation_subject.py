@@ -26,10 +26,10 @@ from tinyllm.schemas.base import StrictSchema
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
 M9_SUBJECT_PATTERN = r"^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$"
 M10_STAGE_SUBJECT_PATTERN = r"^qwen3-0-6b-m10-full-sft-(1m|5m)-[0-9a-f]{8}$"
-M10_LORA_STAGE_SUBJECT_PATTERN = r"^qwen3-8b-m10-agent-lora-(1m|5m|10m)-[0-9a-f]{8}$"
+M10_LORA_STAGE_SUBJECT_PATTERN = r"^qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m)-[0-9a-f]{8}$"
 SUBJECT_PATTERN = (
     r"^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|"
-    r"qwen3-8b-m10-agent-lora-(1m|5m|10m))"
+    r"qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m))"
     r"-[0-9a-f]{8}$"
 )
 
@@ -293,24 +293,32 @@ def m10_lora_stage_evaluation_subject_id(
     source_result_sha256: str,
     checkpoint_manifest_sha256: str,
     memory_probe_sha256: str,
+    checkpoint_export_evidence_sha256: str | None = None,
 ) -> str:
     """Derive one immutable M10 Agent LoRA stage identity."""
 
-    if model.training_tokens not in {1_000_000, 5_000_000, 10_000_000}:
-        raise ValueError("M10 Agent LoRA subjects are limited to 1M/5M/10M stages")
+    if model.training_tokens not in {
+        1_000_000,
+        3_000_000,
+        4_000_000,
+        5_000_000,
+        10_000_000,
+    }:
+        raise ValueError("M10 Agent LoRA subject token count is unsupported")
     stage_label = f"{model.training_tokens // 1_000_000}m"
-    identity = _canonical_sha256(
-        {
-            "kind": f"m10_agent_lora_{stage_label}",
-            "model": model.to_dict(),
-            "base_model_artifact_sha256": base_model_artifact_sha256,
-            "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
-            "adapter_artifact_sha256": adapter_artifact_sha256,
-            "source_result_sha256": source_result_sha256,
-            "checkpoint_manifest_sha256": checkpoint_manifest_sha256,
-            "memory_probe_sha256": memory_probe_sha256,
-        }
-    )
+    inputs = {
+        "kind": f"m10_agent_lora_{stage_label}",
+        "model": model.to_dict(),
+        "base_model_artifact_sha256": base_model_artifact_sha256,
+        "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
+        "adapter_artifact_sha256": adapter_artifact_sha256,
+        "source_result_sha256": source_result_sha256,
+        "checkpoint_manifest_sha256": checkpoint_manifest_sha256,
+        "memory_probe_sha256": memory_probe_sha256,
+    }
+    if checkpoint_export_evidence_sha256 is not None:
+        inputs["checkpoint_export_evidence_sha256"] = checkpoint_export_evidence_sha256
+    identity = _canonical_sha256(inputs)
     return f"qwen3-8b-m10-agent-lora-{stage_label}-{identity[:8]}"
 
 
@@ -320,7 +328,13 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["Evaluation"] = "Evaluation"
     subject_id: str = Field(pattern=M10_LORA_STAGE_SUBJECT_PATTERN)
-    kind: Literal["m10_agent_lora_1m", "m10_agent_lora_5m", "m10_agent_lora_10m"]
+    kind: Literal[
+        "m10_agent_lora_1m",
+        "m10_agent_lora_3m",
+        "m10_agent_lora_4m",
+        "m10_agent_lora_5m",
+        "m10_agent_lora_10m",
+    ]
     created_at: datetime
     model: M6ModelIdentity
     model_dir: Path
@@ -338,6 +352,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
     checkpoint_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     checkpoint_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     memory_probe_sha256: str = Field(pattern=SHA256_PATTERN)
+    checkpoint_export_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[
         "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
@@ -375,9 +390,17 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             raise ValueError("M10 Agent LoRA Adapter file set differs")
         expected_tokens = {
             "m10_agent_lora_1m": 1_000_000,
+            "m10_agent_lora_3m": 3_000_000,
+            "m10_agent_lora_4m": 4_000_000,
             "m10_agent_lora_5m": 5_000_000,
             "m10_agent_lora_10m": 10_000_000,
         }[self.kind]
+        if (expected_tokens in {3_000_000, 4_000_000}) != (
+            self.checkpoint_export_evidence_sha256 is not None
+        ):
+            raise ValueError(
+                "intermediate M10 Agent LoRA subjects require checkpoint export evidence"
+            )
         expected_checkpoint = f"checkpoint-tokens-{expected_tokens:010d}"
         expected_effective = effective_artifact_sha256(
             self.base_model_artifact_sha256, self.adapter_artifact_sha256
@@ -401,6 +424,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             source_result_sha256=self.source_result_sha256,
             checkpoint_manifest_sha256=self.checkpoint_manifest_sha256,
             memory_probe_sha256=self.memory_probe_sha256,
+            checkpoint_export_evidence_sha256=self.checkpoint_export_evidence_sha256,
         )
         if self.subject_id != expected_id:
             raise ValueError("M10 Agent LoRA subject ID differs from immutable inputs")

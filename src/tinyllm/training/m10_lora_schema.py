@@ -383,7 +383,7 @@ class M10LoRAContinuationGate(StrictSchema):
 
 
 class M10LoRAM6RegressionEvidence(StrictSchema):
-    """Paired M6 evidence required only by the 5M→10M LoRA Gate."""
+    """Paired M6 evidence for the selected final LoRA checkpoint."""
 
     schema_version: Literal["1.0"] = "1.0"
     evidence_version: Literal["m10-agent-lora-m6-regression-v1"] = "m10-agent-lora-m6-regression-v1"
@@ -398,7 +398,7 @@ class M10LoRAM6RegressionEvidence(StrictSchema):
     ]
     parent_summary_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_aggregate_basis_points: int = Field(ge=0, le=10_000)
-    candidate_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$")
+    candidate_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-(3m|4m|5m)-[0-9a-f]{8}$")
     candidate_evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
     candidate_model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
     candidate_summary_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -416,7 +416,7 @@ class M10LoRAM6RegressionEvidence(StrictSchema):
 
 
 class M10LoRAGeneralPassSummary(StrictSchema):
-    """One M6-v7 general pass for the 8B Base parent or a 5M LoRA stage."""
+    """One M6-v7 general pass for the 8B Base or selected LoRA checkpoint."""
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
@@ -428,7 +428,7 @@ class M10LoRAGeneralPassSummary(StrictSchema):
     evaluation_subject_id: str = Field(
         pattern=(
             r"^(?:qwen3-8b-m9-base-90587dd6|"
-            r"qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8})$"
+            r"qwen3-8b-m10-agent-lora-(?:3m|4m|5m)-[0-9a-f]{8})$"
         )
     )
     evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -455,9 +455,9 @@ class M10LoRAGeneralPassSummary(StrictSchema):
             self.model.role != "candidate"
             or self.model.adaptation != "lora"
             or self.model.adapter_sha256 is None
-            or self.model.training_tokens != 5_000_000
+            or self.model.training_tokens not in {3_000_000, 4_000_000, 5_000_000}
         ):
-            raise ValueError("M10 LoRA Candidate M6 identity must be the 5M Adapter stage")
+            raise ValueError("M10 LoRA Candidate M6 identity has an unsupported checkpoint")
         if (
             self.model.repository != "Qwen/Qwen3-8B"
             or self.model.base_revision != M10_LORA_MODEL_REVISION

@@ -39,9 +39,17 @@ class M10LoRAGeneralError(RuntimeError):
 def _resolve_subject(artifact_root: Path, subject_id: str) -> ResolvedEvaluationSubject:
     if subject_id == M10_LORA_PARENT_SUBJECT:
         return resolve_evaluation_subject(artifact_root, subject_id)
-    if subject_id.startswith("qwen3-8b-m10-agent-lora-5m-"):
+    if subject_id.startswith(
+        (
+            "qwen3-8b-m10-agent-lora-3m-",
+            "qwen3-8b-m10-agent-lora-4m-",
+            "qwen3-8b-m10-agent-lora-5m-",
+        )
+    ):
         return resolve_m10_lora_stage_evaluation_subject(artifact_root, subject_id)
-    raise M10LoRAGeneralError("M10 LoRA M6 accepts only the frozen parent or a 5M stage")
+    raise M10LoRAGeneralError(
+        "M10 LoRA M6 accepts only the frozen parent or a selected 3M/4M/5M stage"
+    )
 
 
 def _evaluation_id(

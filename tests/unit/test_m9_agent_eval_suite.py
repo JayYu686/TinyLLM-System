@@ -110,7 +110,30 @@ def test_release_v4_is_deterministic_sealed_and_disjoint_from_prior_generations(
     assert manifest.excluded_from_training is True
 
 
-@pytest.mark.parametrize("generation", ["v2", "v3", "v4"])
+def test_release_v5_is_deterministic_sealed_and_disjoint_from_prior_generations() -> None:
+    prior = tuple(
+        task
+        for generation in ("v1", "v2", "v3", "v4")
+        for task in build_tasks(
+            "release", **({} if generation == "v1" else {"generation": generation})
+        )
+    )
+    release_v5_first = build_tasks("release", generation="v5")
+    release_v5_second = build_tasks("release", generation="v5")
+    manifest = build_manifest(release_v5_first)
+
+    assert render_items(release_v5_first) == render_items(release_v5_second)
+    assert {task.prompt_sha256 for task in prior}.isdisjoint(
+        task.prompt_sha256 for task in release_v5_first
+    )
+    assert manifest.suite_version.startswith("tinyllm-devops-agent-release-v5-")
+    assert manifest.seed == 2026083105
+    assert manifest.visibility == "private"
+    assert manifest.release_content_sealed is True
+    assert manifest.excluded_from_training is True
+
+
+@pytest.mark.parametrize("generation", ["v2", "v3", "v4", "v5"])
 def test_dev_rejects_release_only_generation(generation: str) -> None:
     with pytest.raises(ValueError, match="Dev suite remains frozen"):
         build_tasks("dev", generation=generation)  # type: ignore[arg-type]

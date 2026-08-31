@@ -230,7 +230,7 @@ class AgentEvalSuiteManifest(StrictSchema):
     """Immutable identity and distribution summary for one M9 suite split."""
 
     schema_version: Literal["1.0"] = "1.0"
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-4]-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-5]-[0-9a-f]{8}$")
     split: AgentEvalSplit
     visibility: Literal["public", "private"]
     license: Literal["Apache-2.0"]
@@ -366,7 +366,7 @@ class AgentEvalSummary(StrictSchema):
     scoring_protocol: AgentScoringProtocol = "m9-agent-scoring-v1"
     evaluation_id: str = Field(pattern=r"^m9-agent-eval-[0-9a-f]{8}$")
     evaluated_at: datetime
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-4]-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-5]-[0-9a-f]{8}$")
     suite_content_sha256: str = Field(pattern=SHA256_PATTERN)
     model_id: str = Field(min_length=1, max_length=180)
     model_revision: str = Field(min_length=7, max_length=180)

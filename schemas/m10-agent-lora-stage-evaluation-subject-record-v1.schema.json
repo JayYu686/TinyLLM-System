@@ -168,6 +168,19 @@
       "title": "Adapter Artifact Sha256",
       "type": "string"
     },
+    "adapter_calibration_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Calibration Evidence Sha256"
+    },
     "adapter_dir": {
       "format": "path",
       "title": "Adapter Dir",

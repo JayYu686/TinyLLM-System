@@ -294,6 +294,7 @@ def m10_lora_stage_evaluation_subject_id(
     checkpoint_manifest_sha256: str,
     memory_probe_sha256: str,
     checkpoint_export_evidence_sha256: str | None = None,
+    adapter_calibration_evidence_sha256: str | None = None,
 ) -> str:
     """Derive one immutable M10 Agent LoRA stage identity."""
 
@@ -318,6 +319,8 @@ def m10_lora_stage_evaluation_subject_id(
     }
     if checkpoint_export_evidence_sha256 is not None:
         inputs["checkpoint_export_evidence_sha256"] = checkpoint_export_evidence_sha256
+    if adapter_calibration_evidence_sha256 is not None:
+        inputs["adapter_calibration_evidence_sha256"] = adapter_calibration_evidence_sha256
     identity = _canonical_sha256(inputs)
     return f"qwen3-8b-m10-agent-lora-{stage_label}-{identity[:8]}"
 
@@ -353,6 +356,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
     checkpoint_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     memory_probe_sha256: str = Field(pattern=SHA256_PATTERN)
     checkpoint_export_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_calibration_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[
         "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
@@ -425,6 +429,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             checkpoint_manifest_sha256=self.checkpoint_manifest_sha256,
             memory_probe_sha256=self.memory_probe_sha256,
             checkpoint_export_evidence_sha256=self.checkpoint_export_evidence_sha256,
+            adapter_calibration_evidence_sha256=self.adapter_calibration_evidence_sha256,
         )
         if self.subject_id != expected_id:
             raise ValueError("M10 Agent LoRA subject ID differs from immutable inputs")

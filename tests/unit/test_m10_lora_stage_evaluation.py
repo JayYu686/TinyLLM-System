@@ -16,6 +16,7 @@ from tinyllm.deployment import (
     resolve_m10_lora_stage_evaluation_subject,
     resolve_serving_model,
 )
+from tinyllm.deployment.m10_lora_stage import M10LoRAAdapterCalibrationEvidence
 from tinyllm.evaluation import M6ModelIdentity
 
 NOW = datetime(2026, 8, 25, tzinfo=UTC)
@@ -33,6 +34,29 @@ MODEL_FILES = (
 )
 TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json")
 ADAPTER_FILES = ("adapter_config.json", "adapter_model.safetensors")
+
+
+def test_lora_calibration_evidence_requires_unchanged_weights_and_exact_scale() -> None:
+    payload = {
+        "source_subject_id": "qwen3-8b-m10-agent-lora-5m-1234abcd",
+        "source_evaluation_subject_sha256": "a" * 64,
+        "source_adapter_artifact_sha256": "b" * 64,
+        "source_adapter_weights_sha256": "c" * 64,
+        "calibrated_adapter_artifact_sha256": "d" * 64,
+        "calibrated_adapter_weights_sha256": "c" * 64,
+        "calibrated_alpha": 16,
+        "relative_scale_basis_points": 5000,
+    }
+    evidence = M10LoRAAdapterCalibrationEvidence.model_validate(payload)
+    assert evidence.expected_scale_basis_points == 5000
+    with pytest.raises(ValueError, match="must not change Adapter weights"):
+        M10LoRAAdapterCalibrationEvidence.model_validate(
+            {**payload, "calibrated_adapter_weights_sha256": "e" * 64}
+        )
+    with pytest.raises(ValueError, match="differs from Alpha ratio"):
+        M10LoRAAdapterCalibrationEvidence.model_validate(
+            {**payload, "relative_scale_basis_points": 2500}
+        )
 
 
 def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluationSubjectRecord:

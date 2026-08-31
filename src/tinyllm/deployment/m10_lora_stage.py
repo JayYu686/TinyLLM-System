@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 
 from tinyllm.deployment.evaluation_subject import (
     M9EvaluationSubjectRecord,
@@ -18,6 +18,7 @@ from tinyllm.deployment.evaluation_subject import (
     m10_lora_stage_evaluation_subject_id,
     publish_m10_lora_stage_evaluation_subject,
     resolve_evaluation_subject,
+    resolve_m10_lora_stage_evaluation_subject,
 )
 from tinyllm.deployment.registry import DeploymentError
 from tinyllm.evaluation.m6_schema import M6ModelIdentity
@@ -63,6 +64,36 @@ class M10LoRACheckpointExportEvidence(StrictSchema):
     run_id: str = Field(min_length=1, max_length=200)
     supervised_tokens: Literal[3_000_000, 4_000_000]
     source_diagnostic_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class M10LoRAAdapterCalibrationEvidence(StrictSchema):
+    """Lineage for inference-only LoRA strength calibration with unchanged weights."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    calibration_version: Literal["m10-lora-alpha-calibration-v1"] = "m10-lora-alpha-calibration-v1"
+    source_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$")
+    source_evaluation_subject_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    source_adapter_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    source_adapter_weights_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    calibrated_adapter_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    calibrated_adapter_weights_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    rank: Literal[16] = 16
+    source_alpha: Literal[32] = 32
+    calibrated_alpha: Literal[8, 16]
+    relative_scale_basis_points: Literal[2500, 5000]
+    selection_inputs: Literal["public_dev_and_public_bfcl"] = "public_dev_and_public_bfcl"
+
+    @property
+    def expected_scale_basis_points(self) -> int:
+        return self.calibrated_alpha * 10_000 // self.source_alpha
+
+    @model_validator(mode="after")
+    def validate_calibration(self) -> M10LoRAAdapterCalibrationEvidence:
+        if self.relative_scale_basis_points != self.expected_scale_basis_points:
+            raise ValueError("M10 LoRA calibrated scale differs from Alpha ratio")
+        if self.source_adapter_weights_sha256 != self.calibrated_adapter_weights_sha256:
+            raise ValueError("M10 LoRA calibration must not change Adapter weights")
+        return self
 
 
 class M10LoRAStageRegistrationError(RuntimeError):
@@ -460,11 +491,145 @@ def register_m10_lora_checkpoint_evaluation_subject(
         ) from exc
 
 
+def build_m10_lora_calibrated_evaluation_subject(
+    *, artifact_root: Path, source_subject_id: str, calibrated_adapter_dir: Path
+) -> M10LoRAStageEvaluationSubjectRecord:
+    """Build an immutable subject whose only change is PEFT LoRA Alpha."""
+
+    if (
+        not artifact_root.is_absolute()
+        or artifact_root.is_symlink()
+        or not calibrated_adapter_dir.is_absolute()
+        or calibrated_adapter_dir.is_symlink()
+    ):
+        raise M10LoRAStageRegistrationError(
+            "M10 LoRA calibration paths must be absolute non-symlinks"
+        )
+    try:
+        root = artifact_root.resolve(strict=True)
+        calibrated_dir = calibrated_adapter_dir.resolve(strict=True)
+        source_path = root / "registry" / "evaluation-subjects" / source_subject_id / "model.json"
+        source_payload = source_path.read_bytes()
+        source = M10LoRAStageEvaluationSubjectRecord.model_validate_json(source_payload)
+        resolved = resolve_m10_lora_stage_evaluation_subject(root, source_subject_id)
+        evidence_path = calibrated_dir / "calibration.json"
+        evidence = M10LoRAAdapterCalibrationEvidence.model_validate_json(evidence_path.read_bytes())
+        evidence_sha256 = _sha256_file(evidence_path)
+        source_config: object = json.loads(
+            (source.adapter_dir / "adapter_config.json").read_text(encoding="utf-8")
+        )
+        calibrated_config: object = json.loads(
+            (calibrated_dir / "adapter_config.json").read_text(encoding="utf-8")
+        )
+        calibrated_sha256 = evaluation_artifact_sha256(calibrated_dir, ADAPTER_FILES)
+    except (
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        ValidationError,
+        ValueError,
+        DeploymentError,
+    ) as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA calibration evidence is invalid") from exc
+    if not calibrated_dir.is_relative_to(root):
+        raise M10LoRAStageRegistrationError(
+            "M10 LoRA calibrated Adapter escapes the Artifact Store"
+        )
+    if source.kind != "m10_agent_lora_5m" or source.model.training_tokens != 5_000_000:
+        raise M10LoRAStageRegistrationError("M10 LoRA calibration requires a 5M source")
+    if not isinstance(source_config, dict) or not isinstance(calibrated_config, dict):
+        raise M10LoRAStageRegistrationError("M10 LoRA Adapter configuration is invalid")
+    expected_config = dict(source_config)
+    expected_config["lora_alpha"] = evidence.calibrated_alpha
+    identities = (
+        (source.subject_id, evidence.source_subject_id),
+        (hashlib.sha256(source_payload).hexdigest(), evidence.source_evaluation_subject_sha256),
+        (source.adapter_artifact_sha256, evidence.source_adapter_artifact_sha256),
+        (
+            _sha256_file(source.adapter_dir / "adapter_model.safetensors"),
+            evidence.source_adapter_weights_sha256,
+        ),
+        (
+            _sha256_file(calibrated_dir / "adapter_model.safetensors"),
+            evidence.calibrated_adapter_weights_sha256,
+        ),
+        (calibrated_sha256, evidence.calibrated_adapter_artifact_sha256),
+        (source_config.get("r"), evidence.rank),
+        (source_config.get("lora_alpha"), evidence.source_alpha),
+        (calibrated_config, expected_config),
+        (resolved.model_artifact_sha256, source.effective_artifact_sha256),
+    )
+    if any(actual != expected for actual, expected in identities):
+        raise M10LoRAStageRegistrationError(
+            "M10 LoRA calibration changed weights, metadata, or source lineage"
+        )
+
+    effective_sha256 = effective_artifact_sha256(
+        source.base_model_artifact_sha256, calibrated_sha256
+    )
+    model = source.model.model_copy(
+        update={
+            "model_artifact_sha256": effective_sha256,
+            "adapter_sha256": calibrated_sha256,
+        }
+    )
+    subject_id = m10_lora_stage_evaluation_subject_id(
+        model=model,
+        base_model_artifact_sha256=source.base_model_artifact_sha256,
+        tokenizer_artifact_sha256=source.tokenizer_artifact_sha256,
+        adapter_artifact_sha256=calibrated_sha256,
+        source_result_sha256=source.source_result_sha256,
+        checkpoint_manifest_sha256=source.checkpoint_manifest_sha256,
+        memory_probe_sha256=source.memory_probe_sha256,
+        adapter_calibration_evidence_sha256=evidence_sha256,
+    )
+    return M10LoRAStageEvaluationSubjectRecord(
+        **source.model_dump(
+            mode="python",
+            exclude={
+                "subject_id",
+                "created_at",
+                "model",
+                "adapter_dir",
+                "adapter_artifact_sha256",
+                "effective_artifact_sha256",
+                "adapter_calibration_evidence_sha256",
+            },
+        ),
+        subject_id=subject_id,
+        created_at=datetime.now(UTC),
+        model=model,
+        adapter_dir=calibrated_dir,
+        adapter_artifact_sha256=calibrated_sha256,
+        effective_artifact_sha256=effective_sha256,
+        adapter_calibration_evidence_sha256=evidence_sha256,
+    )
+
+
+def register_m10_lora_calibrated_evaluation_subject(
+    *, artifact_root: Path, source_subject_id: str, calibrated_adapter_dir: Path
+) -> tuple[M10LoRAStageEvaluationSubjectRecord, str]:
+    """Validate and publish one inference-calibrated M10 Agent LoRA subject."""
+
+    record = build_m10_lora_calibrated_evaluation_subject(
+        artifact_root=artifact_root,
+        source_subject_id=source_subject_id,
+        calibrated_adapter_dir=calibrated_adapter_dir,
+    )
+    try:
+        return publish_m10_lora_stage_evaluation_subject(artifact_root, record)
+    except DeploymentError as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA calibration registration failed") from exc
+
+
 __all__ = [
     "M10LoRACheckpointExportEvidence",
+    "M10LoRAAdapterCalibrationEvidence",
     "M10LoRAStageRegistrationError",
     "build_m10_lora_checkpoint_evaluation_subject",
+    "build_m10_lora_calibrated_evaluation_subject",
     "build_m10_lora_stage_evaluation_subject",
     "register_m10_lora_checkpoint_evaluation_subject",
+    "register_m10_lora_calibrated_evaluation_subject",
     "register_m10_lora_stage_evaluation_subject",
 ]

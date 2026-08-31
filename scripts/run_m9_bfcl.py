@@ -81,6 +81,35 @@ def _normalize_bfcl_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return normalized
 
 
+def _parse_tinyllm_openai_fc_response(api_response: Any) -> dict[str, Any]:
+    """Preserve text when an OpenAI-compatible endpoint returns no tool calls.
+
+    Some clients deserialize an absent ``tool_calls`` field as an empty list.
+    BFCL v1.3's OpenAI handler iterates that list inside a ``try`` block and
+    consequently records ``[]`` instead of the simultaneously valid text
+    content.  Normalize both ``None`` and ``[]`` to the same OpenAI semantic:
+    no tool call was emitted, so the assistant content is the response.
+    """
+
+    message = api_response.choices[0].message
+    tool_calls = getattr(message, "tool_calls", None)
+    if tool_calls:
+        model_responses = [
+            {tool_call.function.name: tool_call.function.arguments} for tool_call in tool_calls
+        ]
+        tool_call_ids = [tool_call.id for tool_call in tool_calls]
+    else:
+        model_responses = message.content
+        tool_call_ids = []
+    return {
+        "model_responses": model_responses,
+        "model_responses_message_for_chat_history": message,
+        "tool_call_ids": tool_call_ids,
+        "input_token": api_response.usage.prompt_tokens,
+        "output_token": api_response.usage.completion_tokens,
+    }
+
+
 def _install_tinyllm_handler(
     *,
     model_name: str,
@@ -142,7 +171,11 @@ def _install_tinyllm_handler(
     tinyllm_handler = type(
         "TinyLLMOpenAIEndpointHandler",
         (base_handler,),
-        {"__init__": initialize, "_query_FC": query_fc},
+        {
+            "__init__": initialize,
+            "_query_FC": query_fc,
+            "_parse_query_response_FC": staticmethod(_parse_tinyllm_openai_fc_response),
+        },
     )
     model_config_module.MODEL_CONFIG_MAPPING[model_name] = model_config_module.ModelConfig(
         model_name=model_name,

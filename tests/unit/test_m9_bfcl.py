@@ -10,6 +10,7 @@ import pytest
 from scripts.run_m9_bfcl import (
     _install_tinyllm_handler,
     _normalize_bfcl_tools,
+    _parse_tinyllm_openai_fc_response,
     _summarize,
     _validate_generation_results,
 )
@@ -164,6 +165,44 @@ def test_bfcl_tool_projection_strips_only_response_schema() -> None:
 def test_bfcl_tool_projection_rejects_unknown_wire_shapes(tool: dict[str, Any]) -> None:
     with pytest.raises(RuntimeError, match="BFCL produced"):
         _normalize_bfcl_tools([tool])
+
+
+@pytest.mark.parametrize("tool_calls", [None, []])
+def test_bfcl_openai_response_preserves_text_without_tool_calls(tool_calls: Any) -> None:
+    message = SimpleNamespace(content="Please provide the missing path.", tool_calls=tool_calls)
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=message)],
+        usage=SimpleNamespace(prompt_tokens=10, completion_tokens=7),
+    )
+
+    parsed = _parse_tinyllm_openai_fc_response(response)
+
+    assert parsed["model_responses"] == "Please provide the missing path."
+    assert parsed["model_responses_message_for_chat_history"] is message
+    assert parsed["tool_call_ids"] == []
+    assert parsed["input_token"] == 10
+    assert parsed["output_token"] == 7
+
+
+def test_bfcl_openai_response_extracts_nonempty_tool_calls() -> None:
+    message = SimpleNamespace(
+        content=None,
+        tool_calls=[
+            SimpleNamespace(
+                id="call-1",
+                function=SimpleNamespace(name="grep", arguments='{"pattern":"error"}'),
+            )
+        ],
+    )
+    response = SimpleNamespace(
+        choices=[SimpleNamespace(message=message)],
+        usage=SimpleNamespace(prompt_tokens=20, completion_tokens=12),
+    )
+
+    parsed = _parse_tinyllm_openai_fc_response(response)
+
+    assert parsed["model_responses"] == [{"grep": '{"pattern":"error"}'}]
+    assert parsed["tool_call_ids"] == ["call-1"]
 
 
 def _write_generation_results(

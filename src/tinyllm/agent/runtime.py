@@ -53,17 +53,36 @@ _CHINESE_RUN = re.compile(
     r"(?:读取|核对|检查)运行\s*"
     r"(20\d{6}T\d{6}Z-[A-Za-z0-9][A-Za-z0-9._-]{2,180})"
 )
+_EXPLICIT_SEARCH_PATTERNS = (
+    (
+        re.compile(r"Find\s+the\s+recovery\s+policy\s+for\s+([A-Za-z0-9._-]+)", re.I),
+        "recovery policy",
+    ),
+    (re.compile(r"(?:请)?查找\s*([A-Za-z0-9._-]+)\s*的恢复策略"), "recovery policy"),
+    (
+        re.compile(r"Find\s+the\s+([A-Za-z0-9._-]+)\s+recovery\s+documentation", re.I),
+        "failure recovery",
+    ),
+    (re.compile(r"查找\s*([A-Za-z0-9._-]+)\s*的故障恢复文档"), "failure recovery"),
+    (re.compile(r"Retrieve\s+evidence\s+for\s+([A-Za-z0-9._-]+)", re.I), ""),
+    (re.compile(r"读取\s*([A-Za-z0-9._-]+)\s*的证据"), ""),
+)
 _READ_MARKERS = (
     " read ",
     " check ",
     " inspect ",
     " query ",
     " show ",
+    " find ",
+    " retrieve ",
+    " search ",
     "读取",
     "核对",
     "检查",
     "查询",
     "查看",
+    "查找",
+    "检索",
 )
 _NEGATED_READ_MARKERS = (
     " do not read ",
@@ -71,12 +90,16 @@ _NEGATED_READ_MARKERS = (
     " do not check ",
     " don't check ",
     " do not inspect ",
+    " do not search ",
+    " don't search ",
     "不要读取",
     "不要检查",
     "无需读取",
     "无需检查",
     "别读取",
     "别检查",
+    "不要查找",
+    "不要检索",
 )
 _WRITE_MARKERS = (" change ", " update ", " patch ", "修改", "更改", "写入", "改成")
 
@@ -257,6 +280,23 @@ def _explicit_read_plan(
         tool_servers.pop(name, None)
 
     positioned: list[tuple[int, AgentToolCall]] = []
+    search_server_id = tool_servers.get("search_evidence")
+    if search_server_id is not None:
+        for pattern, suffix in _EXPLICIT_SEARCH_PATTERNS:
+            for match in pattern.finditer(user_text):
+                if not _explicit_read_requested(user_text, match.start(1)):
+                    continue
+                query = f"{match.group(1)} {suffix}".strip()
+                positioned.append(
+                    (
+                        match.start(1),
+                        _planned_call(
+                            server_id=search_server_id,
+                            tool_name="search_evidence",
+                            arguments={"query": query, "top_k": 5},
+                        ),
+                    )
+                )
     for match in (*_ENGLISH_RUN.finditer(user_text), *_CHINESE_RUN.finditer(user_text)):
         if not _explicit_read_requested(user_text, match.start(1)):
             continue
@@ -319,6 +359,8 @@ def _explicit_read_plan(
 
 def _planned_call_observed(call: AgentToolCall, observations: Sequence[dict[str, object]]) -> bool:
     for observation in observations:
+        if "result" not in observation:
+            continue
         if (
             observation.get("server_id") != call.server_id
             or observation.get("tool_name") != call.tool_name
@@ -517,18 +559,20 @@ class AgentRuntime:
             mode=record.mode,
             allowed_tools=allowed_tools,
         )
+        explicit_plan = _explicit_read_plan(messages=messages, allowed_tools=allowed_tools)
+        missing_planned_calls = tuple(
+            call for call in explicit_plan if not _planned_call_observed(call, observations)
+        )
         if decision.tool_calls:
             decision = decision.model_copy(
                 update={"tool_calls": _normalize_tool_calls(decision.tool_calls, messages=messages)}
             )
-            explicit_plan = _explicit_read_plan(messages=messages, allowed_tools=allowed_tools)
             expected_tool_names = {call.tool_name for call in explicit_plan}
             selected_tool_names = {call.tool_name for call in decision.tool_calls}
-            missing_planned_calls = tuple(
-                call for call in explicit_plan if not _planned_call_observed(call, observations)
-            )
             if missing_planned_calls and expected_tool_names & selected_tool_names:
                 decision = decision.model_copy(update={"tool_calls": missing_planned_calls})
+        elif missing_planned_calls:
+            decision = AgentModelDecision(tool_calls=missing_planned_calls)
         self.store.transition(
             run_id,
             status="running",

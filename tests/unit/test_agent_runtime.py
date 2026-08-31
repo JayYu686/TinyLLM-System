@@ -386,7 +386,7 @@ def test_runtime_executes_explicit_read_plan_before_model_decision(tmp_path: Pat
     assert metrics_path in answer
 
 
-def test_runtime_does_not_replace_a_model_final_answer_with_explicit_reads(
+def test_runtime_falls_back_to_explicit_reads_after_a_premature_final_answer(
     tmp_path: Path,
 ) -> None:
     store, run_id, _ = _run(tmp_path)
@@ -400,14 +400,48 @@ def test_runtime_does_not_replace_a_model_final_answer_with_explicit_reads(
     runtime = AgentRuntime(
         config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
         store=store,
-        model=_Model([AgentModelDecision(message="I cannot verify the log.")]),
+        model=_Model(
+            [
+                AgentModelDecision(message="I cannot verify the log."),
+                AgentModelDecision(message="The log is grounded."),
+            ]
+        ),
         clients={"tinyllm-devops": client},  # type: ignore[dict-item]
     )
 
     answer = asyncio.run(runtime.run(run_id, messages=messages))
 
-    assert answer == "I cannot verify the log."
-    assert client.calls == []
+    assert answer is not None
+    assert answer.startswith("The log is grounded.")
+    assert client.calls == [
+        ("read_log_excerpt", {"relative_path": "runs/m9/run-one/logs/trainer.log"})
+    ]
+
+
+def test_explicit_read_plan_combines_search_and_run_in_request_order() -> None:
+    run_identifier = "20260820T010000Z-agent-eval-a1b2c3d4-0001"
+    messages = (
+        AgentMessage(
+            role="user",
+            content=(
+                f"Find the trainer recovery documentation, then read Run {run_identifier} "
+                "and compare the evidence."
+            ),
+        ),
+    )
+
+    plan = _explicit_read_plan(
+        messages=messages,
+        allowed_tools=(
+            "tinyllm-devops.search_evidence",
+            "tinyllm-devops.get_run",
+        ),
+    )
+
+    assert [(call.tool_name, call.arguments) for call in plan] == [
+        ("search_evidence", {"query": "trainer failure recovery", "top_k": 5}),
+        ("get_run", {"run_id": run_identifier}),
+    ]
 
 
 def test_explicit_read_plan_rejects_unrequested_negated_and_write_paths() -> None:

@@ -385,9 +385,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-agent-lora-memory-probe-v1.schema.json": M10LoRAMemoryProbeResult,
     "m10-agent-lora-run-result-v1.schema.json": M10LoRARunResult,
     "m10-agent-lora-stage-export-v1.schema.json": M10LoRAStageExport,
-    "m10-agent-lora-interpolation-evidence-v1.schema.json": (
-        M10LoRAAdapterInterpolationEvidence
-    ),
+    "m10-agent-lora-interpolation-evidence-v1.schema.json": (M10LoRAAdapterInterpolationEvidence),
     "m10-mixture-artifact-v1.schema.json": M10MixtureArtifact,
     "m10-mixture-input-evidence-v1.schema.json": M10MixtureInputEvidence,
     "m10-mixture-stratum-v1.schema.json": M10MixtureStratum,

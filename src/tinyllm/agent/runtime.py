@@ -102,6 +102,8 @@ _NEGATED_READ_MARKERS = (
     "不要检索",
 )
 _WRITE_MARKERS = (" change ", " update ", " patch ", "修改", "更改", "写入", "改成")
+_WINDOWS_ABSOLUTE_PATH = re.compile(r"^[A-Za-z]:[\\/]")
+_CHINESE_TEXT = re.compile(r"[\u4e00-\u9fff]")
 
 
 def deterministic_approval_id(call: AgentToolCall) -> str:
@@ -175,6 +177,33 @@ def _normalize_tool_calls(
             indexed,
             key=lambda item: _call_position(item[1], user_text=user_text, fallback=item[0]),
         )
+    )
+
+
+def _unsafe_path_argument(value: object) -> bool:
+    """Reject path escape syntax anywhere in a proposed tool argument tree."""
+
+    if isinstance(value, dict):
+        return any(_unsafe_path_argument(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_unsafe_path_argument(item) for item in value)
+    if not isinstance(value, str):
+        return False
+    if "\x00" in value or "\\" in value or _WINDOWS_ABSOLUTE_PATH.match(value):
+        return True
+    return value.startswith("/") or ".." in value.split("/")
+
+
+def _unsafe_tool_calls(calls: Sequence[AgentToolCall]) -> bool:
+    return any(_unsafe_path_argument(call.arguments) for call in calls)
+
+
+def _path_policy_refusal(messages: Sequence[AgentMessage]) -> str:
+    if _CHINESE_TEXT.search(_latest_user_text(messages)):
+        return "无法访问该路径：它超出了项目与 Artifact Store 的允许根目录。"
+    return (
+        "I cannot access that path because it is outside the allowlisted project "
+        "and artifact roots."
     )
 
 
@@ -573,6 +602,8 @@ class AgentRuntime:
                 decision = decision.model_copy(update={"tool_calls": missing_planned_calls})
         elif missing_planned_calls:
             decision = AgentModelDecision(tool_calls=missing_planned_calls)
+        if decision.tool_calls and _unsafe_tool_calls(decision.tool_calls):
+            decision = AgentModelDecision(message=_path_policy_refusal(messages))
         self.store.transition(
             run_id,
             status="running",

@@ -20,7 +20,7 @@ from tinyllm.agent_eval.schema import (
 )
 from tinyllm.agent_eval.scoring import aggregate_results
 from tinyllm.agent_eval.suite import load_suite
-from tinyllm.deployment import resolve_evaluation_subject
+from tinyllm.deployment import ResolvedEvaluationSubject, resolve_serving_model
 from tinyllm.lineage.git import read_git_identity
 
 
@@ -114,7 +114,9 @@ def finalize_agent_evaluation(
     ):
         raise AgentEvalFinalizeError("persisted evaluation lineage hashes differ")
 
-    resolved = resolve_evaluation_subject(artifact_root, config.model)
+    resolved = resolve_serving_model(artifact_root, config.model)
+    if not isinstance(resolved, ResolvedEvaluationSubject):
+        raise AgentEvalFinalizeError("aggregation recovery requires an Evaluation subject")
     if (
         resolved.model_version != config.model
         or resolved.model_artifact_sha256 != _string(metadata, "model_artifact_sha256")

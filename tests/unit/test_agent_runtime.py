@@ -13,7 +13,7 @@ from tinyllm.agent import (
     agent_tool_call_sha256,
     load_agent_config,
 )
-from tinyllm.agent.runtime import AgentRuntime
+from tinyllm.agent.runtime import AgentRuntime, _explicit_read_plan, _normalize_tool_calls
 from tinyllm.agent.schema import AgentMessage, AgentModelDecision
 
 NOW = datetime.now(UTC)
@@ -48,6 +48,7 @@ class _Client:
             "get_run",
             "read_log_excerpt",
             "query_metrics",
+            "inspect_config",
             "apply_sandbox_config_patch",
         )
         self.calls: list[tuple[str, dict[str, Any]]] = []
@@ -265,10 +266,7 @@ def test_runtime_attaches_actual_evidence_identity_when_model_omits_citation(
     assert answer == "ok\n\nEvidence trace: search_evidence: failure [evidence:call_one]"
 
 
-def test_runtime_normalizes_run_id_and_orders_same_decision_by_request(
-    tmp_path: Path,
-) -> None:
-    store, run_id, _ = _run(tmp_path)
+def test_normalizes_run_id_and_orders_same_decision_by_request() -> None:
     run_identifier = "20260820T010000Z-agent-eval-a1b2c3d4-0001"
     log_path = f"runs/m9/{run_identifier}/logs/trainer.log"
     metrics_path = f"runs/m9/{run_identifier}/metrics.jsonl"
@@ -304,26 +302,13 @@ def test_runtime_normalizes_run_id_and_orders_same_decision_by_request(
             ]
         }
     )
-    client = _Client()
-    runtime = AgentRuntime(
-        config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
-        store=store,
-        model=_Model([decision, AgentModelDecision(message="done")]),
-        clients={"tinyllm-devops": client},  # type: ignore[dict-item]
-    )
+    calls = _normalize_tool_calls(decision.tool_calls, messages=messages)
 
-    answer = asyncio.run(runtime.run(run_id, messages=messages))
-
-    assert [name for name, _ in client.calls] == ["get_run", "read_log_excerpt", "query_metrics"]
-    assert client.calls[0][1] == {"run_id": run_identifier}
-    assert answer is not None
-    assert answer.count("[evidence:") == 3
-    assert log_path in answer
-    assert metrics_path in answer
+    assert [call.tool_name for call in calls] == ["get_run", "read_log_excerpt", "query_metrics"]
+    assert calls[0].arguments == {"run_id": run_identifier}
 
 
-def test_runtime_repairs_only_file_type_incompatible_read_routes(tmp_path: Path) -> None:
-    store, run_id, _ = _run(tmp_path)
+def test_repairs_only_file_type_incompatible_read_routes() -> None:
     log_path = "runs/m9/run-one/logs/trainer.log"
     metrics_path = "runs/m9/run-one/metrics.jsonl"
     messages = (
@@ -350,14 +335,67 @@ def test_runtime_repairs_only_file_type_incompatible_read_routes(tmp_path: Path)
             ]
         }
     )
+    calls = _normalize_tool_calls(decision.tool_calls, messages=messages)
+
+    assert [call.tool_name for call in calls] == ["read_log_excerpt", "query_metrics"]
+
+
+def test_runtime_executes_explicit_read_plan_before_model_decision(tmp_path: Path) -> None:
+    store, run_id, _ = _run(tmp_path)
+    run_identifier = "20260820T010000Z-agent-eval-a1b2c3d4-0001"
+    log_path = f"runs/m9/{run_identifier}/logs/trainer.log"
+    metrics_path = f"runs/m9/{run_identifier}/metrics.jsonl"
+    messages = (
+        AgentMessage(
+            role="user",
+            content=(
+                f"Read Run {run_identifier}. Then read {log_path} lines 4 through 9. "
+                f"Then query {metrics_path} for loss, latest 7."
+            ),
+        ),
+    )
     client = _Client()
     runtime = AgentRuntime(
         config=load_agent_config(Path("configs/agent/m8_devops.yaml")),
         store=store,
-        model=_Model([decision, AgentModelDecision(message="done")]),
+        model=_Model([AgentModelDecision(message="done")]),
         clients={"tinyllm-devops": client},  # type: ignore[dict-item]
     )
 
-    asyncio.run(runtime.run(run_id, messages=messages))
+    answer = asyncio.run(runtime.run(run_id, messages=messages))
 
-    assert [name for name, _ in client.calls] == ["read_log_excerpt", "query_metrics"]
+    assert client.calls == [
+        ("get_run", {"run_id": run_identifier}),
+        (
+            "read_log_excerpt",
+            {"relative_path": log_path, "start_line": 4, "end_line": 9},
+        ),
+        (
+            "query_metrics",
+            {"relative_path": metrics_path, "metric_names": ["loss"], "limit": 7},
+        ),
+    ]
+    assert answer is not None
+    assert answer.count("[evidence:") == 3
+    assert log_path in answer
+    assert metrics_path in answer
+
+
+def test_explicit_read_plan_rejects_unrequested_negated_and_write_paths() -> None:
+    allowed = (
+        "tinyllm-devops.get_run",
+        "tinyllm-devops.read_log_excerpt",
+        "tinyllm-devops.inspect_config",
+    )
+    messages = (
+        AgentMessage(
+            role="user",
+            content=(
+                "Do not read runs/m9/run-one/logs/trainer.log. "
+                "Reference: runs/m9/run-one/logs/other.log. "
+                "Change deployments/prod/config.yaml to use the candidate."
+            ),
+        ),
+    )
+
+    assert _explicit_read_plan(messages=messages, allowed_tools=allowed) == ()

@@ -43,10 +43,11 @@ class _FakeGatewayAgentModel:
                     ),
                 )
             )
+        call_id = observations[-1].get("call_id")
+        assert isinstance(call_id, str)
         return AgentModelDecision(
             message=(
-                "Run 20260820T011500Z-serving-smoke-b2c3d4e5-0002 succeeded. "
-                "[evidence:call_fixture_get_run]"
+                f"Run 20260820T011500Z-serving-smoke-b2c3d4e5-0002 succeeded. [evidence:{call_id}]"
             )
         )
 
@@ -82,7 +83,8 @@ def test_evaluate_task_crosses_real_agent_graph_and_fixture_mcp(
     assert result.status == "succeeded"
     assert result.task_success is True
     assert result.calls[0].tool_name == "get_run"
-    assert result.evidence_citations == ("call_fixture_get_run",)
+    assert len(result.evidence_citations) == 1
+    assert result.evidence_citations[0].startswith("call_plan_")
     assert result.input_tokens == 10
     assert result.output_tokens == 5
 

@@ -20,8 +20,10 @@ from tinyllm.deployment import (
 from tinyllm.deployment.m10_lora_stage import (
     M10LoRAAdapterCalibrationEvidence,
     M10LoRAAdapterInterpolationEvidence,
+    M10LoRAAdapterModuleProfileEvidence,
     M10LoRAStageRegistrationError,
     _interpolate_adapter_states,
+    _profile_adapter_state,
 )
 from tinyllm.evaluation import M6ModelIdentity
 
@@ -99,6 +101,62 @@ def test_lora_interpolation_evidence_and_tensor_math_are_exact() -> None:
     assert torch.equal(interpolated["layer"], torch.tensor([3.0, 7.0], dtype=torch.bfloat16))
     with pytest.raises(M10LoRAStageRegistrationError, match="inputs are incompatible"):
         _interpolate_adapter_states(early, {}, late_weight_basis_points=7500)
+
+
+def test_lora_module_profile_evidence_and_tensor_math_are_exact() -> None:
+    scales = {
+        "down_proj": 1250,
+        "gate_proj": 1250,
+        "k_proj": 10000,
+        "o_proj": 10000,
+        "q_proj": 10000,
+        "up_proj": 1250,
+        "v_proj": 10000,
+    }
+    evidence = M10LoRAAdapterModuleProfileEvidence(
+        source_subject_id="qwen3-8b-m10-agent-lora-5m-1234abcd",
+        source_evaluation_subject_sha256="a" * 64,
+        source_adapter_artifact_sha256="b" * 64,
+        source_adapter_weights_sha256="c" * 64,
+        derived_adapter_artifact_sha256="d" * 64,
+        derived_adapter_weights_sha256="e" * 64,
+        profile="attention_full_mlp_eighth",
+        module_relative_scale_basis_points=scales,
+    )
+    assert evidence.module_relative_scale_basis_points == scales
+    with pytest.raises(ValueError, match="differ from the named profile"):
+        M10LoRAAdapterModuleProfileEvidence(
+            **evidence.model_dump(
+                mode="python",
+                exclude={"module_relative_scale_basis_points"},
+            ),
+            module_relative_scale_basis_points={**scales, "q_proj": 1250},
+        )
+
+    source = {
+        "base_model.model.model.layers.0.self_attn.q_proj.lora_A.weight": torch.tensor(
+            [2.0], dtype=torch.bfloat16
+        ),
+        "base_model.model.model.layers.0.self_attn.q_proj.lora_B.weight": torch.tensor(
+            [2.0], dtype=torch.bfloat16
+        ),
+        "base_model.model.model.layers.0.mlp.up_proj.lora_B.weight": torch.tensor(
+            [2.0], dtype=torch.bfloat16
+        ),
+    }
+    derived = _profile_adapter_state(source, profile="attention_full_mlp_eighth")
+    assert torch.equal(
+        derived["base_model.model.model.layers.0.self_attn.q_proj.lora_A.weight"],
+        torch.tensor([2.0], dtype=torch.bfloat16),
+    )
+    assert torch.equal(
+        derived["base_model.model.model.layers.0.self_attn.q_proj.lora_B.weight"],
+        torch.tensor([16.0], dtype=torch.bfloat16),
+    )
+    assert torch.equal(
+        derived["base_model.model.model.layers.0.mlp.up_proj.lora_B.weight"],
+        torch.tensor([2.0], dtype=torch.bfloat16),
+    )
 
 
 def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluationSubjectRecord:

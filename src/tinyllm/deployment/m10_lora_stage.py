@@ -130,6 +130,60 @@ class M10LoRAAdapterInterpolationEvidence(StrictSchema):
         return self
 
 
+MODULE_NAMES = (
+    "down_proj",
+    "gate_proj",
+    "k_proj",
+    "o_proj",
+    "q_proj",
+    "up_proj",
+    "v_proj",
+)
+
+
+class M10LoRAAdapterModuleProfileEvidence(StrictSchema):
+    """Lineage for a fixed per-module LoRA strength profile."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    profile_version: Literal["m10-lora-module-profile-v1"] = "m10-lora-module-profile-v1"
+    source_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$")
+    source_evaluation_subject_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    source_adapter_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    source_adapter_weights_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    derived_adapter_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    derived_adapter_weights_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    rank: Literal[16] = 16
+    source_alpha: Literal[32] = 32
+    derived_alpha: Literal[4] = 4
+    profile: Literal[
+        "attention_full_mlp_eighth",
+        "mlp_full_attention_eighth",
+        "qv_full_rest_eighth",
+    ]
+    module_relative_scale_basis_points: dict[
+        Literal[
+            "down_proj",
+            "gate_proj",
+            "k_proj",
+            "o_proj",
+            "q_proj",
+            "up_proj",
+            "v_proj",
+        ],
+        Literal[1250, 10000],
+    ]
+    scaling_operation: Literal["float32_scale_lora_b_source_dtype_output"] = (
+        "float32_scale_lora_b_source_dtype_output"
+    )
+    selection_inputs: Literal["public_dev_and_public_bfcl"] = "public_dev_and_public_bfcl"
+
+    @model_validator(mode="after")
+    def validate_profile(self) -> M10LoRAAdapterModuleProfileEvidence:
+        if self.module_relative_scale_basis_points != _module_profile_scales(self.profile):
+            raise ValueError("M10 LoRA module scales differ from the named profile")
+        return self
+
+
 class M10LoRAStageRegistrationError(RuntimeError):
     """Raised when one LoRA stage has incomplete or drifting lineage."""
 
@@ -153,6 +207,41 @@ def _interpolate_adapter_states(
             .mul(early_weight / 10_000)
             .add(late_tensor.float(), alpha=late_weight_basis_points / 10_000)
         ).to(dtype=early_tensor.dtype)
+    return result
+
+
+def _module_profile_scales(profile: str) -> dict[str, int]:
+    low = 1250
+    full = 10_000
+    if profile == "attention_full_mlp_eighth":
+        return {
+            module: full if module in {"k_proj", "o_proj", "q_proj", "v_proj"} else low
+            for module in MODULE_NAMES
+        }
+    if profile == "mlp_full_attention_eighth":
+        return {
+            module: full if module in {"down_proj", "gate_proj", "up_proj"} else low
+            for module in MODULE_NAMES
+        }
+    if profile == "qv_full_rest_eighth":
+        return {module: full if module in {"q_proj", "v_proj"} else low for module in MODULE_NAMES}
+    raise M10LoRAStageRegistrationError("M10 LoRA module profile is unsupported")
+
+
+def _profile_adapter_state(source: dict[str, Tensor], *, profile: str) -> dict[str, Tensor]:
+    """Apply exact effective-strength ratios by scaling LoRA B tensors only."""
+
+    scales = _module_profile_scales(profile)
+    result: dict[str, Tensor] = {}
+    for key in sorted(source):
+        matches = [module for module in MODULE_NAMES if f".{module}." in key]
+        if len(matches) != 1 or not key.endswith((".lora_A.weight", ".lora_B.weight")):
+            raise M10LoRAStageRegistrationError("M10 LoRA module tensor topology differs")
+        tensor = source[key]
+        if key.endswith(".lora_B.weight"):
+            multiplier = scales[matches[0]] / 1250
+            tensor = tensor.float().mul(multiplier).to(dtype=tensor.dtype)
+        result[key] = tensor
     return result
 
 
@@ -795,6 +884,230 @@ def register_m10_lora_interpolated_evaluation_subject(
         raise M10LoRAStageRegistrationError("M10 LoRA interpolation registration failed") from exc
 
 
+def create_m10_lora_module_profile_adapter(
+    *,
+    artifact_root: Path,
+    source_subject_id: str,
+    output_directory: Path,
+    profile: Literal[
+        "attention_full_mlp_eighth",
+        "mlp_full_attention_eighth",
+        "qv_full_rest_eighth",
+    ],
+) -> M10LoRAAdapterModuleProfileEvidence:
+    """Create one immutable Adapter with a fixed module-level strength profile."""
+
+    from safetensors.torch import load_file, save_file  # type: ignore[import-not-found]
+
+    if (
+        not artifact_root.is_absolute()
+        or artifact_root.is_symlink()
+        or not output_directory.is_absolute()
+        or output_directory.is_symlink()
+        or output_directory.exists()
+    ):
+        raise M10LoRAStageRegistrationError("M10 LoRA module-profile paths are unsafe")
+    try:
+        root = artifact_root.resolve(strict=True)
+        output_parent = output_directory.parent.resolve(strict=True)
+        source_path = root / "registry" / "evaluation-subjects" / source_subject_id / "model.json"
+        source_payload = source_path.read_bytes()
+        source = M10LoRAStageEvaluationSubjectRecord.model_validate_json(source_payload)
+        resolve_m10_lora_stage_evaluation_subject(root, source_subject_id)
+        source_config = _normalized_adapter_config(source.adapter_dir / "adapter_config.json")
+        source_state = load_file(source.adapter_dir / "adapter_model.safetensors", device="cpu")
+    except (OSError, ValidationError, ValueError, DeploymentError, RuntimeError) as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA module-profile source is invalid") from exc
+    if not output_parent.is_relative_to(root):
+        raise M10LoRAStageRegistrationError("M10 LoRA module profile escapes the Artifact Store")
+    if (
+        source.kind != "m10_agent_lora_5m"
+        or source.adapter_calibration_evidence_sha256 is not None
+        or source.adapter_interpolation_evidence_sha256 is not None
+        or source.adapter_module_profile_evidence_sha256 is not None
+        or source_config.get("r") != 16
+        or source_config.get("lora_alpha") != 32
+    ):
+        raise M10LoRAStageRegistrationError(
+            "M10 LoRA module profile requires an original Alpha-32 5M source"
+        )
+
+    temporary = output_parent / f".{output_directory.name}.tmp-{uuid.uuid4().hex}"
+    temporary.mkdir()
+    try:
+        derived_config = dict(source_config)
+        derived_config["lora_alpha"] = 4
+        (temporary / "adapter_config.json").write_text(
+            json.dumps(derived_config, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        derived_state = _profile_adapter_state(source_state, profile=profile)
+        save_file(
+            derived_state,
+            temporary / "adapter_model.safetensors",
+            metadata={"format": "pt"},
+        )
+        adapter_sha256 = evaluation_artifact_sha256(temporary, ADAPTER_FILES)
+        evidence = M10LoRAAdapterModuleProfileEvidence(
+            source_subject_id=source.subject_id,
+            source_evaluation_subject_sha256=hashlib.sha256(source_payload).hexdigest(),
+            source_adapter_artifact_sha256=source.adapter_artifact_sha256,
+            source_adapter_weights_sha256=_sha256_file(
+                source.adapter_dir / "adapter_model.safetensors"
+            ),
+            derived_adapter_artifact_sha256=adapter_sha256,
+            derived_adapter_weights_sha256=_sha256_file(temporary / "adapter_model.safetensors"),
+            profile=profile,
+            module_relative_scale_basis_points=_module_profile_scales(profile),
+        )
+        (temporary / "module-profile.json").write_text(
+            json.dumps(
+                evidence.to_dict(),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, output_directory)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    return evidence
+
+
+def build_m10_lora_module_profile_evaluation_subject(
+    *, artifact_root: Path, module_profile_adapter_dir: Path
+) -> M10LoRAStageEvaluationSubjectRecord:
+    """Validate and bind a module-profile Adapter as an Evaluation subject."""
+
+    from safetensors.torch import load_file
+
+    if (
+        not artifact_root.is_absolute()
+        or artifact_root.is_symlink()
+        or not module_profile_adapter_dir.is_absolute()
+        or module_profile_adapter_dir.is_symlink()
+    ):
+        raise M10LoRAStageRegistrationError("M10 LoRA module-profile registration paths are unsafe")
+    try:
+        root = artifact_root.resolve(strict=True)
+        adapter_dir = module_profile_adapter_dir.resolve(strict=True)
+        evidence_path = adapter_dir / "module-profile.json"
+        evidence = M10LoRAAdapterModuleProfileEvidence.model_validate_json(
+            evidence_path.read_bytes()
+        )
+        evidence_sha256 = _sha256_file(evidence_path)
+        source_path = (
+            root / "registry" / "evaluation-subjects" / evidence.source_subject_id / "model.json"
+        )
+        source_payload = source_path.read_bytes()
+        source = M10LoRAStageEvaluationSubjectRecord.model_validate_json(source_payload)
+        resolved = resolve_m10_lora_stage_evaluation_subject(root, source.subject_id)
+        source_config = _normalized_adapter_config(source.adapter_dir / "adapter_config.json")
+        derived_config = _normalized_adapter_config(adapter_dir / "adapter_config.json")
+        source_state = load_file(source.adapter_dir / "adapter_model.safetensors", device="cpu")
+        expected_state = _profile_adapter_state(source_state, profile=evidence.profile)
+        observed_state = load_file(adapter_dir / "adapter_model.safetensors", device="cpu")
+        derived_sha256 = evaluation_artifact_sha256(adapter_dir, ADAPTER_FILES)
+    except (
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        ValidationError,
+        ValueError,
+        DeploymentError,
+        RuntimeError,
+    ) as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA module-profile evidence is invalid") from exc
+    if not adapter_dir.is_relative_to(root):
+        raise M10LoRAStageRegistrationError("M10 LoRA module profile escapes the Artifact Store")
+    expected_config = dict(source_config)
+    expected_config["lora_alpha"] = 4
+    identities = (
+        (source.subject_id, evidence.source_subject_id),
+        (hashlib.sha256(source_payload).hexdigest(), evidence.source_evaluation_subject_sha256),
+        (source.adapter_artifact_sha256, evidence.source_adapter_artifact_sha256),
+        (
+            _sha256_file(source.adapter_dir / "adapter_model.safetensors"),
+            evidence.source_adapter_weights_sha256,
+        ),
+        (
+            _sha256_file(adapter_dir / "adapter_model.safetensors"),
+            evidence.derived_adapter_weights_sha256,
+        ),
+        (derived_sha256, evidence.derived_adapter_artifact_sha256),
+        (source_config.get("r"), evidence.rank),
+        (source_config.get("lora_alpha"), evidence.source_alpha),
+        (derived_config.get("lora_alpha"), evidence.derived_alpha),
+        (derived_config, expected_config),
+        (resolved.model_artifact_sha256, source.effective_artifact_sha256),
+    )
+    if any(actual != expected for actual, expected in identities):
+        raise M10LoRAStageRegistrationError("M10 LoRA module-profile lineage differs")
+    if set(expected_state) != set(observed_state) or any(
+        not torch.equal(expected_state[key], observed_state[key]) for key in expected_state
+    ):
+        raise M10LoRAStageRegistrationError("M10 LoRA module-profile weights differ")
+
+    effective_sha256 = effective_artifact_sha256(source.base_model_artifact_sha256, derived_sha256)
+    model = source.model.model_copy(
+        update={
+            "model_artifact_sha256": effective_sha256,
+            "adapter_sha256": derived_sha256,
+        }
+    )
+    subject_id = m10_lora_stage_evaluation_subject_id(
+        model=model,
+        base_model_artifact_sha256=source.base_model_artifact_sha256,
+        tokenizer_artifact_sha256=source.tokenizer_artifact_sha256,
+        adapter_artifact_sha256=derived_sha256,
+        source_result_sha256=source.source_result_sha256,
+        checkpoint_manifest_sha256=source.checkpoint_manifest_sha256,
+        memory_probe_sha256=source.memory_probe_sha256,
+        adapter_module_profile_evidence_sha256=evidence_sha256,
+    )
+    return M10LoRAStageEvaluationSubjectRecord(
+        **source.model_dump(
+            mode="python",
+            exclude={
+                "subject_id",
+                "created_at",
+                "model",
+                "adapter_dir",
+                "adapter_artifact_sha256",
+                "effective_artifact_sha256",
+                "adapter_calibration_evidence_sha256",
+                "adapter_interpolation_evidence_sha256",
+                "adapter_module_profile_evidence_sha256",
+            },
+        ),
+        subject_id=subject_id,
+        created_at=datetime.now(UTC),
+        model=model,
+        adapter_dir=adapter_dir,
+        adapter_artifact_sha256=derived_sha256,
+        effective_artifact_sha256=effective_sha256,
+        adapter_module_profile_evidence_sha256=evidence_sha256,
+    )
+
+
+def register_m10_lora_module_profile_evaluation_subject(
+    *, artifact_root: Path, module_profile_adapter_dir: Path
+) -> tuple[M10LoRAStageEvaluationSubjectRecord, str]:
+    """Validate and publish one module-profile M10 Agent LoRA subject."""
+
+    record = build_m10_lora_module_profile_evaluation_subject(
+        artifact_root=artifact_root,
+        module_profile_adapter_dir=module_profile_adapter_dir,
+    )
+    try:
+        return publish_m10_lora_stage_evaluation_subject(artifact_root, record)
+    except DeploymentError as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA module-profile registration failed") from exc
+
+
 def build_m10_lora_calibrated_evaluation_subject(
     *, artifact_root: Path, source_subject_id: str, calibrated_adapter_dir: Path
 ) -> M10LoRAStageEvaluationSubjectRecord:
@@ -930,14 +1243,18 @@ __all__ = [
     "M10LoRACheckpointExportEvidence",
     "M10LoRAAdapterCalibrationEvidence",
     "M10LoRAAdapterInterpolationEvidence",
+    "M10LoRAAdapterModuleProfileEvidence",
     "M10LoRAStageRegistrationError",
     "build_m10_lora_checkpoint_evaluation_subject",
     "build_m10_lora_calibrated_evaluation_subject",
     "build_m10_lora_interpolated_evaluation_subject",
+    "build_m10_lora_module_profile_evaluation_subject",
+    "create_m10_lora_module_profile_adapter",
     "create_m10_lora_interpolated_adapter",
     "build_m10_lora_stage_evaluation_subject",
     "register_m10_lora_checkpoint_evaluation_subject",
     "register_m10_lora_calibrated_evaluation_subject",
     "register_m10_lora_interpolated_evaluation_subject",
+    "register_m10_lora_module_profile_evaluation_subject",
     "register_m10_lora_stage_evaluation_subject",
 ]

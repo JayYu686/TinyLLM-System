@@ -162,6 +162,7 @@ def test_lora_module_profile_evidence_and_tensor_math_are_exact() -> None:
     )
     assert _module_profile_scales("mlp_half_attention_eighth")["up_proj"] == 5000
     assert _module_profile_scales("mlp_quarter_attention_eighth")["up_proj"] == 2500
+    assert _module_profile_scales("mlp_three_quarter_attention_eighth")["up_proj"] == 7500
     assert _module_profile_scales("mlp_half_attention_eighth")["q_proj"] == 1250
 
 

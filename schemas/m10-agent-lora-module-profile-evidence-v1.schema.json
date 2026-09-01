@@ -24,6 +24,7 @@
           1250,
           2500,
           5000,
+          7500,
           10000
         ],
         "type": "integer"
@@ -48,6 +49,7 @@
         "mlp_full_attention_eighth",
         "mlp_half_attention_eighth",
         "mlp_quarter_attention_eighth",
+        "mlp_three_quarter_attention_eighth",
         "qv_full_rest_eighth"
       ],
       "title": "Profile",

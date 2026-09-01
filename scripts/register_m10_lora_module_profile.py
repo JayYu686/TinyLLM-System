@@ -19,6 +19,7 @@ ModuleProfile = Literal[
     "mlp_full_attention_eighth",
     "mlp_half_attention_eighth",
     "mlp_quarter_attention_eighth",
+    "mlp_three_quarter_attention_eighth",
     "qv_full_rest_eighth",
 ]
 
@@ -35,6 +36,7 @@ def main() -> int:
             "mlp_full_attention_eighth",
             "mlp_half_attention_eighth",
             "mlp_quarter_attention_eighth",
+            "mlp_three_quarter_attention_eighth",
             "qv_full_rest_eighth",
         ),
         required=True,

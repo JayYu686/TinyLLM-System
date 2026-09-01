@@ -130,7 +130,23 @@ class M10LoRAAdapterInterpolationEvidence(StrictSchema):
         return self
 
 
-MODULE_NAMES = (
+ModuleName = Literal[
+    "down_proj",
+    "gate_proj",
+    "k_proj",
+    "o_proj",
+    "q_proj",
+    "up_proj",
+    "v_proj",
+]
+ModuleScale = Literal[1250, 10000]
+ModuleProfile = Literal[
+    "attention_full_mlp_eighth",
+    "mlp_full_attention_eighth",
+    "qv_full_rest_eighth",
+]
+
+MODULE_NAMES: tuple[ModuleName, ...] = (
     "down_proj",
     "gate_proj",
     "k_proj",
@@ -155,23 +171,8 @@ class M10LoRAAdapterModuleProfileEvidence(StrictSchema):
     rank: Literal[16] = 16
     source_alpha: Literal[32] = 32
     derived_alpha: Literal[4] = 4
-    profile: Literal[
-        "attention_full_mlp_eighth",
-        "mlp_full_attention_eighth",
-        "qv_full_rest_eighth",
-    ]
-    module_relative_scale_basis_points: dict[
-        Literal[
-            "down_proj",
-            "gate_proj",
-            "k_proj",
-            "o_proj",
-            "q_proj",
-            "up_proj",
-            "v_proj",
-        ],
-        Literal[1250, 10000],
-    ]
+    profile: ModuleProfile
+    module_relative_scale_basis_points: dict[ModuleName, ModuleScale]
     scaling_operation: Literal["float32_scale_lora_b_source_dtype_output"] = (
         "float32_scale_lora_b_source_dtype_output"
     )
@@ -210,9 +211,9 @@ def _interpolate_adapter_states(
     return result
 
 
-def _module_profile_scales(profile: str) -> dict[str, int]:
-    low = 1250
-    full = 10_000
+def _module_profile_scales(profile: ModuleProfile) -> dict[ModuleName, ModuleScale]:
+    low: ModuleScale = 1250
+    full: ModuleScale = 10_000
     if profile == "attention_full_mlp_eighth":
         return {
             module: full if module in {"k_proj", "o_proj", "q_proj", "v_proj"} else low
@@ -228,7 +229,9 @@ def _module_profile_scales(profile: str) -> dict[str, int]:
     raise M10LoRAStageRegistrationError("M10 LoRA module profile is unsupported")
 
 
-def _profile_adapter_state(source: dict[str, Tensor], *, profile: str) -> dict[str, Tensor]:
+def _profile_adapter_state(
+    source: dict[str, Tensor], *, profile: ModuleProfile
+) -> dict[str, Tensor]:
     """Apply exact effective-strength ratios by scaling LoRA B tensors only."""
 
     scales = _module_profile_scales(profile)
@@ -889,15 +892,11 @@ def create_m10_lora_module_profile_adapter(
     artifact_root: Path,
     source_subject_id: str,
     output_directory: Path,
-    profile: Literal[
-        "attention_full_mlp_eighth",
-        "mlp_full_attention_eighth",
-        "qv_full_rest_eighth",
-    ],
+    profile: ModuleProfile,
 ) -> M10LoRAAdapterModuleProfileEvidence:
     """Create one immutable Adapter with a fixed module-level strength profile."""
 
-    from safetensors.torch import load_file, save_file  # type: ignore[import-not-found]
+    from safetensors.torch import load_file, save_file
 
     if (
         not artifact_root.is_absolute()
@@ -1244,6 +1243,9 @@ __all__ = [
     "M10LoRAAdapterCalibrationEvidence",
     "M10LoRAAdapterInterpolationEvidence",
     "M10LoRAAdapterModuleProfileEvidence",
+    "ModuleName",
+    "ModuleProfile",
+    "ModuleScale",
     "M10LoRAStageRegistrationError",
     "build_m10_lora_checkpoint_evaluation_subject",
     "build_m10_lora_calibrated_evaluation_subject",

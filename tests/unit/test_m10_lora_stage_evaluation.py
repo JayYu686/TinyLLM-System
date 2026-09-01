@@ -22,6 +22,8 @@ from tinyllm.deployment.m10_lora_stage import (
     M10LoRAAdapterInterpolationEvidence,
     M10LoRAAdapterModuleProfileEvidence,
     M10LoRAStageRegistrationError,
+    ModuleName,
+    ModuleScale,
     _interpolate_adapter_states,
     _profile_adapter_state,
 )
@@ -104,7 +106,7 @@ def test_lora_interpolation_evidence_and_tensor_math_are_exact() -> None:
 
 
 def test_lora_module_profile_evidence_and_tensor_math_are_exact() -> None:
-    scales = {
+    scales: dict[ModuleName, ModuleScale] = {
         "down_proj": 1250,
         "gate_proj": 1250,
         "k_proj": 10000,

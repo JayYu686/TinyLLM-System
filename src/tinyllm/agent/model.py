@@ -280,14 +280,16 @@ class GatewayAgentModel:
                     ),
                 }
             )
-        payload = {
+        payload: dict[str, Any] = {
             "model": self.model,
             "messages": wire_messages,
             "mode": mode,
             "stream": False,
             "temperature": 0,
             "max_completion_tokens": 512,
-            "tools": [
+        }
+        if selected:
+            payload["tools"] = [
                 {
                     "type": "function",
                     "function": {
@@ -297,9 +299,8 @@ class GatewayAgentModel:
                     },
                 }
                 for item in selected
-            ],
-            "tool_choice": "auto",
-        }
+            ]
+            payload["tool_choice"] = "auto"
         if self.seed is not None:
             payload["seed"] = self.seed
         try:

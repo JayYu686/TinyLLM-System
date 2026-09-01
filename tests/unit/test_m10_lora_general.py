@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 import tinyllm.training.m10_lora_general as general_module
-from tinyllm.deployment import ResolvedEvaluationSubject
+from tinyllm.deployment import M10AdapterRoutingPolicy, ResolvedEvaluationSubject
 from tinyllm.evaluation import GeneralBaselineSummary, GeneralTaskResult, M6ModelIdentity
 from tinyllm.training.m10_lora_general import run_m10_lora_general_pass
 from tinyllm.training.m10_lora_schema import (
@@ -42,7 +42,9 @@ def _general_summary() -> GeneralBaselineSummary:
     )
 
 
-def _resolved(tmp_path: Path, *, candidate: bool) -> ResolvedEvaluationSubject:
+def _resolved(
+    tmp_path: Path, *, candidate: bool, routed: bool = False
+) -> ResolvedEvaluationSubject:
     model_dir = (tmp_path / ("candidate-model" if candidate else "parent-model")).resolve()
     tokenizer_dir = (tmp_path / "tokenizer").resolve()
     adapter_dir = (tmp_path / "adapter").resolve() if candidate else None
@@ -79,21 +81,30 @@ def _resolved(tmp_path: Path, *, candidate: bool) -> ResolvedEvaluationSubject:
         tokenizer_artifact_sha256="4" * 64,
         adapter_dir=adapter_dir,
         adapter_artifact_sha256="8" * 64 if candidate else None,
+        adapter_routing_policy=M10AdapterRoutingPolicy() if routed else None,
         verified_at=datetime(2026, 8, 31, tzinfo=UTC),
     )
 
 
-@pytest.mark.parametrize("candidate", [False, True])
+@pytest.mark.parametrize(
+    ("candidate", "routed", "adapter_enabled"),
+    [(False, False, False), (True, False, True), (True, True, False)],
+)
 def test_m10_lora_general_pass_binds_parent_and_candidate_lineage(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, candidate: bool
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    candidate: bool,
+    routed: bool,
+    adapter_enabled: bool,
 ) -> None:
-    subject = _resolved(tmp_path, candidate=candidate)
+    subject = _resolved(tmp_path, candidate=candidate, routed=routed)
     output = (tmp_path / ("candidate-output" if candidate else "parent-output")).resolve()
     artifact_root = (tmp_path / "artifacts").resolve()
     artifact_root.mkdir()
+    observed: dict[str, object] = {}
 
     def run_general(*_args: object, **kwargs: object) -> GeneralBaselineSummary:
-        assert kwargs["adapter_path"] == subject.adapter_dir
+        assert kwargs["adapter_path"] == (subject.adapter_dir if adapter_enabled else None)
         output_path = kwargs["output_path"]
         assert isinstance(output_path, Path)
         raw = output_path / "raw/model"
@@ -113,7 +124,9 @@ def test_m10_lora_general_pass_binds_parent_and_candidate_lineage(
     monkeypatch.setattr(
         general_module,
         "_environment_payload",
-        lambda **_: {"schema_version": "1.0", "environment": "test"},
+        lambda **kwargs: (
+            observed.update(kwargs) or {"schema_version": "1.0", "environment": "test"}
+        ),
     )
     monkeypatch.setattr(
         general_module,
@@ -134,6 +147,7 @@ def test_m10_lora_general_pass_binds_parent_and_candidate_lineage(
     assert result.evaluation_id.startswith(f"m10-lora-m6-general-{kind}-")
     assert result.evaluation_subject_sha256 == subject.evaluation_subject_sha256
     assert result.general.aggregate_basis_points == 6000
+    assert observed["adapter_enabled"] is adapter_enabled
     assert (
         M10LoRAGeneralPassSummary.model_validate_json((output / "summary.json").read_bytes())
         == result

@@ -97,6 +97,7 @@ def run_m10_lora_general_pass(
         raise M10LoRAGeneralError("M10 LoRA M6 requires the frozen v7 Release config")
 
     baseline_config = load_baseline_config(project_root / "configs/eval/m2_baseline.yaml")
+    adapter_enabled = subject.adapter_dir is not None and subject.adapter_routing_policy is None
     started = time.monotonic()
     general_summary = run_general_evaluation(
         baseline_config,
@@ -104,7 +105,7 @@ def run_m10_lora_general_pass(
         artifact_root=artifact_root,
         model_path=subject.model_dir,
         tokenizer_path=subject.tokenizer_dir,
-        adapter_path=subject.adapter_dir,
+        adapter_path=subject.adapter_dir if adapter_enabled else None,
         output_path=output_dir,
         device="cuda",
         offline=True,
@@ -113,7 +114,7 @@ def run_m10_lora_general_pass(
     hardware_path = output_dir / "hardware.json"
     _atomic_json(
         environment_path,
-        _environment_payload(adapter_enabled=subject.adapter_dir is not None),
+        _environment_payload(adapter_enabled=adapter_enabled),
     )
     _atomic_json(hardware_path, _hardware_payload(physical_gpu_index))
     raw_results_sha256 = sha256_tree(output_dir / "raw")

@@ -139,10 +139,12 @@ ModuleName = Literal[
     "up_proj",
     "v_proj",
 ]
-ModuleScale = Literal[1250, 10000]
+ModuleScale = Literal[1250, 2500, 5000, 10000]
 ModuleProfile = Literal[
     "attention_full_mlp_eighth",
     "mlp_full_attention_eighth",
+    "mlp_half_attention_eighth",
+    "mlp_quarter_attention_eighth",
     "qv_full_rest_eighth",
 ]
 
@@ -222,6 +224,12 @@ def _module_profile_scales(profile: ModuleProfile) -> dict[ModuleName, ModuleSca
     if profile == "mlp_full_attention_eighth":
         return {
             module: full if module in {"down_proj", "gate_proj", "up_proj"} else low
+            for module in MODULE_NAMES
+        }
+    if profile in {"mlp_half_attention_eighth", "mlp_quarter_attention_eighth"}:
+        mlp_scale: ModuleScale = 5000 if profile == "mlp_half_attention_eighth" else 2500
+        return {
+            module: mlp_scale if module in {"down_proj", "gate_proj", "up_proj"} else low
             for module in MODULE_NAMES
         }
     if profile == "qv_full_rest_eighth":

@@ -25,6 +25,7 @@ from tinyllm.deployment.m10_lora_stage import (
     ModuleName,
     ModuleScale,
     _interpolate_adapter_states,
+    _module_profile_scales,
     _profile_adapter_state,
 )
 from tinyllm.evaluation import M6ModelIdentity
@@ -159,6 +160,9 @@ def test_lora_module_profile_evidence_and_tensor_math_are_exact() -> None:
         derived["base_model.model.model.layers.0.mlp.up_proj.lora_B.weight"],
         torch.tensor([2.0], dtype=torch.bfloat16),
     )
+    assert _module_profile_scales("mlp_half_attention_eighth")["up_proj"] == 5000
+    assert _module_profile_scales("mlp_quarter_attention_eighth")["up_proj"] == 2500
+    assert _module_profile_scales("mlp_half_attention_eighth")["q_proj"] == 1250
 
 
 def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluationSubjectRecord:

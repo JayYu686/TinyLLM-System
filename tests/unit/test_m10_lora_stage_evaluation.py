@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from types import ModuleType
 from typing import Literal, cast
 
 import pytest
@@ -27,6 +29,12 @@ from tinyllm.deployment.m10_lora_stage import (
     _interpolate_adapter_states,
     _module_profile_scales,
     _profile_adapter_state,
+    build_m10_lora_interpolated_evaluation_subject,
+    build_m10_lora_module_profile_evaluation_subject,
+    create_m10_lora_interpolated_adapter,
+    create_m10_lora_module_profile_adapter,
+    register_m10_lora_interpolated_evaluation_subject,
+    register_m10_lora_module_profile_evaluation_subject,
 )
 from tinyllm.evaluation import M6ModelIdentity
 
@@ -166,11 +174,17 @@ def test_lora_module_profile_evidence_and_tensor_math_are_exact() -> None:
     assert _module_profile_scales("mlp_half_attention_eighth")["q_proj"] == 1250
 
 
-def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluationSubjectRecord:
+def _record(
+    root: Path,
+    *,
+    stage_tokens: int = 1_000_000,
+    adapter_name: str = "adapter",
+    adapter_value: float = 1.0,
+) -> M10LoRAStageEvaluationSubjectRecord:
     model_dir = root / "cache" / "qwen3-8b"
-    adapter_dir = root / "runs" / "m10-lora" / "adapter"
+    adapter_dir = root / "runs" / "m10-lora" / adapter_name
     source_run = root / "runs" / "m10-lora"
-    model_dir.mkdir(parents=True)
+    model_dir.mkdir(parents=True, exist_ok=True)
     adapter_dir.mkdir(parents=True)
     (model_dir / "config.json").write_text(
         '{"architectures":["Qwen3ForCausalLM"],"model_type":"qwen3"}',
@@ -180,8 +194,27 @@ def _record(root: Path, *, stage_tokens: int = 1_000_000) -> M10LoRAStageEvaluat
         (model_dir / name).write_bytes(name.encode())
     (model_dir / "tokenizer.json").write_text("{}", encoding="utf-8")
     (model_dir / "tokenizer_config.json").write_text("{}", encoding="utf-8")
-    (adapter_dir / "adapter_config.json").write_text("{}", encoding="utf-8")
-    (adapter_dir / "adapter_model.safetensors").write_bytes(b"adapter")
+    (adapter_dir / "adapter_config.json").write_text(
+        '{"lora_alpha":32,"r":16,"target_modules":["up_proj","q_proj"]}',
+        encoding="utf-8",
+    )
+    torch.save(
+        {
+            "base_model.model.model.layers.0.self_attn.q_proj.lora_A.weight": torch.full(
+                (1,), adapter_value, dtype=torch.bfloat16
+            ),
+            "base_model.model.model.layers.0.self_attn.q_proj.lora_B.weight": torch.full(
+                (1,), adapter_value, dtype=torch.bfloat16
+            ),
+            "base_model.model.model.layers.0.mlp.up_proj.lora_A.weight": torch.full(
+                (1,), adapter_value, dtype=torch.bfloat16
+            ),
+            "base_model.model.model.layers.0.mlp.up_proj.lora_B.weight": torch.full(
+                (1,), adapter_value, dtype=torch.bfloat16
+            ),
+        },
+        adapter_dir / "adapter_model.safetensors",
+    )
     base_sha = evaluation_artifact_sha256(model_dir, MODEL_FILES)
     tokenizer_sha = evaluation_artifact_sha256(model_dir, TOKENIZER_FILES)
     adapter_sha = evaluation_artifact_sha256(adapter_dir, ADAPTER_FILES)
@@ -298,3 +331,118 @@ def test_lora_subject_rejects_paths_outside_store(tmp_path: Path) -> None:
     record = _record((tmp_path / "outside").resolve())
     with pytest.raises(DeploymentError, match="escapes the Artifact Store"):
         publish_m10_lora_stage_evaluation_subject(root, record)
+
+
+def test_interpolated_adapter_is_created_verified_published_and_resolved(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_safetensors(monkeypatch)
+    root = tmp_path.resolve()
+    early = _record(
+        root,
+        stage_tokens=1_000_000,
+        adapter_name="adapter-1m",
+        adapter_value=0.0,
+    )
+    late = _record(
+        root,
+        stage_tokens=5_000_000,
+        adapter_name="adapter-5m",
+        adapter_value=4.0,
+    )
+    publish_m10_lora_stage_evaluation_subject(root, early)
+    publish_m10_lora_stage_evaluation_subject(root, late)
+    derived_root = root / "derived-adapters"
+    derived_root.mkdir()
+    output = derived_root / "interpolated"
+
+    evidence = create_m10_lora_interpolated_adapter(
+        artifact_root=root,
+        early_subject_id=early.subject_id,
+        late_subject_id=late.subject_id,
+        output_directory=output,
+        late_weight_basis_points=7500,
+    )
+    built = build_m10_lora_interpolated_evaluation_subject(
+        artifact_root=root,
+        interpolated_adapter_dir=output,
+    )
+    registered, record_sha256 = register_m10_lora_interpolated_evaluation_subject(
+        artifact_root=root,
+        interpolated_adapter_dir=output,
+    )
+    resolved = resolve_m10_lora_stage_evaluation_subject(root, registered.subject_id, now=NOW)
+
+    assert evidence.early_weight_basis_points == 2500
+    assert evidence.late_weight_basis_points == 7500
+    assert built.adapter_interpolation_evidence_sha256 is not None
+    assert registered == built.model_copy(update={"created_at": registered.created_at})
+    assert resolved.evaluation_subject_sha256 == record_sha256
+    assert resolved.model_artifact_sha256 == registered.effective_artifact_sha256
+
+
+def test_module_profile_adapter_is_created_verified_published_and_resolved(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_safetensors(monkeypatch)
+    root = tmp_path.resolve()
+    source = _record(
+        root,
+        stage_tokens=5_000_000,
+        adapter_name="adapter-source",
+        adapter_value=2.0,
+    )
+    publish_m10_lora_stage_evaluation_subject(root, source)
+    derived_root = root / "derived-adapters"
+    derived_root.mkdir()
+    output = derived_root / "mlp-full"
+
+    evidence = create_m10_lora_module_profile_adapter(
+        artifact_root=root,
+        source_subject_id=source.subject_id,
+        output_directory=output,
+        profile="mlp_full_attention_eighth",
+    )
+    built = build_m10_lora_module_profile_evaluation_subject(
+        artifact_root=root,
+        module_profile_adapter_dir=output,
+    )
+    registered, record_sha256 = register_m10_lora_module_profile_evaluation_subject(
+        artifact_root=root,
+        module_profile_adapter_dir=output,
+    )
+    resolved = resolve_m10_lora_stage_evaluation_subject(root, registered.subject_id, now=NOW)
+
+    assert evidence.module_relative_scale_basis_points["up_proj"] == 10_000
+    assert evidence.module_relative_scale_basis_points["q_proj"] == 1250
+    assert built.adapter_module_profile_evidence_sha256 is not None
+    assert registered == built.model_copy(update={"created_at": registered.created_at})
+    assert resolved.evaluation_subject_sha256 == record_sha256
+    assert resolved.model_artifact_sha256 == registered.effective_artifact_sha256
+
+
+def _install_fake_safetensors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Provide the two tensor I/O calls used by the registry without an optional wheel."""
+
+    package = ModuleType("safetensors")
+    module = ModuleType("safetensors.torch")
+
+    def load_file(path: Path, *, device: str) -> dict[str, torch.Tensor]:
+        assert device == "cpu"
+        value = torch.load(path, map_location="cpu", weights_only=True)
+        assert isinstance(value, dict)
+        return value
+
+    def save_file(
+        tensors: dict[str, torch.Tensor], path: Path, *, metadata: dict[str, str]
+    ) -> None:
+        assert metadata == {"format": "pt"}
+        torch.save(tensors, path)
+
+    module.load_file = load_file  # type: ignore[attr-defined]
+    module.save_file = save_file  # type: ignore[attr-defined]
+    package.torch = module  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "safetensors", package)
+    monkeypatch.setitem(sys.modules, "safetensors.torch", module)

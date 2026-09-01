@@ -193,6 +193,7 @@ from tinyllm.deployment import (
     M7ServingHardware,
     M7VulnerabilityAssessment,
     M9EvaluationSubjectRecord,
+    M10AdapterRoutingPolicy,
     M10LoRAStageEvaluationSubjectRecord,
     M10StageEvaluationSubjectRecord,
     ResolvedEvaluationSubject,
@@ -618,6 +619,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-agent-lora-stage-evaluation-subject-record-v1.schema.json": (
         M10LoRAStageEvaluationSubjectRecord
     ),
+    "m10-adapter-routing-policy-v1.schema.json": M10AdapterRoutingPolicy,
     "m10-stage-evaluation-subject-record-v1.schema.json": M10StageEvaluationSubjectRecord,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,

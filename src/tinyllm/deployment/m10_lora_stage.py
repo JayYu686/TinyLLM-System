@@ -17,6 +17,7 @@ from torch import Tensor
 
 from tinyllm.deployment.evaluation_subject import (
     M9EvaluationSubjectRecord,
+    M10AdapterRoutingPolicy,
     M10LoRAStageEvaluationSubjectRecord,
     effective_artifact_sha256,
     evaluation_artifact_sha256,
@@ -1125,6 +1126,86 @@ def register_m10_lora_module_profile_evaluation_subject(
         raise M10LoRAStageRegistrationError("M10 LoRA module-profile registration failed") from exc
 
 
+def build_m10_lora_routed_evaluation_subject(
+    *, artifact_root: Path, source_subject_id: str
+) -> M10LoRAStageEvaluationSubjectRecord:
+    """Bind one 5M Adapter to the fixed DevOps-catalog/Base-fallback serving policy."""
+
+    if not artifact_root.is_absolute() or artifact_root.is_symlink():
+        raise M10LoRAStageRegistrationError("M10 LoRA routing Artifact root is unsafe")
+    try:
+        root = artifact_root.resolve(strict=True)
+        source_path = root / "registry" / "evaluation-subjects" / source_subject_id / "model.json"
+        source_payload = source_path.read_bytes()
+        source = M10LoRAStageEvaluationSubjectRecord.model_validate_json(source_payload)
+        resolved = resolve_m10_lora_stage_evaluation_subject(root, source_subject_id)
+    except (OSError, ValidationError, ValueError, DeploymentError) as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA routing source is invalid") from exc
+    if (
+        source.kind != "m10_agent_lora_5m"
+        or source.adapter_routing_policy is not None
+        or source.adapter_module_profile_evidence_sha256 is None
+        or resolved.model_artifact_sha256 != source.effective_artifact_sha256
+    ):
+        raise M10LoRAStageRegistrationError(
+            "M10 LoRA routing requires an unrouted 5M module-profile source"
+        )
+
+    policy = M10AdapterRoutingPolicy()
+    effective_sha256 = effective_artifact_sha256(
+        source.base_model_artifact_sha256,
+        source.adapter_artifact_sha256,
+        policy.policy_sha256,
+    )
+    model = source.model.model_copy(update={"model_artifact_sha256": effective_sha256})
+    subject_id = m10_lora_stage_evaluation_subject_id(
+        model=model,
+        base_model_artifact_sha256=source.base_model_artifact_sha256,
+        tokenizer_artifact_sha256=source.tokenizer_artifact_sha256,
+        adapter_artifact_sha256=source.adapter_artifact_sha256,
+        source_result_sha256=source.source_result_sha256,
+        checkpoint_manifest_sha256=source.checkpoint_manifest_sha256,
+        memory_probe_sha256=source.memory_probe_sha256,
+        checkpoint_export_evidence_sha256=source.checkpoint_export_evidence_sha256,
+        adapter_calibration_evidence_sha256=source.adapter_calibration_evidence_sha256,
+        adapter_interpolation_evidence_sha256=source.adapter_interpolation_evidence_sha256,
+        adapter_module_profile_evidence_sha256=(source.adapter_module_profile_evidence_sha256),
+        adapter_routing_policy=policy,
+    )
+    return M10LoRAStageEvaluationSubjectRecord(
+        **source.model_dump(
+            mode="python",
+            exclude={
+                "subject_id",
+                "created_at",
+                "model",
+                "effective_artifact_sha256",
+                "adapter_routing_policy",
+            },
+        ),
+        subject_id=subject_id,
+        created_at=datetime.now(UTC),
+        model=model,
+        effective_artifact_sha256=effective_sha256,
+        adapter_routing_policy=policy,
+    )
+
+
+def register_m10_lora_routed_evaluation_subject(
+    *, artifact_root: Path, source_subject_id: str
+) -> tuple[M10LoRAStageEvaluationSubjectRecord, str]:
+    """Validate and publish one immutable routed M10 Agent LoRA subject."""
+
+    record = build_m10_lora_routed_evaluation_subject(
+        artifact_root=artifact_root,
+        source_subject_id=source_subject_id,
+    )
+    try:
+        return publish_m10_lora_stage_evaluation_subject(artifact_root, record)
+    except DeploymentError as exc:
+        raise M10LoRAStageRegistrationError("M10 LoRA routing registration failed") from exc
+
+
 def build_m10_lora_calibrated_evaluation_subject(
     *, artifact_root: Path, source_subject_id: str, calibrated_adapter_dir: Path
 ) -> M10LoRAStageEvaluationSubjectRecord:
@@ -1269,6 +1350,7 @@ __all__ = [
     "build_m10_lora_calibrated_evaluation_subject",
     "build_m10_lora_interpolated_evaluation_subject",
     "build_m10_lora_module_profile_evaluation_subject",
+    "build_m10_lora_routed_evaluation_subject",
     "create_m10_lora_module_profile_adapter",
     "create_m10_lora_interpolated_adapter",
     "build_m10_lora_stage_evaluation_subject",
@@ -1276,5 +1358,6 @@ __all__ = [
     "register_m10_lora_calibrated_evaluation_subject",
     "register_m10_lora_interpolated_evaluation_subject",
     "register_m10_lora_module_profile_evaluation_subject",
+    "register_m10_lora_routed_evaluation_subject",
     "register_m10_lora_stage_evaluation_subject",
 ]

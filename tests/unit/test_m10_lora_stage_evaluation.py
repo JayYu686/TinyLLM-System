@@ -31,10 +31,12 @@ from tinyllm.deployment.m10_lora_stage import (
     _profile_adapter_state,
     build_m10_lora_interpolated_evaluation_subject,
     build_m10_lora_module_profile_evaluation_subject,
+    build_m10_lora_routed_evaluation_subject,
     create_m10_lora_interpolated_adapter,
     create_m10_lora_module_profile_adapter,
     register_m10_lora_interpolated_evaluation_subject,
     register_m10_lora_module_profile_evaluation_subject,
+    register_m10_lora_routed_evaluation_subject,
 )
 from tinyllm.evaluation import M6ModelIdentity
 
@@ -421,6 +423,22 @@ def test_module_profile_adapter_is_created_verified_published_and_resolved(
     assert registered == built.model_copy(update={"created_at": registered.created_at})
     assert resolved.evaluation_subject_sha256 == record_sha256
     assert resolved.model_artifact_sha256 == registered.effective_artifact_sha256
+
+    routed = build_m10_lora_routed_evaluation_subject(
+        artifact_root=root,
+        source_subject_id=registered.subject_id,
+    )
+    routed_registered, routed_sha256 = register_m10_lora_routed_evaluation_subject(
+        artifact_root=root,
+        source_subject_id=registered.subject_id,
+    )
+    routed_resolved = resolve_m10_lora_stage_evaluation_subject(
+        root, routed_registered.subject_id, now=NOW
+    )
+    assert routed.adapter_routing_policy is not None
+    assert routed_registered.effective_artifact_sha256 != registered.effective_artifact_sha256
+    assert routed_resolved.adapter_routing_policy is not None
+    assert routed_resolved.evaluation_subject_sha256 == routed_sha256
 
 
 def _install_fake_safetensors(monkeypatch: pytest.MonkeyPatch) -> None:

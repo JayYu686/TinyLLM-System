@@ -2,6 +2,7 @@
 
 from tinyllm.deployment.evaluation_subject import (
     M9EvaluationSubjectRecord,
+    M10AdapterRoutingPolicy,
     M10LoRAStageEvaluationSubjectRecord,
     M10StageEvaluationSubjectRecord,
     ResolvedEvaluationSubject,
@@ -62,6 +63,7 @@ __all__ = [
     "M7PackageVersion",
     "M7VulnerabilityAssessment",
     "M9EvaluationSubjectRecord",
+    "M10AdapterRoutingPolicy",
     "M10StageEvaluationSubjectRecord",
     "M10LoRAStageEvaluationSubjectRecord",
     "ResolvedEvaluationSubject",

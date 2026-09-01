@@ -1,5 +1,59 @@
 {
   "$defs": {
+    "M10AdapterRoutingPolicy": {
+      "additionalProperties": false,
+      "description": "Frozen specialization route: exact DevOps catalog uses LoRA, everything else Base.",
+      "properties": {
+        "adapter_tool_names": {
+          "default": [
+            "apply_sandbox_config_patch",
+            "get_run",
+            "inspect_config",
+            "list_runs",
+            "query_metrics",
+            "read_log_excerpt",
+            "search_evidence"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Adapter Tool Names",
+          "type": "array"
+        },
+        "match_mode": {
+          "const": "exact_tool_name_set",
+          "default": "exact_tool_name_set",
+          "title": "Match Mode",
+          "type": "string"
+        },
+        "matched_route": {
+          "const": "adapter",
+          "default": "adapter",
+          "title": "Matched Route",
+          "type": "string"
+        },
+        "policy_version": {
+          "const": "m10-devops-adapter-route-v1",
+          "default": "m10-devops-adapter-route-v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "unmatched_route": {
+          "const": "base",
+          "default": "base",
+          "title": "Unmatched Route",
+          "type": "string"
+        }
+      },
+      "title": "M10AdapterRoutingPolicy",
+      "type": "object"
+    },
     "M6ModelIdentity": {
       "additionalProperties": false,
       "description": "Base or trained-model identity used by one M6 evaluation.",
@@ -188,6 +242,17 @@
       ],
       "default": null,
       "title": "Adapter Dir"
+    },
+    "adapter_routing_policy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M10AdapterRoutingPolicy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "evaluation_subject_sha256": {
       "pattern": "^[0-9a-f]{64}$",

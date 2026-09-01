@@ -32,6 +32,15 @@ SUBJECT_PATTERN = (
     r"qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m))"
     r"-[0-9a-f]{8}$"
 )
+DEVOPS_ADAPTER_TOOL_NAMES = (
+    "apply_sandbox_config_patch",
+    "get_run",
+    "inspect_config",
+    "list_runs",
+    "query_metrics",
+    "read_log_excerpt",
+    "search_evidence",
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -40,18 +49,49 @@ def _canonical_sha256(value: object) -> str:
 
 
 def effective_artifact_sha256(
-    model_artifact_sha256: str, adapter_artifact_sha256: str | None
+    model_artifact_sha256: str,
+    adapter_artifact_sha256: str | None,
+    routing_policy_sha256: str | None = None,
 ) -> str:
-    """Identify the exact effective weights without merging or copying the base."""
+    """Identify exact weights and an optional deterministic inference routing policy."""
 
     if adapter_artifact_sha256 is None:
+        if routing_policy_sha256 is not None:
+            raise ValueError("Adapter routing requires an Adapter Artifact")
         return model_artifact_sha256
-    return _canonical_sha256(
-        {
-            "base_model_artifact_sha256": model_artifact_sha256,
-            "adapter_artifact_sha256": adapter_artifact_sha256,
-        }
-    )
+    identity = {
+        "base_model_artifact_sha256": model_artifact_sha256,
+        "adapter_artifact_sha256": adapter_artifact_sha256,
+    }
+    if routing_policy_sha256 is not None:
+        identity["routing_policy_sha256"] = routing_policy_sha256
+    return _canonical_sha256(identity)
+
+
+class M10AdapterRoutingPolicy(StrictSchema):
+    """Frozen specialization route: exact DevOps catalog uses LoRA, everything else Base."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    policy_version: Literal["m10-devops-adapter-route-v1"] = "m10-devops-adapter-route-v1"
+    match_mode: Literal["exact_tool_name_set"] = "exact_tool_name_set"
+    adapter_tool_names: tuple[str, ...] = DEVOPS_ADAPTER_TOOL_NAMES
+    matched_route: Literal["adapter"] = "adapter"
+    unmatched_route: Literal["base"] = "base"
+
+    @field_validator("adapter_tool_names", mode="before")
+    @classmethod
+    def freeze_tool_names(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @model_validator(mode="after")
+    def validate_catalog(self) -> M10AdapterRoutingPolicy:
+        if self.adapter_tool_names != DEVOPS_ADAPTER_TOOL_NAMES:
+            raise ValueError("M10 Adapter routing tool catalog differs")
+        return self
+
+    @property
+    def policy_sha256(self) -> str:
+        return _canonical_sha256(self.to_dict())
 
 
 def evaluation_artifact_sha256(root: Path, names: tuple[str, ...]) -> str:
@@ -297,6 +337,7 @@ def m10_lora_stage_evaluation_subject_id(
     adapter_calibration_evidence_sha256: str | None = None,
     adapter_interpolation_evidence_sha256: str | None = None,
     adapter_module_profile_evidence_sha256: str | None = None,
+    adapter_routing_policy: M10AdapterRoutingPolicy | None = None,
 ) -> str:
     """Derive one immutable M10 Agent LoRA stage identity."""
 
@@ -327,6 +368,8 @@ def m10_lora_stage_evaluation_subject_id(
         inputs["adapter_interpolation_evidence_sha256"] = adapter_interpolation_evidence_sha256
     if adapter_module_profile_evidence_sha256 is not None:
         inputs["adapter_module_profile_evidence_sha256"] = adapter_module_profile_evidence_sha256
+    if adapter_routing_policy is not None:
+        inputs["adapter_routing_policy"] = adapter_routing_policy.to_dict()
     identity = _canonical_sha256(inputs)
     return f"qwen3-8b-m10-agent-lora-{stage_label}-{identity[:8]}"
 
@@ -365,6 +408,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
     adapter_calibration_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     adapter_interpolation_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     adapter_module_profile_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_routing_policy: M10AdapterRoutingPolicy | None = None
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[
         "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
@@ -428,9 +472,17 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             or self.adapter_module_profile_evidence_sha256 is not None
         ) and expected_tokens != 5_000_000:
             raise ValueError("M10 Agent LoRA derived Adapter must derive a 5M subject")
+        if self.adapter_routing_policy is not None and expected_tokens != 5_000_000:
+            raise ValueError("M10 Agent LoRA routing requires a 5M subject")
         expected_checkpoint = f"checkpoint-tokens-{expected_tokens:010d}"
         expected_effective = effective_artifact_sha256(
-            self.base_model_artifact_sha256, self.adapter_artifact_sha256
+            self.base_model_artifact_sha256,
+            self.adapter_artifact_sha256,
+            (
+                self.adapter_routing_policy.policy_sha256
+                if self.adapter_routing_policy is not None
+                else None
+            ),
         )
         if (
             self.model.role != "candidate"
@@ -455,6 +507,7 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             adapter_calibration_evidence_sha256=self.adapter_calibration_evidence_sha256,
             adapter_interpolation_evidence_sha256=self.adapter_interpolation_evidence_sha256,
             adapter_module_profile_evidence_sha256=(self.adapter_module_profile_evidence_sha256),
+            adapter_routing_policy=self.adapter_routing_policy,
         )
         if self.subject_id != expected_id:
             raise ValueError("M10 Agent LoRA subject ID differs from immutable inputs")
@@ -476,6 +529,7 @@ class ResolvedEvaluationSubject(StrictSchema):
     tokenizer_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
     adapter_dir: Path | None = None
     adapter_artifact_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_routing_policy: M10AdapterRoutingPolicy | None = None
     verified_at: datetime
 
     @field_validator("model_dir", "tokenizer_dir", "adapter_dir")
@@ -495,6 +549,8 @@ class ResolvedEvaluationSubject(StrictSchema):
             raise ValueError("resolved model hash differs from evaluation identity")
         if (self.adapter_dir is None) != (self.adapter_artifact_sha256 is None):
             raise ValueError("resolved Adapter path and hash must appear together")
+        if self.adapter_routing_policy is not None and self.adapter_dir is None:
+            raise ValueError("resolved Adapter routing requires an Adapter")
         return self
 
 
@@ -840,7 +896,15 @@ def resolve_m10_lora_stage_evaluation_subject(
         actual_model != record.base_model_artifact_sha256
         or actual_tokenizer != record.tokenizer_artifact_sha256
         or actual_adapter != record.adapter_artifact_sha256
-        or effective_artifact_sha256(actual_model, actual_adapter)
+        or effective_artifact_sha256(
+            actual_model,
+            actual_adapter,
+            (
+                record.adapter_routing_policy.policy_sha256
+                if record.adapter_routing_policy is not None
+                else None
+            ),
+        )
         != record.effective_artifact_sha256
     ):
         raise DeploymentError(
@@ -858,6 +922,7 @@ def resolve_m10_lora_stage_evaluation_subject(
         tokenizer_artifact_sha256=record.tokenizer_artifact_sha256,
         adapter_dir=record.adapter_dir,
         adapter_artifact_sha256=record.adapter_artifact_sha256,
+        adapter_routing_policy=record.adapter_routing_policy,
         verified_at=now or datetime.now(UTC),
     )
 

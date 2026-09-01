@@ -431,6 +431,39 @@ def _explicit_read_plan(
     return tuple(planned[:8])
 
 
+def _missing_resource_clarification(messages: Sequence[AgentMessage]) -> str | None:
+    """Return a stable clarification when a read request omits its resource identity."""
+
+    user_text = _latest_user_text(messages)
+    folded = f" {user_text.casefold()} "
+    read_requested = any(marker in folded for marker in _READ_MARKERS)
+    resource_mentioned = any(
+        marker in folded
+        for marker in (
+            " log ",
+            " logs ",
+            " config ",
+            " configuration ",
+            " metric ",
+            " metrics ",
+            " loss ",
+            "日志",
+            "配置",
+            "指标",
+            "损失",
+        )
+    )
+    has_path = _RESOURCE_PATH.search(user_text) is not None
+    has_run = (
+        _ENGLISH_RUN.search(user_text) is not None or _CHINESE_RUN.search(user_text) is not None
+    )
+    if not read_requested or not resource_mentioned or has_path or has_run:
+        return None
+    if _CHINESE_TEXT.search(user_text):
+        return "请提供要检查的日志、配置或指标文件的准确相对路径。"
+    return "Please provide the exact relative path of the log, configuration, or metrics file."
+
+
 def _planned_call_observed(call: AgentToolCall, observations: Sequence[dict[str, object]]) -> bool:
     for observation in observations:
         if "result" not in observation:
@@ -627,11 +660,20 @@ class AgentRuntime:
         messages = tuple(AgentMessage.model_validate(item) for item in state["messages"])
         observations = list(state.get("observations", []))
         allowed_tools = self._allowed_tools(record.mcp_server_ids)
-        decision = await self.model.decide(
-            messages=messages,
-            observations=tuple(observations),
-            mode=record.mode,
-            allowed_tools=allowed_tools,
+        clarification = (
+            _missing_resource_clarification(messages)
+            if self.config.require_explicit_tool_intent and not observations
+            else None
+        )
+        decision = (
+            AgentModelDecision(message=clarification)
+            if clarification is not None
+            else await self.model.decide(
+                messages=messages,
+                observations=tuple(observations),
+                mode=record.mode,
+                allowed_tools=allowed_tools,
+            )
         )
         explicit_plan = _explicit_read_plan(messages=messages, allowed_tools=allowed_tools)
         missing_planned_calls = tuple(
@@ -646,7 +688,7 @@ class AgentRuntime:
             elif self.config.require_explicit_tool_intent:
                 decision = await self.model.decide(
                     messages=messages,
-                    observations=tuple(observations),
+                    observations=(),
                     mode=record.mode,
                     allowed_tools=(),
                 )

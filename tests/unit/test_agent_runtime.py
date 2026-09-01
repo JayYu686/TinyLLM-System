@@ -13,7 +13,12 @@ from tinyllm.agent import (
     agent_tool_call_sha256,
     load_agent_config,
 )
-from tinyllm.agent.runtime import AgentRuntime, _explicit_read_plan, _normalize_tool_calls
+from tinyllm.agent.runtime import (
+    AgentRuntime,
+    _explicit_read_plan,
+    _missing_resource_clarification,
+    _normalize_tool_calls,
+)
 from tinyllm.agent.schema import AgentMessage, AgentModelDecision
 
 NOW = datetime.now(UTC)
@@ -549,6 +554,25 @@ def test_explicit_read_plan_rejects_unrequested_negated_and_write_paths() -> Non
     )
 
     assert _explicit_read_plan(messages=messages, allowed_tools=allowed) == ()
+
+
+def test_missing_resource_clarification_is_bilingual_and_requires_no_literal_resource() -> None:
+    english = (AgentMessage(role="user", content="Inspect the training log and diagnose it."),)
+    chinese = (AgentMessage(role="user", content="查询最近的损失指标。"),)
+    explicit = (
+        AgentMessage(
+            role="user",
+            content="Read runs/m9/run-one/logs/trainer.log and diagnose it.",
+        ),
+    )
+    conceptual = (
+        AgentMessage(role="user", content="Explain the difference between DDP and FSDP2."),
+    )
+
+    assert "path" in (_missing_resource_clarification(english) or "").casefold()
+    assert "路径" in (_missing_resource_clarification(chinese) or "")
+    assert _missing_resource_clarification(explicit) is None
+    assert _missing_resource_clarification(conceptual) is None
 
 
 def test_explicit_plan_compiles_only_sandbox_scoped_config_write() -> None:

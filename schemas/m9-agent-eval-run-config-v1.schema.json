@@ -60,6 +60,11 @@
       "title": "Physical Gpu Index",
       "type": "integer"
     },
+    "require_explicit_tool_intent": {
+      "default": false,
+      "title": "Require Explicit Tool Intent",
+      "type": "boolean"
+    },
     "schema_version": {
       "const": "1.0",
       "default": "1.0",

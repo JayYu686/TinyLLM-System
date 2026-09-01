@@ -101,12 +101,12 @@ def test_eval_config_rejects_remote_gateway_and_unknown_fields() -> None:
         AgentEvalRunConfig.model_validate(payload)
 
 
-def test_scoring_v3_enables_strict_explicit_tool_intent() -> None:
+def test_eval_config_propagates_explicit_tool_intent_policy() -> None:
     task = build_tasks("dev")[0]
 
     strict = _agent_config(
         task,
-        _config().model_copy(update={"scoring_protocol": "m10-agent-scoring-v3"}),
+        _config().model_copy(update={"require_explicit_tool_intent": True}),
     )
     legacy = _agent_config(task, _config())
 

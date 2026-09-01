@@ -273,6 +273,7 @@ class AgentEvalRunConfig(StrictSchema):
     mode: Literal["nonthinking", "thinking"] = "nonthinking"
     max_steps: int = Field(default=8, ge=1, le=8)
     max_tool_calls: int = Field(default=12, ge=1, le=12)
+    require_explicit_tool_intent: bool = False
     task_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
     max_concurrency: int = Field(default=2, ge=1, le=8)
     physical_gpu_index: int = Field(ge=0, le=9)

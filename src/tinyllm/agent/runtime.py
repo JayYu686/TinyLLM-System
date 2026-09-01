@@ -249,9 +249,20 @@ def _tool_call_signature(call: AgentToolCall) -> str:
 def _explicit_read_requested(text: str, position: int) -> bool:
     """Require a nearby positive read verb and reject explicit negation."""
 
+    # A bare full stop cannot delimit clauses here because the allowlisted
+    # resources intentionally contain extensions such as `.log` and `.jsonl`.
+    # Only treat a full stop followed by whitespace as sentence punctuation.
+    prefix = text[:position]
+    dotted_boundaries = tuple(match.start() for match in re.finditer(r"\.\s+", prefix))
     clause_start = max(
-        text.rfind(separator, 0, position)
-        for separator in (".", "!", "?", "。", "！", "？", ";", "；")
+        (
+            *(
+                text.rfind(separator, 0, position)
+                for separator in ("!", "?", "。", "！", "？", ";", "；")
+            ),
+            *dotted_boundaries,
+            -1,
+        )
     )
     context = f" {text[clause_start + 1 : position].casefold()} "
     if any(marker in context for marker in _NEGATED_READ_MARKERS):

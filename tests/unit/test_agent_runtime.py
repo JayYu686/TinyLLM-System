@@ -536,6 +536,37 @@ def test_explicit_read_plan_combines_search_and_run_in_request_order() -> None:
     ]
 
 
+def test_explicit_read_plan_keeps_parallel_resources_in_one_clause() -> None:
+    run_identifier = "20260820T014500Z-recovery-smoke-d4e5f6a7-0004"
+    log_path = f"runs/m9/{run_identifier}/logs/registry.log"
+    metrics_path = f"runs/m9/{run_identifier}/metrics.jsonl"
+    messages = (
+        AgentMessage(
+            role="user",
+            content=(
+                f"Read {log_path} and loss metrics in {metrics_path} independently, "
+                "then combine the diagnosis."
+            ),
+        ),
+    )
+
+    plan = _explicit_read_plan(
+        messages=messages,
+        allowed_tools=(
+            "tinyllm-devops.read_log_excerpt",
+            "tinyllm-devops.query_metrics",
+        ),
+    )
+
+    assert [(call.tool_name, call.arguments) for call in plan] == [
+        ("read_log_excerpt", {"relative_path": log_path}),
+        (
+            "query_metrics",
+            {"relative_path": metrics_path, "metric_names": ["loss"]},
+        ),
+    ]
+
+
 def test_explicit_read_plan_rejects_unrequested_negated_and_write_paths() -> None:
     allowed = (
         "tinyllm-devops.get_run",

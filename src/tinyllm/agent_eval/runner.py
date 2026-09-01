@@ -298,6 +298,7 @@ def _agent_config(task: AgentEvalTask, config: AgentEvalRunConfig) -> AgentConfi
         max_tool_calls=config.max_tool_calls,
         tool_timeout_seconds=10.0,
         run_timeout_seconds=config.task_timeout_seconds,
+        require_explicit_tool_intent=(config.scoring_protocol == "m10-agent-scoring-v3"),
         mcp_servers=(
             MCPServerConfig(
                 server_id="tinyllm-devops",

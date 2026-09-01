@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 from tinyllm.agent import AgentMessage, AgentModelDecision, AgentToolCall
-from tinyllm.agent_eval.runner import _evaluate_task
+from tinyllm.agent_eval.runner import _agent_config, _evaluate_task
 from tinyllm.agent_eval.schema import AgentEvalRunConfig
 from tinyllm.agent_eval.suite import build_tasks
 
@@ -99,3 +99,16 @@ def test_eval_config_rejects_remote_gateway_and_unknown_fields() -> None:
     payload["secret"] = "embedded-token"
     with pytest.raises(ValidationError, match="Extra inputs"):
         AgentEvalRunConfig.model_validate(payload)
+
+
+def test_scoring_v3_enables_strict_explicit_tool_intent() -> None:
+    task = build_tasks("dev")[0]
+
+    strict = _agent_config(
+        task,
+        _config().model_copy(update={"scoring_protocol": "m10-agent-scoring-v3"}),
+    )
+    legacy = _agent_config(task, _config())
+
+    assert strict.require_explicit_tool_intent is True
+    assert legacy.require_explicit_tool_intent is False

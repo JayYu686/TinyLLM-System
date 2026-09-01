@@ -50,8 +50,15 @@ Artifact Store。结果包含 8 条记录、6 个唯一公告：1 条 protobuf �
 
 限定 Profile 的逐项适用性与缓解控制见
 [`requirements/m8_security_exceptions.md`](../../requirements/m8_security_exceptions.md)。CI 和
-`make audit-agent` 只忽略这 6 个精确 ID；任何新公告仍会失败。依赖或部署边界变化后不得沿用
+`make audit-agent` 只忽略逐项复核的精确 ID；任何新公告仍会失败。依赖或部署边界变化后不得沿用
 本次结论。
+
+2026-09-02 新增复核 `CVE-2026-9856`（`GHSA-xrqw-3rrv-vx5w`）。该问题位于
+Transformers tokenizer/processor 的 `save_pretrained()`，需要攻击者控制 Chat Template 名称；M8
+只读 Serving 路径不调用这些保存接口，且只加载本地固定 Revision、SHA256 已验证的 Qwen3 文本
+Tokenizer，关闭 Remote Code。由于 vLLM 0.8.5.post1 的 CUDA 11.8 兼容边界暂不允许升级到
+Transformers 5.10，本 Profile 将该公告记录为“不受影响”的精确例外；一旦加入任意 Hub 模型或
+Tokenizer/Processor 导出，例外立即失效。CI 仍会拒绝除已记录集合之外的新公告。
 
 ## 6. 后续安全工作
 

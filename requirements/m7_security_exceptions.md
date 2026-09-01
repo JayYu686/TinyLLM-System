@@ -13,6 +13,7 @@ loopback, text-only Qwen3 serving profile, not a claim that the packages are vul
 | `PYSEC-2026-249` | `GHSA-82w8-qh3p-5jfq` | Not affected: no form parser is exposed | JSON-only request contract and bounded request body |
 | `PYSEC-2026-2280` | `GHSA-x746-7m8f-x49c` | Not affected: no `HTTPEndpoint` subclass is registered | FastAPI function routes with explicit methods |
 | `PYSEC-2026-2281` | `GHSA-wqp7-x3pw-xc5r` | Not affected: Linux service mounts no `StaticFiles` | no static-file route and no request-controlled filesystem path |
+| `CVE-2026-9856` | `GHSA-xrqw-3rrv-vx5w` | Not affected: Serving is read-only with respect to model artifacts and never calls tokenizer or processor `save_pretrained()` | pinned local Qwen3 text tokenizer; artifact SHA256 verification; offline loading; `trust_remote_code=false` |
 
 Critical and High advisories are additionally captured from OSV, bound to the serving environment,
 and evaluated by `scripts/build_m7_security_audit.py`. Any new unreviewed Critical or High advisory

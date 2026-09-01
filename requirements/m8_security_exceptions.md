@@ -13,6 +13,7 @@ preserved as emitted by `pip-audit`.
 | `PYSEC-2026-249` | Starlette | No form or multipart endpoint is registered; Agent writes accept strict JSON only |
 | `PYSEC-2026-2280` | Starlette | No `HTTPEndpoint` subclass is registered; FastAPI function routes have explicit methods |
 | `PYSEC-2026-2281` | Starlette | No static-file mount exists; user input cannot select a local filesystem route |
+| `CVE-2026-9856` | Transformers | Agent Serving never calls tokenizer or processor `save_pretrained()`; it loads only the pinned, hash-verified local Qwen3 text tokenizer with remote code disabled |
 
 Additional M8 controls include a loopback-only model Gateway, environment-only Bearer secrets,
 administrator-owned MCP registrations, tool allowlists, JSON Schema validation, bounded retries,
@@ -20,5 +21,5 @@ zero automatic retry for writes, explicit idempotent approval, and sandbox-only 
 path traversal and symlink rejection. MCP annotations and retrieved evidence never grant authority.
 
 These are deployment-profile decisions, not claims that the dependencies are vulnerability-free.
-`make audit-agent` ignores only the identifiers above. A new finding, public-network deployment,
+`make audit-agent` ignores only the reviewed identifiers above. A new finding, public-network deployment,
 remote MCP Server, dependency upgrade, or expanded filesystem capability requires a fresh review.

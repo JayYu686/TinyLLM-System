@@ -38,7 +38,7 @@ scipy
 sentencepiece
 tiktoken>=0.6.0
 torch==2.6.0+cu118
-torchaudio==2.6.0+cu118
+torchaudio==2.7.1+cu118
 torchvision==0.21.0+cu118
 transformers==4.57.6
 httptools

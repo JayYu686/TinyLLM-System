@@ -53,7 +53,7 @@ Near Dedup 属于增强项。数据导入时必须重新验证 revision 可取�
   英文/中文目标 70%/30%。
 - Candidate 要求领域总分相对 Baseline 至少提升 3pp，Bootstrap 95% CI 下界大于 0，
   通用聚合回退不超过 2pp，JSON Valid Rate 至少 98%，且血缘完整。
-- 未通过模型保留 Development，报告必须保留回退和失败样例。
+- 未达到晋级标准的模型保留 Development，报告必须保留回退和失败样例。
 
 ## 影响
 

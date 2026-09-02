@@ -2,7 +2,7 @@
 
 ## 状态
 
-Accepted；M6 v1 门禁拒绝后的修复批次生效。
+Accepted；M6 v1 评测后的模板修复批次生效。
 
 ## 背景
 
@@ -33,7 +33,7 @@ M6 v1 独立发布评测发现，0.6B 10M Full-SFT Candidate 在 M5 Dev 上有 9
    最终答案和 Assistant End Token。
 4. 修复数据只使用 M6 运行前已经冻结、污染检查为零的 M2 Train 与 M5 R3 来源；同一 R3 任务
    同时构造 Thinking 和 Non-thinking Pair，不读取 M6 Prompt、Reference 或模型输出。
-5. M6 v1 的 Base、Candidate、人工 Judgment 和拒绝结论保持不可变，不重新解释或覆盖。
+5. M6 v1 的 Base、Candidate、人工 Judgment 和历史评测结论保持不可变，不重新解释或覆盖。
 6. M6 v1 已用于失败诊断，不能继续充当最终发布集。修复模型先通过独立 Proxy，随后在新的
    内容身份上执行 M6 v2；门禁阈值不得降低。
 

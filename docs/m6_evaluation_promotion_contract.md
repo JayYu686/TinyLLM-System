@@ -140,7 +140,7 @@ Rate 分别为 71.25%和 56.25%，Thinking 强制收束率为 99.67%。通用任
 代码审计确认 M5 Non-thinking SFT 缺少 Qwen3 Hard Switch 使用的空 Think 上下文，导致双模式
 在 Assistant Header 后形成竞争目标。该问题按
 [ADR-0007](adr/0007-qwen3-dual-mode-sft-template-alignment.md) 修复；完整证据见
-[M6 v1 门禁拒绝分析](../reports/m6/m6_gate_rejection_analysis.md)。v1 结果保持不可变，旧
+[M6 v1 诊断分析](../reports/m6/m6_v1_diagnostic_analysis.md)。v1 结果保持不可变，旧
 Candidate 保持 `Development`。
 
 修复模型不能在已经用于诊断的 v1 发布集上反复选优。后续晋级使用新的 M6 v2 内容与配置
@@ -162,7 +162,7 @@ R2 的开发代理评测显示长度问题已改善，但 Thinking/Non-thinking 
 15.00%。根因是 R2 从基座重新训练时替换了上一版成功的领域纠错监督，形成灾难性遗忘。R2
 因此不进入 v3。R3 预注册为 55% 上一版纠错回放与 45% R2 修复监督的精确 Token 混合，保持
 70/30 双模式比例；完整诊断和数据身份见
-[R2 失败与 R3 回放计划](../reports/m6/m6_r2_failure_and_r3_replay_plan.md)。
+[R2 诊断与 R3 回放计划](../reports/m6/m6_r2_diagnostic_and_r3_replay_plan.md)。
 
 最终复判使用训练前冻结的 `tinyllm-domain-holdout-v1-2b167ce6`，完整内容 SHA256 为
 `2b167ce67a3761558bf2c556131d86eb572dc5d36e533a668a539a78eb86d6e2`。v3 与 v1/v2 的
@@ -176,7 +176,7 @@ R2 的开发代理评测显示长度问题已改善，但 Thinking/Non-thinking 
 v3 自动评分确认 R3 的 Thinking 能力相对 Base 回退，且两种模式 JSON Valid Rate 分别只有
 86.25% 和 83.75%，因此无需等待人工评分即可确定拒绝。根因是修复集覆盖面过窄并从 Base
 重新训练，模型学到局部模板而没有形成七类任务的泛化能力。完整数据见
-[v3 拒绝与 R4 计划](../reports/m6/m6_v3_rejection_and_r4_plan.md)。
+[v3 诊断与 R4 计划](../reports/m6/m6_v3_diagnostic_and_r4_plan.md)。
 
 R4 从已冻结的 M5 10M 正式快照暖启动，使用不读取任何评测答案或模型输出的 900 条七类任务
 做 1M Token 低学习率训练。最终门禁使用 R4 训练前冻结的

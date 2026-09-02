@@ -14,7 +14,7 @@ selected_thinking_fraction_basis_points: null
 selection_reason: no_arm_passed_preregistered_gates
 ```
 
-0%、30% 和 50% 三个 Thinking Token 配比都通过 Non-thinking 回归门禁，但都未通过两个
+0%、30% 和 50% 三个 Thinking Token 配比都通过 Non-thinking 回归门禁，但都没有达到两个
 Seed 的 Thinking 格式有效率至少 99%这一冻结门禁。因此，本轮没有选出正式配比，M5.3
 Qwen3-0.6B 长程 Full SFT 保持阻塞状态。
 
@@ -144,7 +144,7 @@ Base 结果：
 
 ## 8. 状态与后续门禁
 
-M5.2 的实验执行状态更新为“完成，选优门禁拒绝”。M5 总里程碑继续保持 `IN_PROGRESS`。
+M5.2 的实验执行状态更新为“完成，进入格式可靠性修正”。M5 总里程碑继续保持 `IN_PROGRESS`。
 
 后续建立独立的格式可靠性修正批次：
 

@@ -76,7 +76,7 @@ R3 Mixture 仍为 700K Non-thinking、150K 原完整 Thinking、150K 新 Targete
 
 CPU Fixture 为合成契约 Smoke，不加载模型、不使用 GPU，也不构成质量指标。真实
 Qwen3-8B Teacher Pilot 的结果和中文汇总独立记录在
-[R3-P0 实验报告](m5_r3_p0.md)。真实 P0 已被门禁拒绝，正式 240 条扩展、Mixture 和两个
+[R3-P0 实验报告](m5_r3_p0.md)。真实 P0 已完成边界审查，正式 240 条扩展、Mixture 和两个
 Seed 训练均保持阻断。
 
 ## 6. 证据索引

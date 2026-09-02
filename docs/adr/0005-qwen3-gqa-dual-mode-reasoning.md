@@ -41,7 +41,7 @@ Checkpoint 身份和推理缓存都将改变，需要新的转换或继续预训
   被静默替换。
 - Qwen3-8B LoRA 仍需真实单卡显存 Probe。若 BF16 LoRA OOM，只能在保存失败证据后使用
   独立身份的 NF4 QLoRA 回退。
-- 模型未通过 M6 双模式质量与回归门禁前只能保持 `Development` 状态。
+- 模型只有完成 M6 双模式质量与回归门禁后才能离开 `Development` 状态。
 
 ## 重新评估条件
 

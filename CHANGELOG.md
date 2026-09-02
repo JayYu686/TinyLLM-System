@@ -5,6 +5,14 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+## 1.0.1 - 2026-09-02
+
+- consolidated public M5/M6 iteration wording around final accepted M10 Agent Production status;
+- renamed historical diagnostic reports so the public entry points emphasize root-cause analysis
+  and convergence while retaining the measured evidence;
+- kept private control documents, raw prompts, weights, datasets, and run artifacts outside the
+  public repository.
+
 ## 1.0.0 - 2026-09-02
 
 - selected the Qwen3-8B 5M LoRA with deterministic DevOps Tool-Catalog routing as the final Agent

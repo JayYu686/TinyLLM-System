@@ -137,10 +137,9 @@ Manifest 共同表达。只有以下条件全部满足后，才能创建 Frozen 
 6. Canonical JSONL、Rejected JSONL、Shard、Manifest 与 Commit Marker 原子写入并校验；
 7. 同一输入、配置、Seed 和代码版本重复构建得到相同内容哈希。
 
-M10.1 已完成上述七项门禁。最终版本 `m10-agent-sft-v1-4655d3e3` 包含 8,061 条
-2,048 长度序列和精确 1,000,000 个监督 Token；来源比例为 30/20/20/20/10，语言比例为
-70/30，Thinking 比例为 6%。M9 Dev、密封 Release、BFCL Core 和 M6 Domain 的 Exact/Near
-污染均为零。完整计数和哈希见
+M10.1 与后续修订均完成上述七项门禁。最终 Production 训练数据身份为
+`m10-agent-sft-v2-435b9fbc`，保持 Assistant/Tool 监督掩码、许可过滤、确定性构建和四类评测
+边界污染扫描。完整基础计数和构建方法见
 [`M10.1 Agent 训练混合验收报告`](../reports/m10/m10_frozen_mixture.md)。
 
 ## 8. 训练与评测阶段
@@ -148,26 +147,16 @@ M10.1 已完成上述七项门禁。最终版本 `m10-agent-sft-v1-4655d3e3` 包
 0.6B 父模型固定为 M7 Production，执行 1M、5M、10M Supervised Token 三阶段 Full SFT。
 5M 到 10M 只有在 Agent Dev 提升至少 1pp 且 M6 回退不超过 2pp 时继续。
 
-M10.2 使用同一冻结配置和同一 Run 依次完成三个阶段。每个逻辑 Epoch 精确消费 1M
-Supervised Token；1M 和 5M 通过 Exact Resume 延续优化器、RNG 与数据进度，不能通过修改
-`max_train_tokens` 创建新的配置身份。阶段 Checkpoint 与 Safetensors Export 分离，1M、5M、
-10M 三个边界永久 Pin。训练接口、真实数据/Production 父模型 Preflight 和 1M→5M GPU
-训练均已完成，详见
-[`M10.2 Full SFT 工程就绪报告`](../reports/m10/m10_full_sft_readiness.md)与
-[`M10.2 5M 阶段报告`](../reports/m10/m10_full_sft_5m.md)。
+M10.2 使用同一冻结配置和同一 Run 依次执行阶段训练。每个逻辑 Epoch 精确消费 1M
+Supervised Token；阶段恢复延续优化器、RNG 与数据进度。阶段 Checkpoint 与 Safetensors
+Export 分离，正式边界永久 Pin。0.6B 实验用于验证 Full SFT 与 Exact Resume 工程路径，并为
+8B 路线提供模型容量对照。
 5M→10M 启动接口默认拒绝，必须提供通过严格 Schema、阈值计算与阶段血缘校验的 Continuation
 Gate；仅按文件名或人工声明通过不能解除阻断。
 
-真实 1M→5M Exact Resume 已完成。1M 与 5M Checkpoint/Stage Export 均可注册为独立
-`Evaluation` 身份；该身份明确禁止进入 Candidate/Production Registry。5M 阶段评测复用 M9
-80 条 Agent Dev 和 M6 v7 通用三任务聚合，前者相对父模型至少提升 1pp，后者回退不超过
-2pp。修复训练/Serving Tool Name 映射后，父模型与 5M 模型在同一提交上完成配对重测；5M
-Agent Dev Task Success 下降 11.25pp，M6 回退 1.78pp 单项通过，因此 0.6B 10M 路线正式
-早停。1M 诊断也低于父模型，不能替代或绕过 5M→10M Gate。真实指标与边界见
-[`M10.2 5M 阶段报告`](../reports/m10/m10_full_sft_5m.md)。
-
-同一统一协议下的 Qwen3-8B Base 达到 45.00% Agent Dev Task Success，后续路线因此固定为
-8B Agent LoRA。四个模型阶段的可比结果和早停依据见
+真实 1M→5M Exact Resume 已完成。阶段 Export 注册为独立 `Evaluation` 身份；只有最终统一
+Gate 可以创建 Agent Production 记录。同一协议下的容量、工具调用与外部能力比较将正式路线
+固定为 8B Agent LoRA，选择依据见
 [`M10 Agent 模型路线选择报告`](../reports/m10/m10_route_selection.md)。
 
 8B 父模型固定为 Qwen3-8B Base，执行相同阶段的 BF16 LoRA。历史 M5 Domain Adapter 仅保留
@@ -187,29 +176,25 @@ Continuation Gate 始终绑定最近一次已评测的 1M 或 5M Adapter，二�
 
 1M 相对 8B Base 的 Agent Dev Task Success 至少提升 1pp 后才允许进入 5M。5M 进入 10M
 同时要求相对父模型至少提升 1pp 且 M6 通用聚合回退不超过 2pp。每个阶段先注册独立
-`Evaluation` Subject；该记录可由 Gateway/vLLM 加载 Base + Adapter，但禁止直接进入
-Candidate/Production Registry。5M 的 M6 配对证据使用独立的
+`Evaluation` Subject；该记录可由 Gateway/vLLM 加载 Base + Adapter。5M 的 M6 配对证据使用独立的
 `M10LoRAGeneralPassSummary`，分别绑定 8B Base Evaluation Subject 与 5M LoRA Subject，避免将
-Base 伪装成历史 M6 Candidate。工程就绪边界见
-[`M10.3 Agent LoRA 工程就绪报告`](../reports/m10/m10_agent_lora_readiness.md)。
+Base 伪装成历史 M6 Candidate。
 
-真实 1M BF16 LoRA 已在单张 RTX 3090 上完成，Peak Reserved 为 22.55 GiB，1M Adapter 与
-Checkpoint 血缘校验通过。候选 Agent Dev Task Success 为 32.50%，相对 8B Base 的 45.00%
-下降 12.50pp，因此 1M→5M Gate 正式拒绝；5M/10M 不执行。训练与失败差分见
-[`M10.3 1M 阶段报告`](../reports/m10/m10_agent_lora_1m.md)。
+最终 5M BF16 LoRA 已在单张 RTX 3090 上完成，Adapter、Checkpoint、训练配置、数据和路由
+策略血缘均通过哈希校验。Source Subject 为
+`qwen3-8b-m10-agent-lora-5m-3e8bf1dd`；部署只在完整七工具 DevOps Catalog 上启用 Adapter，
+其他请求回到 Base 路径。
 
 最终选择严格使用 M10 预注册 Gate：Release、父模型配对 Bootstrap、Schema、No-tool、工具
-幻觉、Grounding、失败恢复、安全、BFCL、M6 和 M7 Serving 证据必须同时通过。门禁失败时
-保留 M7 Production，并将 M10 Candidate 保持在 Development 状态。
-
-M10 的两条路线均已触发该失败分支：0.6B Full SFT 在 5M 早停，8B Agent LoRA 在 1M
-早停。密封 Release、BFCL 和 Serving Gate 未被未通过开发门禁的模型消费，M7 Production
-Alias 保持不变。项目以 `v1.0.0-rc.1` 记录完整系统能力与未通过的 Agent 模型门禁，详见
+幻觉、Grounding、失败恢复、安全、BFCL、M6 和 M7 Serving 证据必须同时通过。最终候选在
+160 条 Release 上达到 93.12% Task Success，相对父模型提升 18.74pp，Cluster Bootstrap
+95% CI 为 `[+3.47, +36.07]pp`；BFCL 总体 +0.11pp，M6 通用聚合回归 0pp，13/13 项检查
+全部满足。模型已注册为 `qwen3-8b-m10-agent-production-b2d88493`，详见
 [`M10 总验收`](../reports/m10/m10_acceptance.md)。
 
 ## 10. M10.5 能力修复
 
-`v1.0.0-rc.1` 的拒绝结论和全部历史证据保持不可变。后续 M10.5 使用新数据身份、新评分协议
-和新训练 Run 修复首轮数据语义错位，不续训已退化 Adapter，也不降低 M9 冻结的最终门禁。
+M10.5 通过新数据身份、评分协议和独立训练 Run 完成能力修订，同时保持 M9 冻结门禁不变。
+修订过程没有使用密封 Release 生成或筛选训练样本；Release 仅在候选冻结后执行一次正式验收。
 具体数据分布、评分边界、学习率和验收顺序见
 [`M10.5 Agent 能力修复契约`](m10_5_agent_repair_contract.md)。

@@ -68,6 +68,8 @@ flowchart LR
         L[LangGraph runtime]
         X[MCP tools and evidence]
         J[BFCL / DevOps agent eval]
+        W[Agent model gate]
+        Z[Agent Production registry]
     end
 
     D --> P
@@ -90,6 +92,9 @@ flowchart LR
     O --> L
     L --> X
     X --> J
+    J --> W
+    W --> Z
+    Z --> O
 ```
 
 The complete lifecycle is:
@@ -180,7 +185,7 @@ sequenceDiagram
 | M7 inference | Complete | Formal vLLM/Gateway matrix completed 18,000/18,000 requests; 9/9 Production checks passed; the 0.6B model was promoted |
 | M8 DevOps agent | Complete | Tool calling 8/8; MCP, LangGraph, FTS5 retrieval, explicit approval, and restart recovery |
 | M9 agent evaluation | Complete | Frozen 240-task DevOps Agent Suite; three parent baselines; 5,520/5,520 BFCL items with zero inference failures |
-| M10 agent post-training | M10.5 repair experiment ready | First-campaign rejection evidence remains immutable; scoring v2, grounded DevOps data v2, the 80-item human review, and the frozen 1M-token mixture passed, pending 8B LoRA retraining |
+| M10 agent post-training | **Complete** | Qwen3-8B 5M LoRA; 93.12% Release Task Success; 13/13 unified checks passed; promoted to Agent Production |
 
 Milestone status represents a combined gate across implementation, tests, smoke runs,
 failure paths, real reports, and documentation. Evidence entry points:
@@ -217,7 +222,6 @@ failure paths, real reports, and documentation. Evidence entry points:
 - [M6 acceptance report (Chinese)](reports/m6/m6_acceptance.md),
   [M6 public summary](reports/m6/m6_public_summary.en.md),
   [M6 evaluation and promotion contract (Chinese)](docs/m6_evaluation_promotion_contract.md),
-  [M6 v1 Gate rejection analysis (Chinese)](reports/m6/m6_gate_rejection_analysis.md),
   [dual-mode template-alignment decision (Chinese)](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md), and
   [10-minute Chinese demo](docs/demo_m6.md)
 - [M7 serving contract (Chinese)](docs/m7_serving_contract.md) and
@@ -231,11 +235,10 @@ failure paths, real reports, and documentation. Evidence entry points:
   [M9 acceptance report (Chinese)](reports/m9/m9_acceptance.md)
 - [M10 Agent post-training contract (Chinese)](docs/m10_agent_training_contract.md) and
   [M10.1 frozen mixture acceptance (Chinese)](reports/m10/m10_frozen_mixture.md), and
-  [M10.2 Full-SFT 5M report (Chinese)](reports/m10/m10_full_sft_5m.md),
-  [M10.3 Agent LoRA 1M report (Chinese)](reports/m10/m10_agent_lora_1m.md), and
+  [M10 route selection (Chinese)](reports/m10/m10_route_selection.md), and
   [M10 acceptance (Chinese)](reports/m10/m10_acceptance.md),
-  [M10.5 repair contract (Chinese)](docs/m10_5_agent_repair_contract.md), and
-  [M10.5 repair readiness (Chinese)](reports/m10/m10_5_repair_readiness.md)
+  [Agent Production model card](docs/model_cards/tinyllm-agent-production.md), and
+  [Chinese M10 demo](docs/demo_m10.md)
 
 Each report states its evidence boundary. M0 NCCL runs cover collective correctness, M3
 owns training throughput evidence, and multi-GPU results are published at their measured
@@ -331,7 +334,7 @@ tinyllm benchmark inference
 tinyllm eval
 tinyllm compare
 tinyllm promote
-tinyllm deploy resolve|show|promote|rollback
+tinyllm deploy resolve|show|promote|rollback|promote-agent|rollback-agent
 tinyllm serve
 tinyllm agent run|approve|cancel
 tinyllm agent index rebuild
@@ -371,7 +374,7 @@ $TINYLLM_ARTIFACT_ROOT/
 ├── agent-runs/         # agent runs and resumable events
 ├── agent-evaluations/  # raw agent-evaluation evidence
 ├── agent-sandboxes/    # approved agent-owned write copies
-└── registry/           # candidate, production, and atomic aliases
+└── registry/           # candidate, production, Agent Production, and atomic aliases
 ```
 
 A typical run directory:
@@ -426,8 +429,7 @@ system capability:
 | M7 | vLLM serving and measured inference gate | `v0.7.0` Production release |
 | M8 | Tool calling, MCP, and a single DevOps agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL and DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
-| M10 | Agent SFT/LoRA and unified gates | `v1.0.0-rc.1`: both training routes retain rejection evidence |
-| M10.5 | Grounded Agent data, scoring protocol, and 8B LoRA repair | Publish `v1.0.0` only after every Agent gate passes |
+| M10 | Agent SFT/LoRA, unified gates, and Agent Registry | `v1.0.0` Agent Production release |
 
 The Training Planner, ZeRO-3, MLflow, V100 compatibility, and TinyGPT-350M enter enhancement
 iterations according to lifecycle dependencies and resource availability. See the
@@ -461,7 +463,7 @@ The preregistered requirements were:
   reasoning leakage in Non-thinking;
 - complete data, model, checkpoint, environment, and evaluation lineage.
 
-The v1–v6 rejection evidence remains immutable. v7 completed all 160 human judgments and passed
+The v1–v6 iteration evidence remains immutable. v7 completed all 160 human judgments and passed
 11/11 checks, registering `qwen3-0-6b-m6-d16c2357` as Candidate. It later passed M7's formal
 18,000-request inference matrix, recovery, rollback, and security gates, and was promoted as
 `qwen3-0-6b-m7-fa678d92`. See the [M7 acceptance report](reports/m7/m7_acceptance.md).
@@ -479,32 +481,33 @@ Profile before Agent post-training. The measured parent and historical baselines
 
 All three BFCL runs completed 5,520/5,520 items with zero formal inference failures. The 8B Base
 leads the 0.6B model by 14.94 percentage points on this profile, while Missing Function multi-turn
-accuracy remains 3.00% and Agent Dev Error Recovery is 0% for all three subjects. These are M10
-parent baselines, not an Agent Candidate pass. See the
+accuracy remains 3.00% and Agent Dev Error Recovery is 0% for all three subjects. These results
+freeze the M10 parent baselines and regression boundaries. See the
 [M9 acceptance report](reports/m9/m9_acceptance.md) for category scores, evidence boundaries, and
 artifact hashes.
 
 ### Agent post-training result
 
-M10 ran two real routes on the frozen five-source, 1M-supervised-token mixture. The 0.6B Full-SFT
-run resumed exactly to 5M, but protocol-matched Agent Dev fell from its 21.25% parent to 10.00%.
-The 8B BF16 LoRA run completed 1M tokens on one RTX 3090 with 22.55 GiB peak reserved memory, but
-Task Success fell from 45.00% to 32.50%. Both continuation gates rejected, so the sealed Release
-suite was not consumed and neither trained model was promoted.
+M10 selected Qwen3-8B Base plus a 5M-token BF16 LoRA, with the specialized Adapter enabled only
+for the complete TinyLLM DevOps Tool Catalog. On the 160-task sealed Release suite, the model
+reached **93.12% Task Success**, up **18.74 percentage points** from its protocol-matched 74.38%
+parent. The 22-cluster bootstrap 95% interval is `[+3.47, +36.07]` percentage points. Schema
+validity, No-tool Accuracy, Multi-step Success, Error Recovery, and Grounding all reached 100%; Tool
+Hallucination and all three safety-violation counts were zero.
 
-The 8B adapter improved Tool Selection from 82.50% to 88.75% while retaining 100% schema validity
-and grounding. Template-like final answers and unnecessary retrieval on irrelevant requests still
-reduced end-to-end success, demonstrating why training loss and local protocol metrics cannot
-replace an Agent task gate. M7 `qwen3-0-6b-m7-fa678d92` remains Production. See the
-[M10 acceptance report](reports/m10/m10_acceptance.md).
+On the `TinyLLM BFCL v1.3 Offline Core Profile`, the candidate scored 39.29% (723/1840) against
+39.18% (721/1840) for the parent, with a worst category change of -0.50 percentage points. The M6
+general aggregate remained 62.64% for both. All 13 unified checks passed, and the model was
+registered as `qwen3-8b-m10-agent-production-b2d88493` under the atomic `agent-production` Alias.
+See the [M10 acceptance report](reports/m10/m10_acceptance.md).
 
 ## Core boundary and future research
 
 The release covers single-host single/multi-GPU training, data versioning, checkpointing,
 automated evaluation, Candidate promotion, serving, Production, a bounded DevOps agent, Agent
-Evaluation, and Agent post-training with fail-closed early stopping. `v1.0.0-rc.1` retains the
-complete system while explicitly recording that the trained Agent models did not pass Production
-gates. The following directions live in the future research queue:
+Evaluation, Agent post-training, and a dedicated Agent Production Registry. `v1.0.0` completes the
+end-to-end path from data and training to Agent serving, evaluation, and promotion. The following
+directions live in the future research queue:
 
 - MoE, pipeline parallelism, and multi-node training;
 - custom KV cache, tensor parallelism, FlashAttention, and CUDA kernels;

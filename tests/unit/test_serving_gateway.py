@@ -238,6 +238,36 @@ def test_evaluation_subject_requires_exact_model_id() -> None:
         assert accepted.status_code == 200
 
 
+def test_agent_production_exposes_registry_identity_and_alias() -> None:
+    backend = FakeBackend()
+    resolved = _routed_evaluation_resolved().model_copy(
+        update={
+            "requested_ref": "agent-production",
+            "status": "Production",
+            "production_record_sha256": "1" * 64,
+        }
+    )
+    config = GatewayConfig(config_id="m8-gateway-production-unit", trusted_hosts=("testserver",))
+    with TestClient(
+        create_gateway(
+            config=config,
+            resolved_model=resolved,
+            backend=backend,
+            bearer_token=TOKEN,
+        )
+    ) as client:
+        version = client.get("/version").json()
+        assert version["deployment_status"] == "Production"
+        assert version["evaluation_subject_sha256"] == "f" * 64
+        assert version["production_record_sha256"] == "1" * 64
+        response = client.post(
+            "/v1/chat/completions",
+            headers=_headers(),
+            json={"model": "agent-production", "messages": [{"role": "user", "content": "hi"}]},
+        )
+        assert response.status_code == 200
+
+
 def test_routed_subject_uses_adapter_only_for_exact_devops_catalog() -> None:
     backend = FakeBackend()
     resolved = _routed_evaluation_resolved()

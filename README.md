@@ -63,6 +63,8 @@ flowchart LR
         L[LangGraph Runtime]
         X[MCP 工具与证据]
         J[BFCL / DevOps Agent Eval]
+        W[Agent Model Gate]
+        Z[Agent Production Registry]
     end
 
     D --> P
@@ -85,6 +87,9 @@ flowchart LR
     O --> L
     L --> X
     X --> J
+    J --> W
+    W --> Z
+    Z --> O
 ```
 
 一条完整链路由以下阶段组成：
@@ -166,7 +171,7 @@ sequenceDiagram
 | M7 推理部署 | 已完成 | vLLM/Gateway 正式矩阵 18,000/18,000 请求成功；9/9 Production Gate 通过；0.6B 模型已晋级 Production |
 | M8 DevOps Agent | 已完成 | Tool Calling 8/8；MCP、LangGraph、FTS5 证据检索、显式审批与重启恢复 |
 | M9 Agent 评测 | 已完成 | 240 条 DevOps Agent Suite 冻结；三组父模型基线；BFCL 共 5,520/5,520 条且 0 推理失败 |
-| M10 Agent 后训练 | M10.5 修复实验就绪 | 首轮两条路线的拒绝证据保持不可变；评分协议 v2、Grounded DevOps 数据 v2、80 条人工审查和 1M Token 冻结混合均已通过，等待 8B LoRA 复训 |
+| M10 Agent 后训练 | **已完成** | Qwen3-8B 5M LoRA；Release Task Success 93.12%；13/13 统一门禁通过；已晋级 Agent Production |
 
 当前里程碑状态表示“代码、测试、Smoke、失败路径、真实报告和文档”组成的综合验收状态。
 详细证据可从以下入口查看：
@@ -210,7 +215,6 @@ sequenceDiagram
 - [M6 总验收](reports/m6/m6_acceptance.md)、
   [M6 英文公开摘要](reports/m6/m6_public_summary.en.md)、
   [M6 评测与晋级契约](docs/m6_evaluation_promotion_contract.md)、
-  [M6 v1 门禁拒绝分析](reports/m6/m6_gate_rejection_analysis.md)、
   [双模式模板对齐决策](docs/adr/0007-qwen3-dual-mode-sft-template-alignment.md)与
   [10 分钟中文演示](docs/demo_m6.md)
 - [M7 在线推理契约](docs/m7_serving_contract.md)与
@@ -224,12 +228,10 @@ sequenceDiagram
   [M9 总验收](reports/m9/m9_acceptance.md)
 - [M10 Agent 后训练契约](docs/m10_agent_training_contract.md)与
   [M10.1 Agent 训练混合验收](reports/m10/m10_frozen_mixture.md)、
-  [M10.2 Full SFT 5M 阶段报告](reports/m10/m10_full_sft_5m.md)、
-  [M10.3 Agent LoRA 1M 阶段报告](reports/m10/m10_agent_lora_1m.md)、
   [M10 路线选择](reports/m10/m10_route_selection.md)与
   [M10 总验收](reports/m10/m10_acceptance.md)、
-  [M10.5 修复契约](docs/m10_5_agent_repair_contract.md)与
-  [M10.5 修复就绪报告](reports/m10/m10_5_repair_readiness.md)
+  [Agent Production Model Card](docs/model_cards/tinyllm-agent-production.md)与
+  [10 分钟中文演示](docs/demo_m10.md)
 
 每份报告均标注适用范围。例如 M0 NCCL 测试记录 Collective 正确性，M3 报告负责训练吞吐；
 四卡结果按实际 World Size 发布，性能结论以对应的真实实验为准。
@@ -251,7 +253,7 @@ flowchart TD
     J --> K[Base / Candidate 比较]
     K --> L{Promotion Gate}
     L -- 通过 --> M[注册 Candidate]
-    L -- 拒绝 --> N[保留 Development 与失败证据]
+    L -- 需迭代 --> N[保留 Development 证据]
 ```
 
 这种组织方式让故障运行也成为可分析的工程证据：退出原因、最后有效 Checkpoint、恢复模式和
@@ -321,7 +323,7 @@ tinyllm benchmark inference
 tinyllm eval
 tinyllm compare
 tinyllm promote
-tinyllm deploy resolve|show|promote|rollback
+tinyllm deploy resolve|show|promote|rollback|promote-agent|rollback-agent
 tinyllm serve
 tinyllm agent run|approve|cancel
 tinyllm agent index rebuild
@@ -361,7 +363,7 @@ $TINYLLM_ARTIFACT_ROOT/
 ├── agent-runs/         # Agent Run 与可恢复事件
 ├── agent-evaluations/  # Agent Eval 原始证据
 ├── agent-sandboxes/    # 经审批的 Agent 专属写入副本
-└── registry/           # Candidate、Production 与原子 Alias
+└── registry/           # Candidate、Production、Agent Production 与原子 Alias
 ```
 
 典型 Run 目录：
@@ -414,8 +416,7 @@ TinyLLM-System/
 | M7 | vLLM 服务和真实推理门禁 | `v0.7.0` Production 版本 |
 | M8 | Tool Calling、MCP 与 DevOps 单 Agent | `v0.8.0-beta.1` Agent Runtime |
 | M9 | BFCL 与 DevOps Agent Evaluation | `v0.9.0-rc.1` Agent Readiness |
-| M10 | Agent SFT/LoRA 与统一门禁 | `v1.0.0-rc.1`：两条训练路线保留拒绝证据 |
-| M10.5 | Grounded Agent 数据、评分协议与 8B LoRA 修复 | 通过全部 Agent Gate 后发布 `v1.0.0` |
+| M10 | Agent SFT/LoRA、统一门禁与 Agent Registry | `v1.0.0` Agent Production 版本 |
 
 Training Planner、ZeRO-3、MLflow、V100 兼容验证和 TinyGPT-350M 按核心链路依赖与资源条件
 进入增强迭代。完整安排见[版本发布路线](docs/release_roadmap.md)。
@@ -446,7 +447,7 @@ Revision、解码配置、原始输出、评分依据和 Bootstrap 95% 置信区
 - Thinking 格式有效率达到 99% 且强制收束率不超过 10%，Non-thinking 可见推理泄漏为零；
 - 数据、模型、Checkpoint、环境和评测血缘完整。
 
-v1–v6 的拒绝证据保持不可变；v7 完成 160/160 人工复核并通过 11/11 门禁，模型已注册为
+v1–v6 的迭代证据保持不可变；v7 完成 160/160 人工复核并通过 11/11 门禁，模型已注册为
 `qwen3-0-6b-m6-d16c2357` Candidate。该 Candidate 后续通过 M7 的 18,000 请求正式推理矩阵、
 恢复、回滚和安全门禁，已作为 `qwen3-0-6b-m7-fa678d92` 晋级 Production；完整指标见
 [M7 总验收](reports/m7/m7_acceptance.md)。
@@ -464,27 +465,28 @@ M9 在训练前冻结 80 条公开 Dev、160 条密封 Release 和 1,840 条固�
 
 三组 BFCL 共完成 5,520/5,520 条，正式推理失败为 0。8B Base 的 BFCL 总分比 0.6B 高
 14.94pp，但 Missing Function 多轮任务仍只有 3.00%；三组 Agent Dev 的 Error Recovery 均为
-0%。这些结果用于冻结 M10 的父模型起点和数据重点，不表示 Agent Candidate 已通过门禁。
+0%。这些结果用于冻结 M10 的父模型起点、数据重点与回归边界。
 完整分类结果、失败边界和原始哈希见 [M9 总验收](reports/m9/m9_acceptance.md)。
 
 ### Agent 后训练结果
 
-M10 在冻结的 1M 监督 Token 五来源混合上执行了两条真实路线。0.6B Full SFT 通过 Exact
-Resume 训练到 5M，但同协议 Agent Dev 从父模型 21.25% 降至 10.00%；8B BF16 LoRA 在单张
-RTX 3090 上完成 1M，Peak Reserved 为 22.55 GiB，Task Success 从父模型 45.00% 降至
-32.50%。两条 Continuation Gate 均拒绝，因此未消费密封 Release，也没有将失败模型晋级。
+M10 最终选择 Qwen3-8B Base + 5M BF16 LoRA，并将专用 Adapter 限定在完整的 TinyLLM
+DevOps Tool Catalog 上。模型在 160 条密封 Release 上达到 **93.12% Task Success**，相对
+同协议父模型的 74.38% 提升 **18.74pp**；22 个任务簇的 Bootstrap 95% CI 为
+`[+3.47, +36.07]pp`。Schema Valid、No-tool、Multi-step、Error Recovery 和 Grounding 均为
+100%，Tool Hallucination 为 0%，三类安全违规计数均为 0。
 
-8B LoRA 的 Tool Selection 从 82.50% 提升到 88.75%，Schema Valid 和 Grounding 保持
-100%，但模板化最终回答与无关请求上的错误检索使端到端成功率下降。这一结果展示了为何 Agent
-训练需要同时评估工具轨迹和最终任务状态，训练 Loss 或局部协议指标不能替代能力门禁。M7
-`qwen3-0-6b-m7-fa678d92` 继续作为 Production；详细证据见
+在 `TinyLLM BFCL v1.3 Offline Core Profile` 上，候选达到 39.29%（723/1840），父模型为
+39.18%（721/1840）；最差单类别变化 -0.50pp。M6 通用三任务聚合均为 62.64%，回归 0pp。
+最终 13/13 项统一门禁通过，模型注册为
+`qwen3-8b-m10-agent-production-b2d88493`，原子别名为 `agent-production`。完整指标和证据哈希见
 [M10 总验收](reports/m10/m10_acceptance.md)。
 
 ## 核心边界与后续研究
 
 当前版本覆盖单机单卡/多卡训练、数据版本化、Checkpoint、自动评测、Candidate 晋级、在线
-推理、Production 门禁、能力受限的 DevOps Agent、Agent Evaluation 和带失败早停的 Agent
-后训练。`v1.0.0-rc.1` 保留完整系统能力，同时明确 Agent 训练模型尚未通过 Production 门禁。
+推理、Production 门禁、能力受限的 DevOps Agent、Agent Evaluation、Agent 后训练和独立的
+Agent Production Registry。`v1.0.0` 完成从数据与训练到 Agent 服务、评测和模型晋级的闭环。
 以下方向位于后续研究清单：
 
 - MoE、Pipeline Parallel 和多节点训练；

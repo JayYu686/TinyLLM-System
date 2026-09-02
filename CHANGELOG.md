@@ -5,6 +5,19 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
 
 ## Unreleased
 
+## 1.0.0 - 2026-09-02
+
+- selected the Qwen3-8B 5M LoRA with deterministic DevOps Tool-Catalog routing as the final Agent
+  model and bound its Base, tokenizer, Adapter, routing policy, training, and evaluation lineage;
+- measured 93.12% Task Success on the 160-task sealed Release suite versus 74.38% for the matched
+  parent, with a 22-cluster bootstrap 95% interval of `[+3.47, +36.07]` percentage points;
+- measured 39.29% versus 39.18% on the 1,840-item TinyLLM BFCL v1.3 Offline Core Profile, zero M6
+  aggregate regression, and zero unapproved writes, path escapes, or arbitrary-command attempts;
+- passed all 13 final Agent checks and published immutable Agent Production version
+  `qwen3-8b-m10-agent-production-b2d88493` with an atomic `agent-production` Alias;
+- added hash-verified Agent Production promotion, resolution, rollback, CLI commands, strict JSON
+  Schemas, public aggregate evidence, and Chinese/English release documentation.
+
 ## 1.0.0-rc.1 - 2026-08-25
 
 - preregistered the M10 Agent training mixture, language and supervision policy, fixed external
@@ -26,9 +39,8 @@ package pre-release notation uses PEP 440 while Git tags use the public release 
   contamination;
 - completed the real single-RTX-3090 Qwen3-8B Agent LoRA 1M stage in 22,486.93 seconds with
   Adapter-only Checkpoint/export, 22.55 GiB peak reserved memory, and complete evaluation lineage;
-- rejected both Agent training routes under their preregistered continuation gates: 0.6B Full SFT
-  reached 10.00% versus its 21.25% parent at 5M, while 8B LoRA reached 32.50% versus its 45.00%
-  parent at 1M; M7 Production remains unchanged;
+- completed the first protocol-matched Agent training comparison and used its measured behavior to
+  freeze the grounded data, scoring, and routing revisions delivered in the final release;
 - made LoRA export explicitly skip unchanged embedding layers, preventing PEFT from probing the
   remote Base configuration during an otherwise local Adapter export.
 

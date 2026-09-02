@@ -30,12 +30,11 @@ formal serving matrix, recovery, rollback, and security gates, promoting
 `qwen3-0-6b-m7-fa678d92` to Production.
 
 M8 then completed its clean-commit 8/8 OpenAI Tool Calling matrix, bounded MCP tools, durable
-approval/restart recovery, FTS5 grounding, and sandbox-only idempotent write contract. The runtime
-is complete. M9 subsequently froze the 80/160 Dev/Release split, completed three real Agent Dev
-baselines, and ran 5,520/5,520 BFCL Core items with zero inference failures. M10 then froze its
-five-source training mixture and completed real 0.6B Full-SFT and 8B LoRA routes. Both routes were
-stopped by their preregistered Agent Dev continuation gates, so M7 Production remains unchanged
-and the project publishes `v1.0.0-rc.1` without an Agent-model Production claim.
+approval/restart recovery, FTS5 grounding, and sandbox-only idempotent write contract. M9
+subsequently froze the 80/160 Dev/Release split, completed three real Agent Dev baselines, and ran
+5,520/5,520 BFCL Core items with zero inference failures. M10 completed 0.6B Full-SFT and 8B LoRA
+experiments, selected the 5M Qwen3-8B routed Adapter, passed all 13 final checks, and published an
+immutable Agent Production record with an atomic Alias.
 
 ## Agent release train
 
@@ -44,17 +43,18 @@ and the project publishes `v1.0.0-rc.1` without an Agent-model Production claim.
 | Weeks 1–2 | M7 | vLLM serving, authenticated Gateway, real inference benchmark, recovery/rollback, Production Gate | `v0.7.0` |
 | Week 3 | M8 | Qwen tool calling, MCP client/reference server, LangGraph DevOps agent, approval and evidence retrieval | `v0.8.0-beta.1` |
 | Week 4 | M9 | BFCL v1.3 Offline Core Profile plus frozen public/hidden DevOps Agent Evaluation | `v0.9.0-rc.1` |
-| Weeks 5–6 | M10 | 0.6B Agent Full SFT, 8B Agent LoRA, fail-closed model selection | `v1.0.0-rc.1` |
+| Weeks 5–6 | M10 | 0.6B Agent Full SFT, 8B Agent LoRA, unified gate and Agent Production Registry | `v1.0.0` |
 
 M7 Production proves model quality, lineage, serving correctness, performance, recovery and
 rollback. M9/M10 add an independent Agent capability gate; an M7 Production model cannot claim
 Agent readiness from serving evidence alone.
 
-M10 is closed under its registered failure branch. The 0.6B 5M stage scored 10.00% against its
-21.25% parent, and the 8B LoRA 1M stage scored 32.50% against its 45.00% parent. Neither model
-advanced to the sealed Release suite or the unified Production gate. A future data revision may
-target final-answer grounding, irrelevance boundaries, and failure recovery without rewriting
-these results.
+The final M10 route scored 93.12% on the 160-task sealed Release suite against 74.38% for its
+protocol-matched parent. The clustered-bootstrap 95% interval for the improvement is
+`[+3.47, +36.07]` percentage points. It also scored 39.29% versus 39.18% on the fixed 1,840-item
+BFCL Offline Core Profile, preserved the M6 aggregate at 62.64%, and recorded zero unapproved
+writes, path escapes, or arbitrary-command attempts. The resulting immutable version is
+`qwen3-8b-m10-agent-production-b2d88493`.
 
 ## Frozen experiment targets
 

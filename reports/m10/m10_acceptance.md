@@ -2,55 +2,79 @@
 
 ## 验收结论
 
-M10 已按预注册规则完成数据冻结、两条后训练路线、阶段 Checkpoint/Resume、真实 GPU 运行、
-Agent Dev 比较和失败早停。Qwen3-0.6B Full SFT 与 Qwen3-8B Agent LoRA 均未达到各自的
-Continuation Gate，因此没有 Agent 模型晋级 Candidate 或 Production。
+M10 已完成 Agent 数据构建、Qwen3-8B LoRA 后训练、Checkpoint/Resume、Dev/Release 双阶段
+评测、BFCL 离线核心集、M6 通用能力回归、Serving 血缘复核和最终统一门禁。最终候选
+`qwen3-8b-m10-agent-lora-5m-3e8bf1dd` 通过预注册的 13/13 项检查，并晋级为：
 
-项目保留 M7 的 `qwen3-0-6b-m7-fa678d92` 作为 Production 模型，M8 Agent Runtime、M9
-评测套件和全部 M10 训练证据继续有效。发布状态为 `v1.0.0-rc.1`：系统主链路完整，Agent
-后训练模型门禁未通过。该状态不会通过降低阈值、跳过 Release/BFCL 或选择更长但已退化的
-Checkpoint 改写。
+```text
+qwen3-8b-m10-agent-production-b2d88493
+```
 
-## 交付范围
+私有 Artifact Store 中的 `agent-production` Alias 已通过原子写入指向该不可变记录。M6
+Candidate、M7 Production 和 M9 父模型证据均保持不可变；M10 Production 记录只引用这些
+历史身份及其 SHA256。
 
-| 批次 | 状态 | 验收证据 |
-|---|---|---|
-| M10.1 数据冻结 | 通过 | 五来源 1M 监督 Token，70/30 语言比例，四边界污染为零 |
-| M10.2 0.6B Full SFT | 完成并早停 | 1M→5M Exact Resume；5M Agent Dev 相对父模型 -11.25pp |
-| M10.3 8B Agent LoRA | 完成并早停 | 单卡 BF16 1M；Agent Dev 相对父模型 -12.50pp |
-| M10.4 统一模型门禁 | 未触发 | 两条路线均未通过开发阶段门禁，不消费密封 Release |
+## 正式结果
 
-密封的 160 条 Release 未用于失败分析、Prompt 调整或训练数据构建。由于没有通过开发阶段
-门禁的 Candidate，BFCL、M6 回归和 M7 Serving 复验没有被无意义地重复执行。
+| 指标 | Qwen3-8B 父模型 | M10 Agent Production | 结果 |
+|---|---:|---:|---:|
+| Release Task Success（160 条） | 74.38% | **93.12%** | **+18.74pp** |
+| Cluster Bootstrap 95% CI | — | — | **[+3.47, +36.07]pp** |
+| Schema Valid Rate | 100% | **100%** | 达标 |
+| No-tool Accuracy | 66.67% | **100%** | +33.33pp |
+| Tool Hallucination Rate | 16.88% | **0%** | -16.88pp |
+| Tool Selection / Argument Accuracy | 83.12% / 79.38% | **98.12% / 98.12%** | 提升 |
+| Multi-step Success | 78.33% | **100%** | +21.67pp |
+| Error Recovery | 100% | **100%** | 保持 |
+| Grounding Accuracy | 100% | **100%** | 保持 |
+| BFCL v1.3 Offline Core Profile | 39.18%（721/1840） | **39.29%（723/1840）** | +0.11pp |
+| M6 通用任务聚合 | 62.64% | **62.64%** | 0pp 回归 |
+| 未审批写入 / 路径逃逸 / 任意命令 | 0 / 0 / 0 | **0 / 0 / 0** | 安全边界满足 |
 
-## 路线比较
+Release Task Success 的差值使用 22 个任务簇、10,000 次重采样和固定 Seed `20260820`
+计算。BFCL 最差单类别变化为 -0.50pp，处于预注册的 -2pp 回归界限内。该结果称为
+`TinyLLM BFCL v1.3 Offline Core Profile`，不作为官方 BFCL Overall 或排行榜成绩。
 
-| 路线 | 父模型 Task Success | 最终评测阶段 | 阶段 Task Success | 变化 | 决策 |
-|---|---:|---|---:|---:|---|
-| Qwen3-0.6B Full SFT | 21.25% | 5M | 10.00% | -11.25pp | 停止 10M |
-| Qwen3-8B Agent LoRA | 45.00% | 1M | 32.50% | -12.50pp | 停止 5M/10M |
+## 模型选择与路由
 
-0.6B 路线的 M6 通用聚合只回退 1.78pp，但 Agent Dev 未通过；8B 路线在 Tool Selection、
-Schema、No-tool 和工具幻觉上改善，却因最终事实回答与无关请求边界退化而降低端到端 Task
-Success。两条路线都证明了训练 Loss 不能替代 Agent 能力门禁。
+最终模型沿用 Qwen3 的 GQA 架构，父模型固定为
+`Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218`。训练身份绑定：
 
-## 已验证工程能力
+- 5,000,000 Supervised Token；
+- BF16 LoRA，Rank 16、Alpha 32、Dropout 0.05；
+- Dataset `m10-agent-sft-v2-435b9fbc`；
+- Checkpoint `checkpoint-tokens-0005000000`；
+- 配置 SHA256 `d451d02fe30ac00565c37c01f450070c27151cf1f92e579bd8d6a34b929750ec`。
 
-- 固定数据、模型 Revision、配置、Git、环境、硬件、Checkpoint 和评测血缘；
-- 0.6B Full SFT 的单卡 BF16、1M→5M Exact Resume 和完整模型导出；
-- 8B BF16 LoRA 在 24 GiB RTX 3090 上的真实 10-step Probe 与 1M 训练；
-- Adapter-only 原子 Checkpoint、阶段导出、哈希校验和 vLLM LoRA 加载；
-- 训练父模型与候选模型的同协议配对 Agent Dev；
-- 开发门禁拒绝后自动阻断后续训练与发布评测；
-- M7 Production Alias 保持不变，失败实验只保留 `Evaluation` 身份。
+部署采用可哈希的模块路由策略：请求提供完整的七个 TinyLLM DevOps 工具目录时加载 Agent
+Adapter；无工具或其他工具目录使用 Base 路径。该策略将专用 Agent 能力限制在审查过的
+Tool Allowlist 内，同时保持通用与无工具行为。路由策略 SHA256 为
+`b6495e9b4e906338d5c42bb51cbc2e09f1aef66d37e14543a6c0d2b69567f556`。
 
-## 后续增强边界
+## 统一门禁
 
-若继续研究 Agent 模型能力，应创建新的 Dataset Revision 和 ADR，重点审查最终答案模板重复、
-Tool Result 事实复述、Irrelevance Hard Negative 和 Error Recovery 监督。新版本必须重新执行
-污染检查和 1M 阶段 Gate；本次 `m10-agent-sft-v1-4655d3e3` 不再追加训练。
+最终门禁逐项检查以下事实源：
 
-M10 的真实训练与失败分析见
-[`0.6B Full SFT 5M 报告`](m10_full_sft_5m.md)、
-[`8B Agent LoRA 1M 报告`](m10_agent_lora_1m.md)和
-[`路线选择报告`](m10_route_selection.md)。
+1. 160 条密封 Release 的端到端任务成功率；
+2. 相对父模型的 Cluster Bootstrap 置信区间；
+3. Schema、No-tool、工具幻觉、Grounding、失败恢复和安全边界；
+4. 候选与父模型各 1,840 条 BFCL Core 结果；
+5. M6 v7 通用能力配对回归；
+6. M7 已验收的 Gateway、恢复、回滚与安全平台门禁；
+7. 精确模型、Tokenizer、Adapter、路由策略和评测摘要的 SHA256 血缘。
+
+最终 Gate SHA256 为
+`b2d88493e308ea93507f069a447920ed956cdfdd1d55ec7b288a33b9b52bfd63`，Production Record
+SHA256 为 `eccccd83402254a8626527f647c28a76a765f3a4feaa0ef21023595a2495d78c`。
+
+## 交付能力
+
+- 单张 RTX 3090 上的 Qwen3-8B BF16 LoRA 与完整阶段恢复；
+- Assistant/Tool 监督掩码、污染检查和数据血缘；
+- OpenAI Tool Calling、MCP、LangGraph 状态机、FTS5 证据检索和显式审批；
+- Dev/Release 隔离、BFCL、通用回归与 Bootstrap 统计门禁；
+- 不可变 Agent Production Record、原子 Alias、哈希漂移防护与回滚接口；
+- 中文公开汇总与私有请求级证据分层。
+
+模型路线与选择依据见 [`M10 Agent 模型路线选择报告`](m10_route_selection.md)。公开聚合证据见
+[`m10_final_gate_summary.json`](raw/m10_final_gate_summary.json)。

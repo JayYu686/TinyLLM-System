@@ -492,14 +492,28 @@ def rollback_production(
 def show_deployment(artifact_root: Path, model_ref: str = "production") -> dict[str, object]:
     """Return a path-free Registry view for CLI inspection."""
 
-    resolved = resolve_model(artifact_root, model_ref)
+    from tinyllm.deployment.evaluation_subject import (
+        ResolvedEvaluationSubject,
+        resolve_serving_model,
+    )
+
+    resolved = resolve_serving_model(artifact_root, model_ref)
+    if isinstance(resolved, ResolvedEvaluationSubject):
+        candidate_model_version: str | None = None
+        candidate_record_sha256: str | None = None
+        evaluation_subject_sha256: str | None = resolved.evaluation_subject_sha256
+    else:
+        candidate_model_version = resolved.candidate_model_version
+        candidate_record_sha256 = resolved.candidate_record_sha256
+        evaluation_subject_sha256 = None
     return {
         "schema_version": "1.0",
         "status": resolved.status,
         "model_version": resolved.model_version,
-        "candidate_model_version": resolved.candidate_model_version,
-        "candidate_record_sha256": resolved.candidate_record_sha256,
-        "production_record_sha256": resolved.production_record_sha256,
+        "candidate_model_version": candidate_model_version,
+        "candidate_record_sha256": candidate_record_sha256,
+        "evaluation_subject_sha256": evaluation_subject_sha256,
+        "production_record_sha256": getattr(resolved, "production_record_sha256", None),
         "repository": resolved.model.repository,
         "base_revision": resolved.model.base_revision,
         "training_run_id": resolved.model.training_run_id,

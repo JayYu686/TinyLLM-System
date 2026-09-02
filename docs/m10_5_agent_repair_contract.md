@@ -2,14 +2,13 @@
 
 ## 1. 目标
 
-M10.5 在保留 `v1.0.0-rc.1` 全部失败证据的前提下，修复 M10 首轮训练数据与评分协议之间的
-语义错位。修复实验从固定 Qwen3-8B Base 重新初始化，不续训已经退化的 1M LoRA Adapter，
-也不修改既有 Run、Checkpoint、评测结果或发布标签。
+M10.5 使用独立 Dataset Revision、评分协议和训练 Run 完成 M10 的能力修订。实验从固定
+Qwen3-8B Base 重新初始化，不修改既有 Run、Checkpoint、评测结果或发布标签。
 
-修复完成条件仍由 M9 预注册门禁决定：开发集只负责早停，密封 Release、BFCL、M6 回归和
-M7 Serving 只在开发门禁通过后执行。任何阈值都不会因首轮训练失败而降低。
+修订完成条件仍由 M9 预注册门禁决定：开发集只负责早停，密封 Release、BFCL、M6 回归和
+M7 Serving 只在开发门禁通过后执行，全部阈值沿用预注册契约。
 
-## 2. 已确认的首轮失效机制
+## 2. 首轮诊断与修订目标
 
 首轮数据在结构上合法，但存在三个与运行时不一致的监督信号：
 
@@ -20,7 +19,7 @@ M7 Serving 只在开发门禁通过后执行。任何阈值都不会因首轮训
 3. 等待审批任务要求模型提出写操作并停止，但 v1 评分同时检查不应出现的最终回答文本，且把
    `not_executed` 的审批前工具调用作为普通成功调用处理。
 
-对应修复分别落在数据 v2、评分协议 v2 和独立训练 Campaign 中。历史 v1 证据继续使用
+对应修订分别落在数据 v2、评分协议 v2 和独立训练 Campaign 中。历史 v1 证据继续使用
 `m9-agent-scoring-v1` 解析，不能被新逻辑静默改写。
 
 ## 3. 评分协议 v2
@@ -95,9 +94,8 @@ Cluster Bootstrap 95% CI 下界大于 0，Schema Valid Rate 不低于 98%，No-t
 ## 7. 证据与失败处理
 
 Dataset v2、训练配置、Memory Probe、Run、Checkpoint、Adapter Export、父模型重评分、候选 Dev、
-Release、BFCL、M6 与 Serving 结果均使用独立内容哈希。若修复候选仍未通过最终门禁，M7
-Production Alias 保持不变，项目发布新的 RC 并保留可复现的失败分析；只有全部门禁通过时才
-发布 `v1.0.0`。
+Release、BFCL、M6 与 Serving 结果均使用独立内容哈希。最终模型在全部门禁满足后写入新的
+Agent Production 记录，M6/M7 历史身份保持不变。
 
 ## 8. Repair v4：唯一轨迹扩容与阶段停止规则
 
@@ -116,3 +114,11 @@ Repair v4 的正式混合必须证明所有来源样本复用计数为零。80 �
 `approval-v4` 与 `m10-agent-sft-v3-7aa779bf` 冻结混合已经生成；10 个 Stratum 的样本复用计数
 均为零。新实验重新从 Qwen3-8B Base 开始，在 1M Token 处先做 Agent Dev 门禁，避免再次用
 重复 Epoch 掩盖能力退化。
+
+## 9. 最终状态
+
+最终路线在 160 条密封 Release 上达到 93.12% Task Success，相对父模型提升 18.74pp，
+Cluster Bootstrap 95% CI 为 `[+3.47, +36.07]pp`；BFCL 总体 +0.11pp，M6 聚合回归 0pp，
+13/13 统一门禁通过。模型已注册为
+`qwen3-8b-m10-agent-production-b2d88493`，完整结论见
+[`M10 总验收`](../reports/m10/m10_acceptance.md)。

@@ -734,6 +734,7 @@ def create_gateway(
             deployment_status=resolved_model.status,
             candidate_model_version=candidate_model_version,
             evaluation_subject_sha256=evaluation_subject_sha256,
+            production_record_sha256=getattr(resolved_model, "production_record_sha256", None),
             model_artifact_sha256=resolved_model.model_artifact_sha256,
         ).to_dict()
 
@@ -769,6 +770,8 @@ def create_gateway(
         accepted_models = {resolved_model.model_version}
         if not isinstance(resolved_model, ResolvedEvaluationSubject):
             accepted_models.add("production")
+        elif resolved_model.status == "Production":
+            accepted_models.update({"production", "agent-production", resolved_model.requested_ref})
         if body.model not in accepted_models:
             return _openai_error(
                 "requested model is not deployed",

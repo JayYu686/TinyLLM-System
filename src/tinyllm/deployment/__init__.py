@@ -1,5 +1,12 @@
 """Immutable deployment records and model resolution."""
 
+from tinyllm.deployment.agent_registry import (
+    M10AgentProductionAlias,
+    M10AgentProductionRecord,
+    promote_agent_production,
+    resolve_agent_production,
+    rollback_agent_production,
+)
 from tinyllm.deployment.evaluation_subject import (
     M9EvaluationSubjectRecord,
     M10AdapterRoutingPolicy,
@@ -64,6 +71,8 @@ __all__ = [
     "M7VulnerabilityAssessment",
     "M9EvaluationSubjectRecord",
     "M10AdapterRoutingPolicy",
+    "M10AgentProductionAlias",
+    "M10AgentProductionRecord",
     "M10StageEvaluationSubjectRecord",
     "M10LoRAStageEvaluationSubjectRecord",
     "ResolvedEvaluationSubject",
@@ -76,7 +85,9 @@ __all__ = [
     "m10_lora_stage_evaluation_subject_id",
     "load_production_gate",
     "promote_production",
+    "promote_agent_production",
     "resolve_model",
+    "resolve_agent_production",
     "resolve_evaluation_subject",
     "resolve_m10_stage_evaluation_subject",
     "resolve_m10_lora_stage_evaluation_subject",
@@ -85,5 +96,6 @@ __all__ = [
     "publish_m10_stage_evaluation_subject",
     "publish_m10_lora_stage_evaluation_subject",
     "rollback_production",
+    "rollback_agent_production",
     "show_deployment",
 ]

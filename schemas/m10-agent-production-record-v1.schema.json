@@ -215,48 +215,45 @@
     }
   },
   "additionalProperties": false,
-  "description": "Hash-verified path projection accepted only by serving and evaluation flows.",
+  "description": "Immutable Agent Production identity backed by an accepted M10 gate.",
   "properties": {
-    "adapter_artifact_sha256": {
-      "anyOf": [
-        {
-          "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Adapter Artifact Sha256"
-    },
-    "adapter_dir": {
-      "anyOf": [
-        {
-          "format": "path",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Adapter Dir"
-    },
     "adapter_routing_policy": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/M10AdapterRoutingPolicy"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
+      "$ref": "#/$defs/M10AdapterRoutingPolicy"
     },
-    "evaluation_subject_sha256": {
+    "adapter_routing_policy_sha256": {
       "pattern": "^[0-9a-f]{64}$",
-      "title": "Evaluation Subject Sha256",
+      "title": "Adapter Routing Policy Sha256",
+      "type": "string"
+    },
+    "agent_model_gate_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Agent Model Gate Sha256",
+      "type": "string"
+    },
+    "bfcl_comparison_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Bfcl Comparison Sha256",
+      "type": "string"
+    },
+    "candidate_bfcl_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Bfcl Summary Sha256",
+      "type": "string"
+    },
+    "candidate_release_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Release Summary Sha256",
+      "type": "string"
+    },
+    "gate_check_count": {
+      "const": 13,
+      "default": 13,
+      "title": "Gate Check Count",
+      "type": "integer"
+    },
+    "m6_regression_evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "M6 Regression Evidence Sha256",
       "type": "string"
     },
     "model": {
@@ -267,33 +264,30 @@
       "title": "Model Artifact Sha256",
       "type": "string"
     },
-    "model_dir": {
-      "format": "path",
-      "title": "Model Dir",
+    "parent_release_summary_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Parent Release Summary Sha256",
       "type": "string"
     },
-    "model_version": {
-      "pattern": "^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m))-[0-9a-f]{8}$",
-      "title": "Model Version",
+    "platform_gate_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Platform Gate Sha256",
       "type": "string"
     },
-    "production_record_sha256": {
-      "anyOf": [
-        {
-          "pattern": "^[0-9a-f]{64}$",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Production Record Sha256"
+    "production_eligible": {
+      "const": true,
+      "default": true,
+      "title": "Production Eligible",
+      "type": "boolean"
     },
-    "requested_ref": {
-      "maxLength": 180,
-      "minLength": 1,
-      "title": "Requested Ref",
+    "production_version": {
+      "pattern": "^qwen3-8b-m10-agent-production-[0-9a-f]{8}$",
+      "title": "Production Version",
+      "type": "string"
+    },
+    "promoted_at": {
+      "format": "date-time",
+      "title": "Promoted At",
       "type": "string"
     },
     "schema_version": {
@@ -302,42 +296,46 @@
       "title": "Schema Version",
       "type": "string"
     },
-    "status": {
-      "default": "Evaluation",
-      "enum": [
-        "Evaluation",
-        "Production"
-      ],
-      "title": "Status",
-      "type": "string"
-    },
-    "tokenizer_artifact_sha256": {
+    "serving_lineage_sha256": {
       "pattern": "^[0-9a-f]{64}$",
-      "title": "Tokenizer Artifact Sha256",
+      "title": "Serving Lineage Sha256",
       "type": "string"
     },
-    "tokenizer_dir": {
-      "format": "path",
-      "title": "Tokenizer Dir",
+    "source_evaluation_subject_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Evaluation Subject Sha256",
       "type": "string"
     },
-    "verified_at": {
-      "format": "date-time",
-      "title": "Verified At",
+    "source_subject_id": {
+      "pattern": "^qwen3-8b-m10-agent-lora-(3m|4m|5m)-[0-9a-f]{8}$",
+      "title": "Source Subject Id",
+      "type": "string"
+    },
+    "status": {
+      "const": "Production",
+      "default": "Production",
+      "title": "Status",
       "type": "string"
     }
   },
   "required": [
-    "requested_ref",
-    "model_version",
-    "evaluation_subject_sha256",
+    "production_version",
+    "promoted_at",
+    "source_subject_id",
+    "source_evaluation_subject_sha256",
     "model",
-    "model_dir",
     "model_artifact_sha256",
-    "tokenizer_dir",
-    "tokenizer_artifact_sha256",
-    "verified_at"
+    "adapter_routing_policy",
+    "adapter_routing_policy_sha256",
+    "agent_model_gate_sha256",
+    "serving_lineage_sha256",
+    "candidate_release_summary_sha256",
+    "parent_release_summary_sha256",
+    "candidate_bfcl_summary_sha256",
+    "bfcl_comparison_sha256",
+    "m6_regression_evidence_sha256",
+    "platform_gate_sha256"
   ],
-  "title": "ResolvedEvaluationSubject",
+  "title": "M10AgentProductionRecord",
   "type": "object"
 }

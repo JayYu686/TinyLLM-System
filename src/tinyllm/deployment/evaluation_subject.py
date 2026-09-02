@@ -518,8 +518,8 @@ class ResolvedEvaluationSubject(StrictSchema):
     """Hash-verified path projection accepted only by serving and evaluation flows."""
 
     schema_version: Literal["1.0"] = "1.0"
-    requested_ref: str = Field(pattern=SUBJECT_PATTERN)
-    status: Literal["Evaluation"] = "Evaluation"
+    requested_ref: str = Field(min_length=1, max_length=180)
+    status: Literal["Evaluation", "Production"] = "Evaluation"
     model_version: str = Field(pattern=SUBJECT_PATTERN)
     evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
     model: M6ModelIdentity
@@ -530,6 +530,7 @@ class ResolvedEvaluationSubject(StrictSchema):
     adapter_dir: Path | None = None
     adapter_artifact_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     adapter_routing_policy: M10AdapterRoutingPolicy | None = None
+    production_record_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     verified_at: datetime
 
     @field_validator("model_dir", "tokenizer_dir", "adapter_dir")
@@ -541,8 +542,18 @@ class ResolvedEvaluationSubject(StrictSchema):
 
     @model_validator(mode="after")
     def validate_identity(self) -> ResolvedEvaluationSubject:
-        if self.requested_ref != self.model_version:
-            raise ValueError("resolved evaluation subject identity differs")
+        if self.status == "Evaluation":
+            if (
+                self.requested_ref != self.model_version
+                or self.production_record_sha256 is not None
+            ):
+                raise ValueError("resolved evaluation subject identity differs")
+        elif self.production_record_sha256 is None or (
+            self.requested_ref != "agent-production"
+            and re.fullmatch(r"^qwen3-8b-m10-agent-production-[0-9a-f]{8}$", self.requested_ref)
+            is None
+        ):
+            raise ValueError("resolved Agent Production identity differs")
         if self.verified_at.tzinfo is None:
             raise ValueError("evaluation subject verification timestamp must be timezone-aware")
         if self.model.model_artifact_sha256 != self.model_artifact_sha256:
@@ -930,7 +941,12 @@ def resolve_m10_lora_stage_evaluation_subject(
 def resolve_serving_model(
     artifact_root: Path, model_ref: str, *, now: datetime | None = None
 ) -> ServingModel:
-    """Resolve a deployable M6/M7 model or an explicit evaluation-only subject."""
+    """Resolve a deployable model, Agent Production Alias, or Evaluation subject."""
+
+    if model_ref == "agent-production" or model_ref.startswith("qwen3-8b-m10-agent-production-"):
+        from tinyllm.deployment.agent_registry import resolve_agent_production
+
+        return resolve_agent_production(artifact_root, model_ref, now=now)
 
     if model_ref.startswith("qwen3-8b-m9-"):
         return resolve_evaluation_subject(artifact_root, model_ref, now=now)

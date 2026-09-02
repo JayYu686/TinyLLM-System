@@ -44,6 +44,25 @@ def _candidate_model() -> M6ModelIdentity:
     )
 
 
+def _lora_candidate_model() -> M6ModelIdentity:
+    return M6ModelIdentity(
+        role="candidate",
+        repository="Qwen/Qwen3-8B",
+        base_revision="b968826d9c46dd6066d109eabc6255188de91218",
+        attention_architecture="gqa",
+        adaptation="lora",
+        model_artifact_sha256="9" * 64,
+        model_parameters=8_234_382_336,
+        training_run_id="m10-lora-test-run",
+        training_checkpoint_id="checkpoint-tokens-0005000000",
+        training_tokens=5_000_000,
+        training_config_sha256="d" * 64,
+        dataset_version="m10-agent-sft-v2-test",
+        dataset_manifest_sha256="e" * 64,
+        adapter_sha256="8" * 64,
+    )
+
+
 def _general_summary() -> GeneralBaselineSummary:
     samples = (2376, 10042, 1838)
     tasks = tuple(
@@ -127,7 +146,7 @@ def test_m6_general_pass_writes_complete_lineage(
     monkeypatch.setattr(
         m6_general_module,
         "_environment_payload",
-        lambda: {"schema_version": "1.0", "environment": "test"},
+        lambda **_: {"schema_version": "1.0", "environment": "test"},
     )
     monkeypatch.setattr(
         m6_general_module,
@@ -177,6 +196,80 @@ def test_m6_general_runtime_snapshots_are_path_free(
     assert environment["lm_eval"] == "0.4.12"
     assert hardware["physical_gpu_index"] == 7
     assert hardware["gpu_name"] == "NVIDIA GeForce RTX 3090"
+
+
+def test_m6_general_pass_forwards_verified_lora_adapter(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    output = (tmp_path / "general-lora").resolve()
+    artifact_root = (tmp_path / "artifacts").resolve()
+    model_dir = (tmp_path / "model").resolve()
+    tokenizer_dir = (tmp_path / "tokenizer").resolve()
+    adapter_dir = (tmp_path / "adapter").resolve()
+    for directory in (model_dir, tokenizer_dir, adapter_dir):
+        directory.mkdir()
+    identity = _lora_candidate_model()
+    observed: dict[str, object] = {}
+
+    def run_general(*_args: object, **kwargs: object) -> GeneralBaselineSummary:
+        observed.update(kwargs)
+        output_path = kwargs["output_path"]
+        assert isinstance(output_path, Path)
+        raw = output_path / "raw/model"
+        raw.mkdir(parents=True)
+        (raw / "results.json").write_text("{}\n", encoding="utf-8")
+        return _general_summary()
+
+    cuda = SimpleNamespace(
+        is_available=lambda: True,
+        device_count=lambda: 1,
+        get_device_properties=lambda _: SimpleNamespace(total_memory=24, major=8, minor=6),
+        get_device_name=lambda _: "NVIDIA GeForce RTX 3090",
+        is_bf16_supported=lambda: True,
+    )
+    monkeypatch.setattr("tinyllm.evaluation.m6_general.torch.cuda", cuda)
+    monkeypatch.setattr(m6_general_module, "read_git_identity", lambda _: ("a" * 40, False))
+    monkeypatch.setattr(
+        m6_general_module,
+        "evaluation_artifact_sha256",
+        lambda *_: identity.adapter_sha256,
+    )
+    monkeypatch.setattr(
+        m6_general_module,
+        "effective_artifact_sha256",
+        lambda *_: identity.model_artifact_sha256,
+    )
+    monkeypatch.setattr(m6_general_module, "run_general_evaluation", run_general)
+    monkeypatch.setattr(
+        m6_general_module,
+        "_environment_payload",
+        lambda **_: {"schema_version": "1.0", "environment": "test", "peft": "0.19.1"},
+    )
+    monkeypatch.setattr(
+        m6_general_module,
+        "_hardware_payload",
+        lambda _: {"schema_version": "1.0", "hardware": "test"},
+    )
+
+    result = run_m6_general_pass(
+        release_config_path=Path("configs/eval/m6_release.yaml"),
+        artifact_root=artifact_root,
+        model_dir=model_dir,
+        tokenizer_dir=tokenizer_dir,
+        output_dir=output,
+        project_root=Path.cwd(),
+        physical_gpu_index=7,
+        model_identity=identity,
+        expected_config_sha256=canonical_config_hash(
+            load_m6_release_config(Path("configs/eval/m6_release.yaml"))
+        ),
+        adapter_dir=adapter_dir,
+        base_model_artifact_sha256="7" * 64,
+    )
+
+    assert result.model.adaptation == "lora"
+    assert observed["adapter_path"] == adapter_dir
 
 
 def test_m6_general_cli_runs_preflight_and_emits_json(

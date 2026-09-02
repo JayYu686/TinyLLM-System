@@ -56,6 +56,19 @@ MODEL_FILES = (
 )
 
 
+def test_gate_maps_each_dataset_generation_to_its_scoring_protocol() -> None:
+    assert gate_module._allowed_scoring_protocols("m10-agent-sft-v1-4655d3e3") == {
+        "m9-agent-scoring-v1"
+    }
+    assert gate_module._allowed_scoring_protocols("m10-agent-sft-v2-435b9fbc") == {
+        "m10-agent-scoring-v2",
+        "m10-agent-scoring-v3",
+    }
+    assert gate_module._allowed_scoring_protocols("m10-agent-sft-v3-7aa779bf") == {
+        "m10-agent-scoring-v3"
+    }
+
+
 class _ExportableAdapter:
     peft_config: dict[str, Any] = {}
 

@@ -1,0 +1,53 @@
+schema_version: "1.0"
+config_version: m10-agent-frozen-mixture-v2
+source_config_sha256: 41f6fb545fce229125227995d863ddc8cfc42d5acdd2bcf41d04398f6ac45e9c
+build_seed: 20260827
+dataset_name: tinyllm-agent-sft
+target_supervised_tokens: 1000000
+sequence_length: 2048
+tokenizer_id: Qwen/Qwen3-0.6B
+tokenizer_revision: c1899de289a04d12100db370d81485cdf75e47ca
+inputs:
+  toolace:
+    version: m10-toolace-canonical-v1-5ff7e195
+    content_sha256: 5ff7e19533e330722975605a03d0e8bedb2c0295dace04a6e93d7486b9c8dcca
+    manifest_sha256: 8b185ce98d9b6eb7fa6ffce6b6b8f031c548941f0f8811f73f8deb7f038b4080
+  hermes_function_calling:
+    version: m10-hermes-canonical-v1-fb8b61ba
+    content_sha256: fb8b61ba289fe192afe5c815fb5b58a57ac4d75337b8fea49409e915df2d7be1
+    manifest_sha256: 88ee87fdd108c6c1f226016288495a3062696417364fe800a6034103a6f892a9
+  tinyllm_devops:
+    version: m10-devops-training-v3-a5645bc5
+    content_sha256: a5645bc598b4a8a0a8c2d3c7def5a66a7e78e041906fd5e0b797cd2b92606d36
+    manifest_sha256: 6f26f6e560bc404764a04ddfcdb80d5c0cdb65001af60929561a5df934cf1138
+    approval_sha256: 236085a8327243cf048bc2af3a302020c7f9df05d2840c61b479ebd67f994bc7
+  m6_domain_replay:
+    version: m6-domain-generalization-mixture-v2-f2e029e4
+    content_sha256: f2e029e430ccf68753beeb09a9ba875b441246284c546c77fbb96422e0e0503d
+    manifest_sha256: 288b0c88c91c49b466e9aeee07f9087a69c0f6618f19462621730390831289aa
+  m2_no_tool_replay:
+    version: m2-sft-v1-f82ff32e
+    content_sha256: f82ff32ee98cb852fe6779774d9cce75a71e9430da72a6e5e1f4e3f7c2efd108
+    manifest_sha256: b8240dcfa68d0b7b54d5b7553d5e596097f62aadf866ab53890b4bac3287e750
+strata:
+  - {source_id: toolace, language: en, mode: nonthinking, supervised_tokens: 200000}
+  - {source_id: hermes_function_calling, language: en, mode: nonthinking, supervised_tokens: 100000}
+  - {source_id: tinyllm_devops, language: en, mode: nonthinking, supervised_tokens: 280000}
+  - {source_id: tinyllm_devops, language: zh, mode: nonthinking, supervised_tokens: 120000}
+  - {source_id: m6_domain_replay, language: en, mode: nonthinking, supervised_tokens: 70000}
+  - {source_id: m6_domain_replay, language: en, mode: thinking, supervised_tokens: 30000}
+  - {source_id: m6_domain_replay, language: zh, mode: nonthinking, supervised_tokens: 70000}
+  - {source_id: m6_domain_replay, language: zh, mode: thinking, supervised_tokens: 30000}
+  - {source_id: m2_no_tool_replay, language: en, mode: nonthinking, supervised_tokens: 20000}
+  - {source_id: m2_no_tool_replay, language: zh, mode: nonthinking, supervised_tokens: 80000}
+deduplication:
+  exact_normalized: true
+  minhash_permutations: 128
+  prompt_5gram_threshold_basis_points: 8500
+  tool_schema_5gram_threshold_basis_points: 8500
+contamination:
+  m9_dev_version: tinyllm-devops-agent-dev-v1-f958bcc6
+  m9_release_version: tinyllm-devops-agent-release-v1-1ae9b75b
+  bfcl_version: bfcl-v1.3-ea13468e-offline-core
+  m6_domain_version: tinyllm-domain-thinking-boundary-audit-v1-b82cbca1
+  fail_on_match: true

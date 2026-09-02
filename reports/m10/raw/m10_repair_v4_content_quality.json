@@ -1,0 +1,14 @@
+{
+  "banned_generic_answer_matches": 0,
+  "clarification_question_samples": 960,
+  "entity_preserved_samples": 3840,
+  "item_count": 9600,
+  "maximum_exact_final_answer_frequency": 32,
+  "parallel_two_call_samples": 480,
+  "recovery_single_call_samples": 1440,
+  "schema_version": "1.0",
+  "sequential_two_step_samples": 1920,
+  "status": "pass",
+  "tool_grounded_samples": 5760,
+  "unique_final_answers": 8688
+}

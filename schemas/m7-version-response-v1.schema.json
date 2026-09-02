@@ -45,6 +45,19 @@
       "title": "Model Artifact Sha256",
       "type": "string"
     },
+    "production_record_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Production Record Sha256"
+    },
     "schema_version": {
       "const": "1.0",
       "default": "1.0",

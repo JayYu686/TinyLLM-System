@@ -734,6 +734,7 @@ def create_gateway(
             deployment_status=resolved_model.status,
             candidate_model_version=candidate_model_version,
             evaluation_subject_sha256=evaluation_subject_sha256,
+            production_record_sha256=getattr(resolved_model, "production_record_sha256", None),
             model_artifact_sha256=resolved_model.model_artifact_sha256,
         ).to_dict()
 
@@ -769,6 +770,8 @@ def create_gateway(
         accepted_models = {resolved_model.model_version}
         if not isinstance(resolved_model, ResolvedEvaluationSubject):
             accepted_models.add("production")
+        elif resolved_model.status == "Production":
+            accepted_models.update({"production", "agent-production", resolved_model.requested_ref})
         if body.model not in accepted_models:
             return _openai_error(
                 "requested model is not deployed",
@@ -777,7 +780,8 @@ def create_gateway(
                 request_id=request_id,
             )
         payload = body.model_dump(mode="json", exclude_none=True)
-        payload["model"] = resolved_model.model_version
+        upstream_model, model_route = _select_upstream_model(resolved_model, body)
+        payload["model"] = upstream_model
         payload["chat_template_kwargs"] = {"enable_thinking": body.mode == "thinking"}
         payload.pop("mode", None)
         upstream_headers = {"x-request-id": request_id}
@@ -901,7 +905,11 @@ def create_gateway(
                     metrics.inflight.dec()
                     concurrency.release()
 
-            return StreamingResponse(iterator(), media_type="text/event-stream")
+            return StreamingResponse(
+                iterator(),
+                media_type="text/event-stream",
+                headers={"x-tinyllm-model-route": model_route},
+            )
         try:
             result = await backend.complete(payload, upstream_headers)
         except BackendError as exc:
@@ -935,7 +943,13 @@ def create_gateway(
                 value = usage.get(field)
                 if isinstance(value, int) and value >= 0:
                     metrics.tokens.labels(kind=kind).inc(value)
-        return JSONResponse(content=result, headers={"x-request-id": request_id})
+        return JSONResponse(
+            content=result,
+            headers={
+                "x-request-id": request_id,
+                "x-tinyllm-model-route": model_route,
+            },
+        )
 
     return app
 
@@ -963,3 +977,22 @@ def _stream_usage(chunk: bytes) -> tuple[int, int] | None:
         ):
             return prompt, completion
     return None
+
+
+def _select_upstream_model(
+    resolved_model: ServingModel, body: ChatCompletionRequest
+) -> tuple[str, str]:
+    """Select Adapter only for the exact frozen DevOps tool catalog."""
+
+    if not isinstance(resolved_model, ResolvedEvaluationSubject):
+        return resolved_model.model_version, "model"
+    policy = resolved_model.adapter_routing_policy
+    if policy is None:
+        return (
+            resolved_model.model_version,
+            "adapter" if resolved_model.adapter_dir is not None else "base",
+        )
+    tool_names = tuple(sorted(tool.function.name for tool in body.tools or ()))
+    if tool_names == policy.adapter_tool_names:
+        return resolved_model.model_version, "adapter"
+    return f"{resolved_model.model_version}-base", "base"

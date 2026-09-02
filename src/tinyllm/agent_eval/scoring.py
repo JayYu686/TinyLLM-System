@@ -38,12 +38,63 @@ def _semantic_value_equal(expected: object, actual: object) -> bool:
     return False
 
 
+def _semantic_value_contains(expected: object, actual: object) -> bool:
+    """Compare bounded semantic subsets without accepting type coercion drift."""
+
+    if _semantic_value_equal(expected, actual):
+        return True
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        return set(expected).issubset(actual) and all(
+            _semantic_value_contains(expected[key], actual[key]) for key in expected
+        )
+    if isinstance(expected, list) and isinstance(actual, list):
+        return all(
+            any(_semantic_value_equal(item, candidate) for candidate in actual) for item in expected
+        )
+    return False
+
+
+def _v3_required_arguments(
+    expected: AgentEvalExpectedCall,
+    *,
+    category: str,
+) -> dict[str, object]:
+    """Retain task-specified semantics and discard undisclosed optional defaults."""
+
+    arguments = expected.arguments
+    if category == "tool_failure_recovery":
+        return {"relative_path": arguments["relative_path"]}
+    if category in {"sequential_multi_step", "parallel_independent_tools"}:
+        if expected.tool_name == "read_log_excerpt":
+            return {"relative_path": arguments["relative_path"]}
+        if expected.tool_name == "query_metrics":
+            return {
+                "relative_path": arguments["relative_path"],
+                "metric_names": arguments["metric_names"],
+            }
+        if expected.tool_name == "search_evidence":
+            return {"query": arguments["query"]}
+    return dict(arguments)
+
+
 def _arguments_match(
     expected: AgentEvalExpectedCall,
     actual: AgentEvalObservedCall,
     *,
     protocol: AgentScoringProtocol,
+    category: str,
 ) -> bool:
+    if protocol == "m10-agent-scoring-v3":
+        required = _v3_required_arguments(expected, category=category)
+        for key, value in required.items():
+            candidate = actual.arguments.get(key)
+            if key == "query" and isinstance(value, str) and isinstance(candidate, str):
+                subject = value.split(maxsplit=1)[0].casefold()
+                if subject not in candidate.casefold():
+                    return False
+            elif not _semantic_value_contains(value, candidate):
+                return False
+        return True
     if expected.argument_match == "exact":
         if protocol == "m10-agent-scoring-v2":
             return _semantic_value_equal(expected.arguments, actual.arguments)
@@ -98,6 +149,7 @@ def _calls_match(
     *,
     protocol: AgentScoringProtocol,
     allow_not_executed: bool,
+    category: str,
 ) -> bool:
     if not _names_match(expected, actual):
         return False
@@ -121,7 +173,12 @@ def _calls_match(
                 aligned.append((expected_call, match))
             pairs = tuple(aligned)
         if not all(
-            _arguments_match(expected_call, actual_call, protocol=protocol)
+            _arguments_match(
+                expected_call,
+                actual_call,
+                protocol=protocol,
+                category=category,
+            )
             and (
                 actual_call.result_status == expected_call.result_status
                 or (
@@ -147,13 +204,44 @@ def _answer_assertions(
 ) -> bool:
     assertions = task.final_assertions
     folded = answer.casefold()
-    skip_content = protocol == "m10-agent-scoring-v2" and not requires_final_answer
-    required = skip_content or all(term.casefold() in folded for term in assertions.required_terms)
+    skip_content = protocol in {"m10-agent-scoring-v2", "m10-agent-scoring-v3"} and not (
+        requires_final_answer
+    )
+    clarification_markers = (
+        "which",
+        "what",
+        "please provide",
+        "could you provide",
+        "need",
+        "missing",
+        "specify",
+        "请提供",
+        "需要",
+        "缺少",
+        "哪",
+        "什么",
+    )
+    semantic_clarification = bool(answer.strip()) and any(
+        marker in folded for marker in clarification_markers
+    )
+    if protocol == "m10-agent-scoring-v3" and task.category == "tool_failure_recovery":
+        # Recovery prompts expose the Artifact path but not the generator's hidden service label.
+        required = skip_content or bool(answer.strip())
+    elif protocol == "m10-agent-scoring-v3" and assertions.require_clarification:
+        required = skip_content or semantic_clarification
+    else:
+        required = skip_content or all(
+            term.casefold() in folded for term in assertions.required_terms
+        )
     forbidden = all(term.casefold() not in folded for term in assertions.forbidden_terms)
     clarification = (
         skip_content
         or not assertions.require_clarification
-        or (("?" in answer or "？" in answer) and bool(answer.strip()))
+        or (
+            semantic_clarification
+            if protocol == "m10-agent-scoring-v3"
+            else (("?" in answer or "？" in answer) and bool(answer.strip()))
+        )
     )
     grounding = skip_content or not assertions.require_evidence_citation or bool(citations)
     terminal = terminal_status == assertions.expected_terminal_state
@@ -193,6 +281,7 @@ def score_task(
             observed,
             protocol=scoring_protocol,
             allow_not_executed=allow_not_executed,
+            category=task.category,
         )
         for trajectory in task.allowed_trajectories
     )
@@ -203,6 +292,7 @@ def score_task(
             observed,
             protocol=scoring_protocol,
             allow_not_executed=allow_not_executed,
+            category=task.category,
         )
         for trajectory in task.allowed_trajectories
     )

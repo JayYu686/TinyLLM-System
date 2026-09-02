@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from tinyllm.deployment import ResolvedEvaluationSubject, ResolvedModel
+from tinyllm.deployment import M10AdapterRoutingPolicy, ResolvedEvaluationSubject, ResolvedModel
 from tinyllm.evaluation import M6ModelIdentity
 from tinyllm.serving.backend import BackendError, ChatBackend
 from tinyllm.serving.config import GatewayConfig
@@ -129,6 +129,41 @@ def _evaluation_resolved() -> ResolvedEvaluationSubject:
     )
 
 
+def _routed_evaluation_resolved() -> ResolvedEvaluationSubject:
+    subject = "qwen3-8b-m10-agent-lora-5m-aaaaaaaa"
+    adapter_sha256 = "a" * 64
+    artifact_sha256 = "c" * 64
+    return ResolvedEvaluationSubject(
+        requested_ref=subject,
+        model_version=subject,
+        evaluation_subject_sha256="f" * 64,
+        model=M6ModelIdentity(
+            role="candidate",
+            repository="Qwen/Qwen3-8B",
+            base_revision="b968826d9c46dd6066d109eabc6255188de91218",
+            attention_architecture="gqa",
+            adaptation="lora",
+            model_artifact_sha256=artifact_sha256,
+            model_parameters=8_234_382_336,
+            training_run_id="m10-routing-unit",
+            training_checkpoint_id="checkpoint-tokens-0005000000",
+            training_tokens=5_000_000,
+            training_config_sha256="b" * 64,
+            dataset_version="m10-agent-sft-v3-unit",
+            dataset_manifest_sha256="d" * 64,
+            adapter_sha256=adapter_sha256,
+        ),
+        model_dir=Path("/data/tinyllm/qwen3-8b"),
+        model_artifact_sha256=artifact_sha256,
+        tokenizer_dir=Path("/data/tinyllm/qwen3-8b"),
+        tokenizer_artifact_sha256="e" * 64,
+        adapter_dir=Path("/data/tinyllm/adapter"),
+        adapter_artifact_sha256=adapter_sha256,
+        adapter_routing_policy=M10AdapterRoutingPolicy(),
+        verified_at=datetime(2026, 9, 1, tzinfo=UTC),
+    )
+
+
 def _client(backend: FakeBackend, **config: Any) -> TestClient:
     gateway_config = GatewayConfig(
         config_id="m7-gateway-unit",
@@ -201,6 +236,96 @@ def test_evaluation_subject_requires_exact_model_id() -> None:
         )
         assert rejected.status_code == 404
         assert accepted.status_code == 200
+
+
+def test_agent_production_exposes_registry_identity_and_alias() -> None:
+    backend = FakeBackend()
+    resolved = _routed_evaluation_resolved().model_copy(
+        update={
+            "requested_ref": "agent-production",
+            "status": "Production",
+            "production_record_sha256": "1" * 64,
+        }
+    )
+    config = GatewayConfig(config_id="m8-gateway-production-unit", trusted_hosts=("testserver",))
+    with TestClient(
+        create_gateway(
+            config=config,
+            resolved_model=resolved,
+            backend=backend,
+            bearer_token=TOKEN,
+        )
+    ) as client:
+        version = client.get("/version").json()
+        assert version["deployment_status"] == "Production"
+        assert version["evaluation_subject_sha256"] == "f" * 64
+        assert version["production_record_sha256"] == "1" * 64
+        response = client.post(
+            "/v1/chat/completions",
+            headers=_headers(),
+            json={"model": "agent-production", "messages": [{"role": "user", "content": "hi"}]},
+        )
+        assert response.status_code == 200
+
+
+def test_routed_subject_uses_adapter_only_for_exact_devops_catalog() -> None:
+    backend = FakeBackend()
+    resolved = _routed_evaluation_resolved()
+    config = GatewayConfig(config_id="m8-gateway-routing-unit", trusted_hosts=("testserver",))
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": name,
+                "description": name,
+                "parameters": {"type": "object", "properties": {}},
+            },
+        }
+        for name in M10AdapterRoutingPolicy().adapter_tool_names
+    ]
+    with TestClient(
+        create_gateway(
+            config=config,
+            resolved_model=resolved,
+            backend=backend,
+            bearer_token=TOKEN,
+        )
+    ) as client:
+        adapter = client.post(
+            "/v1/chat/completions",
+            headers=_headers(),
+            json={
+                "model": resolved.model_version,
+                "messages": [{"role": "user", "content": "inspect"}],
+                "tools": tools,
+                "tool_choice": "auto",
+            },
+        )
+        base = client.post(
+            "/v1/chat/completions",
+            headers=_headers(),
+            json={
+                "model": resolved.model_version,
+                "messages": [{"role": "user", "content": "chat"}],
+            },
+        )
+        partial = client.post(
+            "/v1/chat/completions",
+            headers=_headers(),
+            json={
+                "model": resolved.model_version,
+                "messages": [{"role": "user", "content": "inspect"}],
+                "tools": tools[:1],
+                "tool_choice": "auto",
+            },
+        )
+
+    assert adapter.headers["x-tinyllm-model-route"] == "adapter"
+    assert base.headers["x-tinyllm-model-route"] == "base"
+    assert partial.headers["x-tinyllm-model-route"] == "base"
+    assert backend.payloads[0]["model"] == resolved.model_version
+    assert backend.payloads[1]["model"] == f"{resolved.model_version}-base"
+    assert backend.payloads[2]["model"] == f"{resolved.model_version}-base"
 
 
 def test_nonstream_chat_forwards_trace_without_logging_content() -> None:

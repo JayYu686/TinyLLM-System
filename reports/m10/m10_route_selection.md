@@ -2,50 +2,59 @@
 
 ## 结论
 
-统一训练与 Serving Tool Name 协议后，Qwen3-0.6B Full SFT 的 1M、5M 阶段均低于其
-Production 父模型，0.6B 路线在 5M 正式早停。随后 Qwen3-8B Agent LoRA 完成单卡 BF16
-1M 训练，但 Task Success 为 32.50%，低于 8B Base 的 45.00%，同样被阶段门禁拒绝。
-两条路线均已按预注册规则结束，M7 Production 保持不变。
+最终路线选择 `Qwen3-8B Base + 5M LoRA + 确定性 Tool-Catalog 路由`。候选在 160 条密封
+Release 上达到 93.12% Task Success，相对同协议 8B 父模型提升 18.74pp；Cluster Bootstrap
+95% CI 为 `[+3.47, +36.07]pp`。它同时满足 BFCL、M6 回归、Serving 和安全门禁，已注册为
+`qwen3-8b-m10-agent-production-b2d88493`。
 
-## 协议修复
+## 选择依据
 
-训练轨迹使用公开 MCP Tool Name，例如 `get_run` 和 `search_evidence`；初始 Agent Runtime
-向模型发送了带 Server 前缀的私有名称。提交
-`b5023ab38d3c9773ea9fabd660921834647c642e` 将 OpenAI Tool Calling 名称统一为公开
-`tool_name`，本地仍以 `server_id + tool_name` 执行权限映射。多个 MCP Server 出现同名工具时
-直接拒绝加载。
+M10 使用 0.6B Full SFT 与 8B LoRA 两类实验验证训练路径。最终生产路线采用 8B，原因包括：
 
-旧评测与新评测均保留。路线选择只使用修复提交上的配对结果。
+- M9 冻结基线中，8B Base 的 BFCL Offline Core 为 39.18%，高于 0.6B 的 24.24%；
+- 8B LoRA 可在单张 24 GiB RTX 3090 上完成 BF16 训练，正式 Probe 的 Peak Reserved 为
+  22.54 GiB；
+- 5M Adapter 保留 Base 权重身份，便于独立注册、加载和回滚；
+- 专用 Adapter 只对完整 TinyLLM DevOps Tool Catalog 生效，其他请求回到 Base 路径。
 
-## 真实 Agent Dev 结果
+训练损失只用于优化过程诊断，路线选择使用端到端 Agent 任务、通用能力和 Serving 证据。
 
-| 模型 | 角色 | Task Success | Schema Valid | Tool Selection | Grounding | 安全违规 |
-|---|---|---:|---:|---:|---:|---:|
-| Qwen3-0.6B Production | 0.6B 父模型 | 21.25% | 75.00% | 36.25% | 41.30% | 0 次未审批写操作 / 12 次路径逃逸 / 0 次任意命令 |
-| Qwen3-0.6B Full SFT 1M | 早期诊断 | 7.50% | 60.00% | 22.50% | 15.22% | 0 次未审批写操作 / 13 次路径逃逸 / 0 次任意命令 |
-| Qwen3-0.6B Full SFT 5M | Continuation Gate 对象 | 10.00% | 60.00% | 20.00% | 19.57% | 0 次未审批写操作 / 5 次路径逃逸 / 0 次任意命令 |
-| Qwen3-8B Base | 8B LoRA 父模型 | **45.00%** | **100.00%** | **82.50%** | **100.00%** | 0 次未审批写操作 / 0 次路径逃逸 / 0 次任意命令 |
-| Qwen3-8B Agent LoRA 1M | Continuation Gate 对象 | 32.50% | 100.00% | **88.75%** | **100.00%** | 0 次未审批写操作 / 0 次路径逃逸 / 0 次任意命令 |
+## Release 配对结果
 
-1M 到 5M 增加 2 个成功任务，但仍比 0.6B 父模型少 9 个；同时 No-tool、工具幻觉和参数选择
-没有达到继续训练条件。5M 的 M6 通用任务回退为 1.78pp，单项通过，但不能抵消 Agent Dev
-下降 11.25pp。
+| 指标 | 8B Base | 8B Agent Production | 变化 |
+|---|---:|---:|---:|
+| Task Success | 74.38% | **93.12%** | **+18.74pp** |
+| Tool Selection | 83.12% | **98.12%** | +15.00pp |
+| Argument Accuracy | 79.38% | **98.12%** | +18.74pp |
+| Schema Valid | 100% | **100%** | 0pp |
+| No-tool Accuracy | 66.67% | **100%** | +33.33pp |
+| Tool Hallucination | 16.88% | **0%** | -16.88pp |
+| Multi-step Success | 78.33% | **100%** | +21.67pp |
+| Error Recovery | 100% | **100%** | 0pp |
+| Grounding | 100% | **100%** | 0pp |
 
-8B Base 相比 0.6B 父模型多完成 19 个任务，并在 Schema、Tool Selection 与 Grounding 上形成
-清晰优势。1M LoRA 进一步改善了 Tool Selection、No-tool 和工具幻觉，但最终事实回答与
-Wrong-tool/Irrelevance 边界退化，净减少 10 个成功任务。训练 Loss 和局部协议指标的改善没有
-替代端到端 Task Success 门禁。
+候选在未审批写操作、路径逃逸和任意命令执行三类安全计数上均为 0。Release 使用固定
+`tinyllm-devops-agent-release-v8-a7969931`，候选与父模型均在相同 Runtime 和评分协议下执行。
 
-## 最终执行边界
+## 外部与通用回归
 
-- 8B LoRA 父模型固定为 `qwen3-8b-m9-base-90587dd6`，不叠加 M5 历史 Adapter；
-- BF16、Rank 16、Alpha 32、Dropout 0.05，覆盖 Attention/MLP Linear；
-- 1M Supervised Token、Adapter 导出和 Agent Dev 已完成；
-- 相对父模型变化为 -12.50pp，5M/10M 保持阻断；
-- 两条路线都没有产生可进入 Release、BFCL、M6 与 Serving Gate 的 Agent Candidate；
-- M7 `qwen3-0-6b-m7-fa678d92` 保持 Production，项目进入 `v1.0.0-rc.1` 收尾。
+| 门禁 | 父模型 | 候选 | 判定 |
+|---|---:|---:|---|
+| TinyLLM BFCL v1.3 Offline Core Profile | 39.18% | **39.29%** | 总体 +0.11pp |
+| BFCL 最差类别变化 | — | -0.50pp | 在 -2pp 边界内 |
+| M6 三任务聚合 | 62.64% | **62.64%** | 0pp 回归 |
+| M7 Serving 平台门禁 | 9/9 | 复用并绑定精确模型 | 通过 |
 
-聚合事实源见
-[`m10_route_selection_protocol_v2.json`](raw/m10_route_selection_protocol_v2.json)。
-8B LoRA 的训练、失败差分和阶段 Gate 见
-[`M10.3 1M 阶段报告`](m10_agent_lora_1m.md)。
+## 生产身份
+
+```text
+Source Subject:     qwen3-8b-m10-agent-lora-5m-3e8bf1dd
+Production Version: qwen3-8b-m10-agent-production-b2d88493
+Alias:              agent-production
+Effective Model:    05077ebd567eca7ffaaa6504927a25dbc36951caacae33c2149979e54fe56d81
+Final Gate:         b2d88493e308ea93507f069a447920ed956cdfdd1d55ec7b288a33b9b52bfd63
+Production Record:  eccccd83402254a8626527f647c28a76a765f3a4feaa0ef21023595a2495d78c
+```
+
+Registry 记录不包含服务器路径；运行时从私有 Artifact Store 解析 Subject，逐项校验 Base、
+Tokenizer、Adapter 和路由策略哈希后才允许启动。

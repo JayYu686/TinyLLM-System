@@ -24,7 +24,11 @@ AgentEvalCategory = Literal[
 ]
 AgentEvalLanguage = Literal["en", "zh"]
 AgentEvalSplit = Literal["dev", "release"]
-AgentScoringProtocol = Literal["m9-agent-scoring-v1", "m10-agent-scoring-v2"]
+AgentScoringProtocol = Literal[
+    "m9-agent-scoring-v1",
+    "m10-agent-scoring-v2",
+    "m10-agent-scoring-v3",
+]
 BFCLCategory = Literal[
     "simple",
     "multiple",
@@ -226,7 +230,7 @@ class AgentEvalSuiteManifest(StrictSchema):
     """Immutable identity and distribution summary for one M9 suite split."""
 
     schema_version: Literal["1.0"] = "1.0"
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-8]-[0-9a-f]{8}$")
     split: AgentEvalSplit
     visibility: Literal["public", "private"]
     license: Literal["Apache-2.0"]
@@ -269,6 +273,7 @@ class AgentEvalRunConfig(StrictSchema):
     mode: Literal["nonthinking", "thinking"] = "nonthinking"
     max_steps: int = Field(default=8, ge=1, le=8)
     max_tool_calls: int = Field(default=12, ge=1, le=12)
+    require_explicit_tool_intent: bool = False
     task_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
     max_concurrency: int = Field(default=2, ge=1, le=8)
     physical_gpu_index: int = Field(ge=0, le=9)
@@ -362,7 +367,7 @@ class AgentEvalSummary(StrictSchema):
     scoring_protocol: AgentScoringProtocol = "m9-agent-scoring-v1"
     evaluation_id: str = Field(pattern=r"^m9-agent-eval-[0-9a-f]{8}$")
     evaluated_at: datetime
-    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$")
+    suite_version: str = Field(pattern=r"^tinyllm-devops-agent-(?:dev|release)-v[1-8]-[0-9a-f]{8}$")
     suite_content_sha256: str = Field(pattern=SHA256_PATTERN)
     model_id: str = Field(min_length=1, max_length=180)
     model_revision: str = Field(min_length=7, max_length=180)
@@ -568,6 +573,41 @@ class BFCLCoreProfileSummary(StrictSchema):
             raise ValueError("BFCL Overall differs from category counts")
         if self.completed != all(item.item_count > 0 for item in self.categories):
             raise ValueError("BFCL completion flag differs from category evidence")
+        return self
+
+
+class M10ServingLineageEvidence(StrictSchema):
+    """Bind one M10 Candidate to the qualified Gateway and exact-model service runs."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    evidence_version: Literal["m10-serving-lineage-v1"] = "m10-serving-lineage-v1"
+    evaluated_at: datetime
+    candidate_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-(3m|4m|5m)-[0-9a-f]{8}$")
+    candidate_evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
+    candidate_model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
+    platform_gate_id: str = Field(pattern=r"^m7-production-gate-[0-9a-f]{8}$")
+    platform_gate_sha256: str = Field(pattern=SHA256_PATTERN)
+    platform_gate_status: Literal["accepted"] = "accepted"
+    platform_production_eligible: Literal[True] = True
+    dev_evaluation_id: str = Field(pattern=r"^m9-agent-eval-[0-9a-f]{8}$")
+    dev_summary_sha256: str = Field(pattern=SHA256_PATTERN)
+    release_evaluation_id: str = Field(pattern=r"^m9-agent-eval-[0-9a-f]{8}$")
+    release_summary_sha256: str = Field(pattern=SHA256_PATTERN)
+    bfcl_summary_sha256: str = Field(pattern=SHA256_PATTERN)
+    gateway_version: str = Field(min_length=1, max_length=40)
+    agent_runtime_version: str = Field(min_length=1, max_length=40)
+    validated_dev_tasks: Literal[80] = 80
+    validated_release_tasks: Literal[160] = 160
+    validated_bfcl_items: Literal[1840] = 1840
+    exact_model_serving_valid: Literal[True] = True
+    status: Literal["accepted"] = "accepted"
+
+    @model_validator(mode="after")
+    def validate_evidence(self) -> M10ServingLineageEvidence:
+        if self.evaluated_at.tzinfo is None:
+            raise ValueError("M10 Serving lineage timestamp must be timezone-aware")
+        if self.dev_evaluation_id == self.release_evaluation_id:
+            raise ValueError("M10 Serving Dev and Release evaluations must differ")
         return self
 
 

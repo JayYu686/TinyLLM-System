@@ -16,7 +16,12 @@ from tinyllm.schemas.run import SHA256_PATTERN
 
 M10DevOpsCategory = AgentEvalCategory
 M10DevOpsLanguage = AgentEvalLanguage
-M10DevOpsRevision = Literal["m10-devops-training-v1", "m10-devops-training-v2"]
+M10DevOpsRevision = Literal[
+    "m10-devops-training-v1",
+    "m10-devops-training-v2",
+    "m10-devops-training-v3",
+    "m10-devops-training-v4",
+]
 
 
 def canonical_json_sha256(value: object) -> str:
@@ -174,11 +179,11 @@ class M10DevOpsDatasetManifest(StrictSchema):
     """Immutable authored-source identity and aggregate validation evidence."""
 
     schema_version: Literal["1.0"] = "1.0"
-    dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-devops-training-v[1234]-[0-9a-f]{8}$")
     source_revision: M10DevOpsRevision = "m10-devops-training-v1"
     license: Literal["Apache-2.0"] = "Apache-2.0"
-    seed: Literal[20260820, 20260825] = 20260820
-    item_count: Literal[2400] = 2400
+    seed: Literal[20260820, 20260825, 20260827, 20260829] = 20260820
+    item_count: Literal[2400, 9600] = 2400
     category_counts: dict[M10DevOpsCategory, int]
     language_counts: dict[M10DevOpsLanguage, int]
     supervised_message_count: int = Field(gt=0)
@@ -195,8 +200,8 @@ class M10DevOpsDatasetManifest(StrictSchema):
 
     @model_validator(mode="after")
     def validate_manifest(self) -> M10DevOpsDatasetManifest:
-        expected_categories = (
-            {
+        if self.source_revision == "m10-devops-training-v1":
+            expected_categories = {
                 "single_tool": 360,
                 "no_tool": 360,
                 "wrong_tool_irrelevance": 360,
@@ -206,8 +211,8 @@ class M10DevOpsDatasetManifest(StrictSchema):
                 "tool_failure_recovery": 240,
                 "grounding_approval_security": 240,
             }
-            if self.source_revision == "m10-devops-training-v1"
-            else {
+        elif self.source_revision in {"m10-devops-training-v2", "m10-devops-training-v3"}:
+            expected_categories = {
                 "single_tool": 360,
                 "no_tool": 240,
                 "wrong_tool_irrelevance": 480,
@@ -217,10 +222,25 @@ class M10DevOpsDatasetManifest(StrictSchema):
                 "tool_failure_recovery": 360,
                 "grounding_approval_security": 120,
             }
-        )
+        else:
+            expected_categories = {
+                "single_tool": 1440,
+                "no_tool": 960,
+                "wrong_tool_irrelevance": 1920,
+                "missing_argument_clarification": 960,
+                "sequential_multi_step": 1920,
+                "parallel_independent_tools": 480,
+                "tool_failure_recovery": 1440,
+                "grounding_approval_security": 480,
+            }
         if self.category_counts != expected_categories:
             raise ValueError("M10 authored category counts differ from the frozen design")
-        if self.language_counts != {"en": 1680, "zh": 720}:
+        expected_languages = (
+            {"en": 6720, "zh": 2880}
+            if self.source_revision == "m10-devops-training-v4"
+            else {"en": 1680, "zh": 720}
+        )
+        if self.language_counts != expected_languages:
             raise ValueError("M10 authored language counts must be exactly 70/30")
         if sum(self.category_counts.values()) != self.item_count:
             raise ValueError("M10 authored category counts do not sum to item_count")
@@ -238,7 +258,7 @@ class M10DevOpsDuplicateReport(StrictSchema):
     algorithm: Literal["minhash-5gram-lsh-v1"] = "minhash-5gram-lsh-v1"
     permutation_count: Literal[128] = 128
     threshold_basis_points: Literal[8500] = 8500
-    item_count: Literal[2400] = 2400
+    item_count: Literal[2400, 9600] = 2400
     exact_duplicate_pairs: int = Field(ge=0)
     clustered_near_duplicate_pairs: int = Field(ge=0)
     cross_group_near_duplicate_pairs: int = Field(ge=0)
@@ -280,15 +300,18 @@ class M10DevOpsContaminationReport(StrictSchema):
     """Content-free four-boundary evaluation contamination report."""
 
     schema_version: Literal["1.0"] = "1.0"
-    scan_version: Literal["m10-devops-contamination-v1", "m10-devops-contamination-v2"] = (
-        "m10-devops-contamination-v1"
-    )
+    scan_version: Literal[
+        "m10-devops-contamination-v1",
+        "m10-devops-contamination-v2",
+        "m10-devops-contamination-v3",
+        "m10-devops-contamination-v4",
+    ] = "m10-devops-contamination-v1"
     algorithm: Literal["minhash-5gram-lsh-v1"] = "minhash-5gram-lsh-v1"
     permutation_count: Literal[128] = 128
     threshold_basis_points: Literal[8500] = 8500
-    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[1234]-[0-9a-f]{8}$")
     source_content_sha256: str = Field(pattern=SHA256_PATTERN)
-    source_items: Literal[2400] = 2400
+    source_items: Literal[2400, 9600] = 2400
     targets: tuple[
         M10ContaminationTargetResult,
         M10ContaminationTargetResult,
@@ -329,11 +352,11 @@ class M10DevOpsBuildReport(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["review_pending", "ready"]
-    dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-devops-training-v[1234]-[0-9a-f]{8}$")
     manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     items_sha256: str = Field(pattern=SHA256_PATTERN)
     content_sha256: str = Field(pattern=SHA256_PATTERN)
-    item_count: Literal[2400] = 2400
+    item_count: Literal[2400, 9600] = 2400
     category_counts: dict[M10DevOpsCategory, int]
     language_counts: dict[M10DevOpsLanguage, int]
     duplicate_report_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -363,13 +386,16 @@ class M10DevOpsContentReviewResult(StrictSchema):
     """Path-free maintainer approval bound to one immutable review packet."""
 
     schema_version: Literal["1.0"] = "1.0"
-    review_version: Literal["m10-devops-content-review-v1", "m10-devops-content-review-v2"] = (
-        "m10-devops-content-review-v1"
-    )
+    review_version: Literal[
+        "m10-devops-content-review-v1",
+        "m10-devops-content-review-v2",
+        "m10-devops-content-review-v3",
+        "m10-devops-content-review-v4",
+    ] = "m10-devops-content-review-v1"
     reviewed_at: datetime
     status: Literal["approved"] = "approved"
     reviewer_role: Literal["maintainer"] = "maintainer"
-    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[12]-[0-9a-f]{8}$")
+    source_dataset_version: str = Field(pattern=r"^m10-devops-training-v[1234]-[0-9a-f]{8}$")
     source_pending_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     source_items_sha256: str = Field(pattern=SHA256_PATTERN)
     source_content_sha256: str = Field(pattern=SHA256_PATTERN)

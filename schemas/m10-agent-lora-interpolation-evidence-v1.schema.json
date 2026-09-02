@@ -1,0 +1,103 @@
+{
+  "additionalProperties": false,
+  "description": "Lineage for one weight-space interpolation of same-Run LoRA checkpoints.",
+  "properties": {
+    "early_adapter_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Early Adapter Artifact Sha256",
+      "type": "string"
+    },
+    "early_evaluation_subject_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Early Evaluation Subject Sha256",
+      "type": "string"
+    },
+    "early_subject_id": {
+      "pattern": "^qwen3-8b-m10-agent-lora-1m-[0-9a-f]{8}$",
+      "title": "Early Subject Id",
+      "type": "string"
+    },
+    "early_weight_basis_points": {
+      "enum": [
+        2500,
+        5000,
+        7500
+      ],
+      "title": "Early Weight Basis Points",
+      "type": "integer"
+    },
+    "interpolated_adapter_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Interpolated Adapter Artifact Sha256",
+      "type": "string"
+    },
+    "interpolation_dtype": {
+      "const": "float32_accumulation_source_dtype_output",
+      "default": "float32_accumulation_source_dtype_output",
+      "title": "Interpolation Dtype",
+      "type": "string"
+    },
+    "interpolation_version": {
+      "const": "m10-lora-checkpoint-interpolation-v1",
+      "default": "m10-lora-checkpoint-interpolation-v1",
+      "title": "Interpolation Version",
+      "type": "string"
+    },
+    "late_adapter_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Late Adapter Artifact Sha256",
+      "type": "string"
+    },
+    "late_evaluation_subject_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Late Evaluation Subject Sha256",
+      "type": "string"
+    },
+    "late_subject_id": {
+      "pattern": "^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$",
+      "title": "Late Subject Id",
+      "type": "string"
+    },
+    "late_weight_basis_points": {
+      "enum": [
+        2500,
+        5000,
+        7500
+      ],
+      "title": "Late Weight Basis Points",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection_inputs": {
+      "const": "public_dev_and_public_bfcl",
+      "default": "public_dev_and_public_bfcl",
+      "title": "Selection Inputs",
+      "type": "string"
+    },
+    "training_run_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Training Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "early_subject_id",
+    "early_evaluation_subject_sha256",
+    "early_adapter_artifact_sha256",
+    "late_subject_id",
+    "late_evaluation_subject_sha256",
+    "late_adapter_artifact_sha256",
+    "training_run_id",
+    "early_weight_basis_points",
+    "late_weight_basis_points",
+    "interpolated_adapter_artifact_sha256"
+  ],
+  "title": "M10LoRAAdapterInterpolationEvidence",
+  "type": "object"
+}

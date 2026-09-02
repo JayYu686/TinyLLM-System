@@ -18,6 +18,7 @@ Trainer. Any failure to enforce those controls invalidates these exceptions.
 | `PYSEC-2026-2290` | Transformers 4.57.6 | The affected LightGlue remote-code path is outside M4 and remote code is forbidden. No fixed release is published. | Remove when upstream publishes a compatible fix. |
 | `PYSEC-2026-2288` | Transformers 4.57.6 | The issue affects Transformers Trainer RNG checkpoint loading; M4 uses native PyTorch FSDP2/DCP and does not call Trainer. The first fix is Transformers 5.0. | Remove after the Transformers 5 compatibility gate passes. |
 | `PYSEC-2026-2289` | Transformers 4.57.6 | Model-selected remote kernels are forbidden; the fixed config must be hash-verified and M4 selects local SDPA. The first fix is Transformers 5.3. | Remove after the Transformers 5.3+ compatibility gate passes. |
+| `CVE-2026-9856` | Transformers 4.57.6 | The affected `save_pretrained()` path is absent from M4: the dependency gate constructs a local synthetic Qwen3 model, while formal checkpoints use PyTorch DCP and accept no Hub tokenizer or processor. | Remove after Transformers 5.10+ passes the M4 compatibility gate, or immediately if tokenizer/processor export enters this profile. |
 
 Re-run `make audit-m4` before every M4 model run and release. A model revision, architecture,
 attention backend, serialization format, or dependency change requires a fresh review.

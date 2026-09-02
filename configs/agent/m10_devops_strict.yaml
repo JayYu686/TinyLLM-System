@@ -1,0 +1,26 @@
+schema_version: "1.0"
+config_id: m8-agent-devops-strict-v1
+default_model: production
+default_mode: nonthinking
+max_steps: 8
+max_tool_calls: 12
+tool_timeout_seconds: 10.0
+run_timeout_seconds: 120.0
+read_retry_delays_ms: [250, 500]
+same_tool_consecutive_limit: 2
+require_explicit_tool_intent: true
+evidence_top_k: 8
+evidence_excerpt_characters: 1200
+mcp_servers:
+  - server_id: tinyllm-devops
+    transport: stdio
+    command: /usr/bin/env
+    args: [python3, -m, tinyllm.agent.devops_server]
+    tools:
+      - {name: search_evidence, access: read, approval_required: false, timeout_seconds: 10.0, max_attempts: 3}
+      - {name: list_runs, access: read, approval_required: false, timeout_seconds: 10.0, max_attempts: 3}
+      - {name: get_run, access: read, approval_required: false, timeout_seconds: 10.0, max_attempts: 3}
+      - {name: read_log_excerpt, access: read, approval_required: false, timeout_seconds: 10.0, max_attempts: 3}
+      - {name: query_metrics, access: read, approval_required: false, timeout_seconds: 10.0, max_attempts: 3}
+      - {name: inspect_config, access: read, approval_required: false, timeout_seconds: 10.0, max_attempts: 3}
+      - {name: apply_sandbox_config_patch, access: sandbox_write, approval_required: true, timeout_seconds: 10.0, max_attempts: 1}

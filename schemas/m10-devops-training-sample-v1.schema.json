@@ -266,7 +266,9 @@
       "default": "m10-devops-training-v1",
       "enum": [
         "m10-devops-training-v1",
-        "m10-devops-training-v2"
+        "m10-devops-training-v2",
+        "m10-devops-training-v3",
+        "m10-devops-training-v4"
       ],
       "title": "Source Revision",
       "type": "string"

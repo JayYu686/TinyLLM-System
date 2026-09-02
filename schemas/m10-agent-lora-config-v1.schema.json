@@ -95,7 +95,7 @@
           "type": "boolean"
         },
         "dataset_version": {
-          "pattern": "^m10-agent-sft-v[12]-[0-9a-f]{8}$",
+          "pattern": "^m10-agent-sft-v[123]-[0-9a-f]{8}$",
           "title": "Dataset Version",
           "type": "string"
         },
@@ -164,7 +164,10 @@
         "scoring_protocol": {
           "anyOf": [
             {
-              "const": "m10-agent-scoring-v2",
+              "enum": [
+                "m10-agent-scoring-v2",
+                "m10-agent-scoring-v3"
+              ],
               "type": "string"
             },
             {
@@ -443,7 +446,9 @@
         "name": {
           "enum": [
             "m10-agent-lora-qwen3-8b-seed42",
-            "m10-5-agent-repair-lora-qwen3-8b-seed42"
+            "m10-5-agent-repair-lora-qwen3-8b-seed42",
+            "m10-5-agent-repair-v3-lora-qwen3-8b-seed42",
+            "m10-5-agent-repair-v4-lora-qwen3-8b-seed42"
           ],
           "title": "Name",
           "type": "string"

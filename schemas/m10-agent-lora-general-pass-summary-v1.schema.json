@@ -268,7 +268,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "One M6-v7 general pass for the 8B Base parent or a 5M LoRA stage.",
+  "description": "One M6-v7 general pass for the 8B Base or selected LoRA checkpoint.",
   "properties": {
     "config_sha256": {
       "pattern": "^[a-f0-9]{64}$",
@@ -291,7 +291,7 @@
       "type": "string"
     },
     "evaluation_subject_id": {
-      "pattern": "^(?:qwen3-8b-m9-base-90587dd6|qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8})$",
+      "pattern": "^(?:qwen3-8b-m9-base-90587dd6|qwen3-8b-m10-agent-lora-(?:3m|4m|5m)-[0-9a-f]{8})$",
       "title": "Evaluation Subject Id",
       "type": "string"
     },

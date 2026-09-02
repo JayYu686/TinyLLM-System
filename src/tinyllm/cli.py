@@ -49,9 +49,11 @@ from tinyllm.data import (
 from tinyllm.deployment import (
     DeploymentError,
     DeploymentErrorCode,
+    promote_agent_production,
     promote_production,
     resolve_model,
     resolve_serving_model,
+    rollback_agent_production,
     rollback_production,
     show_deployment,
 )
@@ -488,7 +490,7 @@ def deploy_resolve(
         str,
         typer.Option(
             "--model",
-            help="Production Alias, immutable M6/M7 model, or M9 Evaluation Subject.",
+            help="Production/Agent Alias, immutable model, or Evaluation Subject.",
         ),
     ] = "production",
     artifact_root: Annotated[
@@ -505,7 +507,7 @@ def deploy_resolve(
     state = cast(CLIState, ctx.obj)
     json_output = state.json_output or command_json
     try:
-        result = resolve_model(artifact_root, model)
+        result = resolve_serving_model(artifact_root, model)
     except DeploymentError as exc:
         _deployment_error(exc, json_output=json_output)
     if json_output:
@@ -546,7 +548,7 @@ def deploy_show(
     else:
         typer.echo(
             f"{result['status']}: {result['model_version']} "
-            f"candidate={result['candidate_model_version']}"
+            f"artifact={result['model_artifact_sha256']}"
         )
 
 
@@ -578,6 +580,40 @@ def deploy_promote(
         typer.echo(result.model_dump_json(indent=2))
     else:
         typer.echo(f"Production: {result.production_version}")
+
+
+@deploy_app.command("promote-agent")
+def deploy_promote_agent(
+    ctx: typer.Context,
+    gate: Annotated[
+        Path,
+        typer.Option("--gate", help="Absolute accepted M10 Agent Model Gate JSON."),
+    ],
+    serving_lineage: Annotated[
+        Path,
+        typer.Option("--serving-lineage", help="Absolute accepted M10 Serving lineage JSON."),
+    ],
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Publish an accepted M10 Agent Production record and update its Alias."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = promote_agent_production(artifact_root, gate, serving_lineage)
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(f"Agent Production: {result.production_version}")
 
 
 @deploy_app.command("gate")
@@ -683,6 +719,39 @@ def deploy_rollback(
     else:
         typer.echo(
             f"Production: {result.production_version} previous={result.previous_production_version}"
+        )
+
+
+@deploy_app.command("rollback-agent")
+def deploy_rollback_agent(
+    ctx: typer.Context,
+    target: Annotated[
+        str | None,
+        typer.Option("--target", help="Prior immutable Agent Production version."),
+    ] = None,
+    artifact_root: Annotated[
+        Path,
+        typer.Option("--artifact-root", help="Absolute private Artifact Store root."),
+    ] = DEFAULT_ARTIFACT_ROOT,
+    command_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit stable machine-readable JSON."),
+    ] = False,
+) -> None:
+    """Atomically point the Agent Production Alias at a prior accepted model."""
+
+    state = cast(CLIState, ctx.obj)
+    json_output = state.json_output or command_json
+    try:
+        result = rollback_agent_production(artifact_root, target)
+    except DeploymentError as exc:
+        _deployment_error(exc, json_output=json_output)
+    if json_output:
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(
+            f"Agent Production: {result.production_version} "
+            f"previous={result.previous_production_version}"
         )
 
 

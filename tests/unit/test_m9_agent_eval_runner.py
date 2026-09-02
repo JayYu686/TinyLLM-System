@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 from tinyllm.agent import AgentMessage, AgentModelDecision, AgentToolCall
-from tinyllm.agent_eval.runner import _evaluate_task
+from tinyllm.agent_eval.runner import _agent_config, _evaluate_task
 from tinyllm.agent_eval.schema import AgentEvalRunConfig
 from tinyllm.agent_eval.suite import build_tasks
 
@@ -43,10 +43,11 @@ class _FakeGatewayAgentModel:
                     ),
                 )
             )
+        call_id = observations[-1].get("call_id")
+        assert isinstance(call_id, str)
         return AgentModelDecision(
             message=(
-                "Run 20260820T011500Z-serving-smoke-b2c3d4e5-0002 succeeded. "
-                "[evidence:call_fixture_get_run]"
+                f"Run 20260820T011500Z-serving-smoke-b2c3d4e5-0002 succeeded. [evidence:{call_id}]"
             )
         )
 
@@ -82,7 +83,8 @@ def test_evaluate_task_crosses_real_agent_graph_and_fixture_mcp(
     assert result.status == "succeeded"
     assert result.task_success is True
     assert result.calls[0].tool_name == "get_run"
-    assert result.evidence_citations == ("call_fixture_get_run",)
+    assert len(result.evidence_citations) == 1
+    assert result.evidence_citations[0].startswith("call_plan_")
     assert result.input_tokens == 10
     assert result.output_tokens == 5
 
@@ -97,3 +99,16 @@ def test_eval_config_rejects_remote_gateway_and_unknown_fields() -> None:
     payload["secret"] = "embedded-token"
     with pytest.raises(ValidationError, match="Extra inputs"):
         AgentEvalRunConfig.model_validate(payload)
+
+
+def test_eval_config_propagates_explicit_tool_intent_policy() -> None:
+    task = build_tasks("dev")[0]
+
+    strict = _agent_config(
+        task,
+        _config().model_copy(update={"require_explicit_tool_intent": True}),
+    )
+    legacy = _agent_config(task, _config())
+
+    assert strict.require_explicit_tool_intent is True
+    assert legacy.require_explicit_tool_intent is False

@@ -421,7 +421,8 @@
     "config_version": {
       "enum": [
         "m10-agent-data-v1",
-        "m10-agent-data-v2"
+        "m10-agent-data-v2",
+        "m10-agent-data-v3"
       ],
       "title": "Config Version",
       "type": "string"

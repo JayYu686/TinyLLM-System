@@ -1,0 +1,105 @@
+schema_version: "1.0"
+config_version: m10-agent-data-v3
+status: preregistered
+training_permitted: false
+dataset_name: tinyllm-agent-sft
+tokenizer_id: Qwen/Qwen3-0.6B
+tokenizer_revision: c1899de289a04d12100db370d81485cdf75e47ca
+sequence_length: 2048
+sources:
+  - source_id: toolace
+    source_kind: external
+    dataset_id: lockon/ToolACE
+    revision: 6bda777c88d21e5a204703c1ee45597a8fa4f734
+    license: apache-2.0
+    mixture_basis_points: 500
+    readiness: ready
+    redistributable: false
+    artifacts:
+      - filename: data.json
+        size_bytes: 37154735
+        sha256: ba12c083fca7e8da48c67ad5b895e495447da7c66e39a2e19742c082e6cb537e
+    license_evidence_sha256: 4e82e47712cfdc0bc86b3b0c6b03f5f2f00a1ca54ccfa696276833743c85e460
+  - source_id: hermes_function_calling
+    source_kind: external
+    dataset_id: NousResearch/hermes-function-calling-v1
+    revision: dae3e1d28cfbcf4b915c04ea1e072030529b4bda
+    license: apache-2.0
+    mixture_basis_points: 500
+    readiness: ready
+    redistributable: false
+    artifacts:
+      - filename: func-calling.json
+        size_bytes: 20554130
+        sha256: 769478035a886678d525d057ea66e3fd1e247f43e35c8d6d7cc866e080b6742b
+    license_evidence_sha256: a01aa1fe59858148f87d0a584e69bd4e33a9a3c70a177fe1517cad57ead45ae5
+  - source_id: tinyllm_devops
+    source_kind: authored
+    dataset_id: tinyllm/devops-agent-training
+    revision: m10-devops-training-v4-f13ae053
+    license: apache-2.0
+    mixture_basis_points: 7000
+    readiness: pending_build
+    redistributable: true
+  - source_id: m6_domain_replay
+    source_kind: registered_replay
+    dataset_id: tinyllm/m6-domain-generalization
+    revision: m6-domain-generalization-mixture-v2-f2e029e4
+    license: mixed-allowlisted
+    mixture_basis_points: 1500
+    readiness: ready
+    redistributable: false
+    content_sha256: f2e029e430ccf68753beeb09a9ba875b441246284c546c77fbb96422e0e0503d
+    manifest_sha256: 288b0c88c91c49b466e9aeee07f9087a69c0f6618f19462621730390831289aa
+  - source_id: m2_no_tool_replay
+    source_kind: registered_replay
+    dataset_id: tinyllm/m2-sft
+    revision: m2-sft-v1-f82ff32e
+    license: mixed-allowlisted
+    mixture_basis_points: 500
+    readiness: ready
+    redistributable: false
+    content_sha256: f82ff32ee98cb852fe6779774d9cce75a71e9430da72a6e5e1f4e3f7c2efd108
+    manifest_sha256: b8240dcfa68d0b7b54d5b7553d5e596097f62aadf866ab53890b4bac3287e750
+language_target:
+  unit: supervised_tokens
+  english_basis_points: 7000
+  chinese_basis_points: 3000
+supervision:
+  assistant_tool_calls: true
+  assistant_final_answers: true
+  mask_system_messages: true
+  mask_user_messages: true
+  mask_tool_results: true
+  primary_mode: nonthinking
+  preserve_native_dual_mode_with_m6_replay: true
+  synthetic_cot_teacher_data: false
+deduplication:
+  exact_normalized_dedup: true
+  near_dedup_algorithm: minhash_5gram
+  near_dedup_fields: [prompt, tool_schema]
+  near_duplicate_threshold_basis_points: 8500
+  cross_source_before_split: true
+  prompt_match_required: true
+  shared_protocol_schema_match_alone_is_duplicate: false
+contamination:
+  targets:
+    - target_id: m9_dev
+      visibility: public
+      matching: [exact, minhash_5gram]
+      may_influence_generation_or_selection: false
+    - target_id: m9_release
+      visibility: sealed_private
+      matching: [exact, minhash_5gram]
+      may_influence_generation_or_selection: false
+    - target_id: bfcl_core
+      visibility: public
+      matching: [exact, minhash_5gram]
+      may_influence_generation_or_selection: false
+    - target_id: m6_domain
+      visibility: public
+      matching: [exact, minhash_5gram]
+      may_influence_generation_or_selection: false
+  fail_on_exact_match: true
+  fail_on_near_match: true
+  release_scan_output: content_free_counts_and_hashes_only

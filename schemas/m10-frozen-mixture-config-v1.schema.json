@@ -199,7 +199,9 @@
     "build_seed": {
       "enum": [
         20260822,
-        20260825
+        20260825,
+        20260827,
+        20260829
       ],
       "title": "Build Seed",
       "type": "integer"
@@ -207,7 +209,8 @@
     "config_version": {
       "enum": [
         "m10-agent-frozen-mixture-v1",
-        "m10-agent-frozen-mixture-v2"
+        "m10-agent-frozen-mixture-v2",
+        "m10-agent-frozen-mixture-v3"
       ],
       "title": "Config Version",
       "type": "string"

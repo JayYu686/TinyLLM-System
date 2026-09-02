@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 from collections.abc import Callable, Sequence
 from typing import Any, Protocol, TypedDict, cast
 
@@ -41,9 +43,453 @@ class AgentModel(Protocol):
 
 ApprovalIDFactory = Callable[[AgentToolCall], str]
 
+_RESOURCE_PATH = re.compile(r"(?<![A-Za-z0-9._-])(?:runs|evaluations|deployments)/[A-Za-z0-9._/-]+")
+_ENGLISH_RUN = re.compile(
+    r"(?:read|check|inspect)\s+(?:the\s+)?(?:status\s+of\s+)?Run\s+"
+    r"(20\d{6}T\d{6}Z-[A-Za-z0-9][A-Za-z0-9._-]{2,180})",
+    flags=re.IGNORECASE,
+)
+_CHINESE_RUN = re.compile(
+    r"(?:读取|核对|检查)运行\s*"
+    r"(20\d{6}T\d{6}Z-[A-Za-z0-9][A-Za-z0-9._-]{2,180})"
+)
+_EXPLICIT_SEARCH_PATTERNS = (
+    (
+        re.compile(r"Find\s+the\s+recovery\s+policy\s+for\s+([A-Za-z0-9._-]+)", re.I),
+        "recovery policy",
+    ),
+    (re.compile(r"(?:请)?查找\s*([A-Za-z0-9._-]+)\s*的恢复策略"), "recovery policy"),
+    (
+        re.compile(r"Find\s+the\s+([A-Za-z0-9._-]+)\s+recovery\s+documentation", re.I),
+        "failure recovery",
+    ),
+    (re.compile(r"查找\s*([A-Za-z0-9._-]+)\s*的故障恢复文档"), "failure recovery"),
+    (re.compile(r"Retrieve\s+evidence\s+for\s+([A-Za-z0-9._-]+)", re.I), ""),
+    (re.compile(r"读取\s*([A-Za-z0-9._-]+)\s*的证据"), ""),
+)
+_READ_MARKERS = (
+    " read ",
+    " check ",
+    " inspect ",
+    " query ",
+    " show ",
+    " find ",
+    " retrieve ",
+    " search ",
+    "读取",
+    "核对",
+    "检查",
+    "查询",
+    "查看",
+    "查找",
+    "检索",
+)
+_NEGATED_READ_MARKERS = (
+    " do not read ",
+    " don't read ",
+    " do not check ",
+    " don't check ",
+    " do not inspect ",
+    " do not search ",
+    " don't search ",
+    "不要读取",
+    "不要检查",
+    "无需读取",
+    "无需检查",
+    "别读取",
+    "别检查",
+    "不要查找",
+    "不要检索",
+)
+_WRITE_MARKERS = (" change ", " update ", " patch ", "修改", "更改", "写入", "改成")
+_WINDOWS_ABSOLUTE_PATH = re.compile(r"^[A-Za-z]:[\\/]")
+_CHINESE_TEXT = re.compile(r"[\u4e00-\u9fff]")
+
 
 def deterministic_approval_id(call: AgentToolCall) -> str:
     return f"approval-{agent_tool_call_sha256(call)[:12]}"
+
+
+def _latest_user_text(messages: Sequence[AgentMessage]) -> str:
+    return next(
+        (
+            message.content
+            for message in reversed(messages)
+            if message.role == "user" and isinstance(message.content, str)
+        ),
+        "",
+    )
+
+
+def _normalize_tool_call(call: AgentToolCall, *, user_text: str) -> AgentToolCall:
+    """Repair only safe representation or file-type routing mismatches."""
+
+    arguments = dict(call.arguments)
+    relative_path = arguments.get("relative_path")
+    if isinstance(relative_path, str):
+        lowered = relative_path.casefold()
+        if lowered.endswith((".log", ".txt")) and call.tool_name == "inspect_config":
+            return call.model_copy(update={"tool_name": "read_log_excerpt"})
+        if (
+            lowered.endswith("/metrics.jsonl") or lowered.endswith("/summary.json")
+        ) and call.tool_name in {"inspect_config", "read_log_excerpt"}:
+            return call.model_copy(update={"tool_name": "query_metrics"})
+    if call.tool_name != "get_run":
+        return call
+    run_id = arguments.get("run_id")
+    if not isinstance(run_id, str) or "/" not in run_id:
+        return call
+    candidate = run_id.rsplit("/", 1)[-1]
+    if (
+        candidate not in user_text
+        or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{2,180}", candidate) is None
+    ):
+        return call
+    arguments["run_id"] = candidate
+    return call.model_copy(update={"arguments": arguments})
+
+
+def _call_position(call: AgentToolCall, *, user_text: str, fallback: int) -> tuple[int, int]:
+    """Order a same-decision call batch by explicit resource appearance in the request."""
+
+    candidates: list[str] = []
+    for key in ("relative_path", "run_id", "query"):
+        value = call.arguments.get(key)
+        if not isinstance(value, str) or not value:
+            continue
+        candidates.append(value)
+        if key == "query":
+            candidates.extend(part for part in value.split() if len(part) >= 3)
+    positions = [user_text.find(value) for value in candidates]
+    present = [position for position in positions if position >= 0]
+    return (min(present) if present else len(user_text) + fallback, fallback)
+
+
+def _normalize_tool_calls(
+    calls: Sequence[AgentToolCall], *, messages: Sequence[AgentMessage]
+) -> tuple[AgentToolCall, ...]:
+    user_text = _latest_user_text(messages)
+    normalized = tuple(_normalize_tool_call(call, user_text=user_text) for call in calls)
+    indexed = tuple(enumerate(normalized))
+    return tuple(
+        call
+        for _, call in sorted(
+            indexed,
+            key=lambda item: _call_position(item[1], user_text=user_text, fallback=item[0]),
+        )
+    )
+
+
+def _unsafe_path_argument(value: object) -> bool:
+    """Reject path escape syntax anywhere in a proposed tool argument tree."""
+
+    if isinstance(value, dict):
+        return any(_unsafe_path_argument(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_unsafe_path_argument(item) for item in value)
+    if not isinstance(value, str):
+        return False
+    if "\x00" in value or "\\" in value or _WINDOWS_ABSOLUTE_PATH.match(value):
+        return True
+    return value.startswith("/") or ".." in value.split("/")
+
+
+def _unsafe_tool_calls(calls: Sequence[AgentToolCall]) -> bool:
+    return any(_unsafe_path_argument(call.arguments) for call in calls)
+
+
+def _path_policy_refusal(messages: Sequence[AgentMessage]) -> str:
+    if _CHINESE_TEXT.search(_latest_user_text(messages)):
+        return "无法访问该路径：它超出了项目与 Artifact Store 的允许根目录。"
+    return (
+        "I cannot access that path because it is outside the allowlisted project "
+        "and artifact roots."
+    )
+
+
+def _evidence_subject(observation: dict[str, object]) -> str | None:
+    arguments = observation.get("arguments")
+    if not isinstance(arguments, dict):
+        return None
+    keys = (
+        ("source_relative_path",)
+        if observation.get("tool_name") == "apply_sandbox_config_patch"
+        else ("relative_path", "run_id", "query")
+    )
+    for key in keys:
+        value = arguments.get(key)
+        if isinstance(value, str) and value:
+            return re.sub(r"[^A-Za-z0-9._/@:-]", "_", value)[:240]
+    return None
+
+
+def _planned_call(*, server_id: str, tool_name: str, arguments: dict[str, Any]) -> AgentToolCall:
+    identity = json.dumps(
+        [server_id, tool_name, arguments],
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return AgentToolCall(
+        call_id=f"call_plan_{hashlib.sha256(identity).hexdigest()[:24]}",
+        server_id=server_id,
+        tool_name=tool_name,
+        arguments=arguments,
+    )
+
+
+def _tool_call_signature(call: AgentToolCall) -> str:
+    return json.dumps(
+        [call.server_id, call.tool_name, call.arguments],
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def _explicit_read_requested(text: str, position: int) -> bool:
+    """Require a nearby positive read verb and reject explicit negation."""
+
+    # A bare full stop cannot delimit clauses here because the allowlisted
+    # resources intentionally contain extensions such as `.log` and `.jsonl`.
+    # Only treat a full stop followed by whitespace as sentence punctuation.
+    prefix = text[:position]
+    dotted_boundaries = tuple(match.start() for match in re.finditer(r"\.\s+", prefix))
+    clause_start = max(
+        (
+            *(
+                text.rfind(separator, 0, position)
+                for separator in ("!", "?", "。", "！", "？", ";", "；")
+            ),
+            *dotted_boundaries,
+            -1,
+        )
+    )
+    context = f" {text[clause_start + 1 : position].casefold()} "
+    if any(marker in context for marker in _NEGATED_READ_MARKERS):
+        return False
+    return any(marker in context for marker in _READ_MARKERS)
+
+
+def _explicit_line_bounds(text: str) -> tuple[int, int] | None:
+    match = re.search(r"lines?\s+(\d+)\s+(?:through|to|-)\s+(\d+)", text, re.IGNORECASE)
+    if match is None:
+        match = re.search(r"第\s*(\d+)\s*(?:到|至|-)\s*(\d+)\s*行", text)
+    if match is None:
+        return None
+    start, end = (int(match.group(1)), int(match.group(2)))
+    return (start, end) if 1 <= start <= end and end - start < 200 else None
+
+
+def _explicit_metric_arguments(text: str) -> dict[str, object]:
+    folded = text.casefold()
+    names: list[str] = []
+    if "loss" in folded:
+        names.append("loss")
+    if "step_time_ms" in folded:
+        names.append("step_time_ms")
+    if re.search(r"\bstep\b", folded):
+        names.append("step")
+    arguments: dict[str, object] = {}
+    if names:
+        arguments["metric_names"] = names
+    limit = re.search(r"(?:latest|last)\s+(\d+)", folded)
+    if limit is None:
+        limit = re.search(r"最近\s*(\d+)\s*条", text)
+    if limit is not None and 1 <= int(limit.group(1)) <= 200:
+        arguments["limit"] = int(limit.group(1))
+    return arguments
+
+
+def _explicit_patch_arguments(text: str, path: str) -> dict[str, object] | None:
+    """Compile one literal config update only when sandbox scope is explicit."""
+
+    folded = text.casefold()
+    if "sandbox" not in folded and "沙箱" not in text:
+        return None
+    escaped_path = re.escape(path)
+    match = re.search(
+        rf"(?:change|update|set)\s+([A-Za-z_][A-Za-z0-9_.-]*)\s+in\s+"
+        rf"{escaped_path}\s+to\s+([^\s,;]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if match is None:
+        match = re.search(
+            rf"(?:将|把)\s*{escaped_path}\s*(?:中|里的)\s*"
+            rf"([A-Za-z_][A-Za-z0-9_.-]*)\s*(?:改为|设为)\s*([^\s，。；]+)",
+            text,
+        )
+    if match is None:
+        return None
+    return {
+        "source_relative_path": path,
+        "updates": {match.group(1): match.group(2).rstrip(".,。")},
+    }
+
+
+def _explicit_read_plan(
+    *, messages: Sequence[AgentMessage], allowed_tools: Sequence[str]
+) -> tuple[AgentToolCall, ...]:
+    """Compile only literal, allowlisted read resources into a deterministic plan."""
+
+    user_text = _latest_user_text(messages)
+    tool_servers: dict[str, str] = {}
+    collisions: set[str] = set()
+    for qualified in allowed_tools:
+        parsed_server_id, separator, parsed_tool_name = qualified.rpartition(".")
+        if not separator or not parsed_server_id or not parsed_tool_name:
+            continue
+        if parsed_tool_name in tool_servers and tool_servers[parsed_tool_name] != parsed_server_id:
+            collisions.add(parsed_tool_name)
+        else:
+            tool_servers[parsed_tool_name] = parsed_server_id
+    for name in collisions:
+        tool_servers.pop(name, None)
+
+    positioned: list[tuple[int, AgentToolCall]] = []
+    search_server_id = tool_servers.get("search_evidence")
+    if search_server_id is not None:
+        for pattern, suffix in _EXPLICIT_SEARCH_PATTERNS:
+            for match in pattern.finditer(user_text):
+                if not _explicit_read_requested(user_text, match.start(1)):
+                    continue
+                query = f"{match.group(1)} {suffix}".strip()
+                positioned.append(
+                    (
+                        match.start(1),
+                        _planned_call(
+                            server_id=search_server_id,
+                            tool_name="search_evidence",
+                            arguments={"query": query, "top_k": 5},
+                        ),
+                    )
+                )
+    for match in (*_ENGLISH_RUN.finditer(user_text), *_CHINESE_RUN.finditer(user_text)):
+        if not _explicit_read_requested(user_text, match.start(1)):
+            continue
+        run_server_id = tool_servers.get("get_run")
+        if run_server_id is not None:
+            run_id = match.group(1).rstrip(".")
+            positioned.append(
+                (
+                    match.start(1),
+                    _planned_call(
+                        server_id=run_server_id,
+                        tool_name="get_run",
+                        arguments={"run_id": run_id},
+                    ),
+                )
+            )
+
+    folded = f" {user_text.casefold()} "
+    write_request = any(marker in folded for marker in _WRITE_MARKERS)
+    bounds = _explicit_line_bounds(user_text)
+    metric_arguments = _explicit_metric_arguments(user_text)
+    for match in _RESOURCE_PATH.finditer(user_text):
+        path = match.group(0).rstrip(".,;:!?)]}，。；：！？）】")
+        lowered = path.casefold()
+        selected_tool_name: str | None = None
+        arguments: dict[str, Any] = {"relative_path": path}
+        patch_server_id = tool_servers.get("apply_sandbox_config_patch")
+        patch_arguments = (
+            _explicit_patch_arguments(user_text, path)
+            if write_request and lowered.endswith((".yaml", ".yml", ".toml", "/config.json"))
+            else None
+        )
+        if patch_server_id is not None and patch_arguments is not None:
+            positioned.append(
+                (
+                    match.start(),
+                    _planned_call(
+                        server_id=patch_server_id,
+                        tool_name="apply_sandbox_config_patch",
+                        arguments=patch_arguments,
+                    ),
+                )
+            )
+            continue
+        if not _explicit_read_requested(user_text, match.start()):
+            continue
+        if lowered.endswith((".log", ".txt")):
+            selected_tool_name = "read_log_excerpt"
+            if bounds is not None:
+                arguments.update({"start_line": bounds[0], "end_line": bounds[1]})
+        elif lowered.endswith(("/metrics.jsonl", "/summary.json")):
+            selected_tool_name = "query_metrics"
+            arguments.update(metric_arguments)
+        elif lowered.endswith((".yaml", ".yml", ".toml", "/config.json")) and not write_request:
+            selected_tool_name = "inspect_config"
+        path_server_id = tool_servers.get(selected_tool_name or "")
+        if selected_tool_name is not None and path_server_id is not None:
+            positioned.append(
+                (
+                    match.start(),
+                    _planned_call(
+                        server_id=path_server_id,
+                        tool_name=selected_tool_name,
+                        arguments=arguments,
+                    ),
+                )
+            )
+
+    planned: list[AgentToolCall] = []
+    signatures: set[str] = set()
+    for _, call in sorted(positioned, key=lambda item: item[0]):
+        signature = _tool_call_signature(call)
+        if signature not in signatures:
+            planned.append(call)
+            signatures.add(signature)
+    return tuple(planned[:8])
+
+
+def _missing_resource_clarification(messages: Sequence[AgentMessage]) -> str | None:
+    """Return a stable clarification when a read request omits its resource identity."""
+
+    user_text = _latest_user_text(messages)
+    folded = f" {user_text.casefold()} "
+    read_requested = any(marker in folded for marker in _READ_MARKERS)
+    resource_mentioned = any(
+        marker in folded
+        for marker in (
+            " log ",
+            " logs ",
+            " config ",
+            " configuration ",
+            " metric ",
+            " metrics ",
+            " loss ",
+            "日志",
+            "配置",
+            "指标",
+            "损失",
+        )
+    )
+    has_path = _RESOURCE_PATH.search(user_text) is not None
+    has_run = (
+        _ENGLISH_RUN.search(user_text) is not None or _CHINESE_RUN.search(user_text) is not None
+    )
+    if not read_requested or not resource_mentioned or has_path or has_run:
+        return None
+    if _CHINESE_TEXT.search(user_text):
+        return "请提供要检查的日志、配置或指标文件的准确相对路径。"
+    return "Please provide the exact relative path of the log, configuration, or metrics file."
+
+
+def _planned_call_observed(call: AgentToolCall, observations: Sequence[dict[str, object]]) -> bool:
+    for observation in observations:
+        if "result" not in observation:
+            continue
+        if (
+            observation.get("server_id") != call.server_id
+            or observation.get("tool_name") != call.tool_name
+        ):
+            continue
+        arguments = observation.get("arguments")
+        if isinstance(arguments, dict) and all(
+            arguments.get(key) == value for key, value in call.arguments.items()
+        ):
+            return True
+    return False
 
 
 class _GraphState(TypedDict, total=False):
@@ -56,6 +502,7 @@ class _GraphState(TypedDict, total=False):
     approval_id: str
     answer: str
     failed: bool
+    retry_model: bool
 
 
 class AgentRuntime:
@@ -100,6 +547,7 @@ class AgentRuntime:
             {
                 "tool": "validate_tool_schema",
                 "final": "complete_message",
+                "model": "model_decision",
                 "end": END,
             },
         )
@@ -221,20 +669,103 @@ class AgentRuntime:
             self._fail(run_id, "AGENT_STEP_LIMIT")
             return {"failed": True}
         messages = tuple(AgentMessage.model_validate(item) for item in state["messages"])
-        decision = await self.model.decide(
-            messages=messages,
-            observations=tuple(state.get("observations", [])),
-            mode=record.mode,
-            allowed_tools=self._allowed_tools(record.mcp_server_ids),
+        observations = list(state.get("observations", []))
+        allowed_tools = self._allowed_tools(record.mcp_server_ids)
+        clarification = (
+            _missing_resource_clarification(messages)
+            if self.config.require_explicit_tool_intent and not observations
+            else None
         )
+        decision = (
+            AgentModelDecision(message=clarification)
+            if clarification is not None
+            else await self.model.decide(
+                messages=messages,
+                observations=tuple(observations),
+                mode=record.mode,
+                allowed_tools=allowed_tools,
+            )
+        )
+        explicit_plan = _explicit_read_plan(messages=messages, allowed_tools=allowed_tools)
+        missing_planned_calls = tuple(
+            call for call in explicit_plan if not _planned_call_observed(call, observations)
+        )
+        if decision.tool_calls:
+            decision = decision.model_copy(
+                update={"tool_calls": _normalize_tool_calls(decision.tool_calls, messages=messages)}
+            )
+            if self.config.require_explicit_tool_intent and missing_planned_calls:
+                decision = decision.model_copy(update={"tool_calls": missing_planned_calls})
+            elif self.config.require_explicit_tool_intent:
+                decision = await self.model.decide(
+                    messages=messages,
+                    observations=(),
+                    mode=record.mode,
+                    allowed_tools=(),
+                )
+                if decision.tool_calls:
+                    self._fail(run_id, "AGENT_EXPLICIT_INTENT_REQUIRED")
+                    return {"failed": True}
+            else:
+                expected_tool_names = {call.tool_name for call in explicit_plan}
+                selected_tool_names = {call.tool_name for call in decision.tool_calls}
+                if missing_planned_calls and expected_tool_names & selected_tool_names:
+                    decision = decision.model_copy(update={"tool_calls": missing_planned_calls})
+        elif missing_planned_calls:
+            decision = AgentModelDecision(tool_calls=missing_planned_calls)
+        if decision.tool_calls and _unsafe_tool_calls(decision.tool_calls):
+            decision = AgentModelDecision(message=_path_policy_refusal(messages))
         self.store.transition(
             run_id,
             status="running",
             steps_completed=record.steps_completed + 1,
         )
+        pending: list[dict[str, Any]] = []
+        pending_signatures: set[str] = set()
+        duplicate_observations: list[dict[str, object]] = []
+        for call in decision.tool_calls:
+            signature = self._signature(call)
+            if signature in pending_signatures:
+                continue
+            succeeded = next(
+                (
+                    item
+                    for item in reversed(observations)
+                    if "result" in item and self._signature_from_event(item) == signature
+                ),
+                None,
+            )
+            if succeeded is None:
+                pending.append(call.to_dict())
+                pending_signatures.add(signature)
+                continue
+            already_suppressed = any(
+                item.get("duplicate_suppressed") is True
+                and self._signature_from_event(item) == signature
+                for item in observations
+            )
+            if already_suppressed:
+                self._fail(run_id, "AGENT_TOOL_LOOP")
+                return {"failed": True, "pending_calls": [], "retry_model": False}
+            duplicate_observations.append(
+                {
+                    "call_id": call.call_id,
+                    "server_id": call.server_id,
+                    "tool_name": call.tool_name,
+                    "arguments": call.arguments,
+                    "result": {
+                        "schema_version": "1.0",
+                        "status": "already_succeeded",
+                        "instruction": "Do not repeat this call; answer from the existing result.",
+                    },
+                    "duplicate_suppressed": True,
+                }
+            )
         return {
             "decision": decision.to_dict(),
-            "pending_calls": [item.to_dict() for item in decision.tool_calls],
+            "pending_calls": pending,
+            "observations": [*observations, *duplicate_observations],
+            "retry_model": bool(duplicate_observations and not pending),
         }
 
     async def _validate_tool_schema(self, state: _GraphState) -> _GraphState:
@@ -363,14 +894,22 @@ class AgentRuntime:
         assert decision.message is not None
         observations = state.get("observations", [])
         answer = decision.message
-        evidence_ids = tuple(
-            item["call_id"]
+        evidence = tuple(
+            item
             for item in observations
-            if isinstance(item.get("call_id"), str) and "result" in item
+            if isinstance(item.get("call_id"), str)
+            and "result" in item
+            and item.get("duplicate_suppressed") is not True
         )
-        if evidence_ids and not any(f"[evidence:{call_id}]" in answer for call_id in evidence_ids):
-            citations = " ".join(f"[evidence:{call_id}]" for call_id in evidence_ids)
-            answer = f"{answer.rstrip()}\n\nEvidence: {citations}"
+        if evidence:
+            trace: list[str] = []
+            for item in evidence:
+                call_id = str(item["call_id"])
+                tool_name = str(item.get("tool_name", "tool"))
+                subject = _evidence_subject(item)
+                identity = f"{tool_name}: {subject}" if subject else tool_name
+                trace.append(f"{identity} [evidence:{call_id}]")
+            answer = f"{answer.rstrip()}\n\nEvidence trace: {'; '.join(trace)}"
         self.store.append_event(run_id, "model.delta", {"content": answer})
         self.store.append_event(run_id, "message.completed", {"content": answer})
         self.store.append_event(run_id, "run.completed", {"status": "succeeded"})
@@ -380,6 +919,8 @@ class AgentRuntime:
     def _route_decision(self, state: _GraphState) -> str:
         if state.get("failed"):
             return "end"
+        if state.get("retry_model"):
+            return "model"
         decision = AgentModelDecision.model_validate(state["decision"])
         return "tool" if decision.tool_calls else "final"
 
@@ -454,11 +995,7 @@ class AgentRuntime:
 
     @staticmethod
     def _signature(call: AgentToolCall) -> str:
-        return json.dumps(
-            [call.server_id, call.tool_name, call.arguments],
-            sort_keys=True,
-            separators=(",", ":"),
-        )
+        return _tool_call_signature(call)
 
     @staticmethod
     def _signature_from_event(data: dict[str, object]) -> str:

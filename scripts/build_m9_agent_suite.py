@@ -19,6 +19,12 @@ def main() -> int:
         default=None,
         help="Private output root. Required unless --check is used.",
     )
+    parser.add_argument(
+        "--release-generation",
+        choices=("v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"),
+        default="v1",
+        help="Versioned private Release content generation.",
+    )
     args = parser.parse_args()
     project_root = Path(__file__).resolve().parents[1]
     dev_root = project_root / "evals" / "agent" / "dev" / "v1"
@@ -32,7 +38,7 @@ def main() -> int:
     if args.release_root is None or not args.release_root.is_absolute():
         parser.error("--release-root must be an absolute private Artifact Store path")
     dev_manifest = write_suite(dev_root, dev_tasks)
-    release_tasks = build_tasks("release")
+    release_tasks = build_tasks("release", generation=args.release_generation)
     release_manifest = build_manifest(release_tasks)
     release_root = args.release_root / release_manifest.suite_version
     write_suite(release_root, release_tasks)

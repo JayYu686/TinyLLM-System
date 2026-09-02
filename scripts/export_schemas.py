@@ -50,6 +50,7 @@ from tinyllm.agent_eval import (
     BFCLCategorySpec,
     BFCLCoreProfileConfig,
     BFCLCoreProfileSummary,
+    M10ServingLineageEvidence,
 )
 from tinyllm.benchmark import (
     BenchmarkProfileAggregate,
@@ -192,10 +193,17 @@ from tinyllm.deployment import (
     M7ServingHardware,
     M7VulnerabilityAssessment,
     M9EvaluationSubjectRecord,
+    M10AdapterRoutingPolicy,
+    M10AgentProductionAlias,
+    M10AgentProductionRecord,
     M10LoRAStageEvaluationSubjectRecord,
     M10StageEvaluationSubjectRecord,
     ResolvedEvaluationSubject,
     ResolvedModel,
+)
+from tinyllm.deployment.m10_lora_stage import (
+    M10LoRAAdapterInterpolationEvidence,
+    M10LoRAAdapterModuleProfileEvidence,
 )
 from tinyllm.evaluation import (
     AuthoredProvenance,
@@ -383,6 +391,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-agent-lora-memory-probe-v1.schema.json": M10LoRAMemoryProbeResult,
     "m10-agent-lora-run-result-v1.schema.json": M10LoRARunResult,
     "m10-agent-lora-stage-export-v1.schema.json": M10LoRAStageExport,
+    "m10-agent-lora-interpolation-evidence-v1.schema.json": (M10LoRAAdapterInterpolationEvidence),
+    "m10-agent-lora-module-profile-evidence-v1.schema.json": (M10LoRAAdapterModuleProfileEvidence),
     "m10-mixture-artifact-v1.schema.json": M10MixtureArtifact,
     "m10-mixture-input-evidence-v1.schema.json": M10MixtureInputEvidence,
     "m10-mixture-stratum-v1.schema.json": M10MixtureStratum,
@@ -407,6 +417,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-agent-gate-check-v1.schema.json": AgentGateCheck,
     "m10-agent-gate-config-v1.schema.json": AgentGateConfig,
     "m10-agent-gate-result-v1.schema.json": AgentGateResult,
+    "m10-serving-lineage-evidence-v1.schema.json": M10ServingLineageEvidence,
     "m8-agent-contract-evidence-v1.schema.json": M8AgentContractEvidence,
     "m8-agent-approval-decision-v1.schema.json": AgentApprovalDecision,
     "m8-agent-approval-request-v1.schema.json": AgentApprovalRequest,
@@ -610,6 +621,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "m10-agent-lora-stage-evaluation-subject-record-v1.schema.json": (
         M10LoRAStageEvaluationSubjectRecord
     ),
+    "m10-adapter-routing-policy-v1.schema.json": M10AdapterRoutingPolicy,
+    "m10-agent-production-alias-v1.schema.json": M10AgentProductionAlias,
+    "m10-agent-production-record-v1.schema.json": M10AgentProductionRecord,
     "m10-stage-evaluation-subject-record-v1.schema.json": M10StageEvaluationSubjectRecord,
     "oasst1-import-config-v1.schema.json": OASST1ImportConfig,
     "multiple-choice-scorer-v1.schema.json": MultipleChoiceScorer,

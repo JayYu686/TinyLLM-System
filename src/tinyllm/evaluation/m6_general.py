@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -31,6 +32,40 @@ from tinyllm.schemas import canonical_config_hash
 
 class M6GeneralError(RuntimeError):
     """Raised when formal M6 general-regression execution fails closed."""
+
+
+def evaluation_artifact_sha256(root: Path, names: tuple[str, ...]) -> str:
+    """Hash an explicit Adapter file set without importing the deployment layer."""
+
+    if not root.is_absolute() or not root.is_dir() or root.is_symlink():
+        raise M6GeneralError("M6 LoRA Adapter directory is unsafe")
+    paths = tuple(sorted((root / name for name in names), key=lambda path: path.name))
+    if any(not path.is_file() or path.is_symlink() for path in paths):
+        raise M6GeneralError("M6 LoRA Adapter file set is incomplete or unsafe")
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(path.name.encode())
+        digest.update(str(path.stat().st_size).encode())
+        digest.update(sha256_file(path).encode())
+    return digest.hexdigest()
+
+
+def effective_artifact_sha256(
+    base_model_artifact_sha256: str,
+    adapter_artifact_sha256: str,
+) -> str:
+    """Identify one effective Base-plus-Adapter weight set."""
+
+    payload = json.dumps(
+        {
+            "base_model_artifact_sha256": base_model_artifact_sha256,
+            "adapter_artifact_sha256": adapter_artifact_sha256,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _atomic_json(path: Path, value: object) -> None:
@@ -68,11 +103,11 @@ def _general_result(summary: GeneralBaselineSummary) -> M6GeneralResult:
     )
 
 
-def _environment_payload() -> dict[str, object]:
+def _environment_payload(*, adapter_enabled: bool = False) -> dict[str, object]:
     import lm_eval  # type: ignore[import-not-found]
     import transformers  # type: ignore[import-not-found]
 
-    return {
+    payload: dict[str, object] = {
         "schema_version": "1.0",
         "python": platform.python_version(),
         "platform": platform.platform(),
@@ -81,6 +116,11 @@ def _environment_payload() -> dict[str, object]:
         "lm_eval": lm_eval.__version__,
         "cuda_runtime": torch.version.cuda,
     }
+    if adapter_enabled:
+        import peft  # type: ignore[import-not-found]
+
+        payload["peft"] = peft.__version__
+    return payload
 
 
 def _hardware_payload(physical_gpu_index: int) -> dict[str, object]:
@@ -107,6 +147,8 @@ def run_m6_general_pass(
     physical_gpu_index: int,
     model_identity: M6ModelIdentity,
     expected_config_sha256: str,
+    adapter_dir: Path | None = None,
+    base_model_artifact_sha256: str | None = None,
 ) -> M6GeneralPassSummary:
     """Run the full frozen lm-eval suite for the M6 Candidate."""
 
@@ -121,11 +163,37 @@ def run_m6_general_pass(
     release = load_m6_release_config(release_config_path)
     if canonical_config_hash(release) != expected_config_sha256:
         raise M6GeneralError("M6 Candidate import and Release config identities differ")
-    if (
-        model_identity.role != "candidate"
-        or model_identity.adaptation != "full_sft"
-        or model_export_sha256(model_dir) != model_identity.model_artifact_sha256
-    ):
+    if model_identity.role != "candidate":
+        raise M6GeneralError("M6 general model differs from the imported Candidate")
+    if model_identity.adaptation == "full_sft":
+        valid_artifact = (
+            adapter_dir is None
+            and base_model_artifact_sha256 is None
+            and model_export_sha256(model_dir) == model_identity.model_artifact_sha256
+        )
+    elif model_identity.adaptation == "lora":
+        if adapter_dir is None or base_model_artifact_sha256 is None:
+            valid_artifact = False
+        else:
+            try:
+                adapter_sha256 = evaluation_artifact_sha256(
+                    adapter_dir,
+                    ("adapter_config.json", "adapter_model.safetensors"),
+                )
+            except (OSError, RuntimeError, ValueError):
+                valid_artifact = False
+            else:
+                valid_artifact = (
+                    adapter_sha256 == model_identity.adapter_sha256
+                    and effective_artifact_sha256(
+                        base_model_artifact_sha256,
+                        adapter_sha256,
+                    )
+                    == model_identity.model_artifact_sha256
+                )
+    else:
+        valid_artifact = False
+    if not valid_artifact:
         raise M6GeneralError("M6 general model differs from the imported Candidate")
     if not tokenizer_dir.is_absolute() or not tokenizer_dir.is_dir():
         raise M6GeneralError("M6 general tokenizer must be an absolute existing directory")
@@ -137,13 +205,17 @@ def run_m6_general_pass(
         artifact_root=artifact_root,
         model_path=model_dir,
         tokenizer_path=tokenizer_dir,
+        adapter_path=adapter_dir,
         output_path=output_dir,
         device="cuda",
         offline=True,
     )
     environment_path = output_dir / "environment.json"
     hardware_path = output_dir / "hardware.json"
-    _atomic_json(environment_path, _environment_payload())
+    _atomic_json(
+        environment_path,
+        _environment_payload(adapter_enabled=model_identity.adaptation == "lora"),
+    )
     _atomic_json(hardware_path, _hardware_payload(physical_gpu_index))
     result = M6GeneralPassSummary(
         status="succeeded",

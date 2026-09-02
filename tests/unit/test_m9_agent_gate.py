@@ -5,7 +5,9 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from tinyllm.agent_eval.gate import assemble_agent_gate, paired_cluster_bootstrap
+import pytest
+
+from tinyllm.agent_eval.gate import AgentGateError, assemble_agent_gate, paired_cluster_bootstrap
 from tinyllm.agent_eval.schema import (
     AgentEvalItemResult,
     AgentEvalSummary,
@@ -171,3 +173,37 @@ def test_complete_candidate_passes_frozen_agent_gate(tmp_path: Path) -> None:
     assert result.decision == "accepted"
     assert len(result.checks) == 13
     assert all(check.passed for check in result.checks)
+
+
+def test_agent_gate_rejects_bfcl_from_a_different_model(tmp_path: Path) -> None:
+    candidate_items = _items(candidate=True)
+    parent_items = _items(candidate=False)
+    candidate_items_path = tmp_path / "candidate-items.jsonl"
+    parent_items_path = tmp_path / "parent-items.jsonl"
+    candidate_items_path.write_bytes(_jsonl(candidate_items))
+    parent_items_path.write_bytes(_jsonl(parent_items))
+    candidate_summary_path = tmp_path / "candidate-summary.json"
+    parent_summary_path = tmp_path / "parent-summary.json"
+    candidate_bfcl_path = tmp_path / "candidate-bfcl.json"
+    parent_bfcl_path = tmp_path / "parent-bfcl.json"
+    _write(candidate_summary_path, _summary(candidate_items, candidate=True))
+    _write(parent_summary_path, _summary(parent_items, candidate=False))
+    _write(
+        candidate_bfcl_path,
+        _bfcl(candidate=True).model_copy(update={"model_artifact_sha256": "9" * 64}),
+    )
+    _write(parent_bfcl_path, _bfcl(candidate=False))
+
+    with pytest.raises(AgentGateError, match="BFCL evidence"):
+        assemble_agent_gate(
+            candidate_summary_path=candidate_summary_path,
+            candidate_items_path=candidate_items_path,
+            parent_summary_path=parent_summary_path,
+            parent_items_path=parent_items_path,
+            candidate_bfcl_path=candidate_bfcl_path,
+            parent_bfcl_path=parent_bfcl_path,
+            m6_regression_basis_points=0,
+            m6_evidence_sha256="1" * 64,
+            serving_gate_valid=True,
+            serving_evidence_sha256="2" * 64,
+        )

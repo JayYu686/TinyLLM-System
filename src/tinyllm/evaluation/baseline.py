@@ -234,6 +234,7 @@ def build_lm_eval_command(
     project_root: Path,
     model_path: Path,
     tokenizer_path: Path | None = None,
+    adapter_path: Path | None = None,
     output_path: Path,
     device: str,
 ) -> tuple[str, ...]:
@@ -243,6 +244,7 @@ def build_lm_eval_command(
         not model_path.is_absolute()
         or not output_path.is_absolute()
         or (tokenizer_path is not None and not tokenizer_path.is_absolute())
+        or (adapter_path is not None and not adapter_path.is_absolute())
     ):
         raise BaselineContractError("model, tokenizer, and lm-eval output paths must be absolute")
     if device not in {"cpu", "cuda", "cuda:0"}:
@@ -250,6 +252,8 @@ def build_lm_eval_command(
     model_arguments = [f"pretrained={model_path}"]
     if tokenizer_path is not None:
         model_arguments.append(f"tokenizer={tokenizer_path}")
+    if adapter_path is not None:
+        model_arguments.append(f"peft={adapter_path}")
     model_arguments.extend(
         (
             f"dtype={config.model.dtype}",

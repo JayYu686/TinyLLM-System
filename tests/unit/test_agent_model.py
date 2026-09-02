@@ -52,6 +52,20 @@ def test_gateway_agent_model_forwards_optional_evaluation_seed() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         payload = __import__("json").loads(request.content)
         assert payload["seed"] == 20260820
+        policy = payload["messages"][0]["content"]
+        assert "Follow this decision order before every tool call" in policy
+        assert "JSON Schema's required array" in policy
+        assert "sufficient authorization for a read" in policy
+        assert "ask one concise clarification and make no tool call" in policy
+        assert "incident/reference ID is metadata" in policy
+        assert "search_evidence: policy, documentation, or evidence search" in policy
+        assert "read_log_excerpt: .log/.txt log inspection" in policy
+        assert "literal Run ID or relative path" in policy
+        assert "independent or parallel operations, emit all calls together" in policy
+        assert "emit all calls in the requested order" in policy
+        assert "retries are performed by the runtime" in policy
+        assert "explicitly repeat the user-requested subject" in policy
+        assert "or entity and cite every supporting call" in policy
         return httpx.Response(200, json={"choices": [{"message": {"content": "done"}}]})
 
     decision = asyncio.run(
@@ -107,6 +121,25 @@ def test_gateway_agent_model_maps_openai_tool_call_to_local_authority() -> None:
     assert decision.tool_calls[0].server_id == "tinyllm-devops"
     assert decision.tool_calls[0].tool_name == "search_evidence"
     assert decision.tool_calls[0].arguments == {"query": "failure"}
+
+
+def test_gateway_agent_model_omits_tool_fields_for_final_answer_retry() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = __import__("json").loads(request.content)
+        assert "tools" not in payload
+        assert "tool_choice" not in payload
+        return httpx.Response(200, json={"choices": [{"message": {"content": "done"}}]})
+
+    decision = asyncio.run(
+        _model(handler).decide(
+            messages=(AgentMessage(role="user", content="summarize the verified evidence"),),
+            observations=(),
+            mode="nonthinking",
+            allowed_tools=(),
+        )
+    )
+
+    assert decision.message == "done"
 
 
 def test_gateway_agent_model_rejects_unknown_tool_and_reasoning_leakage() -> None:

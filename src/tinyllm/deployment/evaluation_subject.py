@@ -26,11 +26,20 @@ from tinyllm.schemas.base import StrictSchema
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
 M9_SUBJECT_PATTERN = r"^qwen3-8b-m9-(base|historical-lora)-[0-9a-f]{8}$"
 M10_STAGE_SUBJECT_PATTERN = r"^qwen3-0-6b-m10-full-sft-(1m|5m)-[0-9a-f]{8}$"
-M10_LORA_STAGE_SUBJECT_PATTERN = r"^qwen3-8b-m10-agent-lora-(1m|5m|10m)-[0-9a-f]{8}$"
+M10_LORA_STAGE_SUBJECT_PATTERN = r"^qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m)-[0-9a-f]{8}$"
 SUBJECT_PATTERN = (
     r"^(qwen3-8b-m9-(base|historical-lora)|qwen3-0-6b-m10-full-sft-(1m|5m)|"
-    r"qwen3-8b-m10-agent-lora-(1m|5m|10m))"
+    r"qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m))"
     r"-[0-9a-f]{8}$"
+)
+DEVOPS_ADAPTER_TOOL_NAMES = (
+    "apply_sandbox_config_patch",
+    "get_run",
+    "inspect_config",
+    "list_runs",
+    "query_metrics",
+    "read_log_excerpt",
+    "search_evidence",
 )
 
 
@@ -40,18 +49,49 @@ def _canonical_sha256(value: object) -> str:
 
 
 def effective_artifact_sha256(
-    model_artifact_sha256: str, adapter_artifact_sha256: str | None
+    model_artifact_sha256: str,
+    adapter_artifact_sha256: str | None,
+    routing_policy_sha256: str | None = None,
 ) -> str:
-    """Identify the exact effective weights without merging or copying the base."""
+    """Identify exact weights and an optional deterministic inference routing policy."""
 
     if adapter_artifact_sha256 is None:
+        if routing_policy_sha256 is not None:
+            raise ValueError("Adapter routing requires an Adapter Artifact")
         return model_artifact_sha256
-    return _canonical_sha256(
-        {
-            "base_model_artifact_sha256": model_artifact_sha256,
-            "adapter_artifact_sha256": adapter_artifact_sha256,
-        }
-    )
+    identity = {
+        "base_model_artifact_sha256": model_artifact_sha256,
+        "adapter_artifact_sha256": adapter_artifact_sha256,
+    }
+    if routing_policy_sha256 is not None:
+        identity["routing_policy_sha256"] = routing_policy_sha256
+    return _canonical_sha256(identity)
+
+
+class M10AdapterRoutingPolicy(StrictSchema):
+    """Frozen specialization route: exact DevOps catalog uses LoRA, everything else Base."""
+
+    schema_version: Literal["1.0"] = "1.0"
+    policy_version: Literal["m10-devops-adapter-route-v1"] = "m10-devops-adapter-route-v1"
+    match_mode: Literal["exact_tool_name_set"] = "exact_tool_name_set"
+    adapter_tool_names: tuple[str, ...] = DEVOPS_ADAPTER_TOOL_NAMES
+    matched_route: Literal["adapter"] = "adapter"
+    unmatched_route: Literal["base"] = "base"
+
+    @field_validator("adapter_tool_names", mode="before")
+    @classmethod
+    def freeze_tool_names(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @model_validator(mode="after")
+    def validate_catalog(self) -> M10AdapterRoutingPolicy:
+        if self.adapter_tool_names != DEVOPS_ADAPTER_TOOL_NAMES:
+            raise ValueError("M10 Adapter routing tool catalog differs")
+        return self
+
+    @property
+    def policy_sha256(self) -> str:
+        return _canonical_sha256(self.to_dict())
 
 
 def evaluation_artifact_sha256(root: Path, names: tuple[str, ...]) -> str:
@@ -293,24 +333,44 @@ def m10_lora_stage_evaluation_subject_id(
     source_result_sha256: str,
     checkpoint_manifest_sha256: str,
     memory_probe_sha256: str,
+    checkpoint_export_evidence_sha256: str | None = None,
+    adapter_calibration_evidence_sha256: str | None = None,
+    adapter_interpolation_evidence_sha256: str | None = None,
+    adapter_module_profile_evidence_sha256: str | None = None,
+    adapter_routing_policy: M10AdapterRoutingPolicy | None = None,
 ) -> str:
     """Derive one immutable M10 Agent LoRA stage identity."""
 
-    if model.training_tokens not in {1_000_000, 5_000_000, 10_000_000}:
-        raise ValueError("M10 Agent LoRA subjects are limited to 1M/5M/10M stages")
+    if model.training_tokens not in {
+        1_000_000,
+        3_000_000,
+        4_000_000,
+        5_000_000,
+        10_000_000,
+    }:
+        raise ValueError("M10 Agent LoRA subject token count is unsupported")
     stage_label = f"{model.training_tokens // 1_000_000}m"
-    identity = _canonical_sha256(
-        {
-            "kind": f"m10_agent_lora_{stage_label}",
-            "model": model.to_dict(),
-            "base_model_artifact_sha256": base_model_artifact_sha256,
-            "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
-            "adapter_artifact_sha256": adapter_artifact_sha256,
-            "source_result_sha256": source_result_sha256,
-            "checkpoint_manifest_sha256": checkpoint_manifest_sha256,
-            "memory_probe_sha256": memory_probe_sha256,
-        }
-    )
+    inputs = {
+        "kind": f"m10_agent_lora_{stage_label}",
+        "model": model.to_dict(),
+        "base_model_artifact_sha256": base_model_artifact_sha256,
+        "tokenizer_artifact_sha256": tokenizer_artifact_sha256,
+        "adapter_artifact_sha256": adapter_artifact_sha256,
+        "source_result_sha256": source_result_sha256,
+        "checkpoint_manifest_sha256": checkpoint_manifest_sha256,
+        "memory_probe_sha256": memory_probe_sha256,
+    }
+    if checkpoint_export_evidence_sha256 is not None:
+        inputs["checkpoint_export_evidence_sha256"] = checkpoint_export_evidence_sha256
+    if adapter_calibration_evidence_sha256 is not None:
+        inputs["adapter_calibration_evidence_sha256"] = adapter_calibration_evidence_sha256
+    if adapter_interpolation_evidence_sha256 is not None:
+        inputs["adapter_interpolation_evidence_sha256"] = adapter_interpolation_evidence_sha256
+    if adapter_module_profile_evidence_sha256 is not None:
+        inputs["adapter_module_profile_evidence_sha256"] = adapter_module_profile_evidence_sha256
+    if adapter_routing_policy is not None:
+        inputs["adapter_routing_policy"] = adapter_routing_policy.to_dict()
+    identity = _canonical_sha256(inputs)
     return f"qwen3-8b-m10-agent-lora-{stage_label}-{identity[:8]}"
 
 
@@ -320,7 +380,13 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["Evaluation"] = "Evaluation"
     subject_id: str = Field(pattern=M10_LORA_STAGE_SUBJECT_PATTERN)
-    kind: Literal["m10_agent_lora_1m", "m10_agent_lora_5m", "m10_agent_lora_10m"]
+    kind: Literal[
+        "m10_agent_lora_1m",
+        "m10_agent_lora_3m",
+        "m10_agent_lora_4m",
+        "m10_agent_lora_5m",
+        "m10_agent_lora_10m",
+    ]
     created_at: datetime
     model: M6ModelIdentity
     model_dir: Path
@@ -338,6 +404,11 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
     checkpoint_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     checkpoint_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     memory_probe_sha256: str = Field(pattern=SHA256_PATTERN)
+    checkpoint_export_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_calibration_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_interpolation_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_module_profile_evidence_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_routing_policy: M10AdapterRoutingPolicy | None = None
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[
         "9f72bba28bcfaed45f116080033cb9bc83be1632570e71623f2a5684350261d8"
@@ -375,12 +446,43 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             raise ValueError("M10 Agent LoRA Adapter file set differs")
         expected_tokens = {
             "m10_agent_lora_1m": 1_000_000,
+            "m10_agent_lora_3m": 3_000_000,
+            "m10_agent_lora_4m": 4_000_000,
             "m10_agent_lora_5m": 5_000_000,
             "m10_agent_lora_10m": 10_000_000,
         }[self.kind]
+        if (expected_tokens in {3_000_000, 4_000_000}) != (
+            self.checkpoint_export_evidence_sha256 is not None
+        ):
+            raise ValueError(
+                "intermediate M10 Agent LoRA subjects require checkpoint export evidence"
+            )
+        derivations = sum(
+            value is not None
+            for value in (
+                self.adapter_calibration_evidence_sha256,
+                self.adapter_interpolation_evidence_sha256,
+                self.adapter_module_profile_evidence_sha256,
+            )
+        )
+        if derivations > 1:
+            raise ValueError("M10 Agent LoRA subject cannot combine Adapter derivations")
+        if (
+            self.adapter_interpolation_evidence_sha256 is not None
+            or self.adapter_module_profile_evidence_sha256 is not None
+        ) and expected_tokens != 5_000_000:
+            raise ValueError("M10 Agent LoRA derived Adapter must derive a 5M subject")
+        if self.adapter_routing_policy is not None and expected_tokens != 5_000_000:
+            raise ValueError("M10 Agent LoRA routing requires a 5M subject")
         expected_checkpoint = f"checkpoint-tokens-{expected_tokens:010d}"
         expected_effective = effective_artifact_sha256(
-            self.base_model_artifact_sha256, self.adapter_artifact_sha256
+            self.base_model_artifact_sha256,
+            self.adapter_artifact_sha256,
+            (
+                self.adapter_routing_policy.policy_sha256
+                if self.adapter_routing_policy is not None
+                else None
+            ),
         )
         if (
             self.model.role != "candidate"
@@ -401,6 +503,11 @@ class M10LoRAStageEvaluationSubjectRecord(StrictSchema):
             source_result_sha256=self.source_result_sha256,
             checkpoint_manifest_sha256=self.checkpoint_manifest_sha256,
             memory_probe_sha256=self.memory_probe_sha256,
+            checkpoint_export_evidence_sha256=self.checkpoint_export_evidence_sha256,
+            adapter_calibration_evidence_sha256=self.adapter_calibration_evidence_sha256,
+            adapter_interpolation_evidence_sha256=self.adapter_interpolation_evidence_sha256,
+            adapter_module_profile_evidence_sha256=(self.adapter_module_profile_evidence_sha256),
+            adapter_routing_policy=self.adapter_routing_policy,
         )
         if self.subject_id != expected_id:
             raise ValueError("M10 Agent LoRA subject ID differs from immutable inputs")
@@ -411,8 +518,8 @@ class ResolvedEvaluationSubject(StrictSchema):
     """Hash-verified path projection accepted only by serving and evaluation flows."""
 
     schema_version: Literal["1.0"] = "1.0"
-    requested_ref: str = Field(pattern=SUBJECT_PATTERN)
-    status: Literal["Evaluation"] = "Evaluation"
+    requested_ref: str = Field(min_length=1, max_length=180)
+    status: Literal["Evaluation", "Production"] = "Evaluation"
     model_version: str = Field(pattern=SUBJECT_PATTERN)
     evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
     model: M6ModelIdentity
@@ -422,6 +529,8 @@ class ResolvedEvaluationSubject(StrictSchema):
     tokenizer_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
     adapter_dir: Path | None = None
     adapter_artifact_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
+    adapter_routing_policy: M10AdapterRoutingPolicy | None = None
+    production_record_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     verified_at: datetime
 
     @field_validator("model_dir", "tokenizer_dir", "adapter_dir")
@@ -433,14 +542,26 @@ class ResolvedEvaluationSubject(StrictSchema):
 
     @model_validator(mode="after")
     def validate_identity(self) -> ResolvedEvaluationSubject:
-        if self.requested_ref != self.model_version:
-            raise ValueError("resolved evaluation subject identity differs")
+        if self.status == "Evaluation":
+            if (
+                self.requested_ref != self.model_version
+                or self.production_record_sha256 is not None
+            ):
+                raise ValueError("resolved evaluation subject identity differs")
+        elif self.production_record_sha256 is None or (
+            self.requested_ref != "agent-production"
+            and re.fullmatch(r"^qwen3-8b-m10-agent-production-[0-9a-f]{8}$", self.requested_ref)
+            is None
+        ):
+            raise ValueError("resolved Agent Production identity differs")
         if self.verified_at.tzinfo is None:
             raise ValueError("evaluation subject verification timestamp must be timezone-aware")
         if self.model.model_artifact_sha256 != self.model_artifact_sha256:
             raise ValueError("resolved model hash differs from evaluation identity")
         if (self.adapter_dir is None) != (self.adapter_artifact_sha256 is None):
             raise ValueError("resolved Adapter path and hash must appear together")
+        if self.adapter_routing_policy is not None and self.adapter_dir is None:
+            raise ValueError("resolved Adapter routing requires an Adapter")
         return self
 
 
@@ -786,7 +907,15 @@ def resolve_m10_lora_stage_evaluation_subject(
         actual_model != record.base_model_artifact_sha256
         or actual_tokenizer != record.tokenizer_artifact_sha256
         or actual_adapter != record.adapter_artifact_sha256
-        or effective_artifact_sha256(actual_model, actual_adapter)
+        or effective_artifact_sha256(
+            actual_model,
+            actual_adapter,
+            (
+                record.adapter_routing_policy.policy_sha256
+                if record.adapter_routing_policy is not None
+                else None
+            ),
+        )
         != record.effective_artifact_sha256
     ):
         raise DeploymentError(
@@ -804,6 +933,7 @@ def resolve_m10_lora_stage_evaluation_subject(
         tokenizer_artifact_sha256=record.tokenizer_artifact_sha256,
         adapter_dir=record.adapter_dir,
         adapter_artifact_sha256=record.adapter_artifact_sha256,
+        adapter_routing_policy=record.adapter_routing_policy,
         verified_at=now or datetime.now(UTC),
     )
 
@@ -811,7 +941,12 @@ def resolve_m10_lora_stage_evaluation_subject(
 def resolve_serving_model(
     artifact_root: Path, model_ref: str, *, now: datetime | None = None
 ) -> ServingModel:
-    """Resolve a deployable M6/M7 model or an explicit evaluation-only subject."""
+    """Resolve a deployable model, Agent Production Alias, or Evaluation subject."""
+
+    if model_ref == "agent-production" or model_ref.startswith("qwen3-8b-m10-agent-production-"):
+        from tinyllm.deployment.agent_registry import resolve_agent_production
+
+        return resolve_agent_production(artifact_root, model_ref, now=now)
 
     if model_ref.startswith("qwen3-8b-m9-"):
         return resolve_evaluation_subject(artifact_root, model_ref, now=now)

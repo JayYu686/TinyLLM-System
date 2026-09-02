@@ -256,7 +256,8 @@
       "default": "m9-agent-scoring-v1",
       "enum": [
         "m9-agent-scoring-v1",
-        "m10-agent-scoring-v2"
+        "m10-agent-scoring-v2",
+        "m10-agent-scoring-v3"
       ],
       "title": "Scoring Protocol",
       "type": "string"
@@ -267,7 +268,7 @@
       "type": "string"
     },
     "suite_version": {
-      "pattern": "^tinyllm-devops-agent-(?:dev|release)-v1-[0-9a-f]{8}$",
+      "pattern": "^tinyllm-devops-agent-(?:dev|release)-v[1-8]-[0-9a-f]{8}$",
       "title": "Suite Version",
       "type": "string"
     }

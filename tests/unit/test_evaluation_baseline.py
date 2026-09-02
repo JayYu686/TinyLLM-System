@@ -198,11 +198,13 @@ def test_lm_eval_command_is_reviewable_and_smoke_is_bounded(tmp_path: Path) -> N
     config = load_baseline_config(SMOKE_CONFIG)
     project_root = Path.cwd().resolve()
     tokenizer_path = (tmp_path / "tokenizer").resolve()
+    adapter_path = (tmp_path / "adapter").resolve()
     command = build_lm_eval_command(
         config,
         project_root=project_root,
         model_path=(tmp_path / "model").resolve(),
         tokenizer_path=tokenizer_path,
+        adapter_path=adapter_path,
         output_path=(tmp_path / "results").resolve(),
         device="cuda:0",
     )
@@ -210,6 +212,7 @@ def test_lm_eval_command_is_reviewable_and_smoke_is_bounded(tmp_path: Path) -> N
     joined = " ".join(command)
     assert "tinyllm_arc_easy,tinyllm_hellaswag,tinyllm_piqa" in joined
     assert f"tokenizer={tokenizer_path}" in joined
+    assert f"peft={adapter_path}" in joined
     assert "enable_thinking=False" in joined
     assert "--apply_chat_template" in command
     assert "--log_samples" in command

@@ -49,6 +49,8 @@ class M10LoRARunConfig(StrictSchema):
     name: Literal[
         "m10-agent-lora-qwen3-8b-seed42",
         "m10-5-agent-repair-lora-qwen3-8b-seed42",
+        "m10-5-agent-repair-v3-lora-qwen3-8b-seed42",
+        "m10-5-agent-repair-v4-lora-qwen3-8b-seed42",
     ]
     seed: Literal[42]
     purpose: Literal["agent_lora"]
@@ -104,7 +106,7 @@ class M10LoRAModelConfig(StrictSchema):
 class M10LoRADataConfig(StrictSchema):
     """Immutable M10 Agent training array identity."""
 
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     sequence_length: Literal[2048]
     target_supervised_tokens_per_epoch: Literal[1_000_000]
@@ -167,7 +169,7 @@ class M10LoRAEvaluationConfig(StrictSchema):
     stage_min_improvement_basis_points: Literal[100]
     m6_max_regression_basis_points: Literal[200]
     release_set_access: Literal["m10_final_gate_only"]
-    scoring_protocol: Literal["m10-agent-scoring-v2"] | None = None
+    scoring_protocol: Literal["m10-agent-scoring-v2", "m10-agent-scoring-v3"] | None = None
 
 
 class M10LoRAMemoryProbeConfig(StrictSchema):
@@ -192,8 +194,34 @@ class M10LoRAConfig(StrictSchema):
 
     @model_validator(mode="after")
     def validate_campaign_identity(self) -> M10LoRAConfig:
-        repair = self.run.name.startswith("m10-5-agent-repair-")
-        if repair:
+        repair_v4 = self.run.name.startswith("m10-5-agent-repair-v4-")
+        repair_v3 = self.run.name.startswith("m10-5-agent-repair-v3-")
+        repair_v2 = (
+            self.run.name.startswith("m10-5-agent-repair-") and not repair_v3 and not repair_v4
+        )
+        if repair_v4:
+            if (
+                not self.data.dataset_version.startswith("m10-agent-sft-v3-")
+                or self.optimization.learning_rate != 1e-5
+                or self.evaluation.scoring_protocol != "m10-agent-scoring-v3"
+                or self.evaluation.parent_task_success_basis_points != 4875
+            ):
+                raise ValueError(
+                    "M10.5 v4 repair requires Dataset v3, LR 1e-5, scoring v3, and its "
+                    "frozen parent baseline"
+                )
+        elif repair_v3:
+            if (
+                not self.data.dataset_version.startswith("m10-agent-sft-v2-")
+                or self.optimization.learning_rate != 1e-5
+                or self.evaluation.scoring_protocol != "m10-agent-scoring-v3"
+                or self.evaluation.parent_task_success_basis_points != 4875
+            ):
+                raise ValueError(
+                    "M10.5 v3 repair requires Dataset v2, LR 1e-5, scoring v3, and its "
+                    "frozen parent baseline"
+                )
+        elif repair_v2:
             if (
                 not self.data.dataset_version.startswith("m10-agent-sft-v2-")
                 or self.optimization.learning_rate != 5e-5
@@ -238,7 +266,7 @@ class M10LoRACheckpointManifest(StrictSchema):
     sequence_cursor: Literal[0]
     supervised_tokens: int = Field(ge=1_000_000, le=10_000_000)
     config_sha256: str = Field(pattern=SHA256_PATTERN)
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     dataset_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[
@@ -298,7 +326,11 @@ class M10LoRAContinuationGate(StrictSchema):
 
     schema_version: Literal["1.0"] = "1.0"
     gate_version: Literal["m10-agent-lora-continuation-v1"] = "m10-agent-lora-continuation-v1"
-    scoring_protocol: Literal["m9-agent-scoring-v1", "m10-agent-scoring-v2"] = "m9-agent-scoring-v1"
+    scoring_protocol: Literal[
+        "m9-agent-scoring-v1",
+        "m10-agent-scoring-v2",
+        "m10-agent-scoring-v3",
+    ] = "m9-agent-scoring-v1"
     evaluated_at: datetime
     decision: Literal["accepted", "rejected"]
     run_id: str = Field(min_length=1, max_length=180)
@@ -330,7 +362,11 @@ class M10LoRAContinuationGate(StrictSchema):
         observed = self.candidate_task_success_basis_points - self.parent_task_success_basis_points
         if self.improvement_basis_points != observed:
             raise ValueError("M10 LoRA Gate improvement differs from evidence")
-        expected_parent = 4750 if self.scoring_protocol == "m10-agent-scoring-v2" else 4500
+        expected_parent = {
+            "m9-agent-scoring-v1": 4500,
+            "m10-agent-scoring-v2": 4750,
+            "m10-agent-scoring-v3": 4875,
+        }[self.scoring_protocol]
         if self.parent_task_success_basis_points != expected_parent:
             raise ValueError("M10 LoRA Gate parent score differs from its scoring protocol")
         if self.source_stage_tokens == 1_000_000:
@@ -347,7 +383,7 @@ class M10LoRAContinuationGate(StrictSchema):
 
 
 class M10LoRAM6RegressionEvidence(StrictSchema):
-    """Paired M6 evidence required only by the 5M→10M LoRA Gate."""
+    """Paired M6 evidence for the selected final LoRA checkpoint."""
 
     schema_version: Literal["1.0"] = "1.0"
     evidence_version: Literal["m10-agent-lora-m6-regression-v1"] = "m10-agent-lora-m6-regression-v1"
@@ -362,7 +398,7 @@ class M10LoRAM6RegressionEvidence(StrictSchema):
     ]
     parent_summary_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_aggregate_basis_points: int = Field(ge=0, le=10_000)
-    candidate_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$")
+    candidate_subject_id: str = Field(pattern=r"^qwen3-8b-m10-agent-lora-(3m|4m|5m)-[0-9a-f]{8}$")
     candidate_evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
     candidate_model_artifact_sha256: str = Field(pattern=SHA256_PATTERN)
     candidate_summary_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -380,7 +416,7 @@ class M10LoRAM6RegressionEvidence(StrictSchema):
 
 
 class M10LoRAGeneralPassSummary(StrictSchema):
-    """One M6-v7 general pass for the 8B Base parent or a 5M LoRA stage."""
+    """One M6-v7 general pass for the 8B Base or selected LoRA checkpoint."""
 
     schema_version: Literal["1.0"] = "1.0"
     status: Literal["succeeded"]
@@ -392,7 +428,7 @@ class M10LoRAGeneralPassSummary(StrictSchema):
     evaluation_subject_id: str = Field(
         pattern=(
             r"^(?:qwen3-8b-m9-base-90587dd6|"
-            r"qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8})$"
+            r"qwen3-8b-m10-agent-lora-(?:3m|4m|5m)-[0-9a-f]{8})$"
         )
     )
     evaluation_subject_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -419,9 +455,9 @@ class M10LoRAGeneralPassSummary(StrictSchema):
             self.model.role != "candidate"
             or self.model.adaptation != "lora"
             or self.model.adapter_sha256 is None
-            or self.model.training_tokens != 5_000_000
+            or self.model.training_tokens not in {3_000_000, 4_000_000, 5_000_000}
         ):
-            raise ValueError("M10 LoRA Candidate M6 identity must be the 5M Adapter stage")
+            raise ValueError("M10 LoRA Candidate M6 identity has an unsupported checkpoint")
         if (
             self.model.repository != "Qwen/Qwen3-8B"
             or self.model.base_revision != M10_LORA_MODEL_REVISION
@@ -437,7 +473,7 @@ class M10LoRAMemoryProbeResult(StrictSchema):
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     environment_sha256: str = Field(pattern=SHA256_PATTERN)
     hardware_compatibility_sha256: str = Field(pattern=SHA256_PATTERN)
@@ -466,7 +502,7 @@ class M10LoRARunResult(StrictSchema):
     config_sha256: str = Field(pattern=SHA256_PATTERN)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     git_dirty: Literal[False]
-    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[12]-[0-9a-f]{8}$")
+    dataset_version: str = Field(pattern=r"^m10-agent-sft-v[123]-[0-9a-f]{8}$")
     dataset_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
     parent_evaluation_subject: Literal["qwen3-8b-m9-base-90587dd6"]
     parent_evaluation_subject_sha256: Literal[

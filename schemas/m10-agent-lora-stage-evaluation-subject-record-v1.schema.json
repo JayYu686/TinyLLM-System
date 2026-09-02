@@ -1,5 +1,59 @@
 {
   "$defs": {
+    "M10AdapterRoutingPolicy": {
+      "additionalProperties": false,
+      "description": "Frozen specialization route: exact DevOps catalog uses LoRA, everything else Base.",
+      "properties": {
+        "adapter_tool_names": {
+          "default": [
+            "apply_sandbox_config_patch",
+            "get_run",
+            "inspect_config",
+            "list_runs",
+            "query_metrics",
+            "read_log_excerpt",
+            "search_evidence"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Adapter Tool Names",
+          "type": "array"
+        },
+        "match_mode": {
+          "const": "exact_tool_name_set",
+          "default": "exact_tool_name_set",
+          "title": "Match Mode",
+          "type": "string"
+        },
+        "matched_route": {
+          "const": "adapter",
+          "default": "adapter",
+          "title": "Matched Route",
+          "type": "string"
+        },
+        "policy_version": {
+          "const": "m10-devops-adapter-route-v1",
+          "default": "m10-devops-adapter-route-v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "unmatched_route": {
+          "const": "base",
+          "default": "base",
+          "title": "Unmatched Route",
+          "type": "string"
+        }
+      },
+      "title": "M10AdapterRoutingPolicy",
+      "type": "object"
+    },
     "M6ModelIdentity": {
       "additionalProperties": false,
       "description": "Base or trained-model identity used by one M6 evaluation.",
@@ -168,6 +222,19 @@
       "title": "Adapter Artifact Sha256",
       "type": "string"
     },
+    "adapter_calibration_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Calibration Evidence Sha256"
+    },
     "adapter_dir": {
       "format": "path",
       "title": "Adapter Dir",
@@ -182,10 +249,60 @@
       "title": "Adapter Files",
       "type": "array"
     },
+    "adapter_interpolation_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Interpolation Evidence Sha256"
+    },
+    "adapter_module_profile_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adapter Module Profile Evidence Sha256"
+    },
+    "adapter_routing_policy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M10AdapterRoutingPolicy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "base_model_artifact_sha256": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Base Model Artifact Sha256",
       "type": "string"
+    },
+    "checkpoint_export_evidence_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checkpoint Export Evidence Sha256"
     },
     "checkpoint_manifest_sha256": {
       "pattern": "^[0-9a-f]{64}$",
@@ -210,6 +327,8 @@
     "kind": {
       "enum": [
         "m10_agent_lora_1m",
+        "m10_agent_lora_3m",
+        "m10_agent_lora_4m",
         "m10_agent_lora_5m",
         "m10_agent_lora_10m"
       ],
@@ -277,7 +396,7 @@
       "type": "string"
     },
     "subject_id": {
-      "pattern": "^qwen3-8b-m10-agent-lora-(1m|5m|10m)-[0-9a-f]{8}$",
+      "pattern": "^qwen3-8b-m10-agent-lora-(1m|3m|4m|5m|10m)-[0-9a-f]{8}$",
       "title": "Subject Id",
       "type": "string"
     },

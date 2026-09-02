@@ -212,6 +212,7 @@ class AgentConfig(StrictSchema):
     run_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
     read_retry_delays_ms: tuple[Literal[250, 500], ...] = (250, 500)
     same_tool_consecutive_limit: Literal[2] = 2
+    require_explicit_tool_intent: bool = False
     evidence_top_k: int = Field(default=8, ge=1, le=20)
     evidence_excerpt_characters: int = Field(default=1200, ge=100, le=4000)
     mcp_servers: tuple[MCPServerConfig, ...] = Field(min_length=1, max_length=8)

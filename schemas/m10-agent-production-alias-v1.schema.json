@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "description": "Atomically replaceable pointer to one immutable Agent Production record.",
+  "properties": {
+    "alias": {
+      "const": "agent-production",
+      "default": "agent-production",
+      "title": "Alias",
+      "type": "string"
+    },
+    "previous_production_version": {
+      "anyOf": [
+        {
+          "pattern": "^qwen3-8b-m10-agent-production-[0-9a-f]{8}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Previous Production Version"
+    },
+    "production_record_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Production Record Sha256",
+      "type": "string"
+    },
+    "production_version": {
+      "pattern": "^qwen3-8b-m10-agent-production-[0-9a-f]{8}$",
+      "title": "Production Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "production_version",
+    "production_record_sha256",
+    "updated_at"
+  ],
+  "title": "M10AgentProductionAlias",
+  "type": "object"
+}

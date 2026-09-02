@@ -48,6 +48,14 @@ def _load(path: Path, schema: type[BaseModel]) -> BaseModel:
         raise M10LoRAStageGateError(f"M10 Agent LoRA evidence is invalid: {path.name}") from exc
 
 
+def _allowed_scoring_protocols(dataset_version: str) -> set[str]:
+    if dataset_version.startswith("m10-agent-sft-v3-"):
+        return {"m10-agent-scoring-v3"}
+    if dataset_version.startswith("m10-agent-sft-v2-"):
+        return {"m10-agent-scoring-v2", "m10-agent-scoring-v3"}
+    return {"m9-agent-scoring-v1"}
+
+
 def _atomic_bundle(path: Path, values: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     temporary = path.parent / f".{path.name}.tmp-{uuid.uuid4().hex}"
@@ -135,13 +143,10 @@ def assemble_m10_lora_stage_gate(
         for actual, expected in (*parent_identities, *candidate_identities, *source_identities)
     ):
         raise M10LoRAStageGateError("M10 Agent LoRA Gate lineage or protocol differs")
-    expected_protocol = (
-        "m10-agent-scoring-v2"
-        if result.dataset_version.startswith("m10-agent-sft-v2-")
-        else "m9-agent-scoring-v1"
-    )
+    expected_protocol = parent_agent.scoring_protocol
+    allowed_protocols = _allowed_scoring_protocols(result.dataset_version)
     if (
-        parent_agent.scoring_protocol != expected_protocol
+        expected_protocol not in allowed_protocols
         or candidate_agent.scoring_protocol != expected_protocol
     ):
         raise M10LoRAStageGateError("M10 Agent LoRA scoring protocol differs from its Dataset")

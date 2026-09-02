@@ -42,6 +42,8 @@ from tinyllm.training.m10_lora_schema import (
 )
 
 CONFIG = Path("configs/sft/m10_agent_lora_qwen3_8b.yaml")
+REPAIR_V3_CONFIG = Path("configs/sft/m10_5_agent_repair_v3_lora_qwen3_8b.yaml")
+REPAIR_V4_CONFIG = Path("configs/sft/m10_5_agent_repair_v4_lora_qwen3_8b.yaml")
 
 
 def test_m10_lora_config_freezes_parent_data_adapter_and_stages() -> None:
@@ -103,6 +105,65 @@ def test_m10_lora_repair_campaign_requires_v2_data_lr_and_scoring() -> None:
     value["optimization"]["learning_rate"] = 2e-4
     with pytest.raises(ValueError, match="M10.5 repair"):
         M10LoRAConfig.model_validate(value)
+
+
+def test_m10_lora_v3_repair_freezes_low_lr_and_migrated_scoring() -> None:
+    value: dict[str, Any] = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
+    value["run"]["name"] = "m10-5-agent-repair-v3-lora-qwen3-8b-seed42"
+    value["data"]["dataset_version"] = "m10-agent-sft-v2-12345678"
+    value["data"]["manifest_sha256"] = "a" * 64
+    value["optimization"]["learning_rate"] = 1e-5
+    value["evaluation"]["parent_task_success_basis_points"] = 4875
+    value["evaluation"]["scoring_protocol"] = "m10-agent-scoring-v3"
+
+    config = M10LoRAConfig.model_validate(value)
+
+    assert config.optimization.learning_rate == 1e-5
+    assert config.evaluation.scoring_protocol == "m10-agent-scoring-v3"
+
+    value["optimization"]["learning_rate"] = 5e-5
+    with pytest.raises(ValueError, match="M10.5 v3 repair"):
+        M10LoRAConfig.model_validate(value)
+
+
+def test_m10_lora_v3_repair_file_binds_frozen_mixture() -> None:
+    config = load_m10_lora_config(REPAIR_V3_CONFIG)
+
+    assert config.data.dataset_version == "m10-agent-sft-v2-435b9fbc"
+    assert config.data.manifest_sha256 == (
+        "e7b7943e3dddee9cad3403e22e26de4c65c92d063efa15b2d4c168d29afe21d2"
+    )
+    assert config.optimization.learning_rate == 1e-5
+    assert config.evaluation.parent_task_success_basis_points == 4875
+
+
+def test_m10_lora_v4_repair_file_binds_zero_reuse_mixture() -> None:
+    config = load_m10_lora_config(REPAIR_V4_CONFIG)
+
+    assert config.data.dataset_version == "m10-agent-sft-v3-7aa779bf"
+    assert config.data.manifest_sha256 == (
+        "da18eedacf417bf70d55b46ef0fba2244367197f52588a5979ac804608929e52"
+    )
+    assert config.optimization.learning_rate == 1e-5
+    assert config.evaluation.scoring_protocol == "m10-agent-scoring-v3"
+
+    probe = M10LoRAMemoryProbeResult(
+        config_sha256="a" * 64,
+        git_commit="b" * 40,
+        git_dirty=False,
+        dataset_version=config.data.dataset_version,
+        parent_evaluation_subject=M10_LORA_PARENT_SUBJECT,
+        environment_sha256="c" * 64,
+        hardware_compatibility_sha256="d" * 64,
+        physical_gpu_index=4,
+        gpu_name="NVIDIA GeForce RTX 3090",
+        optimizer_steps=10,
+        supervised_tokens=10_000,
+        peak_allocated_bytes=10,
+        peak_reserved_bytes=20,
+        duration_seconds=1.0,
+    )
+    assert probe.dataset_version == config.data.dataset_version
 
 
 def _resolved_parent() -> ResolvedEvaluationSubject:
@@ -358,6 +419,17 @@ def test_continuation_gate_freezes_both_stage_policies(tmp_path: Path) -> None:
     repair["improvement_basis_points"] = 350
     with pytest.raises(ValueError, match="parent score"):
         M10LoRAContinuationGate.model_validate(repair)
+
+    migrated = _gate_mapping()
+    migrated.update(
+        {
+            "scoring_protocol": "m10-agent-scoring-v3",
+            "parent_task_success_basis_points": 4875,
+            "candidate_task_success_basis_points": 6250,
+            "improvement_basis_points": 1375,
+        }
+    )
+    assert M10LoRAContinuationGate.model_validate(migrated).decision == "accepted"
 
     with pytest.raises(ValueError, match="must not consume M6"):
         M10LoRAContinuationGate.model_validate(

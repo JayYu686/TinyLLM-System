@@ -155,6 +155,17 @@ def test_frozen_config_encodes_exact_source_language_mode_matrix() -> None:
     )
 
 
+def test_repair_v3_frozen_config_uses_distinct_seed_and_approved_source() -> None:
+    config = load_frozen_mixture_config(Path("configs/data/m10_agent_repair_v3_frozen.yaml"))
+
+    assert config.config_version == "m10-agent-frozen-mixture-v2"
+    assert config.build_seed == 20260827
+    assert config.inputs.tinyllm_devops.version == "m10-devops-training-v3-a5645bc5"
+    assert config.inputs.tinyllm_devops.approval_sha256 == (
+        "236085a8327243cf048bc2af3a302020c7f9df05d2840c61b479ebd67f994bc7"
+    )
+
+
 def test_frozen_config_rejects_silent_ratio_drift() -> None:
     value = yaml.safe_load(Path("configs/data/m10_agent_frozen.yaml").read_text(encoding="utf-8"))
     value["strata"][0]["supervised_tokens"] -= 1

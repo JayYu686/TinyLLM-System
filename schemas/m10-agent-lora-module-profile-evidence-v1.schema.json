@@ -1,0 +1,127 @@
+{
+  "additionalProperties": false,
+  "description": "Lineage for a fixed per-module LoRA strength profile.",
+  "properties": {
+    "derived_adapter_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Derived Adapter Artifact Sha256",
+      "type": "string"
+    },
+    "derived_adapter_weights_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Derived Adapter Weights Sha256",
+      "type": "string"
+    },
+    "derived_alpha": {
+      "const": 4,
+      "default": 4,
+      "title": "Derived Alpha",
+      "type": "integer"
+    },
+    "module_relative_scale_basis_points": {
+      "additionalProperties": {
+        "enum": [
+          1250,
+          2500,
+          5000,
+          7500,
+          10000
+        ],
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "down_proj",
+          "gate_proj",
+          "k_proj",
+          "o_proj",
+          "q_proj",
+          "up_proj",
+          "v_proj"
+        ]
+      },
+      "title": "Module Relative Scale Basis Points",
+      "type": "object"
+    },
+    "profile": {
+      "enum": [
+        "attention_full_mlp_eighth",
+        "mlp_full_attention_eighth",
+        "mlp_half_attention_eighth",
+        "mlp_quarter_attention_eighth",
+        "mlp_three_quarter_attention_eighth",
+        "qv_full_rest_eighth"
+      ],
+      "title": "Profile",
+      "type": "string"
+    },
+    "profile_version": {
+      "const": "m10-lora-module-profile-v1",
+      "default": "m10-lora-module-profile-v1",
+      "title": "Profile Version",
+      "type": "string"
+    },
+    "rank": {
+      "const": 16,
+      "default": 16,
+      "title": "Rank",
+      "type": "integer"
+    },
+    "scaling_operation": {
+      "const": "float32_scale_lora_b_source_dtype_output",
+      "default": "float32_scale_lora_b_source_dtype_output",
+      "title": "Scaling Operation",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection_inputs": {
+      "const": "public_dev_and_public_bfcl",
+      "default": "public_dev_and_public_bfcl",
+      "title": "Selection Inputs",
+      "type": "string"
+    },
+    "source_adapter_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Adapter Artifact Sha256",
+      "type": "string"
+    },
+    "source_adapter_weights_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Adapter Weights Sha256",
+      "type": "string"
+    },
+    "source_alpha": {
+      "const": 32,
+      "default": 32,
+      "title": "Source Alpha",
+      "type": "integer"
+    },
+    "source_evaluation_subject_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Evaluation Subject Sha256",
+      "type": "string"
+    },
+    "source_subject_id": {
+      "pattern": "^qwen3-8b-m10-agent-lora-5m-[0-9a-f]{8}$",
+      "title": "Source Subject Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_subject_id",
+    "source_evaluation_subject_sha256",
+    "source_adapter_artifact_sha256",
+    "source_adapter_weights_sha256",
+    "derived_adapter_artifact_sha256",
+    "derived_adapter_weights_sha256",
+    "profile",
+    "module_relative_scale_basis_points"
+  ],
+  "title": "M10LoRAAdapterModuleProfileEvidence",
+  "type": "object"
+}

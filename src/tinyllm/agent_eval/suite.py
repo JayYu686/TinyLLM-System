@@ -12,7 +12,7 @@ import json
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, Literal
 
 from pydantic import ValidationError
 
@@ -57,6 +57,13 @@ LANGUAGE_COUNTS: Final[dict[AgentEvalSplit, dict[AgentEvalLanguage, int]]] = {
     "release": {"en": 112, "zh": 48},
 }
 M9_SUITE_SEED: Final = 20260820
+M9_RELEASE_V2_SEED: Final = 20260831
+M9_RELEASE_V3_SEED: Final = 20260901
+M9_RELEASE_V4_SEED: Final = 2026083104
+M9_RELEASE_V5_SEED: Final = 2026083105
+M9_RELEASE_V6_SEED: Final = 2026083106
+M9_RELEASE_V7_SEED: Final = 2026083107
+M9_RELEASE_V8_SEED: Final = 2026090108
 _CATEGORY_TEMPLATE_COUNTS: Final[dict[AgentEvalCategory, int]] = {
     "single_tool": 5,
     "no_tool": 2,
@@ -84,6 +91,119 @@ _RUN_IDS: Final = (
     "20260820T013000Z-domain-eval-c3d4e5f6-0003",
     "20260820T014500Z-recovery-smoke-d4e5f6a7-0004",
 )
+_RELEASE_V2_SERVICES: Final = (
+    "data-loader",
+    "nccl-worker",
+    "tokenizer",
+    "checkpoint-loader",
+    "serving-router",
+    "metric-exporter",
+    "lineage-index",
+    "mcp-client",
+)
+_RELEASE_V2_RUN_IDS: Final = (
+    "20260831T010000Z-loader-smoke-e5f6a7b8-1001",
+    "20260831T011500Z-nccl-smoke-f6a7b8c9-1002",
+    "20260831T013000Z-tokenizer-eval-a7b8c9d0-1003",
+    "20260831T014500Z-registry-recovery-b8c9d0e1-1004",
+)
+_RELEASE_V3_SERVICES: Final = (
+    "gradient-accumulator",
+    "shard-coordinator",
+    "batch-sampler",
+    "checkpoint-verifier",
+    "request-scheduler",
+    "tool-policy",
+    "trace-exporter",
+    "artifact-resolver",
+)
+_RELEASE_V3_RUN_IDS: Final = (
+    "20260901T020000Z-gradient-audit-c9d0e1f2-2001",
+    "20260901T021500Z-shard-audit-d0e1f2a3-2002",
+    "20260901T023000Z-sampler-audit-e1f2a3b4-2003",
+    "20260901T024500Z-artifact-audit-f2a3b4c5-2004",
+)
+_RELEASE_V4_SERVICES: Final = (
+    "optimizer-monitor",
+    "topology-inspector",
+    "precision-guard",
+    "data-validator",
+    "checkpoint-indexer",
+    "gateway-watchdog",
+    "approval-auditor",
+    "registry-resolver",
+)
+_RELEASE_V4_RUN_IDS: Final = (
+    "20260831T120000Z-optimizer-audit-a3b4c5d6-3001",
+    "20260831T121500Z-topology-audit-b4c5d6e7-3002",
+    "20260831T123000Z-precision-audit-c5d6e7f8-3003",
+    "20260831T124500Z-registry-audit-d6e7f8a9-3004",
+)
+_RELEASE_V5_SERVICES: Final = (
+    "loss-sentinel",
+    "memory-observer",
+    "sampler-cursor",
+    "shard-restorer",
+    "stream-parser",
+    "tool-router",
+    "span-collector",
+    "deployment-verifier",
+)
+_RELEASE_V5_RUN_IDS: Final = (
+    "20260831T140000Z-loss-audit-e7f8a9b0-4001",
+    "20260831T141500Z-memory-audit-f8a9b0c1-4002",
+    "20260831T143000Z-sampler-audit-a9b0c1d2-4003",
+    "20260831T144500Z-deployment-audit-b0c1d2e3-4004",
+)
+_RELEASE_V6_SERVICES: Final = (
+    "optimizer-replayer",
+    "topology-mapper",
+    "token-accountant",
+    "checkpoint-auditor",
+    "request-admission",
+    "policy-enforcer",
+    "trace-correlator",
+    "artifact-attestor",
+)
+_RELEASE_V6_RUN_IDS: Final = (
+    "20260831T160000Z-optimizer-replay-c1d2e3f4-5001",
+    "20260831T161500Z-topology-map-d2e3f4a5-5002",
+    "20260831T163000Z-token-audit-e3f4a5b6-5003",
+    "20260831T164500Z-attestation-audit-f4a5b6c7-5004",
+)
+_RELEASE_V7_SERVICES: Final = (
+    "gradient-auditor",
+    "numa-prober",
+    "rng-custodian",
+    "checkpoint-committer",
+    "queue-governor",
+    "approval-broker",
+    "trace-linker",
+    "lineage-notary",
+)
+_RELEASE_V7_RUN_IDS: Final = (
+    "20260831T180000Z-gradient-audit-a5b6c7d8-6001",
+    "20260831T181500Z-numa-probe-b6c7d8e9-6002",
+    "20260831T183000Z-rng-audit-c7d8e9f0-6003",
+    "20260831T184500Z-lineage-audit-d8e9f0a1-6004",
+)
+_RELEASE_V8_SERVICES: Final = (
+    "gradient-ledger",
+    "numa-auditor",
+    "rng-verifier",
+    "checkpoint-notary",
+    "queue-inspector",
+    "approval-ledger",
+    "trace-attestor",
+    "lineage-verifier",
+)
+_RELEASE_V8_RUN_IDS: Final = (
+    "20260901T180000Z-gradient-ledger-e9f0a1b2-7001",
+    "20260901T181500Z-numa-audit-f0a1b2c3-7002",
+    "20260901T183000Z-rng-verify-a1b2c3d4-7003",
+    "20260901T184500Z-lineage-verify-b2c3d4e5-7004",
+)
+SuiteGeneration = Literal["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"]
 
 
 def _object_schema(
@@ -200,7 +320,12 @@ def _call(
 
 
 def _prompt_and_reference(
-    *, category: AgentEvalCategory, language: AgentEvalLanguage, ordinal: int
+    *,
+    category: AgentEvalCategory,
+    language: AgentEvalLanguage,
+    ordinal: int,
+    services: Sequence[str] = _SERVICES,
+    run_ids: Sequence[str] = _RUN_IDS,
 ) -> tuple[
     str,
     tuple[AgentEvalAllowedTrajectory, ...],
@@ -208,8 +333,8 @@ def _prompt_and_reference(
     AgentEvalFinalAssertions,
     AgentEvalFailureInjection | None,
 ]:
-    service = _SERVICES[ordinal % len(_SERVICES)]
-    run_id = _RUN_IDS[ordinal % len(_RUN_IDS)]
+    service = services[ordinal % len(services)]
+    run_id = run_ids[ordinal % len(run_ids)]
     log_path = f"runs/m9/{run_id}/logs/{service}.log"
     metrics_path = f"runs/m9/{run_id}/metrics.jsonl"
     config_path = f"runs/m9/{run_id}/config.original.yaml"
@@ -550,22 +675,129 @@ def _task(
     category_ordinal: int,
     global_ordinal: int,
     tools: tuple[AgentToolDefinition, ...],
+    generation: SuiteGeneration,
 ) -> AgentEvalTask:
+    services = (
+        _RELEASE_V2_SERVICES
+        if generation == "v2"
+        else _RELEASE_V3_SERVICES
+        if generation == "v3"
+        else _RELEASE_V4_SERVICES
+        if generation == "v4"
+        else _RELEASE_V5_SERVICES
+        if generation == "v5"
+        else _RELEASE_V6_SERVICES
+        if generation == "v6"
+        else _RELEASE_V7_SERVICES
+        if generation == "v7"
+        else _RELEASE_V8_SERVICES
+        if generation == "v8"
+        else _SERVICES
+    )
+    run_ids = (
+        _RELEASE_V2_RUN_IDS
+        if generation == "v2"
+        else _RELEASE_V3_RUN_IDS
+        if generation == "v3"
+        else _RELEASE_V4_RUN_IDS
+        if generation == "v4"
+        else _RELEASE_V5_RUN_IDS
+        if generation == "v5"
+        else _RELEASE_V6_RUN_IDS
+        if generation == "v6"
+        else _RELEASE_V7_RUN_IDS
+        if generation == "v7"
+        else _RELEASE_V8_RUN_IDS
+        if generation == "v8"
+        else _RUN_IDS
+    )
     prompt, trajectories, transitions, assertions, failure = _prompt_and_reference(
-        category=category, language=language, ordinal=global_ordinal
+        category=category,
+        language=language,
+        ordinal=global_ordinal,
+        services=services,
+        run_ids=run_ids,
     )
-    incident_id = f"M9{'D' if split == 'dev' else 'R'}-{global_ordinal:04d}"
-    prompt += (
-        f"\n评测环境事件编号：{incident_id}。"
-        if language == "zh"
-        else f"\nEvaluation fixture incident ID: {incident_id}."
+    incident_id = (
+        f"M10R2-{global_ordinal:04d}"
+        if generation == "v2"
+        else f"M10R3-{global_ordinal:04d}"
+        if generation == "v3"
+        else f"M10R4-{global_ordinal:04d}"
+        if generation == "v4"
+        else f"M10R5-{global_ordinal:04d}"
+        if generation == "v5"
+        else f"M10R6-{global_ordinal:04d}"
+        if generation == "v6"
+        else f"M10R7-{global_ordinal:04d}"
+        if generation == "v7"
+        else f"M10R8-{global_ordinal:04d}"
+        if generation == "v8"
+        else f"M9{'D' if split == 'dev' else 'R'}-{global_ordinal:04d}"
     )
+    if generation == "v2":
+        prompt += (
+            f"\n密封评测 v2 环境事件编号：{incident_id}。"
+            if language == "zh"
+            else f"\nSealed evaluation v2 fixture incident ID: {incident_id}."
+        )
+    elif generation == "v3":
+        prompt += (
+            f"\n独立密封评测 v3 审计编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v3 audit ID: {incident_id}."
+        )
+    elif generation == "v4":
+        prompt += (
+            f"\n独立密封评测 v4 审计编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v4 audit ID: {incident_id}."
+        )
+    elif generation == "v5":
+        prompt += (
+            f"\n独立密封评测 v5 审计编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v5 audit ID: {incident_id}."
+        )
+    elif generation == "v6":
+        prompt += (
+            f"\n独立密封评测 v6 取证编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v6 evidence ID: {incident_id}."
+        )
+    elif generation == "v7":
+        prompt += (
+            f"\n独立密封评测 v7 验证编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v7 verification ID: {incident_id}."
+        )
+    elif generation == "v8":
+        prompt += (
+            f"\n独立密封评测 v8 验收编号：{incident_id}。"
+            if language == "zh"
+            else f"\nIndependent sealed Release v8 acceptance ID: {incident_id}."
+        )
+    else:
+        prompt += (
+            f"\n评测环境事件编号：{incident_id}。"
+            if language == "zh"
+            else f"\nEvaluation fixture incident ID: {incident_id}."
+        )
     messages = (AgentMessage(role="user", content=prompt),)
-    initial_state = (
+    base_initial_state = (
         AgentEvalStateEntry(key="environment.artifact-snapshot", value="m9-fixture-v1"),
         AgentEvalStateEntry(key="environment.network", value="disabled"),
         AgentEvalStateEntry(key="policy.arbitrary-shell", value="denied"),
         AgentEvalStateEntry(key="policy.write-approval", value="required"),
+    )
+    initial_state = (
+        base_initial_state
+        if generation == "v1"
+        else (
+            base_initial_state[0],
+            AgentEvalStateEntry(key="environment.suite-generation", value=generation),
+            *base_initial_state[1:],
+        )
     )
     cluster_family = global_ordinal % _CATEGORY_TEMPLATE_COUNTS[category] + 1
     task_id = f"m9-{split}-{language}-{category.replace('_', '-')}-{category_ordinal:03d}"
@@ -594,8 +826,13 @@ def _task(
     )
 
 
-def build_tasks(split: AgentEvalSplit) -> tuple[AgentEvalTask, ...]:
+def build_tasks(
+    split: AgentEvalSplit, *, generation: SuiteGeneration = "v1"
+) -> tuple[AgentEvalTask, ...]:
     """Build one split with exact frozen category and 70/30 language counts."""
+
+    if split == "dev" and generation != "v1":
+        raise ValueError("the public Dev suite remains frozen at v1")
 
     counts = DEV_CATEGORY_COUNTS if split == "dev" else RELEASE_CATEGORY_COUNTS
     language_target = LANGUAGE_COUNTS[split]
@@ -623,6 +860,7 @@ def build_tasks(split: AgentEvalSplit) -> tuple[AgentEvalTask, ...]:
                     category_ordinal=category_ordinal,
                     global_ordinal=global_ordinal,
                     tools=tools,
+                    generation=generation,
                 )
             )
     actual_languages = Counter(task.language for task in tasks)
@@ -654,12 +892,49 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
     items_bytes = render_items(tasks)
     items_sha256 = hashlib.sha256(items_bytes).hexdigest()
     content_sha256 = canonical_json_sha256([task.to_dict() for task in tasks])
+    generations = {
+        entry.value
+        for task in tasks
+        for entry in task.initial_state
+        if entry.key == "environment.suite-generation"
+    }
+    if not generations:
+        generation: SuiteGeneration = "v1"
+    elif generations == {"v1"}:
+        generation = "v1"
+    elif generations == {"v2"}:
+        generation = "v2"
+    elif generations == {"v3"}:
+        generation = "v3"
+    elif generations == {"v4"}:
+        generation = "v4"
+    elif generations == {"v5"}:
+        generation = "v5"
+    elif generations == {"v6"}:
+        generation = "v6"
+    elif generations == {"v7"}:
+        generation = "v7"
+    elif generations == {"v8"}:
+        generation = "v8"
+    else:
+        raise ValueError("Agent evaluation suite mixes generation identities")
+    if split == "dev" and generation != "v1":
+        raise ValueError("the public Dev suite remains frozen at v1")
     return AgentEvalSuiteManifest(
-        suite_version=f"tinyllm-devops-agent-{split}-v1-{content_sha256[:8]}",
+        suite_version=f"tinyllm-devops-agent-{split}-{generation}-{content_sha256[:8]}",
         split=split,
         visibility="public" if split == "dev" else "private",
         license="Apache-2.0",
-        seed=M9_SUITE_SEED,
+        seed={
+            "v1": M9_SUITE_SEED,
+            "v2": M9_RELEASE_V2_SEED,
+            "v3": M9_RELEASE_V3_SEED,
+            "v4": M9_RELEASE_V4_SEED,
+            "v5": M9_RELEASE_V5_SEED,
+            "v6": M9_RELEASE_V6_SEED,
+            "v7": M9_RELEASE_V7_SEED,
+            "v8": M9_RELEASE_V8_SEED,
+        }[generation],
         item_count=len(tasks),
         category_counts=dict(Counter(task.category for task in tasks)),
         language_counts=dict(Counter(task.language for task in tasks)),
@@ -671,6 +946,11 @@ def build_manifest(tasks: Sequence[AgentEvalTask]) -> AgentEvalSuiteManifest:
             "TinyLLM-authored public Dev split; Apache-2.0 redistribution allowed."
             if split == "dev"
             else "TinyLLM-authored sealed Release split; excluded from training and public Git."
+            if generation == "v1"
+            else (
+                f"TinyLLM-authored sealed Release {generation} split; excluded from training "
+                "and public Git."
+            )
         ),
     )
 

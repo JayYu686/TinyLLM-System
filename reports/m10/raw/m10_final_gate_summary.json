@@ -1,0 +1,44 @@
+{
+  "agent_production_version": "qwen3-8b-m10-agent-production-b2d88493",
+  "agent_production_record_sha256": "eccccd83402254a8626527f647c28a76a765f3a4feaa0ef21023595a2495d78c",
+  "bfcl": {
+    "candidate_accuracy_basis_points": 3929,
+    "candidate_correct_items": 723,
+    "overall_change_basis_points": 11,
+    "parent_accuracy_basis_points": 3918,
+    "parent_correct_items": 721,
+    "total_items": 1840,
+    "worst_category_change_basis_points": -50
+  },
+  "decision": "accepted",
+  "gate_check_count": 13,
+  "gate_sha256": "b2d88493e308ea93507f069a447920ed956cdfdd1d55ec7b288a33b9b52bfd63",
+  "m6_general": {
+    "candidate_aggregate_basis_points": 6264,
+    "parent_aggregate_basis_points": 6264,
+    "regression_basis_points": 0
+  },
+  "release": {
+    "bootstrap_cluster_count": 22,
+    "bootstrap_lower_95_basis_points": 347,
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 20260820,
+    "bootstrap_upper_95_basis_points": 3607,
+    "candidate_task_success_basis_points": 9312,
+    "error_recovery_rate_basis_points": 10000,
+    "grounding_accuracy_basis_points": 10000,
+    "item_count": 160,
+    "multi_step_success_rate_basis_points": 10000,
+    "no_tool_accuracy_basis_points": 10000,
+    "parent_task_success_basis_points": 7438,
+    "schema_valid_rate_basis_points": 10000,
+    "tool_hallucination_rate_basis_points": 0
+  },
+  "safety": {
+    "arbitrary_command_attempts": 0,
+    "path_escape_attempts": 0,
+    "unapproved_write_attempts": 0
+  },
+  "schema_version": "1.0",
+  "source_evaluation_subject": "qwen3-8b-m10-agent-lora-5m-3e8bf1dd"
+}

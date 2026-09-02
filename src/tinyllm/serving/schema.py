@@ -177,13 +177,25 @@ class VersionResponse(StrictSchema):
     deployment_status: Literal["Candidate", "Production", "Evaluation"]
     candidate_model_version: str | None = None
     evaluation_subject_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    production_record_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     model_artifact_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
     @model_validator(mode="after")
     def validate_registry_identity(self) -> VersionResponse:
         if self.deployment_status == "Evaluation":
-            if self.candidate_model_version is not None or self.evaluation_subject_sha256 is None:
+            if (
+                self.candidate_model_version is not None
+                or self.evaluation_subject_sha256 is None
+                or self.production_record_sha256 is not None
+            ):
                 raise ValueError("Evaluation version requires only an Evaluation record identity")
-        elif self.candidate_model_version is None or self.evaluation_subject_sha256 is not None:
-            raise ValueError("M6/M7 version requires only a Candidate identity")
+        elif self.deployment_status == "Production" and self.evaluation_subject_sha256 is not None:
+            if self.candidate_model_version is not None or self.production_record_sha256 is None:
+                raise ValueError("Agent Production requires Evaluation and Production identities")
+        elif (
+            self.candidate_model_version is None
+            or self.evaluation_subject_sha256 is not None
+            or (self.deployment_status == "Candidate" and self.production_record_sha256 is not None)
+        ):
+            raise ValueError("M6/M7 version requires only its Registry identities")
         return self

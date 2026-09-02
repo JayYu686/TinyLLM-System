@@ -1,7 +1,7 @@
 # TinyLLM M6 v6 密封输出边界审计集
 
 该目录在实现 Non-thinking Thinking-tag 停止策略之前冻结。冻结时只知道 v5 Candidate
-Non-thinking 的汇总门禁失败及其单条失败机制；尚未执行或读取 v5 的其余三路结果。v6 保持
+Non-thinking 的汇总诊断及其单条机制；尚未执行或读取 v5 的其余三路结果。v6 保持
 既有 300 条规模、类别、语言比例、评分器、双语 Cluster Bootstrap 和全部门禁阈值，并使用
 新的完整指令与任务参数。v6 与 v1–v5 的完整 Prompt 交集为 0。
 

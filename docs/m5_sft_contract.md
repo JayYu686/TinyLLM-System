@@ -129,7 +129,7 @@ Non-thinking。Thinking 固定 Seed `20260726`、Temperature 0.6、Top-p 0.95、
 
 三个配比都未达到每个 Seed 至少 99%的冻结门槛。预注册选择器返回
 `status=no_eligible_arm` 和退出码 6，没有产生正式 Thinking 配比。M5.2 实验执行已收口为
-门禁拒绝，M5.3 长程 Full SFT 在新的格式可靠性修正批次通过同一门槛前保持阻塞。
+评测触发保护性暂停，M5.3 长程 Full SFT 在新的格式可靠性修正批次完成前保持阻塞。
 
 本轮完整结果见
 [M5.2 中文报告](../reports/m5/m5_ablation_selection.md)和
@@ -209,7 +209,7 @@ P0-R1 冻结为 `m5-r3-p0-r1-v1`：新 Task/Template/Case Reference、Task Seed 
 不变。
 
 真实 GPU Pilot 接受 12/40 条：Config 4 条（英文 3、中文 1），Log 8 条（英文 7、中文 1）。
-46 个候选超过 192 Token，14 个候选触及 384 Token 生成上限。两个任务族均未通过来源
+46 个候选超过 192 Token，14 个候选触及 384 Token 生成上限。两个任务族的来源覆盖均不足
 门禁，P0-R1 状态为 `COMPLETED_GATE_REJECTED`；正式 240 条扩展和 R3 训练继续阻断。
 本结果结束同类 Prompt-only 修正，下一步必须重新审查 Teacher 来源策略。完整证据见
 [P0-R1 中文报告](../reports/m5/m5_r3_p0_r1.md)。

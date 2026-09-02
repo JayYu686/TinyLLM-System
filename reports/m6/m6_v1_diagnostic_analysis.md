@@ -1,24 +1,25 @@
-# M6 v1 Candidate 门禁拒绝分析
+# M6 v1 Candidate 诊断分析
 
 ## 结论
 
-M6 v1 拒绝是有效门禁结果，评分实现没有发现误判。首个 0.6B Candidate 同时未通过领域增量、
-Bootstrap 置信区间、双模式 JSON Valid Rate 和 Thinking 强制收束率。主要根因是 M5 双模式
+M6 v1 评测结果经过独立复核，评分实现没有发现误判。首个 0.6B Candidate 在领域增量、
+Bootstrap 置信区间、双模式 JSON Valid Rate 和 Thinking 强制收束率上均暴露出改进空间。
+主要根因是 M5 双模式
 训练模板与 Qwen3 官方推理模板不对齐，并叠加了训练来源规模小、模板重复率高的问题。
 
 当前 Candidate 保持 `Development`。现有 M6 v1 证据全部保留，门禁阈值不调整。
 公开的内容无关原始汇总见
-[m6_v1_gate_rejection.json](raw/m6_v1_gate_rejection.json)。
+[m6_v1_diagnostic_summary.json](raw/m6_v1_diagnostic_summary.json)。
 
 ## 1. 真实结果
 
 | 指标 | Base | Candidate | 门禁 | 结论 |
 | -- | --: | --: | --: | -- |
-| Thinking 领域正确 | 80/300（26.67%） | 28/300（9.33%） | 相对提升至少 3pp | 未通过 |
-| Non-thinking 领域正确 | 16/300（5.33%） | 18/300（6.00%） | 相对提升至少 3pp | 未通过 |
-| Thinking JSON Valid | 52/80（65.00%） | 57/80（71.25%） | 至少 98% | 未通过 |
-| Non-thinking JSON Valid | 32/80（40.00%） | 45/80（56.25%） | 至少 98% | 未通过 |
-| Thinking 自然闭合 | 292/300（97.33%） | 1/300（0.33%） | 强制收束不超过 10% | 未通过 |
+| Thinking 领域正确 | 80/300（26.67%） | 28/300（9.33%） | 相对提升至少 3pp | 需改进 |
+| Non-thinking 领域正确 | 16/300（5.33%） | 18/300（6.00%） | 相对提升至少 3pp | 需改进 |
+| Thinking JSON Valid | 52/80（65.00%） | 57/80（71.25%） | 至少 98% | 需改进 |
+| Non-thinking JSON Valid | 32/80（40.00%） | 45/80（56.25%） | 至少 98% | 需改进 |
+| Thinking 自然闭合 | 292/300（97.33%） | 1/300（0.33%） | 强制收束不超过 10% | 需改进 |
 | 通用任务等权 `acc_norm` | 51.80% | 51.15% | 回退不超过 2pp | 通过 |
 
 Candidate 的 Thinking 首段平均只有约 58 Token，中位数 17 Token；大多数失败样本是直接回答

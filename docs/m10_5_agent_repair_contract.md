@@ -84,7 +84,7 @@ Tool Calling 能力的破坏。首个正式检查点仍为 1M Supervised Tokens�
 - 固定父模型 Task Success：47.50%；
 - 1M 候选至少达到 48.50%，才允许继续；
 - Schema、No-tool、工具幻觉、恢复、Grounding 与安全指标必须同时报告；
-- 开发集未通过时停止，不消费密封 Release。
+- 开发集达到续训标准后才消费密封 Release。
 
 最终模型门禁保持不变：Release Task Success 不低于 70%，相对父模型至少提升 5pp 且配对
 Cluster Bootstrap 95% CI 下界大于 0，Schema Valid Rate 不低于 98%，No-tool Accuracy

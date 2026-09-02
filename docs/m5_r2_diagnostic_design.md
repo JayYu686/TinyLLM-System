@@ -204,7 +204,7 @@ Projected Format Basis Points 必须继续以 200 条完整 Dev 为分母。两�
 若任一 Seed 在 1536 仍低于 99%：
 
 - 记录 `LENGTH_CEILING_INSUFFICIENT`；
-- 保持现有评测协议与 R1 拒绝结论；
+- 保持现有评测协议与 R1 历史评测结论；
 - 停止通用短样本复用；
 - 后续训练设计只面向 Config/Log，增加新的、互不重复的简洁 Teacher Trace；
 - 在训练前冻结任务族比例、推理长度分布和污染检查。

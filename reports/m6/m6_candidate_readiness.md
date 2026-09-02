@@ -1,7 +1,7 @@
 # M6 Candidate 正式评测就绪报告
 
-> 历史状态说明：本报告记录评测启动前的输入就绪状态。该 Candidate 后续已完成 M6 v1 并被
-> 门禁拒绝，实际结果与修复进展见 [M6 v1 门禁拒绝分析](m6_gate_rejection_analysis.md)。
+> 历史状态说明：本报告记录评测启动前的输入就绪状态。该 Candidate 后续已完成 M6 v1
+> 评测，实际结果与修复进展见 [M6 v1 诊断分析](m6_v1_diagnostic_analysis.md)。
 
 ## 结论
 

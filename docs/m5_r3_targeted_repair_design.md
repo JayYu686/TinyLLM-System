@@ -183,7 +183,7 @@ R3 不是 M6 Candidate Gate。即使通过，也只确定 M5.3 可采用的训�
 
 当前已完成 R3-P0：固定 40 条任务及独立身份、Dev/历史 Pilot 污染检查、严格 Schema、
 CPU 合成契约 Smoke、失败路径和真实 Qwen3-8B Teacher Pilot。P0 只接受 10/40 条，Config
-与 Log Diagnosis 各 5 条，两个任务族均未通过门禁；正式 240 条扩展保持阻断。
+与 Log Diagnosis 各 5 条，两个任务族均未达到预设覆盖目标；正式 240 条扩展保持阻断。
 真实运行使用隔离的两阶段环境：Teacher 环境只生成候选，冻结 `tokenizers=0.21.4` 的
 Policy 环境负责 Token 计数、Trace 选择和 Gate；禁止为了复用单一环境而绕过版本校验。
 

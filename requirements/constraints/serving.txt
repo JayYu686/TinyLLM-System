@@ -4,7 +4,7 @@ click==8.4.2
 fastapi==0.128.8
 googleapis-common-protos==1.65.0
 httpx==0.28.1
-numpy==2.2.6
+numpy==2.4.6
 openai==1.77.0
 opentelemetry-api==1.26.0
 opentelemetry-exporter-otlp==1.26.0
